@@ -73,6 +73,7 @@ window.XtreamSource = function (source) {
                             episodes.push({
                                 id: ep.id,
                                 container_extension: ep.container_extension,
+                                season: String(ep.season || season),
                                 label: 'S' + (ep.season || season) + ' E' + (ep.episode_num || '?') + '  ' + (ep.title || ''),
                             });
                         });

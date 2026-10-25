@@ -42,6 +42,17 @@ window.Browser = function (hooks) {
         },
         decorate: decorate,
         label: itemLabel,
+        pills: function () {
+            var show = state.episodesOf;
+            if (!show || !show.seasons || show.seasons.length < 2) return null;
+            return {
+                labels: show.seasons.map(function (season) {
+                    return 'Season ' + season;
+                }),
+                active: show.season,
+                focused: state.zone === 'pills',
+            };
+        },
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
@@ -561,9 +572,65 @@ window.Browser = function (hooks) {
             return state.adapter.episodes(show);
         })
             .then(function (episodes) {
-                if (token === state.token) items.set(episodes, 0, 'No episodes');
+                if (token !== state.token) return;
+                state.episodesOf.all = episodes;
+                state.episodesOf.seasons = [];
+                episodes.forEach(function (ep) {
+                    if (state.episodesOf.seasons.indexOf(ep.season) === -1) state.episodesOf.seasons.push(ep.season);
+                });
+                showSeason(0);
             })
             .catch(fail(items, 'EPISODES'));
+    }
+
+    function showSeason(index) {
+        var show = state.episodesOf;
+        show.season = Math.max(0, Math.min(show.seasons.length - 1, index));
+        var season = show.seasons[show.season];
+        items.set(
+            show.all.filter(function (ep) {
+                return show.seasons.length < 2 || ep.season === season;
+            }),
+            0,
+            'No episodes'
+        );
+    }
+
+    // An episode request that knows the whole show, so the player can offer
+    // Next episode, autoplay and the episodes panel. Opening another episode
+    // from the player records it like a pick from the list.
+    function episodeRequest(show, list, index) {
+        var req = state.adapter.episodeRequest(show, list[index]);
+        req.episodes = {
+            items: list,
+            index: index,
+            open: function (next) {
+                record(list[next], show, list[next]);
+                return episodeRequest(show, list, next);
+            },
+        };
+        return req;
+    }
+
+    // From Recently watched / Continue watching: load the show's episodes
+    // first so Next episode works there too.
+    function playSavedEpisode(entry) {
+        var show = entry.show;
+        record(entry, show, entry.episode);
+        cached('episodes:' + show.series_id, function () {
+            return state.adapter.episodes(show);
+        })
+            .then(function (list) {
+                var index = -1;
+                list.forEach(function (ep, i) {
+                    if (String(ep.id) === String(entry.episode.id)) index = i;
+                });
+                hooks.play(index >= 0 ? episodeRequest(show, list, index) : state.adapter.episodeRequest(show, entry.episode));
+            })
+            .catch(function (err) {
+                Log.error('EPISODES FAIL ' + err.message);
+                hooks.play(state.adapter.episodeRequest(show, entry.episode));
+            });
     }
 
     function closeEpisodes() {
@@ -578,10 +645,7 @@ window.Browser = function (hooks) {
         var item = items.item();
         if (!item) return;
         if (state.section === 'sources') return sourceAction();
-        if (item.episode) {
-            record(item, item.show, item.episode);
-            return hooks.play(state.adapter.episodeRequest(item.show, item.episode));
-        }
+        if (item.episode) return playSavedEpisode(item);
         if (state.section === 'live') {
             record(item);
             return hooks.play(state.adapter.liveRequest(item));
@@ -591,8 +655,9 @@ window.Browser = function (hooks) {
             return hooks.play(state.adapter.movieRequest(item));
         }
         if (state.episodesOf) {
-            record(item, state.episodesOf.show, item);
-            return hooks.play(state.adapter.episodeRequest(state.episodesOf.show, item));
+            var show = state.episodesOf;
+            record(item, show.show, item);
+            return hooks.play(episodeRequest(show.show, show.all, show.all.indexOf(item)));
         }
         openEpisodes(item);
     }
@@ -633,6 +698,27 @@ window.Browser = function (hooks) {
         return items.move(target - at);
     }
 
+    function hasSeasons() {
+        return !!(state.episodesOf && state.episodesOf.seasons && state.episodesOf.seasons.length > 1);
+    }
+
+    // Season pills above a show's episodes.
+    function onPillsKey(code) {
+        var show = state.episodesOf;
+        if (code === KEY.LEFT || code === KEY.RIGHT) {
+            var next = show.season + (code === KEY.LEFT ? -1 : 1);
+            if (next >= 0 && next < show.seasons.length) {
+                showSeason(next);
+                renderChrome();
+            }
+        } else if (code === KEY.DOWN || code === KEY.ENTER) setZone('items');
+        else if (isBack(code)) {
+            closeEpisodes();
+            setZone('items');
+        } else return code === KEY.UP;
+        return true;
+    }
+
     function leaveItems() {
         if (state.episodesOf) closeEpisodes();
         else setZone('categories');
@@ -648,6 +734,7 @@ window.Browser = function (hooks) {
             refreshLibrary();
         }
         if (state.zone === 'toolbar') return onToolbarKey(code);
+        if (state.zone === 'pills') return onPillsKey(code);
         if (state.zone === 'rail') {
             if (code === KEY.UP || code === KEY.DOWN) moveSection(code === KEY.UP ? -1 : 1);
             else if (code === KEY.RIGHT || code === KEY.ENTER) setZone('categories');
@@ -665,7 +752,10 @@ window.Browser = function (hooks) {
         } else {
             var grid = items.cols() > 1;
             if (STEPS[code]) {
-                if (!moveItems(code) && code === KEY.UP) enterToolbar('items');
+                if (!moveItems(code) && code === KEY.UP) {
+                    if (hasSeasons()) setZone('pills');
+                    else enterToolbar('items');
+                }
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {

@@ -6,7 +6,7 @@
 // stream is open, so release() always closes the previous one first.
 //
 // Request fields: live, title, subtitle, id (stable key for saved progress),
-// sources.
+// sources, and for episodes an optional episodes list (see player-series.js).
 window.Player = (function () {
     'use strict';
 
@@ -88,6 +88,24 @@ window.Player = (function () {
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
     var menu = { open: false, focus: 0, actions: [] };
     var resume = { open: false, focus: 0, position: 0 };
+    var series = PlayerSeries({
+        current: function () {
+            return current;
+        },
+        position: position,
+        duration: duration,
+        seekTo: seekTo,
+        isEnded: function () {
+            return ended;
+        },
+        play: play,
+        openMenu: openMenu,
+        showControls: showControls,
+        progressOf: function (id) {
+            var saved = loadProgress()[id];
+            return saved && saved.duration > 0 ? Math.min(1, saved.position / saved.duration) : 0;
+        },
+    });
 
     function avplay() {
         return window.webapis && window.webapis.avplay;
@@ -217,12 +235,13 @@ window.Player = (function () {
     // ---- Overlay ----------------------------------------------------------
 
     function canHide() {
-        return !isPaused() && !menu.open && !resume.open && !ended && !seek.timer;
+        return !isPaused() && !menu.open && !resume.open && !ended && !seek.timer && !series.busy();
     }
 
     function hideControls() {
         ui.controls.classList.add('hidden');
         playerEl.classList.remove('controls-on');
+        series.onHide();
     }
 
     // The tick hides the overlay once the deadline passes; while paused (or a
@@ -234,7 +253,7 @@ window.Player = (function () {
     function hintHtml() {
         var parts = current.live
             ? [['OK', 'Info'], ['▲▼', 'Channel'], ['Yellow', 'Audio & subtitles']]
-            : [['OK', 'Pause'], ['◀ ▶', 'Seek'], ['▲', 'Audio, subtitles, speed']];
+            : [['OK', 'Pause'], ['◀ ▶', 'Seek'], ['▲', 'Audio, subtitles, speed'], ['▼', current.episodes ? 'Episodes & more' : 'More']];
         parts.push(['Return', 'Close']);
         return parts;
     }
@@ -284,6 +303,7 @@ window.Player = (function () {
         playerEl.classList.add('controls-on');
         render();
         scheduleHide();
+        series.render(true);
     }
 
     function showStatus(text, error) {
@@ -305,6 +325,7 @@ window.Player = (function () {
         if (!ended && !isPaused() && Date.now() - lastSave > SAVE_EVERY_MS) saveProgress();
         if (!canHide()) scheduleHide();
         else if (Date.now() >= hideAt) hideControls();
+        series.render(!ui.controls.classList.contains('hidden'));
     }
 
     // ---- Seeking ----------------------------------------------------------
@@ -729,6 +750,7 @@ window.Player = (function () {
         ui.menu.classList.add('hidden');
         ui.resume.classList.add('hidden');
         clearSubs();
+        series.reset();
         avAudio = avText = -1;
         speed = 1;
         ui.speed.classList.add('hidden');
@@ -975,7 +997,8 @@ window.Player = (function () {
         if (resume.open) return resumeKey(code);
         if (!ready) return false;
         if (menu.open) return menuKey(code);
-        var wantsMenu = code === KEY.YELLOW || code === KEY.INFO || (!live && (code === KEY.UP || code === KEY.DOWN));
+        if (!live && series.key(code)) return true;
+        var wantsMenu = code === KEY.YELLOW || code === KEY.INFO || (!live && code === KEY.UP);
         if (wantsMenu) {
             openMenu();
             return true;

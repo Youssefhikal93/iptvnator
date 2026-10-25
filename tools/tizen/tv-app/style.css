@@ -557,3 +557,29 @@ svg {
     font-weight: 700;
     background: linear-gradient(135deg, #2a3150, #1e2330);
 }
+
+/* Season pills above a show's episodes */
+.pills {
+    display: flex;
+    gap: 12px;
+    padding: 0 8px 16px;
+    overflow: hidden;
+}
+.pill {
+    flex: none;
+    padding: 8px 24px;
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background: var(--search-bg);
+    color: var(--muted);
+    font-size: 24px;
+}
+.pill.active {
+    background: var(--selection-surface-strong);
+    color: var(--selection);
+    font-weight: 600;
+}
+.pills.focused .pill.active {
+    border-color: var(--selection-border);
+    box-shadow: 0 0 18px var(--selection-glow);
+}

@@ -338,3 +338,161 @@
     background: var(--pc-accent-strong);
     border-color: var(--pc-focus);
 }
+
+/* Series: button row, Skip intro, Up next and the episodes panel */
+#pl-buttons {
+    display: flex;
+    gap: 20px;
+    margin-top: 28px;
+}
+#pl-buttons:empty {
+    display: none;
+}
+.pl-btn {
+    padding: 12px 30px;
+    border-radius: 14px;
+    border: 3px solid var(--pc-glass-border);
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 30px;
+    font-weight: 600;
+}
+.pl-btn.focus {
+    background: var(--pc-accent-strong);
+    border-color: var(--pc-focus);
+}
+#pl-skip {
+    position: absolute;
+    right: 80px;
+    bottom: 120px;
+    padding: 18px 36px;
+    border-radius: 16px;
+    background: var(--pc-glass);
+    border: 3px solid var(--pc-focus);
+    font-size: 32px;
+    font-weight: 600;
+}
+#pl-skip b {
+    margin-left: 12px;
+    color: var(--pc-cyan);
+}
+#pl-next {
+    position: absolute;
+    right: 80px;
+    top: 80px;
+    width: 620px;
+    padding: 28px 36px;
+    border-radius: 22px;
+    background: var(--pc-glass);
+    border: 2px solid var(--pc-glass-border);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.pl-next-eyebrow {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pc-cyan);
+}
+#pl-next-title {
+    margin-top: 10px;
+    font-size: 34px;
+    font-weight: 600;
+    white-space: pre-line;
+}
+#pl-next-count {
+    margin-top: 16px;
+    font-size: 26px;
+    color: var(--pc-text-secondary);
+}
+#pl-episodes {
+    position: absolute;
+    left: 64px;
+    top: 64px;
+    bottom: 64px;
+    width: 900px;
+    padding: 32px 0;
+    border-radius: 24px;
+    background: #0c1017;
+    border: 2px solid var(--pc-glass-border);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+.pl-ep-head {
+    padding: 0 40px 18px;
+    font-size: 38px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pl-ep-pills {
+    display: flex;
+    gap: 12px;
+    padding: 0 36px 20px;
+    overflow: hidden;
+}
+.pl-ep-pill {
+    flex: none;
+    padding: 8px 24px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--pc-text-secondary);
+    font-size: 26px;
+}
+.pl-ep-pill.active {
+    background: var(--pc-accent-strong);
+    color: #fff;
+    font-weight: 600;
+}
+.pl-ep-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 6px 24px;
+    padding: 18px 20px 22px;
+    border-radius: 14px;
+    border: 3px solid transparent;
+    font-size: 30px;
+}
+.pl-ep-row.focus {
+    background: rgba(79, 142, 255, 0.22);
+    border-color: var(--pc-focus);
+}
+.pl-ep-row.playing {
+    color: var(--pc-cyan);
+}
+.pl-ep-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pl-ep-tag {
+    padding: 2px 14px;
+    border-radius: 8px;
+    background: rgba(92, 214, 255, 0.18);
+    font-size: 22px;
+    font-weight: 700;
+}
+.pl-ep-bar {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 8px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--pc-timeline-track);
+}
+.pl-ep-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--pc-accent);
+}
+.pl-ep-hint {
+    position: absolute;
+    left: 40px;
+    bottom: 24px;
+    font-size: 24px;
+    color: var(--pc-text-secondary);
+}

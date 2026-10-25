@@ -5,17 +5,19 @@
         <meta name="viewport" content="width=1920, height=1080" />
         <title>IPTVnator</title>
         <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="player.css" />
     </head>
     <body>
         <aside id="rail"></aside>
 
         <header id="header">
             <div id="source-pill">
-                <span class="pill-icon">≡</span>
+                <span class="pill-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z"/></svg></span>
                 <span class="pill-text">
                     <span id="source-name">No source</span>
                     <span id="source-type"></span>
                 </span>
+                <svg class="pill-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
             </div>
             <div id="breadcrumb"></div>
         </header>
@@ -24,6 +26,9 @@
             <section id="categories" class="pane side"></section>
             <section id="items" class="pane main"></section>
         </main>
+
+        <div id="search" class="hidden"><input id="search-input" autocomplete="off" /></div>
+        <div id="toast" class="hidden"></div>
 
         <footer id="hints">Arrows: move · OK: open · CH ▲▼: page · Return: back</footer>
 
@@ -49,7 +54,45 @@
         <div id="player" class="hidden">
             <video id="video"></video>
             <object id="avplayer" type="application/avplayer"></object>
-            <div id="osd" class="hidden"></div>
+            <div id="pl-subs"></div>
+            <div id="pl-status" class="hidden">
+                <div class="pl-spinner"></div>
+                <div id="pl-status-text"></div>
+            </div>
+            <div id="pl-controls" class="hidden">
+                <div class="pl-top">
+                    <div class="pl-titles">
+                        <div id="pl-title"></div>
+                        <div id="pl-subtitle"></div>
+                    </div>
+                    <span id="pl-speed" class="pl-chip hidden"></span>
+                    <span id="pl-live" class="pl-badge hidden">LIVE</span>
+                </div>
+                <div class="pl-dock">
+                    <div id="pl-seekbox">
+                        <div id="pl-bar">
+                            <div id="pl-fill"></div>
+                            <div id="pl-target"></div>
+                        </div>
+                        <div class="pl-times">
+                            <span id="pl-state"></span>
+                            <span id="pl-cur">0:00</span>
+                            <span id="pl-sep">/</span>
+                            <span id="pl-total">0:00</span>
+                            <span id="pl-jump"></span>
+                        </div>
+                    </div>
+                    <div id="pl-hint"></div>
+                </div>
+            </div>
+            <div id="pl-menu" class="hidden"></div>
+            <div id="pl-resume" class="hidden">
+                <div id="pl-resume-title"></div>
+                <div class="pl-resume-buttons">
+                    <span id="pl-resume-yes"></span>
+                    <span id="pl-resume-no">Start over</span>
+                </div>
+            </div>
         </div>
 
         <script src="$WEBAPIS/webapis/webapis.js"></script>
@@ -59,6 +102,7 @@
         <script src="js/sources.js"></script>
         <script src="js/xtream.js"></script>
         <script src="js/m3u.js"></script>
+        <script src="js/library.js"></script>
         <script src="js/list.js"></script>
         <script src="js/player.js"></script>
         <script src="js/form.js"></script>

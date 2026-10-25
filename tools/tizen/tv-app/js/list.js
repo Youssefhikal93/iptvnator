@@ -3,12 +3,40 @@
 window.List = function (el, options) {
     'use strict';
 
-    var state = { items: [], index: 0, active: false, empty: '' };
+    var state = { items: [], index: 0, active: false, empty: '', grid: false };
+    var GRID = { cols: 5, rows: 2 };
+
+    // Initials tile, like the desktop shows for channels without a logo.
+    function placeholder(item) {
+        var tile = document.createElement('span');
+        tile.className = 'icon ph';
+        tile.textContent = String(item.name).replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
+        return tile;
+    }
+
+    // Own function so each failing logo swaps in its own item's initials,
+    // even after the list has re-rendered and detached the image.
+    function logo(src, item) {
+        var img = new Image();
+        img.className = 'icon';
+        img.onerror = function () {
+            if (img.parentNode) img.parentNode.replaceChild(placeholder(item), img);
+        };
+        img.src = src;
+        return img;
+    }
 
     function render() {
-        var rows = options.rows;
+        var rows = state.grid ? GRID.rows : options.rows;
         var count = state.items.length;
-        var start = Math.max(0, Math.min(state.index - Math.floor(rows / 2), count - rows));
+        var start;
+        if (state.grid) {
+            var lastRow = Math.floor((count - 1) / GRID.cols);
+            var firstRow = Math.max(0, Math.min(Math.floor(state.index / GRID.cols) - Math.floor(rows / 2), lastRow - rows + 1));
+            start = firstRow * GRID.cols;
+        } else {
+            start = Math.max(0, Math.min(state.index - Math.floor(rows / 2), count - rows));
+        }
         el.innerHTML = '';
 
         var header = document.createElement('div');
@@ -30,6 +58,8 @@ window.List = function (el, options) {
             return;
         }
 
+        if (state.grid) return renderGrid(start, count);
+
         for (var i = start; i < Math.min(count, start + rows); i++) {
             var item = state.items[i];
             var row = document.createElement('div');
@@ -37,13 +67,9 @@ window.List = function (el, options) {
             if (i === state.index) row.className += state.active ? ' focused' : ' selected';
             var src = options.icon && options.icon(item);
             if (src) {
-                var img = new Image();
-                img.className = 'icon';
-                img.onerror = function () {
-                    this.remove();
-                };
-                img.src = src;
-                row.appendChild(img);
+                row.appendChild(logo(src, item));
+            } else if (options.icon && item.name) {
+                row.appendChild(placeholder(item));
             }
             var label = document.createElement('span');
             label.className = 'label';
@@ -56,8 +82,33 @@ window.List = function (el, options) {
                 badgeEl.textContent = badge;
                 row.appendChild(badgeEl);
             }
+            if (options.decorate) options.decorate(row, item);
             el.appendChild(row);
         }
+    }
+
+    // Poster cards, GRID.cols per row; only the visible rows exist in the DOM.
+    function renderGrid(start, count) {
+        var grid = document.createElement('div');
+        grid.className = 'grid';
+        for (var i = start; i < Math.min(count, start + GRID.cols * GRID.rows); i++) {
+            var item = state.items[i];
+            var card = document.createElement('div');
+            card.className = 'card';
+            if (i === state.index) card.className += state.active ? ' focused' : ' selected';
+            var poster = document.createElement('div');
+            poster.className = 'poster';
+            var src = options.icon && options.icon(item);
+            poster.appendChild(src ? logo(src, item) : placeholder(item));
+            if (options.decorate) options.decorate(poster, item);
+            card.appendChild(poster);
+            var title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = options.label(item);
+            card.appendChild(title);
+            grid.appendChild(card);
+        }
+        el.appendChild(grid);
     }
 
     return {
@@ -75,6 +126,16 @@ window.List = function (el, options) {
             state.index = next;
             render();
             return moved;
+        },
+        setGrid: function (grid) {
+            state.grid = grid;
+            render();
+        },
+        cols: function () {
+            return state.grid ? GRID.cols : 1;
+        },
+        pageSize: function () {
+            return state.grid ? GRID.cols * GRID.rows : 10;
         },
         select: function (index) {
             state.index = index;

@@ -31,6 +31,14 @@ window.XtreamSource = function (source) {
         return url + '/' + kind + '/' + enc(user) + '/' + enc(pass) + '/' + id + '.' + ext;
     }
 
+    // Movies and episodes: AVPlay first; HLS containers can use hls.js too.
+    function vodChain(src, ext) {
+        var chain = [{ via: 'avplay', url: src }];
+        if (/^m3u8$/i.test(ext)) chain.push({ via: 'hls', url: src });
+        chain.push({ via: 'video', url: src });
+        return chain;
+    }
+
     return {
         sections: ['live', 'movies', 'series'],
         account: function () {
@@ -84,16 +92,19 @@ window.XtreamSource = function (source) {
             };
         },
         movieRequest: function (movie) {
-            var src = streamUrl('movie', movie.stream_id, movie.container_extension || 'mp4');
-            return { live: false, title: movie.name, sources: [{ via: 'avplay', url: src }, { via: 'video', url: src }] };
+            var ext = movie.container_extension || 'mp4';
+            var src = streamUrl('movie', movie.stream_id, ext);
+            return { live: false, id: 'movie:' + movie.stream_id, title: movie.name, sources: vodChain(src, ext) };
         },
         episodeRequest: function (show, episode) {
-            var src = streamUrl('series', episode.id, episode.container_extension || 'mp4');
+            var ext = episode.container_extension || 'mp4';
+            var src = streamUrl('series', episode.id, ext);
             return {
                 live: false,
+                id: 'episode:' + episode.id,
                 title: show.name,
                 subtitle: episode.label,
-                sources: [{ via: 'avplay', url: src }, { via: 'video', url: src }],
+                sources: vodChain(src, ext),
             };
         },
     };

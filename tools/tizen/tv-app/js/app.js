@@ -21,7 +21,7 @@
         FAST_FORWARD: 417,
         REWIND: 412,
     };
-    var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind'];
+    var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'Info'];
 
     var screen = 'browser';
 
@@ -59,15 +59,14 @@
     function onPlayerKey(code) {
         var live = browser.isLive();
         var zapStep = { 427: 1, 38: 1, 428: -1, 40: -1 }[code];
+        // The player consumes its own keys (overlay, seeking, track menu,
+        // resume prompt); Return/Stop and live zapping stay here.
+        if (Player.key(code, live)) return true;
         if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.STOP) closePlayer();
         else if (live && zapStep) {
             var next = browser.zap(zapStep);
             if (next) Player.play(next);
-        } else if (live && code === KEY.ENTER) Player.info();
-        else if (!live && [KEY.ENTER, KEY.PLAY_PAUSE, KEY.PLAY, KEY.PAUSE].indexOf(code) !== -1) Player.togglePause();
-        else if (!live && (code === KEY.RIGHT || code === KEY.FAST_FORWARD)) Player.seek(true);
-        else if (!live && (code === KEY.LEFT || code === KEY.REWIND)) Player.seek(false);
-        else return false;
+        } else return false;
         return true;
     }
 

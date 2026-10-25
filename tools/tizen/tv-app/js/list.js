@@ -13,7 +13,13 @@ window.List = function (el, options) {
 
         var header = document.createElement('div');
         header.className = 'list-header';
-        header.textContent = options.title() + (count ? '  ·  ' + (state.index + 1) + ' / ' + count : '');
+        header.textContent = options.title();
+        if (count) {
+            var position = document.createElement('span');
+            position.className = 'count';
+            position.textContent = state.index + 1 + ' / ' + count;
+            header.appendChild(position);
+        }
         el.appendChild(header);
 
         if (!count) {
@@ -40,8 +46,16 @@ window.List = function (el, options) {
                 row.appendChild(img);
             }
             var label = document.createElement('span');
+            label.className = 'label';
             label.textContent = options.label(item);
             row.appendChild(label);
+            var badge = options.badge && options.badge(item);
+            if (badge !== undefined && badge !== null && badge !== '') {
+                var badgeEl = document.createElement('span');
+                badgeEl.className = 'badge';
+                badgeEl.textContent = badge;
+                row.appendChild(badgeEl);
+            }
             el.appendChild(row);
         }
     }

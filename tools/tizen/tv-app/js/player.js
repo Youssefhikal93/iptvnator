@@ -1,7 +1,8 @@
-// Full-screen playback. Live TV uses mpegts.js (as IPTVnator's web player
-// does), then hls.js, then Samsung AVPlay; movies and episodes (mp4/mkv) use
-// AVPlay, then the <video> element. Only one stream is open at a time:
-// single-connection accounts answer 503 while another stream is open.
+// Full-screen playback. A request lists the players to try in order
+// (`sources: [{ via, url }]`): live TV uses mpegts.js (as IPTVnator's web
+// player does), then hls.js, then Samsung AVPlay; movies and episodes
+// (mp4/mkv) use AVPlay, then the <video> element. Only one stream is open at
+// a time: single-connection accounts answer 503 while another stream is open.
 window.Player = (function () {
     'use strict';
 
@@ -176,16 +177,10 @@ window.Player = (function () {
         playerEl.classList.remove('hidden', 'av');
         showOsd(heading(req) + '\nLoading…', true);
 
-        var attempts = req.live
-            ? [
-                  ['mpegts.js', viaMpegts(req.tsUrl)],
-                  ['hls.js', viaHls(req.hlsUrl)],
-                  ['AVPlay', viaAvPlay(req.tsUrl)],
-              ]
-            : [
-                  ['AVPlay', viaAvPlay(req.url)],
-                  ['video', viaVideo(req.url)],
-              ];
+        var STARTERS = { mpegts: viaMpegts, hls: viaHls, avplay: viaAvPlay, video: viaVideo };
+        var attempts = req.sources.map(function (source) {
+            return [source.via, STARTERS[source.via](source.url)];
+        });
 
         function next(index, retried) {
             if (mine !== session) return Promise.resolve();

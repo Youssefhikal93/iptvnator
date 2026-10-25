@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=1920, height=1080" />
+        <title>IPTVnator Probe</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 48px 64px;
+                background: #111418;
+                color: #e8eaed;
+                font: 28px/1.4 sans-serif;
+            }
+            h1 { margin: 0 0 24px; font-size: 44px; }
+            .row { display: flex; gap: 48px; }
+            .col { flex: 1; }
+            label { display: block; margin-top: 16px; color: #9aa0a6; }
+            input, button {
+                box-sizing: border-box;
+                width: 100%;
+                margin-top: 6px;
+                padding: 12px 16px;
+                font-size: 28px;
+                color: inherit;
+                background: #1f242b;
+                border: 3px solid #3c4043;
+                border-radius: 8px;
+            }
+            button { margin-top: 20px; background: #26476d; }
+            input:focus, button:focus { border-color: #8ab4f8; outline: none; }
+            #log {
+                margin-top: 24px;
+                height: 300px;
+                overflow: auto;
+                white-space: pre-wrap;
+                font: 24px/1.3 monospace;
+                background: #000;
+                padding: 12px;
+            }
+            .ok { color: #81c995; }
+            .fail { color: #f28b82; }
+            video { width: 640px; height: 360px; background: #000; margin-top: 20px; }
+            #avplayer {
+                position: absolute;
+                right: 64px;
+                bottom: 48px;
+                width: 640px;
+                height: 360px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>IPTVnator TV probe</h1>
+        <div class="row">
+            <div class="col">
+                <label for="xtream-url">Xtream server URL</label>
+                <input id="xtream-url" placeholder="http://example.com:8080" />
+                <label for="xtream-user">Username</label>
+                <input id="xtream-user" />
+                <label for="xtream-pass">Password</label>
+                <input id="xtream-pass" type="password" />
+                <label for="xtream-channel">Channel name or id (optional)</label>
+                <input id="xtream-channel" placeholder="e.g. BBC One" />
+                <button id="test-xtream">Test Xtream</button>
+            </div>
+            <div class="col">
+                <label for="m3u-url">M3U link</label>
+                <input id="m3u-url" placeholder="http://example.com/playlist.m3u" />
+                <button id="test-m3u">Test M3U</button>
+                <button id="stop">Stop video</button>
+                <video id="video" autoplay></video>
+            </div>
+        </div>
+        <div id="log"></div>
+        <object id="avplayer" type="application/avplayer"></object>
+        <script src="$WEBAPIS/webapis/webapis.js"></script>
+        <script src="vendor/hls.min.js"></script>
+        <script src="vendor/mpegts.js"></script>
+        <script src="probe.js"></script>
+    </body>
+</html>

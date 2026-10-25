@@ -112,6 +112,21 @@ window.Library = (function () {
             var list = without(listOf('recent', sourceId, section), section, entry);
             save('recent', sourceId, section, [entry].concat(list).slice(0, RECENT_MAX));
         },
+        isRecent: function (sourceId, section, item) {
+            var key = keyOf(section, item);
+            return listOf('recent', sourceId, section).some(function (entry) {
+                return keyOf(section, entry) === key;
+            });
+        },
+        removeRecent: function (sourceId, section, item) {
+            save('recent', sourceId, section, without(listOf('recent', sourceId, section), section, item));
+        },
+        // Forgets the saved position, which also drops the item from Continue watching.
+        clearProgress: function (id) {
+            var all = read(PROGRESS_KEY, {});
+            delete all[String(id)];
+            write(PROGRESS_KEY, all);
+        },
         continueWatching: function (sourceId, section) {
             return listOf('recent', sourceId, section).filter(function (entry) {
                 return unfinished(section, entry);

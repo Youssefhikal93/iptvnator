@@ -19,7 +19,14 @@
                 </span>
                 <svg class="pill-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
             </div>
-            <div id="breadcrumb"></div>
+            <div id="searchbar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+                <input id="search-input" autocomplete="off" />
+            </div>
+            <div id="view-toggle">
+                <span class="view-btn" data-mode="list" title="List view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z"/></svg></span>
+                <span class="view-btn" data-mode="grid" title="Grid view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h5V5H4zm0 7h5v-6H4zm6 0h5v-6h-5zm6 0h5v-6h-5zm-6-7h5V5h-5zm6-6v6h5V5z"/></svg></span>
+            </div>
         </header>
 
         <main id="content">
@@ -27,7 +34,7 @@
             <section id="items" class="pane main"></section>
         </main>
 
-        <div id="search" class="hidden"><input id="search-input" autocomplete="off" /></div>
+        <div id="menu" class="hidden"></div>
         <div id="toast" class="hidden"></div>
 
         <footer id="hints">Arrows: move · OK: open · CH ▲▼: page · Return: back</footer>
@@ -106,6 +113,7 @@
         <script src="js/list.js"></script>
         <script src="js/player.js"></script>
         <script src="js/form.js"></script>
+        <script src="js/menu.js"></script>
         <script src="js/browser.js"></script>
         <script src="js/app.js"></script>
     </body>

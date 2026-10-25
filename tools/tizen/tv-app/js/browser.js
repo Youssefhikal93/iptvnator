@@ -4,11 +4,9 @@ window.Browser = function (hooks) {
     'use strict';
 
     var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27, CH_UP: 427, CH_DOWN: 428, IME_DONE: 65376, IME_CANCEL: 65385 };
-    // Red / Green / Blue on the remote, with F / S / V for a desktop browser.
-    var FAVORITE_KEYS = [403, 70];
-    var SEARCH_KEYS = [404, 83];
-    var VIEW_KEYS = [406, 86];
     var HOLD_MS = 600;
+    // Header toolbar, left to right: search bar, list view, grid view.
+    var TOOLS = ['search', 'list', 'grid'];
     var STEPS = { 38: -1, 40: 1, 427: -10, 428: 10 };
     var SECTIONS = [
         { id: 'sources', label: 'Sources', icon: 'M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z' },
@@ -19,7 +17,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, episodesOf: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, searching: false, press: null, played: false, favKeys: null, toastTimer: null };
+    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, episodesOf: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null };
 
     var categories = List($('categories'), {
         rows: 11,
@@ -38,21 +36,21 @@ window.Browser = function (hooks) {
         title: function () {
             if (state.section === 'sources') return 'Source';
             if (state.episodesOf) return state.episodesOf.name;
+            if (state.showingSearch) return 'Search: "' + state.search.query + '"';
             var category = categories.item();
-            if (category && category.virtual === 'search' && state.search && state.search.section === state.section) {
-                return 'Search: "' + state.search.query + '"';
-            }
             return category ? category.category_name : '';
         },
         decorate: decorate,
-        label: function (it) {
-            if (it.label) return it.label;
-            return (it.num && state.section === 'live' ? it.num + '. ' : '') + it.name;
-        },
+        label: itemLabel,
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
     });
+
+    function itemLabel(it) {
+        if (it.label) return it.label;
+        return (it.num && state.section === 'live' ? it.num + '. ' : '') + it.name;
+    }
 
     // ---- Library: favorites, recently watched, continue watching ----
 
@@ -101,7 +99,6 @@ window.Browser = function (hooks) {
         var id = sourceId();
         var section = state.section;
         var rows = [
-            { category_id: '__search', category_name: 'Search', virtual: 'search' },
             { category_id: '__fav', category_name: 'Favorites', virtual: 'favorites', count: Library.favorites(id, section).length },
             { category_id: '__recent', category_name: 'Recently watched', virtual: 'recent', count: Library.recent(id, section).length },
         ];
@@ -123,23 +120,17 @@ window.Browser = function (hooks) {
     }
 
     var EMPTY = {
-        search: 'Press OK to search this section.',
-        favorites: 'No favorites yet. Hold OK or press Red / F on an item.',
+        favorites: 'No favorites yet. Hold OK on an item to add it.',
         recent: 'Nothing watched yet.',
         continue: 'Nothing to continue.',
     };
 
     function showVirtual(category, index) {
-        var kind = category.virtual;
         state.token++;
         state.episodesOf = null;
+        state.showingSearch = false;
         applyView();
-        if (kind === 'search') {
-            var found = state.search && state.search.section === state.section ? state.search : null;
-            items.set(found ? found.results : [], 0, found ? 'No results for "' + found.query + '"' : EMPTY.search);
-        } else {
-            items.set(virtualList(kind), index || 0, EMPTY[kind]);
-        }
+        items.set(virtualList(category.virtual), index || 0, EMPTY[category.virtual]);
         renderChrome();
     }
 
@@ -154,7 +145,7 @@ window.Browser = function (hooks) {
         state.favKeys = null;
         showCategories(categories.index());
         var category = categories.item();
-        if (category && category.virtual && category.virtual !== 'search' && !state.episodesOf) showVirtual(category, items.index());
+        if (category && category.virtual && !state.showingSearch && !state.episodesOf) showVirtual(category, items.index());
         else if (items.items().length) items.select(items.index());
         renderChrome();
     }
@@ -178,6 +169,53 @@ window.Browser = function (hooks) {
         refreshLibrary();
     }
 
+    // The saved position of a movie or episode, as the player keys it.
+    function progressIdOf(item) {
+        return state.episodesOf ? 'episode:' + item.id : Library.progressId(state.section, item);
+    }
+
+    // Recently watched stores episodes under their show; match that shape.
+    function recentEntryOf(item) {
+        return state.episodesOf ? { episode: { id: item.id } } : item;
+    }
+
+    // Hold OK on an item: play, favorite and library actions, like the
+    // desktop's item context menu.
+    function openItemMenu() {
+        var item = items.item();
+        if (!item) return;
+        var section = state.section;
+        var isShow = section === 'series' && !item.episode && !state.episodesOf;
+        var options = [{ label: section === 'live' ? 'Watch' : isShow ? 'Open episodes' : 'Play', run: activateItem }];
+        if (!state.episodesOf) {
+            options.push({ label: isFavorite(item) ? 'Remove from Favorites' : 'Add to Favorites', run: toggleFavorite });
+        }
+        var progressId = progressIdOf(item);
+        var progress = section === 'live' ? null : Library.progress(progressId);
+        if (progress) {
+            options.push({
+                label: progress.ratio < 0.95 ? 'Remove from Continue watching' : 'Mark as not watched',
+                run: function () {
+                    Library.clearProgress(progressId);
+                    toast('Removed from Continue watching');
+                    refreshLibrary();
+                },
+            });
+        }
+        if (Library.isRecent(sourceId(), section, recentEntryOf(item))) {
+            options.push({
+                label: 'Remove from Recently watched',
+                run: function () {
+                    Library.removeRecent(sourceId(), section, recentEntryOf(item));
+                    toast('Removed from Recently watched');
+                    refreshLibrary();
+                },
+            });
+        }
+        options.push({ label: 'Cancel' });
+        Menu.open(itemLabel(item), options);
+    }
+
     function viewMode() {
         return Library.view(state.section, state.section === 'live' ? 'list' : 'grid');
     }
@@ -186,69 +224,107 @@ window.Browser = function (hooks) {
         items.setGrid(state.section !== 'sources' && !state.episodesOf && viewMode() === 'grid');
     }
 
-    function toggleView() {
+    function setView(mode) {
         if (state.section === 'sources') return;
-        var mode = viewMode() === 'grid' ? 'list' : 'grid';
         Library.setView(state.section, mode);
         applyView();
         renderChrome();
-        toast(mode === 'grid' ? 'Grid view' : 'List view');
     }
 
-    // ---- Search ----
+    // ---- Header toolbar and search ----
 
-    function openSearch() {
+    function hasTools() {
+        return state.section !== 'sources' && !!state.base;
+    }
+
+    function enterToolbar(from) {
+        if (!hasTools()) return false;
+        state.toolFrom = from;
+        state.tool = 0;
+        setZone('toolbar');
+        return true;
+    }
+
+    function leaveToolbar() {
+        var back = state.toolFrom === 'items' && items.items().length ? 'items' : 'categories';
+        setZone(back);
+    }
+
+    function startTyping() {
         state.searching = true;
-        var input = $('search-input');
-        input.placeholder = 'Search ' + sectionOf(state.section).label + '\u2026';
-        input.value = state.search && state.search.section === state.section ? state.search.query : '';
-        $('search').classList.remove('hidden');
-        input.focus();
+        $('searchbar').classList.add('typing');
+        $('search-input').focus();
     }
 
-    function closeSearch() {
+    function stopTyping() {
         state.searching = false;
+        $('searchbar').classList.remove('typing');
         $('search-input').blur();
-        $('search').classList.add('hidden');
     }
 
-    function submitSearch() {
+    // Filters the section's full catalogue; an empty query restores the category.
+    function runSearch() {
+        clearTimeout(state.searchTimer);
         var query = $('search-input').value.trim();
-        closeSearch();
-        if (!query) return;
         var section = state.section;
+        if (!query) {
+            if (state.showingSearch) loadItems();
+            return Promise.resolve(0);
+        }
         var needle = query.toLowerCase();
         var token = ++state.token;
         state.search = { section: section, query: query, results: [] };
+        state.showingSearch = true;
+        state.episodesOf = null;
+        applyView();
         items.set([], 0, 'Searching\u2026');
-        cached(section + ':items:', function () {
+        return cached(section + ':items:', function () {
             return state.adapter.items(section, '');
         })
             .then(function (all) {
-                if (token !== state.token) return;
+                if (token !== state.token) return 0;
                 state.search.results = all.filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1;
                 });
                 items.set(state.search.results, 0, 'No results for "' + query + '"');
                 renderChrome();
-                if (state.search.results.length) setZone('items');
+                return state.search.results.length;
             })
-            .catch(fail(items, 'SEARCH'));
+            .catch(function (err) {
+                fail(items, 'SEARCH')(err);
+                return 0;
+            });
     }
 
+    // Results follow the typing after a short pause.
+    $('search-input').addEventListener('input', function () {
+        clearTimeout(state.searchTimer);
+        state.searchTimer = setTimeout(runSearch, 500);
+    });
+
     function onSearchKey(code) {
-        if (code === KEY.ENTER || code === KEY.IME_DONE || code === KEY.DOWN) submitSearch();
-        else if (code === KEY.RETURN || code === KEY.ESCAPE || code === KEY.IME_CANCEL) closeSearch();
-        else return false;
+        if (code === KEY.ENTER || code === KEY.IME_DONE || code === KEY.DOWN) {
+            stopTyping();
+            runSearch().then(function (found) {
+                if (found) setZone('items');
+            });
+        } else if (code === KEY.RETURN || code === KEY.ESCAPE || code === KEY.IME_CANCEL) {
+            stopTyping();
+        } else return false;
         return true;
     }
 
-    function jumpToSearch() {
-        if (state.section === 'sources' || !state.base) return;
-        categories.select(0);
-        setZone('categories');
-        showVirtual(categories.item());
-        openSearch();
+    function onToolbarKey(code) {
+        var tool = TOOLS[state.tool];
+        if (code === KEY.LEFT && state.tool > 0) state.tool--;
+        else if (code === KEY.RIGHT && state.tool < TOOLS.length - 1) state.tool++;
+        else if (code === KEY.LEFT) setZone('rail');
+        else if (code === KEY.DOWN || isBack(code)) leaveToolbar();
+        else if (code === KEY.ENTER && tool === 'search') startTyping();
+        else if (code === KEY.ENTER) setView(tool);
+        else return code === KEY.UP || code === KEY.RIGHT;
+        renderChrome();
+        return true;
     }
 
     function sectionOf(id) {
@@ -289,15 +365,26 @@ window.Browser = function (hooks) {
         });
         $('source-name').textContent = state.source ? state.source.name : 'No source yet';
         $('source-type').textContent = state.source ? Sources.typeLabel(state.source) : 'Add one in Sources';
-        var category = categories.item();
+        renderToolbar();
         $('hints').textContent =
-            state.section === 'sources' || state.zone === 'rail'
-                ? 'Arrows: move \u00b7 OK: open \u00b7 CH \u25b2\u25bc: page \u00b7 Return: back'
-                : 'OK: open \u00b7 Hold OK or Red/F: favorite \u00b7 Green/S: search \u00b7 Blue/V: ' +
-                  (viewMode() === 'grid' ? 'list' : 'grid') +
-                  ' view \u00b7 Return: back';
-        $('breadcrumb').textContent =
-            sectionOf(state.section).label + (state.section !== 'sources' && category ? ' / ' + category.category_name : '');
+            state.zone === 'items' && state.section !== 'sources'
+                ? 'OK: open \u00b7 Hold OK: options \u00b7 \u25b2 at the top: search and view \u00b7 Return: back'
+                : 'Arrows: move \u00b7 OK: open \u00b7 CH \u25b2\u25bc: page \u00b7 Return: back';
+    }
+
+    function renderToolbar() {
+        var on = hasTools();
+        var focus = state.zone === 'toolbar' ? TOOLS[state.tool] : null;
+        $('header').classList.toggle('no-tools', !on);
+        $('searchbar').classList.toggle('focused', focus === 'search');
+        var input = $('search-input');
+        input.placeholder = on ? 'Search ' + sectionOf(state.section).label + '\u2026' : 'Search';
+        if (!state.searching) input.value = state.showingSearch ? state.search.query : '';
+        Array.prototype.forEach.call(document.querySelectorAll('.view-btn'), function (btn) {
+            var mode = btn.getAttribute('data-mode');
+            btn.classList.toggle('active', on && !state.episodesOf && viewMode() === mode);
+            btn.classList.toggle('focused', focus === mode);
+        });
     }
 
     function setZone(zone) {
@@ -401,6 +488,7 @@ window.Browser = function (hooks) {
         state.cache = {};
         state.base = null;
         state.search = null;
+        state.showingSearch = false;
         state.favKeys = null;
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
@@ -423,6 +511,7 @@ window.Browser = function (hooks) {
         if (!available(id)) return;
         state.section = id;
         state.episodesOf = null;
+        state.showingSearch = false;
         state.base = null;
         state.favKeys = null;
         var token = ++state.token;
@@ -450,6 +539,7 @@ window.Browser = function (hooks) {
         var section = state.section;
         var token = ++state.token;
         state.episodesOf = null;
+        state.showingSearch = false;
         applyView();
         items.set([], 0, 'Loading…');
         renderChrome();
@@ -532,7 +622,7 @@ window.Browser = function (hooks) {
         var count = items.items().length;
         var at = items.index();
         if (cols === 1) return items.move(STEPS[code]);
-        if (code === KEY.UP) return items.move(-cols);
+        if (code === KEY.UP) return at >= cols && items.move(-cols);
         if (code === KEY.CH_UP) return items.move(-items.pageSize());
         if (code === KEY.CH_DOWN) return items.move(items.pageSize());
         var target = at + cols;
@@ -549,16 +639,15 @@ window.Browser = function (hooks) {
     }
 
     function onKey(code) {
+        // OK repeats while held; the hold timer and keyup own that press.
+        if (state.press && code === KEY.ENTER) return true;
+        if (Menu.isOpen()) return Menu.onKey(code);
         if (state.searching) return onSearchKey(code);
         if (state.played) {
             state.played = false;
             refreshLibrary();
         }
-        if (state.section !== 'sources' && state.zone !== 'rail') {
-            if (FAVORITE_KEYS.indexOf(code) !== -1) return toggleFavorite(), true;
-            if (SEARCH_KEYS.indexOf(code) !== -1) return jumpToSearch(), true;
-        }
-        if (VIEW_KEYS.indexOf(code) !== -1) return toggleView(), true;
+        if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'rail') {
             if (code === KEY.UP || code === KEY.DOWN) moveSection(code === KEY.UP ? -1 : 1);
             else if (code === KEY.RIGHT || code === KEY.ENTER) setZone('categories');
@@ -568,27 +657,27 @@ window.Browser = function (hooks) {
             var row = categories.item();
             if (STEPS[code]) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
+                else if (code === KEY.UP) enterToolbar('categories');
             } else if (code === KEY.LEFT || isBack(code)) setZone('rail');
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
-            else if (code === KEY.ENTER && row && row.virtual === 'search') openSearch();
             else if ((code === KEY.RIGHT || code === KEY.ENTER) && items.items().length) setZone('items');
             else return code === KEY.RIGHT || code === KEY.ENTER;
         } else {
             var grid = items.cols() > 1;
-            if (STEPS[code]) moveItems(code);
-            else if (grid && code === KEY.RIGHT) items.move(1);
+            if (STEPS[code]) {
+                if (!moveItems(code) && code === KEY.UP) enterToolbar('items');
+            } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {
-                // Long press toggles the favorite; a short press opens on release.
+                // Holding OK opens the options menu; a short press opens on release.
                 if (state.section === 'sources') activateItem();
-                else if (!state.press) {
-                    state.press = {
-                        fired: false,
-                        timer: setTimeout(function () {
-                            state.press.fired = true;
-                            toggleFavorite();
-                        }, HOLD_MS),
-                    };
+                else {
+                    var press = { fired: false };
+                    press.timer = setTimeout(function () {
+                        press.fired = true;
+                        openItemMenu();
+                    }, HOLD_MS);
+                    state.press = press;
                 }
             } else if (code === KEY.LEFT || isBack(code)) leaveItems();
             else return false;

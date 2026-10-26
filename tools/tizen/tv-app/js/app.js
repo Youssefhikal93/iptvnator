@@ -24,6 +24,8 @@
     var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'Info'];
 
     var screen = 'browser';
+    // The request on screen: live TV keeps ▲▼ for changing channel.
+    var playing = null;
 
     function exitApp() {
         Player.stop();
@@ -36,11 +38,13 @@
 
     function play(request) {
         screen = 'player';
+        playing = request;
         Player.play(request);
     }
 
     function closePlayer() {
         Player.stop();
+        playing = null;
         screen = 'browser';
         browser.afterPlayback();
     }
@@ -58,7 +62,7 @@
     });
 
     function onPlayerKey(code) {
-        var live = browser.isLive();
+        var live = !!playing && playing.live;
         var zapStep = { 427: 1, 38: 1, 428: -1, 40: -1 }[code];
         // The player consumes its own keys (overlay, seeking, track menu,
         // resume prompt); Return/Stop and live zapping stay here.
@@ -66,7 +70,7 @@
         if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.STOP) closePlayer();
         else if (live && zapStep) {
             var next = browser.zap(zapStep);
-            if (next) Player.play(next);
+            if (next) play(next);
         } else return false;
         return true;
     }

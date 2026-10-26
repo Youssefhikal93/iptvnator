@@ -185,6 +185,11 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Home** (opens on start): a banner for up to 3 things you are watching
+  (Continue watching, Details, ‹ › to switch), then rows: Continue
+  watching, Live now on your favorite channels, Favorite movies and series,
+  Recently added movies and series, Recently watched channels. ◀ ▶ within
+  a row, ▲ ▼ between rows, OK opens, hold OK for options.
 - **Sources** (left rail): add an Xtream account or an M3U link, switch
   between them, or remove one (press OK twice).
 - **▲ at the top of a list** reaches the search bar and the list / grid

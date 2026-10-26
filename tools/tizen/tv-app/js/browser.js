@@ -9,6 +9,7 @@ window.Browser = function (hooks) {
     var TOOLS = ['search', 'list', 'grid'];
     var STEPS = { 38: -1, 40: 1, 427: -10, 428: 10 };
     var SECTIONS = [
+        { id: 'home', label: 'Home', icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' },
         { id: 'sources', label: 'Sources', icon: 'M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z' },
         { id: 'live', label: 'Live TV', icon: 'M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zM9 10v8l7-4z' },
         { id: 'movies', label: 'Movies', icon: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z' },
@@ -17,7 +18,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
+    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
 
     var categories = List($('categories'), {
         rows: 11,
@@ -32,6 +33,33 @@ window.Browser = function (hooks) {
         },
     });
     var detail = Detail();
+    var home = Home({
+        hero: function () {
+            return state.adapter ? continueEntries().slice(0, 3) : [];
+        },
+        rows: function () {
+            return state.adapter ? homeRows() : [];
+        },
+        open: function (entry) {
+            openEntry(entry.item, entry.section);
+        },
+        resume: function (entry) {
+            if (entry.item.episode) playSavedEpisode(entry.item, true);
+            else playMovie(entry.item, true);
+        },
+        openDetails: function (entry) {
+            if (entry.item.episode) openShow(entry.item.show);
+            else openMovie(entry.item);
+        },
+        details: homeDetails,
+        progress: progressOf,
+        programme: function (item) {
+            if (!state.epg || item.stream_id === undefined) return null;
+            var programmes = state.epg.peek(item);
+            if (programmes === undefined) return wantProgramme(item), null;
+            return programmes.now;
+        },
+    });
     var items = List($('items'), {
         rows: 9,
         title: function () {
@@ -62,14 +90,18 @@ window.Browser = function (hooks) {
         return item.episode ? item.show : item;
     }
 
-    function isFavorite(item) {
-        if (!state.favKeys) {
-            state.favKeys = {};
-            Library.favorites(sourceId(), state.section).forEach(function (entry) {
-                state.favKeys[Library.keyOf(state.section, entry)] = true;
+    // section: the item's own section (Home mixes them); the open one by default.
+    function isFavorite(item, section) {
+        section = section || state.section;
+        state.favKeys = state.favKeys || {};
+        var keys = state.favKeys[section];
+        if (!keys) {
+            keys = state.favKeys[section] = {};
+            Library.favorites(sourceId(), section).forEach(function (entry) {
+                keys[Library.keyOf(section, entry)] = true;
             });
         }
-        return !!state.favKeys[Library.keyOf(state.section, favoriteTarget(item))];
+        return !!keys[Library.keyOf(section, favoriteTarget(item))];
     }
 
     // Star for favorites and a thin progress bar for unfinished movies and episodes.
@@ -139,10 +171,11 @@ window.Browser = function (hooks) {
             state.epgWanted = [];
             if (!epg) return;
             epg.want(wanted, 12, function () {
-                if (epg !== state.epg || state.section !== 'live') return;
+                if (epg !== state.epg) return;
                 clearTimeout(state.redrawTimer);
                 state.redrawTimer = setTimeout(function () {
                     if (state.section === 'live') items.select(items.index());
+                    else if (state.section === 'home') home.render();
                 }, 150);
             });
         }, 300);
@@ -187,13 +220,17 @@ window.Browser = function (hooks) {
         renderChrome();
     }
 
-    function record(item, show, episode) {
-        Library.addRecent(sourceId(), episode ? 'series' : state.section, item, show, episode);
+    function record(item, show, episode, section) {
+        Library.addRecent(sourceId(), episode ? 'series' : section || state.section, item, show, episode);
         state.played = true;
     }
 
     // After playback or a favorite change: refresh counts and the open list.
     function refreshLibrary() {
+        if (state.section === 'home') {
+            state.favKeys = null;
+            return home.render();
+        }
         if (state.section === 'sources' || !state.adapter || !state.base) return;
         state.favKeys = null;
         showCategories(categories.index());
@@ -213,22 +250,27 @@ window.Browser = function (hooks) {
         }, 1800);
     }
 
-    function toggleFavorite(item) {
-        if (!item || state.section === 'sources') return;
+    function toggleFavorite(item, section) {
+        section = section || state.section;
+        if (!item || section === 'sources') return;
         var target = favoriteTarget(item);
-        var added = Library.toggleFavorite(sourceId(), state.section, target);
+        var added = Library.toggleFavorite(sourceId(), section, target);
         toast((added ? 'Added to Favorites: ' : 'Removed from Favorites: ') + target.name);
         refreshLibrary();
     }
 
     // Hold OK on an item: play, favorite and library actions, like the
     // desktop's item context menu.
-    function openItemMenu() {
-        var item = items.item();
+    function openItemMenu(item, section) {
         if (!item) return;
-        var section = state.section;
-        var isShow = section === 'series' && !item.episode;
-        var options = [{ label: section === 'live' ? 'Watch' : isShow ? 'Details' : section === 'movies' && !item.episode ? 'Details' : 'Play', run: activateItem }];
+        var options = [
+            {
+                label: section === 'live' ? 'Watch' : item.episode ? 'Play' : 'Details',
+                run: function () {
+                    openEntry(item, section);
+                },
+            },
+        ];
         if (section === 'movies' && !item.episode) {
             options.push({
                 label: 'Play',
@@ -238,9 +280,9 @@ window.Browser = function (hooks) {
             });
         }
         options.push({
-            label: isFavorite(item) ? 'Remove from Favorites' : 'Add to Favorites',
+            label: isFavorite(item, section) ? 'Remove from Favorites' : 'Add to Favorites',
             run: function () {
-                toggleFavorite(item);
+                toggleFavorite(item, section);
             },
         });
         var progressId = Library.progressId(section, item);
@@ -386,6 +428,7 @@ window.Browser = function (hooks) {
     }
 
     function available(id) {
+        if (id === 'home') return !!state.adapter;
         return id === 'sources' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
     }
 
@@ -462,7 +505,9 @@ window.Browser = function (hooks) {
         $('source-type').textContent = state.source ? Sources.typeLabel(state.source) + (state.updating ? ' · Updating…' : '') : 'Add one in Sources';
         renderToolbar();
         $('hints').textContent =
-            state.zone === 'items' && state.section !== 'sources'
+            state.zone === 'home'
+                ? 'OK: open · Hold OK: options · Arrows: move · Return: menu'
+                : state.zone === 'items' && state.section !== 'sources'
                 ? 'OK: open \u00b7 Hold OK: options \u00b7 \u25b2 at the top: search and view \u00b7 Return: back'
                 : 'Arrows: move \u00b7 OK: open \u00b7 CH \u25b2\u25bc: page \u00b7 Return: back';
     }
@@ -482,10 +527,16 @@ window.Browser = function (hooks) {
         });
     }
 
+    // Where the focus goes from the rail: Home's rows or the category list.
+    function contentZone() {
+        return state.section === 'home' ? 'home' : 'categories';
+    }
+
     function setZone(zone) {
         state.zone = zone;
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
+        home.setActive(zone === 'home');
         renderChrome();
     }
 
@@ -550,15 +601,15 @@ window.Browser = function (hooks) {
         var action = items.item() && items.item().action;
         if (action === 'open') {
             setSource(row.source);
-            openSection('live');
-            setZone('categories');
+            openSection('home');
+            setZone(contentZone());
         } else if (action === 'refresh') {
             // Forget the saved lists; the next section opened reloads them.
             Catalogue.drop(row.source.id).then(function () {
                 toast('Reloading ' + row.source.name + '…');
                 setSource(row.source);
-                openSection('live');
-                setZone('categories');
+                openSection('home');
+                setZone(contentZone());
             });
         } else if (action === 'remove') {
             if (state.armed !== row.source.id) {
@@ -579,8 +630,8 @@ window.Browser = function (hooks) {
         hooks.openForm(kind, function (source) {
             if (!source) return setZone('categories');
             setSource(Sources.add(source));
-            openSection('live');
-            setZone('categories');
+            openSection('home');
+            setZone(contentZone());
         });
     }
 
@@ -596,6 +647,8 @@ window.Browser = function (hooks) {
         state.search = null;
         state.showingSearch = false;
         state.favKeys = null;
+        state.added = {};
+        home.reset();
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
@@ -617,6 +670,7 @@ window.Browser = function (hooks) {
     function openSection(id) {
         if (!available(id)) return;
         state.section = id;
+        $('content').classList.toggle('home', id === 'home');
         state.showingSearch = false;
         state.base = null;
         state.favKeys = null;
@@ -624,6 +678,7 @@ window.Browser = function (hooks) {
         applyView();
         items.set([], 0, '');
         if (id === 'sources') return showSources(0);
+        if (id === 'home') return showHome();
         categories.set([], 0, 'Loading…');
         renderChrome();
         cached(
@@ -689,9 +744,14 @@ window.Browser = function (hooks) {
 
     // From Recently watched / Continue watching: load the show's episodes
     // first so Next episode works there too.
-    function playSavedEpisode(entry) {
+    // resume: true / false skips the player's Resume prompt.
+    function playSavedEpisode(entry, resume) {
         var show = entry.show;
         record(entry, show, entry.episode);
+        var play = function (req) {
+            if (resume !== undefined) req.resume = resume;
+            hooks.play(req);
+        };
         loadShow(show)
             .then(function (info) {
                 var list = info.episodes;
@@ -699,12 +759,110 @@ window.Browser = function (hooks) {
                 list.forEach(function (ep, i) {
                     if (String(ep.id) === String(entry.episode.id)) index = i;
                 });
-                hooks.play(index >= 0 ? episodeRequest(show, list, index) : state.adapter.episodeRequest(show, entry.episode));
+                play(index >= 0 ? episodeRequest(show, list, index) : state.adapter.episodeRequest(show, entry.episode));
             })
             .catch(function (err) {
                 Log.error('EPISODES FAIL ' + err.message);
-                hooks.play(state.adapter.episodeRequest(show, entry.episode));
+                play(state.adapter.episodeRequest(show, entry.episode));
             });
+    }
+
+    // ---- Home ----
+
+    var HOME_ROW_MAX = 20;
+
+    function entriesOf(section, list) {
+        return list.slice(0, HOME_ROW_MAX).map(function (item) {
+            return { item: item, section: section };
+        });
+    }
+
+    function progressOf(entry) {
+        return Library.progress(Library.progressId(entry.section, entry.item));
+    }
+
+    // Unfinished movies, and each show's latest episode while it is
+    // unfinished (older episodes never come back); most recent first.
+    function continueEntries() {
+        var id = sourceId();
+        var list = available('movies') ? entriesOf('movies', Library.continueWatching(id, 'movies')) : [];
+        if (available('series')) {
+            var seen = {};
+            Library.recent(id, 'series').forEach(function (item) {
+                var show = item.show ? item.show.series_id : item.series_id;
+                if (seen[show]) return;
+                seen[show] = true;
+                if (item.episode && Library.unfinished('series', item)) list.push({ item: item, section: 'series' });
+            });
+        }
+        return list.sort(function (a, b) {
+            return progressOf(b).updatedAt - progressOf(a).updatedAt;
+        });
+    }
+
+    function homeRows() {
+        var id = sourceId();
+        return [
+            { id: 'continue', title: 'Continue watching', entries: continueEntries().slice(0, HOME_ROW_MAX) },
+            { id: 'live', title: 'Live now on your favorite channels', entries: entriesOf('live', Library.favorites(id, 'live')) },
+            { id: 'fav-movies', title: 'Favorite movies', entries: entriesOf('movies', Library.favorites(id, 'movies')) },
+            { id: 'fav-series', title: 'Favorite series', entries: entriesOf('series', Library.favorites(id, 'series')) },
+            { id: 'new-movies', title: 'Recently added movies', entries: entriesOf('movies', state.added.movies || []) },
+            { id: 'new-series', title: 'Recently added series', entries: entriesOf('series', state.added.series || []) },
+            { id: 'recent-live', title: 'Recently watched channels', entries: entriesOf('live', Library.recent(id, 'live')) },
+        ];
+    }
+
+    // Artwork and plot for the hero.
+    function homeDetails(entry) {
+        if (entry.item.episode) {
+            return loadShow(entry.item.show).then(function (info) {
+                return info.details;
+            });
+        }
+        if (!state.adapter.movieInfo) return Promise.resolve({});
+        return remembered('vod:' + entry.item.stream_id, function () {
+            return state.adapter.movieInfo(entry.item);
+        });
+    }
+
+    // Newest movies by `added` and shows by `last_modified`, from the
+    // section's full list (saved like the other lists).
+    function loadRecentlyAdded() {
+        [
+            ['movies', 'added'],
+            ['series', 'last_modified'],
+        ].forEach(function (pair) {
+            var section = pair[0];
+            var field = pair[1];
+            var adapter = state.adapter;
+            if (!available(section) || state.added[section]) return;
+            state.added[section] = [];
+            cached(section + ':items:', function () {
+                return adapter.items(section, '');
+            })
+                .then(function (list) {
+                    if (adapter !== state.adapter) return;
+                    state.added[section] = list
+                        .filter(function (it) {
+                            return Number(it[field]) > 0;
+                        })
+                        .sort(function (a, b) {
+                            return Number(b[field]) - Number(a[field]);
+                        })
+                        .slice(0, HOME_ROW_MAX);
+                    if (state.section === 'home') home.render();
+                })
+                .catch(function (err) {
+                    Log.error('RECENTLY ADDED FAIL ' + err.message);
+                });
+        });
+    }
+
+    function showHome() {
+        home.render();
+        renderChrome();
+        loadRecentlyAdded();
     }
 
     // ---- Detail pages ----
@@ -724,7 +882,7 @@ window.Browser = function (hooks) {
 
     // resume: true / false skips the player's Resume prompt.
     function playMovie(movie, resume) {
-        record(movie);
+        record(movie, null, null, 'movies');
         var req = state.adapter.movieRequest(movie);
         if (resume !== undefined) req.resume = resume;
         hooks.play(req);
@@ -748,9 +906,9 @@ window.Browser = function (hooks) {
                       ]
                     : [{ label: '▶  Play', run: playMovie.bind(null, movie, undefined) }];
                 list.push({
-                    label: isFavorite(movie) ? 'Remove from Favorites' : 'Add to Favorites',
+                    label: isFavorite(movie, 'movies') ? 'Remove from Favorites' : 'Add to Favorites',
                     run: function () {
-                        toggleFavorite(movie);
+                        toggleFavorite(movie, 'movies');
                         detail.refresh();
                     },
                 });
@@ -813,9 +971,9 @@ window.Browser = function (hooks) {
                     });
                 }
                 list.push({
-                    label: isFavorite(show) ? 'Remove from Favorites' : 'Add to Favorites',
+                    label: isFavorite(show, 'series') ? 'Remove from Favorites' : 'Add to Favorites',
                     run: function () {
-                        toggleFavorite(show);
+                        toggleFavorite(show, 'series');
                         detail.refresh();
                     },
                 });
@@ -824,17 +982,22 @@ window.Browser = function (hooks) {
         });
     }
 
+    // OK on a channel, movie, show or saved episode of `section`.
+    function openEntry(item, section) {
+        if (item.episode) return playSavedEpisode(item);
+        if (section === 'live') {
+            record(item, null, null, 'live');
+            return hooks.play(liveRequest(item));
+        }
+        if (section === 'movies') return openMovie(item);
+        openShow(item);
+    }
+
     function activateItem() {
         var item = items.item();
         if (!item) return;
         if (state.section === 'sources') return sourceAction();
-        if (item.episode) return playSavedEpisode(item);
-        if (state.section === 'live') {
-            record(item);
-            return hooks.play(liveRequest(item));
-        }
-        if (state.section === 'movies') return openMovie(item);
-        openShow(item);
+        openEntry(item, state.section);
     }
 
     // ---- Keys ----
@@ -873,6 +1036,31 @@ window.Browser = function (hooks) {
         return items.move(target - at);
     }
 
+    // Holding OK opens the options menu; a short press runs tap on release.
+    function startPress(tap, hold) {
+        var press = { fired: false, tap: tap };
+        press.timer = setTimeout(function () {
+            press.fired = true;
+            hold();
+        }, HOLD_MS);
+        state.press = press;
+    }
+
+    function onHomeKey(code) {
+        var entry = home.focused();
+        if (code === KEY.ENTER && entry) {
+            startPress(
+                function () {
+                    openEntry(entry.item, entry.section);
+                },
+                function () {
+                    openItemMenu(entry.item, entry.section);
+                }
+            );
+        } else if (isBack(code) || home.key(code) === 'left') setZone('rail');
+        return true;
+    }
+
     function onKey(code) {
         // OK repeats while held; the hold timer and keyup own that press.
         if (state.press && code === KEY.ENTER) return true;
@@ -880,9 +1068,10 @@ window.Browser = function (hooks) {
         if (state.searching) return onSearchKey(code);
         if (detail.isOpen()) return detail.onKey(code);
         if (state.zone === 'toolbar') return onToolbarKey(code);
+        if (state.zone === 'home') return onHomeKey(code);
         if (state.zone === 'rail') {
             if (code === KEY.UP || code === KEY.DOWN) moveSection(code === KEY.UP ? -1 : 1);
-            else if (code === KEY.RIGHT || code === KEY.ENTER) setZone('categories');
+            else if (code === KEY.RIGHT || code === KEY.ENTER) setZone(contentZone());
             else if (isBack(code)) hooks.exit();
             else return false;
         } else if (state.zone === 'categories') {
@@ -904,12 +1093,9 @@ window.Browser = function (hooks) {
                 // Holding OK opens the options menu; a short press opens on release.
                 if (state.section === 'sources') activateItem();
                 else {
-                    var press = { fired: false };
-                    press.timer = setTimeout(function () {
-                        press.fired = true;
-                        openItemMenu();
-                    }, HOLD_MS);
-                    state.press = press;
+                    startPress(activateItem, function () {
+                        openItemMenu(items.item(), state.section);
+                    });
                 }
             } else if (code === KEY.LEFT || isBack(code)) setZone('categories');
             else return false;
@@ -922,22 +1108,22 @@ window.Browser = function (hooks) {
         if (!press || event.keyCode !== KEY.ENTER) return;
         clearTimeout(press.timer);
         state.press = null;
-        if (!press.fired) activateItem();
+        if (!press.fired) press.tap();
     });
 
     // Next/previous live channel while watching; null at the ends of the list.
     function zap(delta) {
         if (state.section !== 'live' || !items.move(delta)) return null;
-        record(items.item());
+        record(items.item(), null, null, 'live');
         return liveRequest(items.item());
     }
 
     function start() {
         var source = Sources.current();
         setSource(source);
-        if (source) openSection('live');
+        if (source) openSection('home');
         else openSection('sources');
-        setZone('categories');
+        setZone(contentZone());
     }
 
     return {
@@ -951,8 +1137,5 @@ window.Browser = function (hooks) {
             detail.refresh();
         },
         zap: zap,
-        isLive: function () {
-            return state.section === 'live';
-        },
     };
 };

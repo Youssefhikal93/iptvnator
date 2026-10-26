@@ -18,6 +18,11 @@ const show = (n = 4) => ({ name: 'Show ' + n, series_id: 3000 + n });
 const channel = (n = 1) => ({ name: 'Channel ' + n + ' (cat all)', stream_id: 1000 + n, num: n, category_id: String(1 + n % 30) });
 
 async function boot(page, seed = {}) {
+    // Live preview is off unless a spec opts in with { livePreview: true }, so
+    // the specs that press OK on a channel keep expecting full screen.
+    const storage = { ...seed.storage };
+    if (!seed.livePreview) storage.settings = { livePreview: false, ...storage.settings };
+    seed = { ...seed, storage };
     // Seed once per context; a reload must exercise the app's persisted state.
     await page.addInitScript((seed) => {
         if (localStorage.getItem('tv-tests:seeded')) return;

@@ -60,6 +60,7 @@ window.Player = (function () {
     var current = null;
     var ready = false; // a stream is playing
     var channelListOpen = false;
+    var box = null; // preview rectangle in screen pixels; null is full screen
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
     var playbackError = false;
@@ -101,6 +102,29 @@ window.Player = (function () {
 
     function avplay() {
         return window.webapis && window.webapis.avplay;
+    }
+
+    function displayRect() {
+        return box || { x: 0, y: 0, w: 1920, h: 1080 };
+    }
+
+    // Draws the stream in the live preview box (see live-preview.js) or full
+    // screen. The same stream keeps playing, so switching never reopens it.
+    function setBox(rect) {
+        box = rect || null;
+        playerEl.classList.toggle('preview', !!box);
+        var at = displayRect();
+        playerEl.style.left = box ? at.x + 'px' : '';
+        playerEl.style.top = box ? at.y + 'px' : '';
+        playerEl.style.width = box ? at.w + 'px' : '';
+        playerEl.style.height = box ? at.h + 'px' : '';
+        if (usingAv && avplay()) {
+            try {
+                avplay().setDisplayRect(at.x, at.y, at.w, at.h);
+            } catch (e) {
+                // Not prepared yet; viaAvPlay sets the rectangle itself.
+            }
+        }
     }
 
     function wait(ms) {
@@ -924,7 +948,8 @@ window.Player = (function () {
                 oncurrentplaytime: restoration.onTime,
                 onsubtitlechange: showSub,
             });
-            av.setDisplayRect(0, 0, 1920, 1080);
+            var at = displayRect();
+            av.setDisplayRect(at.x, at.y, at.w, at.h);
             av.prepareAsync(
                 function () {
                     try {
@@ -989,11 +1014,14 @@ window.Player = (function () {
 
     var STARTERS = { mpegts: viaMpegts, hls: viaHls, avplay: viaAvPlay, video: viaVideo };
 
-    function play(req) {
+    // `rect` plays in the live preview box, null full screen; leaving it out
+    // (a retry, the next episode) keeps the current mode.
+    function play(req, rect) {
         playbackError = false;
         release();
         var mine = ++session;
         current = req;
+        if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
         hideControls();
         ui.title.textContent = req.title;
@@ -1050,7 +1078,24 @@ window.Player = (function () {
         current = null;
         hideStatus();
         hideControls();
+        setBox(null);
         playerEl.classList.add('hidden');
+    }
+
+    // Moves the playing stream into the preview box; false when nothing is
+    // playing to show (stopped or failed).
+    function preview(rect) {
+        if (!current || playbackError) return false;
+        setBox(rect);
+        closeMenu();
+        hideControls();
+        return true;
+    }
+
+    // Takes the playing stream full screen, as if it had just started.
+    function fullscreen() {
+        setBox(null);
+        showControls();
     }
 
     function togglePause(force) {
@@ -1092,6 +1137,8 @@ window.Player = (function () {
     return {
         play: play,
         stop: stop,
+        preview: preview,
+        fullscreen: fullscreen,
         key: key,
         canOpenChannelList: function () {
             return ready && current.live && !menu.open && !resume.open && ui.controls.classList.contains('hidden') && ui.status.classList.contains('hidden');

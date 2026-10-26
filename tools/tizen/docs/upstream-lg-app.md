@@ -18,7 +18,7 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | TMDB artwork and description (optional key, 8 s limit, session cache) | Missing | #20 | Yes, the TV calls TMDB |
 | Catalogue sort: Recently added (default), Title A–Z, Provider order | Done (not yet tested on the TV): six orders and a Recently added category | #9 | Yes |
 | Live category browser with restored focus per category | Partial | #8 | Yes |
-| Live preview: OK previews beside the list, OK again fullscreen | Missing | #32 | Yes, one stream at a time |
+| Live preview: OK previews beside the list, OK again fullscreen | Done (not yet tested on the TV): list view only, Settings On/Off | #32 | Yes, one stream at a time |
 | Channel drawer over fullscreen live (◀), Channels / Programme / TV Guide buttons | Drawer done (not yet tested on the TV); buttons missing | #8 | Yes |
 | Single-channel programme list (dates, Now, descriptions) | Missing (now and next only) | #1, #6 | Yes |
 | Multi-channel guide grid (2-hour window, Watch live button) | Missing | #6 | Yes |

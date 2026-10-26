@@ -22,13 +22,22 @@
     function play(request) {
         screen = 'player';
         playing = request;
-        Player.play(request);
+        Player.play(request, null);
         LoadScreen.pause(true);
         channelList.sync();
     }
 
-    function closePlayer() {
+    // Return from full screen opened on a live preview goes back to the box,
+    // with the stream still playing; STOP closes everything.
+    function closePlayer(stopped) {
         channelList.close();
+        if (stopped) preview.stop();
+        if (preview.back(playing)) {
+            playing = null;
+            screen = 'browser';
+            LoadScreen.pause(document.hidden);
+            return browser.afterPlayback();
+        }
         Player.stop();
         playing = null;
         screen = 'browser';
@@ -36,9 +45,21 @@
         browser.afterPlayback();
     }
 
+    var preview = null;
     var browser = Browser({
         play: play,
         exit: exitApp,
+        preview: {
+            open: function (item, list) {
+                return preview.open(item, list);
+            },
+            active: function () {
+                return preview.active();
+            },
+            stop: function () {
+                preview.stop();
+            },
+        },
         openForm: function (kind, done) {
             screen = 'form';
             Form.open(kind, function (source) {
@@ -48,6 +69,19 @@
         },
     });
     var channelList = ChannelList({ channels: browser.live, epg: browser.epg, play: play, visibility: Player.channelList });
+    preview = LivePreview({
+        live: browser.live,
+        start: Player.play,
+        show: Player.preview,
+        stop: Player.stop,
+        fullscreen: function (request) {
+            screen = 'player';
+            playing = request;
+            Player.fullscreen();
+            LoadScreen.pause(true);
+            channelList.sync();
+        },
+    });
 
     function onPlayerKey(code) {
         var live = !!playing && playing.live;
@@ -62,7 +96,7 @@
         var handled = Player.key(code, live);
         if (handled === 'back') closePlayer();
         if (handled) return true;
-        if (Keys.isBack(code) || code === KEY.STOP) closePlayer();
+        if (Keys.isBack(code) || code === KEY.STOP) closePlayer(code === KEY.STOP);
         else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) {
             var previous = browser.live.previous();
             if (previous) play(previous);
@@ -81,6 +115,7 @@
 
     // Leaving the app (Home, Source) must free the account's connection.
     document.addEventListener('visibilitychange', function () {
+        if (document.hidden) preview.stop();
         if (document.hidden && screen === 'player') closePlayer();
         LoadScreen.pause(document.hidden || screen === 'player');
     });

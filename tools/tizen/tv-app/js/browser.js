@@ -145,6 +145,7 @@ window.Browser = function (hooks) {
 
     function openGuide() {
         if (!guideAvailable()) return false;
+        hooks.preview.stop();
         if (state.searching) {
             clearTimeout(state.searchTimer);
             stopTyping();
@@ -591,7 +592,7 @@ window.Browser = function (hooks) {
 
     function loadCatalogue(what, onFresh) {
         return state.catalogue.load(what, {
-            screen: !Player.isOpen(),
+            screen: !Player.isOpen() || hooks.preview.active(),
             active: function () { return catalogueActive(what); },
             onFresh: onFresh,
         });
@@ -799,6 +800,7 @@ window.Browser = function (hooks) {
     // ---- Content sections ----
 
     function setSource(source) {
+        hooks.preview.stop();
         if (state.catalogue) state.catalogue.dispose();
         state.catalogue = null;
         LoadScreen.reset();
@@ -850,6 +852,7 @@ window.Browser = function (hooks) {
 
     function openSection(id) {
         if (!available(id)) return;
+        if (id !== 'live') hooks.preview.stop();
         state.section = id;
         clearTimeout(state.timer);
         clearTimeout(state.searchTimer);
@@ -1175,6 +1178,8 @@ window.Browser = function (hooks) {
         var item = items.item();
         if (!item) return;
         if (state.section === 'sources') return sourceAction();
+        // OK on a channel previews it beside the list (see live-preview.js).
+        if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items())) return;
         openEntry(item, state.section);
     }
 
@@ -1249,6 +1254,10 @@ window.Browser = function (hooks) {
         if (guide.isOpen()) return guide.key(code);
         if (code === 458 && openGuide()) return true;
         if (state.searching) return onSearchKey(code);
+        if (Keys.isBack(code) && hooks.preview.active()) {
+            hooks.preview.stop();
+            return true;
+        }
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
         if (state.zone === 'settings') {

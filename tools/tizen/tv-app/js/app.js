@@ -14,6 +14,8 @@
         ESCAPE: 27,
         CH_UP: 427,
         CH_DOWN: 428,
+        PREVIOUS_CHANNEL: 10190,
+        GREEN: 404,
         PLAY_PAUSE: 10252,
         PLAY: 415,
         PAUSE: 19,
@@ -21,7 +23,7 @@
         FAST_FORWARD: 417,
         REWIND: 412,
     };
-    var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'Info'];
+    var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'PreviousChannel', 'ColorF1Green', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'Info'];
 
     var screen = 'browser';
     // The request on screen: live TV keeps ▲▼ for changing channel.
@@ -40,9 +42,11 @@
         screen = 'player';
         playing = request;
         Player.play(request);
+        channelList.sync();
     }
 
     function closePlayer() {
+        channelList.close();
         Player.stop();
         playing = null;
         screen = 'browser';
@@ -60,15 +64,24 @@
             });
         },
     });
+    var channelList = ChannelList({ channels: browser.live, epg: browser.epg, play: play, visibility: Player.channelList });
 
     function onPlayerKey(code) {
         var live = !!playing && playing.live;
         var zapStep = { 427: 1, 38: 1, 428: -1, 40: -1 }[code];
+        if (channelList.key(code)) return true;
+        if (live && code === KEY.LEFT && Player.canOpenChannelList()) {
+            channelList.open();
+            return true;
+        }
         // The player consumes its own keys (overlay, seeking, track menu,
         // resume prompt); Return/Stop and live zapping stay here.
         if (Player.key(code, live)) return true;
         if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.STOP) closePlayer();
-        else if (live && zapStep) {
+        else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) {
+            var previous = browser.live.previous();
+            if (previous) play(previous);
+        } else if (live && zapStep) {
             var next = browser.zap(zapStep);
             if (next) play(next);
         } else return false;

@@ -7,7 +7,7 @@ window.Library = (function () {
     var PREFIX = 'iptvnator-tv:';
     var PROGRESS_KEY = PREFIX + 'progress';
     var RECENT_MAX = 40;
-    var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label'];
+    var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label', 'category_id'];
 
     function read(key, fallback) {
         try {
@@ -78,6 +78,21 @@ window.Library = (function () {
     }
 
     return {
+        // Startup restore is on by default; false survives JSON storage.
+        setting: function (name, enabled) {
+            var settings = read(PREFIX + 'settings', { lastChannelOnStart: true });
+            if (enabled !== undefined) {
+                settings[name] = enabled;
+                write(PREFIX + 'settings', settings);
+            }
+            return settings[name] === undefined && name === 'lastChannelOnStart' ? true : settings[name];
+        },
+        lastChannel: function (sourceId) {
+            return read(PREFIX + 'last-channel:' + sourceId, null);
+        },
+        setLastChannel: function (sourceId, channel) {
+            write(PREFIX + 'last-channel:' + sourceId, snapshot(channel));
+        },
         keyOf: keyOf,
         progress: progress,
         progressId: progressId,

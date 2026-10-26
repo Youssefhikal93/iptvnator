@@ -188,7 +188,7 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
-- **Home** (opens on start): a banner for up to 3 things you are watching
+- **Home** (opens on start unless resuming a channel): a banner for up to 3 things you are watching
   (Continue watching, Details, ‹ › to switch), then rows: Continue
   watching, Live now on your favorite channels, Favorite movies and series,
   Recently added movies and series, Recently watched channels. ◀ ▶ within
@@ -218,6 +218,20 @@ from step 8 must already be downloaded.
   shows Now and Next with times, description and progress.
 - **Live TV rows** (Xtream) show the programme on now and its progress,
   fetched for the channels on screen once scrolling stops.
+- **Channel list while watching**: with live player controls hidden, press
+  LEFT to open a see-through channel list on the playing channel. UP/DOWN
+  move focus without changing channel; OK watches the focused channel.
+  LEFT/RIGHT switch category from anywhere in the list. CH+/CH- still change
+  channel and keep the list on the playing channel. Return closes the list;
+  another Return stops playback and returns to Home. The list closes after
+  10 seconds without a key.
+- **Previous channel**: PRE-CH or Green switches between the current and
+  previously watched live channel. Yellow still opens Audio & subtitles.
+- **Last channel on start**: the last live channel is saved per source and
+  plays on the next start if it is still in the catalogue. This is on by
+  default; until Settings exists, developers can disable it with
+  `Library.setting('lastChannelOnStart', false)` in the console (use `true`
+  to turn it back on). Return stops playback and opens Home.
 - **Start-up**: the app opens on the lists saved on the TV and refreshes
   them in the background ("Updating…" next to the source name); new
   channels, movies and episodes then appear by themselves. **Sources →

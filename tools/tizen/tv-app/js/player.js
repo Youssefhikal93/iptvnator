@@ -78,6 +78,7 @@ window.Player = (function () {
     var session = 0;
     var current = null;
     var ready = false; // a stream is playing
+    var channelListOpen = false;
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
     var speed = 1;
@@ -262,7 +263,7 @@ window.Player = (function () {
 
     function hintHtml() {
         var parts = current.live
-            ? [['OK', 'Info'], ['▲▼', 'Channel'], ['Yellow', 'Audio & subtitles']]
+            ? [['OK', 'Info'], ['▲▼', 'Channel'], ['◀', 'Channel list'], ['PRE-CH / Green', 'Previous channel'], ['Yellow', 'Audio & subtitles']]
             : [['OK', 'Pause'], ['◀ ▶', 'Seek'], ['▲', 'Audio, subtitles, speed'], ['▼', current.episodes ? 'Episodes & more' : 'More']];
         parts.push(['Return', 'Close']);
         return parts;
@@ -308,7 +309,7 @@ window.Player = (function () {
     }
 
     function showControls() {
-        if (!current || !ready || resume.open) return;
+        if (!current || !ready || resume.open || channelListOpen) return;
         ui.controls.classList.remove('hidden');
         playerEl.classList.add('controls-on');
         render();
@@ -1039,6 +1040,13 @@ window.Player = (function () {
         play: play,
         stop: stop,
         key: key,
+        canOpenChannelList: function () {
+            return ready && current.live && !menu.open && !resume.open && ui.controls.classList.contains('hidden') && ui.status.classList.contains('hidden');
+        },
+        channelList: function (opened) {
+            channelListOpen = opened;
+            if (opened) hideControls();
+        },
         isOpen: function () {
             return current !== null;
         },

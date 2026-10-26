@@ -103,6 +103,10 @@ _Avoid_: Context menu, long-press menu
 **Player**:
 The full-screen playback screen for a channel, movie or episode.
 
+**Channel list**:
+The see-through list over live playback: browse channels and categories, then press OK to watch.
+_Avoid_: Drawer, sidebar
+
 **Now and next**:
 The programme on a channel now and the one after it.
 _Avoid_: EPG (for this), guide

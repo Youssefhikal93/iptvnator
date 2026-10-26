@@ -19,6 +19,22 @@ window.Browser = function (hooks) {
         return document.getElementById(id);
     };
     var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
+    var restoring = false;
+    var live = LiveChannels({
+        categories: function () {
+            var adapter = state.adapter;
+            return cached('live:categories', function () { return adapter.categories('live'); });
+        },
+        channels: function (categoryId) {
+            var adapter = state.adapter;
+            return cached('live:items:' + categoryId, function () { return adapter.items('live', categoryId); });
+        },
+        request: liveRequest,
+        record: function (channel) {
+            record(channel, null, null, 'live');
+            Library.setLastChannel(sourceId(), channel);
+        },
+    });
 
     var categories = List($('categories'), {
         rows: 11,
@@ -638,6 +654,8 @@ window.Browser = function (hooks) {
     // ---- Content sections ----
 
     function setSource(source) {
+        live.reset();
+        restoring = false;
         state.source = source;
         state.adapter = null;
         state.epg = null;
@@ -986,8 +1004,7 @@ window.Browser = function (hooks) {
     function openEntry(item, section) {
         if (item.episode) return playSavedEpisode(item);
         if (section === 'live') {
-            record(item, null, null, 'live');
-            return hooks.play(liveRequest(item));
+            return hooks.play(live.play(item, state.section === 'live' ? items.items() : null));
         }
         if (section === 'movies') return openMovie(item);
         openShow(item);
@@ -1062,6 +1079,7 @@ window.Browser = function (hooks) {
     }
 
     function onKey(code) {
+        restoring = false;
         // OK repeats while held; the hold timer and keyup own that press.
         if (state.press && code === KEY.ENTER) return true;
         if (Menu.isOpen()) return Menu.onKey(code);
@@ -1111,19 +1129,22 @@ window.Browser = function (hooks) {
         if (!press.fired) press.tap();
     });
 
-    // Next/previous live channel while watching; null at the ends of the list.
-    function zap(delta) {
-        if (state.section !== 'live' || !items.move(delta)) return null;
-        record(items.item(), null, null, 'live');
-        return liveRequest(items.item());
-    }
-
     function start() {
         var source = Sources.current();
         setSource(source);
         if (source) openSection('home');
         else openSection('sources');
         setZone(contentZone());
+        if (source) {
+            restoring = true;
+            live.last(source.id).then(function (channel) {
+                if (restoring && channel) hooks.play(live.play(channel));
+                restoring = false;
+            }).catch(function () {
+                restoring = false;
+                Log.error('LAST CHANNEL FAIL');
+            });
+        }
     }
 
     return {
@@ -1134,8 +1155,13 @@ window.Browser = function (hooks) {
             if (!state.played) return;
             state.played = false;
             refreshLibrary();
+            // Zapping does not move the list; land on the channel watched last.
+            var at = state.section === 'live' && !state.showingSearch ? live.indexOf(items.items(), live.current()) : -1;
+            if (at >= 0) items.select(at);
             detail.refresh();
         },
-        zap: zap,
+        live: live,
+        epg: function () { return state.epg; },
+        zap: live.zap,
     };
 };

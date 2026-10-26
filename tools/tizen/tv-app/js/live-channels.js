@@ -81,7 +81,7 @@ window.LiveChannels = function (hooks) {
         },
         last: function (sourceId) {
             var saved = Library.lastChannel(sourceId);
-            if (!saved || Library.setting('onStart') !== 'last-channel') return Promise.resolve(null);
+            if (!saved || Prefs.get('onStart') !== 'last-channel') return Promise.resolve(null);
             return hooks.channels('').then(function (channels) {
                 var index = indexOf(channels, saved);
                 return index < 0 ? null : channels[index];

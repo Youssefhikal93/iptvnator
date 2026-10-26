@@ -5,31 +5,29 @@ window.Watched = function (api) {
 
     function isWatched(item, section) {
         if (section === 'live') return false;
-        if (section !== 'series' || item.episode) return Library.isWatched(Library.progressId(section, item));
+        if (section !== 'series' || item.episode) return Progress.isWatched(Progress.id(section, item));
         var info = api.knownShow(item);
-        return Library.allWatched(info && info.episodes);
+        return Progress.allWatched(info && info.episodes);
     }
 
     function itemOption(item, section) {
-        var id = Library.progressId(section, item);
-        var done = Library.isWatched(id);
+        var id = Progress.id(section, item);
+        var done = Progress.isWatched(id);
         return {
             label: item.episode ? 'Mark episode ' + (done ? 'unwatched' : 'watched') : 'Mark as ' + (done ? 'unwatched' : 'watched'),
             run: function () {
-                if (done) Library.markUnwatched(id);
-                else Library.markWatched(id, item.seconds);
+                Progress.mark([id], !done, [item.seconds]);
                 api.changed();
             },
         };
     }
 
     function episodesOption(label, episodes) {
-        var done = Library.allWatched(episodes);
+        var done = Progress.allWatched(episodes);
         return {
             label: label + ' ' + (done ? 'unwatched' : 'watched'),
             run: function () {
-                if (done) Library.markEpisodesUnwatched(episodes);
-                else Library.markEpisodesWatched(episodes);
+                Progress.mark(episodes.map(Progress.episodeId), !done, episodes.map(function (ep) { return ep.seconds; }));
                 api.changed();
             },
         };

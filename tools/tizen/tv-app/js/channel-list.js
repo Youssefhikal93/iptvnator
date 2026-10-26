@@ -3,7 +3,7 @@ window.ChannelList = function (hooks) {
     'use strict';
 
     var ROWS = 9;
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27, CH_UP: 427, CH_DOWN: 428, PREVIOUS: 10190, GREEN: 404, STOP: 413, YELLOW: 405, INFO: 457 };
+    var KEY = Keys;
     var panel = document.createElement('div');
     panel.id = 'pl-channels';
     panel.className = 'hidden';
@@ -148,12 +148,12 @@ window.ChannelList = function (hooks) {
     function key(code) {
         if (!opened) return false;
         touch();
-        if ([KEY.CH_UP, KEY.CH_DOWN, KEY.GREEN, KEY.PREVIOUS, KEY.STOP].indexOf(code) >= 0) return false;
+        if ([KEY.CH_UP, KEY.CH_DOWN, KEY.GREEN, KEY.PREVIOUS_CHANNEL, KEY.STOP].indexOf(code) >= 0) return false;
         if ([KEY.YELLOW, KEY.INFO].indexOf(code) >= 0) {
             close();
             return false;
         }
-        if ([KEY.RETURN, KEY.BACKSPACE, KEY.ESCAPE].indexOf(code) >= 0) close();
+        if (Keys.isBack(code)) close();
         else if (code === KEY.UP || code === KEY.DOWN) {
             focus = Math.max(0, Math.min(channels.length - 1, focus + (code === KEY.UP ? -1 : 1)));
             render();

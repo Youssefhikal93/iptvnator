@@ -19,30 +19,10 @@ window.Player = (function () {
     var SAVE_EVERY_MS = 10000;
     var SEEK_COMMIT_MS = 700;
     var SEEK_STEPS_S = [10, 30, 60]; // repeated presses accelerate
-    var RESUME_MIN_S = 30;
-    var FINISHED_MARGIN_S = 30;
-    var PROGRESS_KEY = 'iptvnator-tv:progress';
     var SPEEDS_HTML = [0.5, 1, 1.25, 1.5, 2];
     var SPEEDS_AV = [1, 2];
 
-    var KEY = {
-        LEFT: 37,
-        UP: 38,
-        RIGHT: 39,
-        DOWN: 40,
-        ENTER: 13,
-        RETURN: 10009,
-        BACKSPACE: 8,
-        ESCAPE: 27,
-        STOP: 413,
-        PLAY_PAUSE: 10252,
-        PLAY: 415,
-        PAUSE: 19,
-        FAST_FORWARD: 417,
-        REWIND: 412,
-        YELLOW: 405,
-        INFO: 457,
-    };
+    var KEY = Keys;
 
     function $(id) {
         return document.getElementById(id);
@@ -117,10 +97,6 @@ window.Player = (function () {
         play: play,
         openMenu: openMenu,
         showControls: showControls,
-        progressOf: function (id) {
-            var saved = loadProgress()[id];
-            return saved && saved.duration > 0 ? Math.min(1, saved.position / saved.duration) : 0;
-        },
     });
 
     function avplay() {
@@ -252,39 +228,13 @@ window.Player = (function () {
 
     // ---- Saved progress ---------------------------------------------------
 
-    function loadProgress() {
-        try {
-            return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
-        } catch (e) {
-            return {};
-        }
-    }
-
-    function storeProgress(map) {
-        try {
-            localStorage.setItem(PROGRESS_KEY, JSON.stringify(map));
-        } catch (e) {
-            // Storage full or unavailable.
-        }
-    }
-
-    // A finished item stays saved at 100 %: it leaves Continue watching but
-    // still counts as watched (series pages, next episode to play).
-    function markWatched(map, dur) {
-        var secs = Math.max(1, Math.floor(dur || 0));
-        map[current.id] = { position: secs, duration: secs, updatedAt: Date.now() };
-    }
-
     function saveProgress() {
         if (!started || !current || current.live || !current.id || progressBlocked()) return;
         var pos = position() / 1000;
         var dur = duration() / 1000;
         if (!(dur > 0)) return;
-        var map = loadProgress();
-        if (ended || pos > dur - FINISHED_MARGIN_S) markWatched(map, dur);
-        else if (pos >= 5) map[current.id] = { position: Math.floor(pos), duration: Math.floor(dur), updatedAt: Date.now() };
-        else return;
-        storeProgress(map);
+        if (ended) Progress.finish(current.id, dur);
+        else if (!Progress.save(current.id, pos, dur)) return;
         lastSave = Date.now();
     }
 
@@ -389,7 +339,7 @@ window.Player = (function () {
     }
 
     function errorKey(code) {
-        if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE) return false;
+        if (Keys.isBack(code)) return false;
         if (code === KEY.LEFT || code === KEY.RIGHT) {
             errorFocus = code === KEY.LEFT ? 0 : 1;
             $('pl-error-actions').children[errorFocus].focus();
@@ -739,7 +689,7 @@ window.Player = (function () {
     }
 
     function menuKey(code) {
-        if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.YELLOW || code === KEY.INFO) closeMenu();
+        if (Keys.isBack(code) || code === KEY.YELLOW || code === KEY.INFO) closeMenu();
         else if (code === KEY.UP || code === KEY.DOWN) {
             menu.focus += code === KEY.UP ? -1 : 1;
             renderMenu();
@@ -766,7 +716,7 @@ window.Player = (function () {
 
     function settleResume(fromSaved) {
         if (fromSaved && resume.failed) {
-            var saved = loadProgress()[current.id];
+            var saved = Progress.of(current.id);
             if (!saved || !(saved.position > 0) || !isFinite(saved.position)) return;
             resume.position = Number(saved.position);
         }
@@ -799,10 +749,10 @@ window.Player = (function () {
             started = !current.live;
             return;
         }
-        var saved = loadProgress()[current.id];
-        var dur = duration() / 1000;
-        if (!saved || !(saved.position > 0) || !isFinite(saved.position) ||
-            (current.resume !== true && (saved.position < RESUME_MIN_S || (dur > 0 && saved.position > dur - FINISHED_MARGIN_S)))) {
+        var saved = Progress.of(current.id);
+        var offer = Progress.resumeFrom(current.id, duration() / 1000);
+        // Explicit Resume also accepts early progress from a detail page.
+        if (!saved || saved.status === 'watched' || (current.resume !== true && !offer)) {
             started = true;
             return;
         }
@@ -826,7 +776,7 @@ window.Player = (function () {
             resume.focus = 1 - resume.focus;
             renderResume();
         } else if (code === KEY.ENTER || code === KEY.PLAY_PAUSE || code === KEY.PLAY) settleResume(resume.focus === 0);
-        else if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === 413) return false;
+        else if (Keys.isBack(code) || code === KEY.STOP) return false;
         return true;
     }
 
@@ -1010,11 +960,7 @@ window.Player = (function () {
         if (current.live) return showStatus('Playback stopped.', true);
         if (!started || progressBlocked()) return;
         ended = true;
-        if (started && current.id) {
-            var map = loadProgress();
-            markWatched(map, duration() / 1000);
-            storeProgress(map);
-        }
+        if (current.id) Progress.finish(current.id, duration() / 1000);
         started = false;
         showControls();
     }
@@ -1128,7 +1074,7 @@ window.Player = (function () {
             openMenu();
             return true;
         }
-        if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE) return false;
+        if (Keys.isBack(code)) return false;
         showControls();
         if (live || ended) return code === KEY.ENTER;
         if (code === KEY.ENTER) {

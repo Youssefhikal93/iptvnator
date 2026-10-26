@@ -5,20 +5,7 @@ window.Library = (function () {
     'use strict';
 
     var PREFIX = 'iptvnator-tv:';
-    var PROGRESS_KEY = PREFIX + 'progress';
     var RECENT_MAX = 40;
-    var DEFAULTS = {
-        autoplayMs: 8000,
-        skipIntroSeconds: 90,
-        programmeGuide: true,
-        homeLayout: 'cinema',
-        'view:movies': 'grid',
-        'view:series': 'grid',
-        'view:live': 'list',
-        'sort:movies': 'newest',
-        'sort:series': 'newest',
-        onStart: 'last-channel',
-    };
     var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label', 'category_id', 'added', 'last_modified', 'rating_5based', 'rating'];
 
     function read(key, fallback) {
@@ -70,74 +57,6 @@ window.Library = (function () {
         });
     }
 
-    function progress(id) {
-        if (id === undefined || id === null) return null;
-        var entry = read(PROGRESS_KEY, {})[String(id)];
-        if (!entry || !(entry.duration > 0) || !(entry.position > 0)) return null;
-        return { ratio: Math.min(1, entry.position / entry.duration), position: entry.position, updatedAt: entry.updatedAt || 0 };
-    }
-
-    // Progress ids as the player stores them: movie:<stream_id>, episode:<episode id>.
-    function progressId(section, item) {
-        if (item.episode) return 'episode:' + item.episode.id;
-        if (section === 'movies' && item.stream_id !== undefined) return 'movie:' + item.stream_id;
-        return item.progressId;
-    }
-
-    function unfinished(section, item) {
-        var p = progress(progressId(section, item));
-        return p && p.ratio < 0.95 ? p : null;
-    }
-
-    function isWatched(id) {
-        var p = progress(id);
-        return !!p && p.ratio >= 0.95;
-    }
-
-    function allWatched(episodes) {
-        return !!episodes && episodes.length > 0 && episodes.every(function (ep) {
-            return ep.id !== undefined && ep.id !== null && isWatched('episode:' + ep.id);
-        });
-    }
-
-    function saveWatched(all, id, duration) {
-        if (id === undefined || id === null) return;
-        var saved = all[String(id)];
-        var secs = Number(saved && saved.duration);
-        if (!(secs > 0) || !isFinite(secs)) secs = Number(duration);
-        // Unknown lengths still need valid full progress, as in the player.
-        if (!(secs > 0) || !isFinite(secs)) secs = 1;
-        all[String(id)] = { position: secs, duration: secs, updatedAt: Date.now() };
-    }
-
-    function markWatched(id, duration) {
-        var all = read(PROGRESS_KEY, {});
-        saveWatched(all, id, duration);
-        write(PROGRESS_KEY, all);
-    }
-
-    function markUnwatched(id) {
-        var all = read(PROGRESS_KEY, {});
-        delete all[String(id)];
-        write(PROGRESS_KEY, all);
-    }
-
-    function markEpisodesWatched(episodes) {
-        var all = read(PROGRESS_KEY, {});
-        episodes.forEach(function (ep) {
-            if (ep.id !== undefined && ep.id !== null) saveWatched(all, 'episode:' + ep.id, ep.seconds);
-        });
-        write(PROGRESS_KEY, all);
-    }
-
-    function markEpisodesUnwatched(episodes) {
-        var all = read(PROGRESS_KEY, {});
-        episodes.forEach(function (ep) {
-            if (ep.id !== undefined && ep.id !== null) delete all['episode:' + ep.id];
-        });
-        write(PROGRESS_KEY, all);
-    }
-
     // Older favorites lack sort fields; use the catalogue and its provider order
     // where available, retaining snapshots for items the source no longer lists.
     function favoriteItems(sourceId, section, catalogue) {
@@ -157,44 +76,7 @@ window.Library = (function () {
         }));
     }
 
-    function setting(name) {
-        var settings = read(PREFIX + 'settings', {});
-        if (name === 'lastChannelOnStart') return setting('onStart') === 'last-channel';
-        if (settings[name] !== undefined) return settings[name];
-        if (name === 'onStart' && settings.lastChannelOnStart === false) return 'home';
-        // Keep the toolbar's existing view keys, including choices from older installs.
-        if (name.indexOf('view:') === 0) {
-            var saved;
-            try {
-                saved = localStorage.getItem(PREFIX + name);
-            } catch (e) {
-                // Use the default when storage is unavailable.
-            }
-            if (saved === 'grid' || saved === 'list') return saved;
-        }
-        return DEFAULTS[name];
-    }
-
-    function setSetting(name, value) {
-        var settings = read(PREFIX + 'settings', {});
-        if (name === 'lastChannelOnStart') {
-            name = 'onStart';
-            value = value ? 'last-channel' : 'home';
-        }
-        settings[name] = value;
-        write(PREFIX + 'settings', settings);
-        if (name.indexOf('view:') === 0) {
-            try {
-                localStorage.setItem(PREFIX + name, value);
-            } catch (e) {
-                // The settings object still holds the choice.
-            }
-        }
-    }
-
     return {
-        setting: setting,
-        setSetting: setSetting,
         lastChannel: function (sourceId) {
             return read(PREFIX + 'last-channel:' + sourceId, null);
         },
@@ -202,14 +84,6 @@ window.Library = (function () {
             write(PREFIX + 'last-channel:' + sourceId, snapshot(channel));
         },
         keyOf: keyOf,
-        progress: progress,
-        progressId: progressId,
-        isWatched: isWatched,
-        allWatched: allWatched,
-        markWatched: markWatched,
-        markUnwatched: markUnwatched,
-        markEpisodesWatched: markEpisodesWatched,
-        markEpisodesUnwatched: markEpisodesUnwatched,
         favorites: function (sourceId, section) {
             return listOf('favorites', sourceId, section);
         },
@@ -251,19 +125,16 @@ window.Library = (function () {
         removeRecent: function (sourceId, section, item) {
             save('recent', sourceId, section, without(listOf('recent', sourceId, section), section, item));
         },
-        // Forgets the saved position, which also drops the item from Continue watching.
-        clearProgress: markUnwatched,
         continueWatching: function (sourceId, section) {
             return listOf('recent', sourceId, section).filter(function (entry) {
-                return unfinished(section, entry);
+                return Progress.unfinished(section, entry);
             });
         },
-        unfinished: unfinished,
         sort: function (sourceId, section) {
             var saved = read(PREFIX + 'sort:' + sourceId, {})[section];
             return Sort.options.some(function (option) {
                 return option.id === saved;
-            }) ? saved : section === 'movies' || section === 'series' ? setting('sort:' + section) : 'provider';
+            }) ? saved : section === 'movies' || section === 'series' ? Prefs.get('sort:' + section) : 'provider';
         },
         setSort: function (sourceId, section, mode) {
             var key = PREFIX + 'sort:' + sourceId;
@@ -272,11 +143,11 @@ window.Library = (function () {
             write(key, all);
         },
         view: function (section, fallback) {
-            var saved = setting('view:' + section);
+            var saved = Prefs.get('view:' + section);
             return saved === 'grid' || saved === 'list' ? saved : fallback;
         },
         setView: function (section, mode) {
-            setSetting('view:' + section, mode);
+            Prefs.set('view:' + section, mode);
         },
     };
 })();

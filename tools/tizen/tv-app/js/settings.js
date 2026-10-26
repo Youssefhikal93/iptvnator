@@ -3,7 +3,7 @@ window.Settings = function (hooks) {
     'use strict';
 
     var VERSION = '0.1.0'; // Keep in step with config.xml.
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
+    var KEY = Keys;
     var root = document.getElementById('settings');
     var focus = 0;
     var active = false;
@@ -33,7 +33,7 @@ window.Settings = function (hooks) {
     }
 
     function choice(row) {
-        return Math.max(0, row.choices.indexOf(Library.setting(row.key)));
+        return Math.max(0, row.choices.indexOf(Prefs.get(row.key)));
     }
 
     function renderRow(row, index) {
@@ -60,8 +60,7 @@ window.Settings = function (hooks) {
         // LEFT at the first choice leaves the screen; RIGHT cycles forward.
         if (step < 0 && index === 0) return 'left';
         if (!row.key) return;
-        Library.setSetting(row.key, row.choices[(index + step) % row.choices.length]);
-        hooks.changed(row.key);
+        Prefs.set(row.key, row.choices[(index + step) % row.choices.length]);
         hooks.toast('Saved');
         render();
     }
@@ -73,7 +72,7 @@ window.Settings = function (hooks) {
             render();
         },
         key: function (code) {
-            if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE) return 'left';
+            if (Keys.isBack(code)) return 'left';
             if (code === KEY.LEFT) return change(-1);
             if (code === KEY.RIGHT || code === KEY.ENTER) return change(1);
             if (code === KEY.UP || code === KEY.DOWN) {

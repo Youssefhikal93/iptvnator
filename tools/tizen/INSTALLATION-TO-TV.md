@@ -249,6 +249,9 @@ from step 8 must already be downloaded.
   On a show's detail page, hold OK on an episode for episode and season
   actions. A tick marks watched items; season counts and the next episode
   button update immediately. Watched items leave Continue watching.
+- **Progress near the end**: movies and episodes count as watched at 95 % or
+  with fewer than 30 seconds left. Continue watching, watched ticks and Resume
+  use the same rule, including progress saved by an older version.
 - **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,
   subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
   Episodes, Audio & subtitles). Episodes show an Up next card near the end
@@ -281,6 +284,9 @@ from step 8 must already be downloaded.
   them in the background ("Updating…" next to the source name); new
   channels, movies and episodes then appear by themselves. **Sources →
   Refresh source** throws the saved lists away and reloads them.
+
+- **Switching sources**: each source keeps its own saved catalogue; a refresh
+  finishing for the previous source does not replace the source now on screen.
 
 ### Installing on another TV
 

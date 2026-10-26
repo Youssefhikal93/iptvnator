@@ -9,7 +9,7 @@
 window.Detail = function () {
     'use strict';
 
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
+    var KEY = Keys;
     var root = document.getElementById('detail');
     var s = null;
 
@@ -28,10 +28,6 @@ window.Detail = function () {
         if (src) node.src = src;
         else node.style.visibility = 'hidden';
         return node;
-    }
-
-    function isBack(code) {
-        return code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE;
     }
 
     function runtime(secs) {
@@ -121,7 +117,7 @@ window.Detail = function () {
             if (button.progress) {
                 var bar = el('span', 'dt-btn-bar');
                 var fill = el('span', 'dt-btn-fill');
-                fill.style.width = Math.max(3, Math.round(button.progress * 100)) + '%';
+                fill.style.width = Progress.bar(button.progress);
                 bar.appendChild(fill);
                 node.appendChild(bar);
             }
@@ -175,15 +171,15 @@ window.Detail = function () {
 
     function onKey(code) {
         if (s.trailer || s.more) {
-            if (isBack(code)) {
+            if (Keys.isBack(code)) {
                 s.trailer = null;
                 s.more = false;
                 render();
             }
             return true;
         }
-        if (isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
-        else if (isBack(code)) return close(), true;
+        if (Keys.isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
+        else if (Keys.isBack(code)) return close(), true;
         else if (s.zone === 'episodes') {
             var result = s.page.episodes.key(code);
             if (result === 'up') s.zone = 'buttons';

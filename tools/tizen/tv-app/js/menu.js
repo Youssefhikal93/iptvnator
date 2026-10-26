@@ -3,7 +3,7 @@
 window.Menu = (function () {
     'use strict';
 
-    var KEY = { UP: 38, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
+    var KEY = Keys;
     var el = document.getElementById('menu');
     var state = { options: [], index: 0, title: '', open: false };
 
@@ -49,7 +49,7 @@ window.Menu = (function () {
                 var option = state.options[state.index];
                 close();
                 if (option && option.run) option.run();
-            } else if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE) {
+            } else if (Keys.isBack(code)) {
                 close();
             }
             // Everything else is swallowed while the menu is open.

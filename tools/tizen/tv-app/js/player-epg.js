@@ -47,10 +47,10 @@ window.PlayerEpg = function () {
     }
 
     function fetchFor(req) {
-        if (!Library.setting('programmeGuide')) return;
+        if (!Prefs.get('programmeGuide')) return;
         var mine = s.session;
         return req.programmes().then(function (programmes) {
-            if (mine !== s.session || !Library.setting('programmeGuide')) return;
+            if (mine !== s.session || !Prefs.get('programmeGuide')) return;
             s.shown = programmes;
             s.reloading = false;
             build();
@@ -69,13 +69,13 @@ window.PlayerEpg = function () {
         reset: reset,
         load: function (req) {
             reset();
-            if (!Library.setting('programmeGuide') || !req.live || !req.programmes) return;
+            if (!Prefs.get('programmeGuide') || !req.live || !req.programmes) return;
             s.req = req;
             fetchFor(req);
         },
         // Called on every player render while live.
         render: function () {
-            if (!Library.setting('programmeGuide')) return reset();
+            if (!Prefs.get('programmeGuide')) return reset();
             var now = s.shown && s.shown.now;
             if (!now || !s.parts) return;
             var t = Date.now();

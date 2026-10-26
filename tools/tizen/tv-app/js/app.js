@@ -3,26 +3,7 @@
 (function () {
     'use strict';
 
-    var KEY = {
-        LEFT: 37,
-        UP: 38,
-        RIGHT: 39,
-        DOWN: 40,
-        ENTER: 13,
-        RETURN: 10009,
-        BACKSPACE: 8,
-        ESCAPE: 27,
-        CH_UP: 427,
-        CH_DOWN: 428,
-        PREVIOUS_CHANNEL: 10190,
-        GREEN: 404,
-        PLAY_PAUSE: 10252,
-        PLAY: 415,
-        PAUSE: 19,
-        STOP: 413,
-        FAST_FORWARD: 417,
-        REWIND: 412,
-    };
+    var KEY = Keys;
     var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'PreviousChannel', 'ColorF1Green', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'Info'];
 
     var screen = 'browser';
@@ -70,7 +51,7 @@
 
     function onPlayerKey(code) {
         var live = !!playing && playing.live;
-        var zapStep = { 427: 1, 38: 1, 428: -1, 40: -1 }[code];
+        var zapStep = code === KEY.CH_UP || code === KEY.UP ? 1 : code === KEY.CH_DOWN || code === KEY.DOWN ? -1 : 0;
         if (channelList.key(code)) return true;
         if (live && code === KEY.LEFT && Player.canOpenChannelList()) {
             channelList.open();
@@ -81,7 +62,7 @@
         var handled = Player.key(code, live);
         if (handled === 'back') closePlayer();
         if (handled) return true;
-        if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.STOP) closePlayer();
+        if (Keys.isBack(code) || code === KEY.STOP) closePlayer();
         else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) {
             var previous = browser.live.previous();
             if (previous) play(previous);

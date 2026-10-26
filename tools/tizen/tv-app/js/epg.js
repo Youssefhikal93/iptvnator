@@ -38,7 +38,7 @@ window.Epg = function (adapter) {
     }
 
     function fetchOne(channel) {
-        if (stopped || !Library.setting('programmeGuide')) return Promise.resolve({ now: null, next: null });
+        if (stopped || !Prefs.get('programmeGuide')) return Promise.resolve({ now: null, next: null });
         var id = idOf(channel);
         if (!loading[id]) {
             loading[id] = adapter
@@ -58,7 +58,7 @@ window.Epg = function (adapter) {
     }
 
     function pump(done) {
-        while (!stopped && Library.setting('programmeGuide') && active < PARALLEL && queue.length) {
+        while (!stopped && Prefs.get('programmeGuide') && active < PARALLEL && queue.length) {
             var channel = queue.shift();
             if (peek(channel) !== undefined) continue;
             active++;

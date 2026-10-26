@@ -31,6 +31,11 @@ window.Menu = (function () {
             state = { options: options, index: 0, title: title, open: true };
             render();
             el.classList.remove('hidden');
+            var current = state;
+            // Async options must not reopen a menu dismissed with Return.
+            return function () {
+                return state === current && state.open;
+            };
         },
         isOpen: function () {
             return state.open;

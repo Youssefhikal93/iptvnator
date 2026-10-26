@@ -225,6 +225,10 @@ window.Detail = function () {
             return !!s;
         },
         onKey: onKey,
+        episodeSelection: function () {
+            if (!s || s.zone !== 'episodes' || s.more || s.trailer) return null;
+            return s.page.episodes.selection();
+        },
         // After playback or a library change: new Resume labels and progress.
         refresh: function () {
             if (s) render();

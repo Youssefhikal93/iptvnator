@@ -5,7 +5,7 @@
 // api: hero() / rows() -> entries { item, section } and [{ id, title, entries }]
 //      open(entry) (OK on a poster), resume(entry) and openDetails(entry)
 //      (hero buttons), details(entry) -> Promise of detail-page details,
-//      progress(entry) -> Library.progress shape or null,
+//      progress(entry) -> Library.progress shape or null, watched(entry) -> boolean,
 //      programme(item) -> the programme on now for a channel, or null
 window.Home = function (api) {
     'use strict';
@@ -147,6 +147,11 @@ window.Home = function (api) {
         if (src) poster.appendChild(img('', src));
         else poster.appendChild(el('span', 'hm-initials', titleOf(entry).replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()));
         var p = live ? null : api.progress(entry);
+        if (api.watched(entry)) {
+            var tick = el('span', 'watched-tick', '\u2713');
+            tick.setAttribute('aria-label', 'Watched');
+            poster.appendChild(tick);
+        }
         if (p && p.ratio < 0.95) {
             var bar = el('div', 'hm-bar');
             var fill = el('div', 'hm-fill');

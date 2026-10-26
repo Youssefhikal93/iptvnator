@@ -431,6 +431,31 @@ svg {
     right: 10px;
     text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
 }
+.watched-tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--selection);
+    color: var(--selection-on);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+}
+.poster .watched-tick,
+.hm-poster .watched-tick {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+}
+.dt-ep-thumb .watched-tick {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+}
 .bar {
     position: absolute;
     left: 14px;

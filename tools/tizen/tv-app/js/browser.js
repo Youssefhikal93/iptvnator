@@ -33,6 +33,17 @@ window.Browser = function (hooks) {
         },
     });
     var detail = Detail();
+    var watched = Watched({
+        knownShow: function (show) {
+            return state.cache['series:' + show.series_id];
+        },
+        loadShow: loadShow,
+        changed: function () {
+            refreshLibrary();
+            detail.refresh();
+        },
+        toast: toast,
+    });
     var home = Home({
         hero: function () {
             return state.adapter ? continueEntries().slice(0, 3) : [];
@@ -53,6 +64,9 @@ window.Browser = function (hooks) {
         },
         details: homeDetails,
         progress: progressOf,
+        watched: function (entry) {
+            return watched.isWatched(entry.item, entry.section);
+        },
         programme: function (item) {
             if (!state.epg || item.stream_id === undefined) return null;
             var programmes = state.epg.peek(item);
@@ -114,6 +128,13 @@ window.Browser = function (hooks) {
             el.appendChild(star);
         }
         if (state.section === 'live') return showProgramme(el, item);
+        if (watched.isWatched(item, state.section)) {
+            var tick = document.createElement('span');
+            tick.className = 'watched-tick';
+            tick.textContent = '\u2713';
+            tick.setAttribute('aria-label', 'Watched');
+            el.appendChild(tick);
+        }
         var p = Library.progress(Library.progressId(state.section, item));
         if (p && p.ratio < 0.95) {
             var bar = document.createElement('div');
@@ -287,12 +308,12 @@ window.Browser = function (hooks) {
         });
         var progressId = Library.progressId(section, item);
         var progress = section === 'live' ? null : Library.progress(progressId);
-        if (progress) {
+        if (progress && progress.ratio < 0.95) {
             options.push({
-                label: progress.ratio < 0.95 ? 'Remove from Continue watching' : 'Mark as not watched',
+                label: 'Remove from Continue watching',
                 run: function () {
                     Library.clearProgress(progressId);
-                    toast(progress.ratio < 0.95 ? 'Removed from Continue watching' : 'Marked as not watched');
+                    toast('Removed from Continue watching');
                     refreshLibrary();
                 },
             });
@@ -308,7 +329,7 @@ window.Browser = function (hooks) {
             });
         }
         options.push({ label: 'Cancel' });
-        Menu.open(itemLabel(item), options);
+        watched.openItemMenu(item, section, options, itemLabel(item));
     }
 
     function viewMode() {
@@ -948,6 +969,7 @@ window.Browser = function (hooks) {
         detail.open({
             item: show,
             episodes: episodes,
+            onClose: refreshLibrary,
             load: function () {
                 var fresh = function (info) {
                     episodes.setEpisodes(info.episodes);
@@ -1063,10 +1085,23 @@ window.Browser = function (hooks) {
 
     function onKey(code) {
         // OK repeats while held; the hold timer and keyup own that press.
-        if (state.press && code === KEY.ENTER) return true;
+        if (state.press) {
+            if (code === KEY.ENTER) return true;
+            clearTimeout(state.press.timer);
+            state.press = null;
+        }
         if (Menu.isOpen()) return Menu.onKey(code);
         if (state.searching) return onSearchKey(code);
-        if (detail.isOpen()) return detail.onKey(code);
+        if (detail.isOpen()) {
+            var selection = detail.episodeSelection();
+            if (code !== KEY.ENTER || !selection) return detail.onKey(code);
+            startPress(function () {
+                detail.onKey(code);
+            }, function () {
+                watched.openEpisodeMenu(selection);
+            });
+            return true;
+        }
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
         if (state.zone === 'rail') {

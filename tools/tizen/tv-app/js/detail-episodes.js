@@ -73,11 +73,11 @@ window.DetailEpisodes = function (opts) {
             }
         });
         var index = nextUnwatched(latest);
-        if (index < 0) return s.list.length ? { index: 0, label: 'Watch again ' + code(s.list[0]) } : null;
+        if (index < 0) return s.list.length ? { index: 0, label: I18n.t('episodes.watchAgain', { code: code(s.list[0]) }) } : null;
         var p = opts.progressOf(s.list[index]);
         return p
-            ? { index: index, resume: true, progress: p.ratio, label: 'Continue ' + code(s.list[index]) }
-            : { index: index, label: 'Play ' + code(s.list[index]) };
+            ? { index: index, resume: true, progress: p.ratio, label: I18n.t('episodes.continue', { code: code(s.list[index]) }) }
+            : { index: index, label: I18n.t('episodes.play', { code: code(s.list[index]) }) };
     }
 
     // Puts the focus on the episode the main button would play.
@@ -89,7 +89,7 @@ window.DetailEpisodes = function (opts) {
     }
 
     function runtime(secs) {
-        return secs ? Math.round(secs / 60) + ' min' : '';
+        return secs ? I18n.t('unit.minutesOnly', { m: Math.round(secs / 60) }) : '';
     }
 
     function renderRow(index, focused) {
@@ -108,7 +108,7 @@ window.DetailEpisodes = function (opts) {
         thumb.appendChild(el('span', 'dt-ep-num', ep.num));
         if (watched(ep)) {
             var tick = el('span', 'watched-tick', '\u2713');
-            tick.setAttribute('aria-label', 'Watched');
+            tick.setAttribute('aria-label', I18n.t('browser.watched'));
             thumb.appendChild(tick);
         }
         if (p) {
@@ -121,7 +121,7 @@ window.DetailEpisodes = function (opts) {
         row.appendChild(thumb);
         var text = el('div', 'dt-ep-text');
         text.appendChild(el('div', 'dt-ep-title', ep.num + '. ' + (ep.title || code(ep))));
-        var meta = [runtime(ep.seconds), p && p.status === 'watched' ? 'Watched' : p ? Math.round(p.ratio * 100) + '% watched' : ''].filter(Boolean);
+        var meta = [runtime(ep.seconds), p && p.status === 'watched' ? I18n.t('browser.watched') : p ? I18n.t('episodes.percentWatched', { percent: Math.round(p.ratio * 100) }) : ''].filter(Boolean);
         if (meta.length) text.appendChild(el('div', 'dt-ep-meta', meta.join('  ·  ')));
         if (ep.plot) text.appendChild(el('div', 'dt-ep-plot', ep.plot));
         row.appendChild(text);
@@ -131,19 +131,19 @@ window.DetailEpisodes = function (opts) {
     function render(active) {
         var box = el('div', 'dt-episodes' + (active ? ' active' : ''));
         if (!s.list.length) {
-            box.appendChild(el('div', 'dt-ep-empty', s.loaded ? 'No episodes' : 'Loading episodes…'));
+            box.appendChild(el('div', 'dt-ep-empty', I18n.t(s.loaded ? 'episodes.none' : 'episodes.loading')));
             return box;
         }
         var head = el('div', 'dt-ep-pills');
         s.seasons.forEach(function (season, i) {
             var cls = 'dt-ep-pill' + (i === s.season ? ' active' : '') + (active && s.zone === 'pills' && i === s.season ? ' focus' : '');
-            head.appendChild(el('span', cls, 'Season ' + season));
+            head.appendChild(el('span', cls, I18n.t('episodes.season', { n: season })));
         });
         var shown = inSeason();
         var done = shown.filter(function (index) {
             return watched(s.list[index]);
         }).length;
-        head.appendChild(el('span', 'dt-ep-count', done + ' of ' + shown.length + ' watched'));
+        head.appendChild(el('span', 'dt-ep-count', I18n.t('episodes.doneOf', { done: done, total: shown.length })));
         box.appendChild(head);
         var start = Math.max(0, Math.min(s.focus - 1, shown.length - ROWS));
         shown.slice(start, start + ROWS).forEach(function (index, i) {

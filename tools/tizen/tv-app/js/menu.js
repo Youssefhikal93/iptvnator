@@ -8,6 +8,7 @@ window.Menu = (function () {
     var state = { options: [], index: 0, title: '', open: false };
 
     function render() {
+        var scroll = el.scrollTop;
         el.innerHTML = '';
         var title = document.createElement('div');
         title.className = 'menu-title';
@@ -19,6 +20,10 @@ window.Menu = (function () {
             row.textContent = option.label;
             el.appendChild(row);
         });
+        // A long list (the languages) scrolls inside the dialog.
+        el.scrollTop = scroll;
+        var focused = el.querySelector('.focused');
+        if (focused) focused.scrollIntoView({ block: 'nearest' });
     }
 
     function close() {
@@ -27,8 +32,8 @@ window.Menu = (function () {
     }
 
     return {
-        open: function (title, options) {
-            state = { options: options, index: 0, title: title, open: true };
+        open: function (title, options, index) {
+            state = { options: options, index: index || 0, title: title, open: true };
             render();
             el.classList.remove('hidden');
             var current = state;

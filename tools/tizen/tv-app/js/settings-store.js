@@ -23,6 +23,8 @@ window.Prefs = (function () {
         'sort:series': 'newest',
         onStart: 'last-channel',
         parentalRelockMs: 900000,
+        language: 'en',
+        theme: 'dark',
     };
 
     function read(key, fallback) {

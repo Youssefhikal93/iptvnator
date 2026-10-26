@@ -8,29 +8,29 @@ window.Settings = function (hooks) {
     var focus = 0;
     var active = false;
     var rows = [
-        { group: 'Playback', label: 'Autoplay next episode', key: 'autoplayMs', choices: [0, 5000, 8000, 15000], labels: ['Off', '5 s', '8 s', '15 s'] },
-        { label: 'Skip intro length', key: 'skipIntroSeconds', choices: [60, 75, 90, 120], labels: ['60 s', '75 s', '90 s', '120 s'] },
-        { label: 'Programme guide (now and next)', key: 'programmeGuide', choices: [true, false], labels: ['On', 'Off'] },
-        { label: 'Live preview', key: 'livePreview', choices: [true, false], labels: ['On', 'Off'] },
+        { get group() { return I18n.t('settings.playback'); }, get label() { return I18n.t('settings.autoplay'); }, key: 'autoplayMs', choices: [0, 5000, 8000, 15000], get labels() { return [I18n.t('common.off'), I18n.t('unit.seconds', { n: 5 }), I18n.t('unit.seconds', { n: 8 }), I18n.t('unit.seconds', { n: 15 })]; } },
+        { get label() { return I18n.t('settings.skipIntro'); }, key: 'skipIntroSeconds', choices: [60, 75, 90, 120], get labels() { return [60, 75, 90, 120].map(function (n) { return I18n.t('unit.seconds', { n: n }); }); } },
+        { get label() { return I18n.t('settings.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
+        { get label() { return I18n.t('settings.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
     ].concat(PlayerPicture.rows, [
-        { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
-        { label: 'Favorites and recents from', key: 'librarySources', choices: ['current', 'all'], labels: ['This source', 'All sources'] },
-        { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
-        { label: 'Default view for Series', key: 'view:series', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
-        { label: 'Default view for Live TV', key: 'view:live', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
-        { label: 'Default sort for Movies', key: 'sort:movies', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
-        { label: 'Default sort for Series', key: 'sort:series', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
-        { group: 'Start-up', label: 'On start open', key: 'onStart', choices: ['last-channel', 'home'], labels: ['Last channel', 'Home'] },
-        { group: 'Parental lock', label: 'PIN', run: function () { ParentalMenu.settings(render); }, text: function () { return ParentalLock.hasPin() ? 'Change PIN\u2026 / Remove PIN' : 'Set PIN\u2026'; } },
-        { label: 'Re-lock after', key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], labels: ['5 min', '15 min', '1 hour', 'When the app closes'] },
-        { group: 'Categories', label: 'Manage Live TV categories', action: 'live', text: hiddenText('live') },
-        { label: 'Manage Movies categories', action: 'movies', text: hiddenText('movies') },
-        { label: 'Manage Series categories', action: 'series', text: hiddenText('series') },
-        { group: 'Backup', label: 'Import from link\u2026', backup: 'import', text: '' },
-        { label: 'Export', backup: 'export', text: '' },
-    ], TmdbSettings.rows, [
-        { group: 'About', label: 'App version', text: VERSION },
-        { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
+        { get group() { return I18n.t('settings.display'); }, get label() { return I18n.t('settings.homeLayout'); }, key: 'homeLayout', choices: ['cinema', 'showcase'], get labels() { return [I18n.t('settings.cinema'), I18n.t('settings.showcase')]; } },
+        { get label() { return I18n.t('settings.libraryFrom'); }, key: 'librarySources', choices: ['current', 'all'], get labels() { return [I18n.t('settings.thisSource'), I18n.t('settings.allSources')]; } },
+        { get label() { return I18n.t('settings.viewMovies'); }, key: 'view:movies', choices: ['list', 'grid'], get labels() { return [I18n.t('settings.list'), I18n.t('settings.grid')]; } },
+        { get label() { return I18n.t('settings.viewSeries'); }, key: 'view:series', choices: ['list', 'grid'], get labels() { return [I18n.t('settings.list'), I18n.t('settings.grid')]; } },
+        { get label() { return I18n.t('settings.viewLive'); }, key: 'view:live', choices: ['list', 'grid'], get labels() { return [I18n.t('settings.list'), I18n.t('settings.grid')]; } },
+        { get label() { return I18n.t('settings.sortMovies'); }, key: 'sort:movies', choices: Sort.options.map(sortId), get labels() { return Sort.options.map(sortLabel); } },
+        { get label() { return I18n.t('settings.sortSeries'); }, key: 'sort:series', choices: Sort.options.map(sortId), get labels() { return Sort.options.map(sortLabel); } },
+        { get group() { return I18n.t('settings.startUp'); }, get label() { return I18n.t('settings.onStart'); }, key: 'onStart', choices: ['last-channel', 'home'], get labels() { return [I18n.t('settings.lastChannel'), I18n.t('rail.home')]; } },
+        { get group() { return I18n.t('settings.parentalLock'); }, get label() { return I18n.t('settings.pin'); }, run: function () { ParentalMenu.settings(render); }, text: function () { return ParentalLock.hasPin() ? I18n.t('settings.changePin') : I18n.t('settings.setPin'); } },
+        { get label() { return I18n.t('settings.relock'); }, key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], get labels() { return [I18n.t('unit.minutes', { n: 5 }), I18n.t('unit.minutes', { n: 15 }), I18n.t('unit.hour'), I18n.t('settings.relockClose')]; } },
+        { get group() { return I18n.t('settings.categories'); }, get label() { return I18n.t('settings.manageLive'); }, action: 'live', text: hiddenText('live') },
+        { get label() { return I18n.t('settings.manageMovies'); }, action: 'movies', text: hiddenText('movies') },
+        { get label() { return I18n.t('settings.manageSeries'); }, action: 'series', text: hiddenText('series') },
+        { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },
+        { get label() { return I18n.t('settings.export'); }, backup: 'export', text: '' },
+    ], TmdbSettings.rows, AppearanceSettings.rows, [
+        { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('settings.version'); }, text: VERSION },
+        { get label() { return I18n.t('settings.installGuide'); }, text: 'tools/tizen/INSTALLATION-TO-TV.md' },
     ]);
 
     // Read when drawn, so the count follows what the viewer hides.
@@ -65,7 +65,7 @@ window.Settings = function (hooks) {
     function render() {
         var scroll = root.scrollTop;
         root.textContent = '';
-        root.appendChild(el('h1', 'st-title', 'Settings'));
+        root.appendChild(el('h1', 'st-title', I18n.t('rail.settings')));
         rows.forEach(renderRow);
         root.scrollTop = scroll;
         var selected = root.querySelector('.focused');
@@ -85,7 +85,7 @@ window.Settings = function (hooks) {
             return;
         }
         Prefs.set(row.key, row.choices[(index + step) % row.choices.length]);
-        hooks.toast('Saved');
+        hooks.toast(I18n.t('toast.saved'));
         render();
     }
 

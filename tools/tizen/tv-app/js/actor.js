@@ -21,8 +21,8 @@ window.Actor = (function () {
         }
         root.appendChild(TmdbView.el('h1', '', person.name));
         root.appendChild(TmdbView.el('p', 'tm-bio', (person.biography || '').slice(0, 900)));
-        root.appendChild(TmdbView.cards('In your library', state.entries.map(TmdbView.catalogueCard), state.focus));
-        root.appendChild(TmdbView.el('p', '', state.loading ? 'Loading…' : state.entries.length ? 'OK: open · Return: detail page' : 'No matching items in this source'));
+        root.appendChild(TmdbView.cards(I18n.t('tmdb.inLibrary'), state.entries.map(TmdbView.catalogueCard), state.focus));
+        root.appendChild(TmdbView.el('p', '', I18n.t(state.loading ? 'common.loadingEllipsis' : state.entries.length ? 'actor.hint' : 'actor.none')));
         TmdbView.scroll(root);
     }
 

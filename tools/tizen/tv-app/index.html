@@ -21,7 +21,7 @@
             <div id="source-pill">
                 <span class="pill-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z"/></svg></span>
                 <span class="pill-text">
-                    <span id="source-name">No source</span>
+                    <span id="source-name" data-i18n="browser.noSource">No source</span>
                     <span id="source-type"></span>
                 </span>
                 <svg class="pill-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
@@ -31,67 +31,67 @@
                 <input id="search-input" autocomplete="off" />
             </div>
             <div id="view-toggle">
-                <span class="view-btn" data-mode="list" title="List view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z"/></svg></span>
-                <span class="view-btn" data-mode="grid" title="Grid view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h5V5H4zm0 7h5v-6H4zm6 0h5v-6h-5zm6 0h5v-6h-5zm-6-7h5V5h-5zm6-6v6h5V5z"/></svg></span>
-                <span class="view-btn hidden" data-mode="sort" title="Sort"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h12v2H3zm0 5h6v2H3z"/></svg></span>
-                <span id="guide-button" class="view-btn hidden" data-mode="guide">TV guide</span>
+                <span class="view-btn" data-mode="list" title="List view" data-i18n-title="header.listView"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z"/></svg></span>
+                <span class="view-btn" data-mode="grid" title="Grid view" data-i18n-title="header.gridView"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h5V5H4zm0 7h5v-6H4zm6 0h5v-6h-5zm6 0h5v-6h-5zm-6-7h5V5h-5zm6-6v6h5V5z"/></svg></span>
+                <span class="view-btn hidden" data-mode="sort" title="Sort" data-i18n-title="browser.sort"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h12v2H3zm0 5h6v2H3z"/></svg></span>
+                <span id="guide-button" class="view-btn hidden" data-mode="guide" data-i18n="header.guide">TV guide</span>
             </div>
         </header>
 
         <main id="content">
             <section id="categories" class="pane side"></section>
             <section id="items" class="pane main"></section>
-            <section id="live-preview" aria-label="Live preview"></section>
+            <section id="live-preview" aria-label="Live preview" data-i18n-label="settings.livePreview"></section>
             <section id="home"></section>
             <section id="settings"></section>
         </main>
 
         <div id="detail" class="hidden"></div>
-        <section id="guide" class="hidden" aria-label="TV guide"></section>
-        <section id="manage" class="hidden" aria-label="Manage categories"></section>
+        <section id="guide" class="hidden" aria-label="TV guide" data-i18n-label="header.guide"></section>
+        <section id="manage" class="hidden" aria-label="Manage categories" data-i18n-label="manage.title"></section>
         <div id="menu" class="hidden"></div>
         <div id="toast" class="hidden"></div>
         <div id="load-error" class="hidden" role="alertdialog" aria-labelledby="load-message">
             <div id="load-message"></div>
             <p id="load-hint"></p>
             <div class="load-buttons">
-                <button id="load-retry" class="state-button">Retry</button>
-                <button id="load-sources" class="state-button hidden">Go to Sources</button>
+                <button id="load-retry" class="state-button" data-i18n="common.retry">Retry</button>
+                <button id="load-sources" class="state-button hidden" data-i18n="load.goToSources">Go to Sources</button>
             </div>
             <p id="load-countdown"></p>
         </div>
 
-        <footer id="hints">Arrows: move · OK: open · CH ▲▼: page · Return: back</footer>
+        <footer id="hints" data-i18n="hints.default">Arrows: move · OK: open · CH ▲▼: page · Return: back</footer>
 
         <div id="form" class="hidden">
-            <h1 id="form-title">Add source</h1>
+            <h1 id="form-title" data-i18n="form.addSource">Add source</h1>
             <div class="form-columns">
                 <div id="form-source">
-                    <label for="form-name">Name (optional)</label>
+                    <label for="form-name" data-i18n="form.nameOptional">Name (optional)</label>
                     <input id="form-name" />
-                    <label for="form-url" id="form-url-label">Server URL</label>
+                    <label for="form-url" id="form-url-label" data-i18n="form.serverUrl">Server URL</label>
                     <input id="form-url" />
                     <div id="form-login">
-                        <label for="form-user">Username</label>
+                        <label for="form-user" data-i18n="form.username">Username</label>
                         <input id="form-user" />
-                        <label for="form-pass">Password</label>
+                        <label for="form-pass" data-i18n="form.password">Password</label>
                         <input id="form-pass" type="password" />
                     </div>
                 </div>
                 <div id="form-guide">
-                    <label for="form-epg-url">Guide link (XMLTV) (optional)</label>
+                    <label for="form-epg-url" data-i18n="form.guideLink">Guide link (XMLTV) (optional)</label>
                     <input id="form-epg-url" placeholder="https://example.com/guide.xml.gz" />
-                    <label for="form-epg-offset">Guide time offset (hours, -12 to +12)</label>
+                    <label for="form-epg-offset" data-i18n="form.guideOffset">Guide time offset (hours, -12 to +12)</label>
                     <input id="form-epg-offset" type="number" min="-12" max="12" step="1" value="0" />
                     <div id="form-epg-preference">
-                        <label for="form-epg-prefer">Prefer my guide</label>
-                        <select id="form-epg-prefer"><option value="yes">On</option><option value="no">Off</option></select>
+                        <label for="form-epg-prefer" data-i18n="form.preferGuide">Prefer my guide</label>
+                        <select id="form-epg-prefer"><option value="yes" data-i18n="common.on">On</option><option value="no" data-i18n="common.off">Off</option></select>
                     </div>
                 </div>
             </div>
             <div class="form-buttons">
-                <button id="form-save">Save</button>
-                <button id="form-cancel">Cancel</button>
+                <button id="form-save" data-i18n="common.save">Save</button>
+                <button id="form-cancel" data-i18n="common.cancel">Cancel</button>
             </div>
             <p id="form-msg"></p>
         </div>
@@ -105,8 +105,8 @@
                 <div class="pl-spinner"></div>
                 <div id="pl-status-text"></div>
                 <div id="pl-error-actions" class="hidden">
-                    <button class="state-button">Retry playback</button>
-                    <button class="state-button">Back</button>
+                    <button class="state-button" data-i18n="player.retryPlayback">Retry playback</button>
+                    <button class="state-button" data-i18n="common.back">Back</button>
                 </div>
             </div>
             <div id="pl-controls" class="hidden">
@@ -116,7 +116,7 @@
                         <div id="pl-subtitle"></div>
                     </div>
                     <span id="pl-speed" class="pl-chip hidden"></span>
-                    <span id="pl-live" class="pl-badge hidden">LIVE</span>
+                    <span id="pl-live" class="pl-badge hidden" data-i18n="player.live">LIVE</span>
                 </div>
                 <div class="pl-dock">
                     <div id="pl-epg" class="hidden"></div>
@@ -137,9 +137,9 @@
                     <div id="pl-hint"></div>
                 </div>
             </div>
-            <div id="pl-skip" class="hidden">Skip intro <b>▼</b></div>
+            <div id="pl-skip" class="hidden"><span data-i18n="player.skipIntro">Skip intro</span> <b>▼</b></div>
             <div id="pl-next" class="hidden">
-                <div class="pl-next-eyebrow">Up next</div>
+                <div class="pl-next-eyebrow" data-i18n="player.upNext">Up next</div>
                 <div id="pl-next-title"></div>
                 <div id="pl-next-count"></div>
             </div>
@@ -149,7 +149,7 @@
                 <div id="pl-resume-title"></div>
                 <div class="pl-resume-buttons">
                     <span id="pl-resume-yes"></span>
-                    <span id="pl-resume-no">Start over</span>
+                    <span id="pl-resume-no" data-i18n="detail.startOver">Start over</span>
                 </div>
             </div>
         </div>
@@ -159,8 +159,30 @@
         <script src="vendor/mpegts.js"></script>
         <script src="js/log.js"></script>
         <script src="js/keys.js"></script>
+        <script src="js/i18n.js"></script>
+        <script src="js/i18n/en.js"></script>
+        <script src="js/i18n/ar.js"></script>
+        <script src="js/i18n/ary.js"></script>
+        <script src="js/i18n/by.js"></script>
+        <script src="js/i18n/de.js"></script>
+        <script src="js/i18n/el.js"></script>
+        <script src="js/i18n/es.js"></script>
+        <script src="js/i18n/fr.js"></script>
+        <script src="js/i18n/hu.js"></script>
+        <script src="js/i18n/it.js"></script>
+        <script src="js/i18n/ja.js"></script>
+        <script src="js/i18n/ko.js"></script>
+        <script src="js/i18n/nl.js"></script>
+        <script src="js/i18n/pl.js"></script>
+        <script src="js/i18n/pt.js"></script>
+        <script src="js/i18n/ru.js"></script>
+        <script src="js/i18n/tr.js"></script>
+        <script src="js/i18n/uk.js"></script>
+        <script src="js/i18n/zh.js"></script>
+        <script src="js/i18n/zhtw.js"></script>
         <script src="js/progress.js"></script>
         <script src="js/settings-store.js"></script>
+        <script src="js/appearance.js"></script>
         <script src="js/tmdb-store.js"></script>
         <script src="js/tmdb.js"></script>
         <script src="js/tmdb-view.js"></script>
@@ -204,6 +226,7 @@
         <script src="js/player.js"></script>
         <script src="js/form.js"></script>
         <script src="js/menu.js"></script>
+        <script src="js/appearance-settings.js"></script>
         <script src="js/pin-pad.js"></script>
         <script src="js/parental-menu.js"></script>
         <script src="js/source-guide.js"></script>

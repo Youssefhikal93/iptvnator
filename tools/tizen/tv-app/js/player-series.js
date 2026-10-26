@@ -56,10 +56,10 @@ window.PlayerSeries = function (api) {
         var req = api.current();
         if (!req || req.live) return [];
         var list = [];
-        if (inIntro()) list.push({ label: 'Skip intro', run: skipIntro });
-        if (nextIndex() >= 0) list.push({ label: 'Next episode', run: playNext });
-        if (episodes()) list.push({ label: 'Episodes', run: openPanel });
-        list.push({ label: 'Audio & subtitles', run: api.openMenu });
+        if (inIntro()) list.push({ label: I18n.t('player.skipIntro'), run: skipIntro });
+        if (nextIndex() >= 0) list.push({ label: I18n.t('player.nextEpisode'), run: playNext });
+        if (episodes()) list.push({ label: I18n.t('player.episodes'), run: openPanel });
+        list.push({ label: I18n.t('player.hint.audioSubs'), run: api.openMenu });
         return list;
     }
 
@@ -101,13 +101,13 @@ window.PlayerSeries = function (api) {
         var autoplayMs = Prefs.get('autoplayMs');
         if (!api.isEnded() || !autoplayMs) {
             s.autoplayAt = 0;
-            ui.nextCount.textContent = 'OK: play now · Return: hide';
+            ui.nextCount.textContent = I18n.t('player.nextHide');
             return;
         }
         if (!s.autoplayAt) s.autoplayAt = Date.now() + autoplayMs;
         var left = Math.ceil((s.autoplayAt - Date.now()) / 1000);
         if (left <= 0) return playNext();
-        ui.nextCount.textContent = 'Playing in ' + left + ' s · OK: play now · Return: cancel';
+        ui.nextCount.textContent = I18n.t('player.nextCountdown', { s: left });
     }
 
     // ---- Episodes panel ---------------------------------------------------
@@ -154,7 +154,7 @@ window.PlayerSeries = function (api) {
         if (p.seasons.length > 1) {
             var pills = el('div', 'pl-ep-pills');
             p.seasons.forEach(function (season, i) {
-                pills.appendChild(el('span', 'pl-ep-pill' + (i === p.season ? ' active' : ''), 'Season ' + season));
+                pills.appendChild(el('span', 'pl-ep-pill' + (i === p.season ? ' active' : ''), I18n.t('episodes.season', { n: season })));
             });
             ui.panel.appendChild(pills);
         }
@@ -164,7 +164,7 @@ window.PlayerSeries = function (api) {
             var ep = eps.items[index];
             var row = el('div', 'pl-ep-row' + (start + i === p.focus ? ' focus' : '') + (index === eps.index ? ' playing' : ''));
             row.appendChild(el('span', 'pl-ep-label', String(ep.label).replace(/\s+/g, ' ')));
-            if (index === eps.index) row.appendChild(el('span', 'pl-ep-tag', 'Playing'));
+            if (index === eps.index) row.appendChild(el('span', 'pl-ep-tag', I18n.t('player.playing')));
             var progress = Progress.of(Progress.episodeId(ep));
             if (progress) {
                 var bar = el('div', 'pl-ep-bar');
@@ -175,7 +175,7 @@ window.PlayerSeries = function (api) {
             }
             ui.panel.appendChild(row);
         });
-        ui.panel.appendChild(el('div', 'pl-ep-hint', '◀ ▶ Season · ▲▼ Episode · OK Play · Return Close'));
+        ui.panel.appendChild(el('div', 'pl-ep-hint', I18n.t('player.episodesHint')));
     }
 
     function panelKey(code) {

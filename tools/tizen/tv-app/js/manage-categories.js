@@ -10,7 +10,7 @@ window.ManageCategories = function (hooks) {
     'use strict';
 
     var KEY = Keys;
-    var LABELS = { live: 'Live TV', movies: 'Movies', series: 'Series' };
+    var LABELS = { get live() { return I18n.t('rail.live'); }, get movies() { return I18n.t('rail.movies'); }, get series() { return I18n.t('rail.series'); } };
     var root = document.getElementById('manage');
     var s = { open: false, section: '', all: [], zone: 'list', tool: 0, typing: false, changed: false };
 
@@ -26,28 +26,29 @@ window.ManageCategories = function (hooks) {
     var box = el('div', 'mc-search');
     var input = el('input');
     input.autocomplete = 'off';
-    input.placeholder = 'Search categories…';
+    input.placeholder = I18n.t('manage.search');
     box.appendChild(input);
-    var all = el('span', 'mc-btn', 'Show all');
+    var all = el('span', 'mc-btn', I18n.t('manage.showAll'));
     bar.appendChild(box);
     bar.appendChild(all);
     var pane = el('div', 'pane main mc-list');
     root.appendChild(title);
     root.appendChild(bar);
     root.appendChild(pane);
-    root.appendChild(el('div', 'mc-hint', 'OK: show or hide · ▲ at the top: search and Show all · Return: done'));
+    var hint = el('div', 'mc-hint', I18n.t('manage.hint'));
+    root.appendChild(hint);
 
     var list = List(pane, {
         rows: 8,
         title: function () {
             var hidden = HiddenCategories.count(hooks.sourceId(), s.section);
-            return 'Categories' + (hidden ? ' · ' + hidden + ' hidden' : '');
+            return I18n.t('manage.categories') + (hidden ? ' · ' + I18n.t('browser.hidden', { count: hidden }) : '');
         },
         label: function (category) {
             return category.category_name;
         },
         badge: function (category) {
-            return HiddenCategories.isHidden(hooks.sourceId(), s.section, category.category_id) ? 'Hidden' : 'Shown';
+            return HiddenCategories.isHidden(hooks.sourceId(), s.section, category.category_id) ? I18n.t('manage.hidden') : I18n.t('manage.shown');
         },
         decorate: function (row, category) {
             if (HiddenCategories.isHidden(hooks.sourceId(), s.section, category.category_id)) row.classList.add('mc-off');
@@ -71,7 +72,7 @@ window.ManageCategories = function (hooks) {
 
     function refresh(index) {
         var searching = !!input.value.trim();
-        list.set(matching(), index || 0, searching ? ['No matching categories', 'Try a shorter search.'] : ['No categories', 'This source has none in this section.']);
+        list.set(matching(), index || 0, searching ? [I18n.t('manage.noMatch'), I18n.t('manage.noMatchHint')] : [I18n.t('browser.noCategories'), I18n.t('manage.noneInSection')]);
         paint();
     }
 
@@ -96,7 +97,11 @@ window.ManageCategories = function (hooks) {
     function show(section, categories) {
         s = { open: true, section: section, all: categories.filter(HiddenCategories.isReal), zone: 'list', tool: 0, typing: false, changed: false };
         input.value = '';
-        title.textContent = 'Manage ' + LABELS[section] + ' categories';
+        title.textContent = I18n.t('manage.titleOf', { section: LABELS[section] });
+        // Built once; follow the language chosen since.
+        input.placeholder = I18n.t('manage.search');
+        all.textContent = I18n.t('manage.showAll');
+        hint.textContent = I18n.t('manage.hint');
         root.classList.remove('hidden');
         refresh(0);
     }
@@ -123,7 +128,7 @@ window.ManageCategories = function (hooks) {
     function showAll() {
         HiddenCategories.showAll(hooks.sourceId(), s.section);
         s.changed = true;
-        hooks.toast('All categories shown');
+        hooks.toast(I18n.t('manage.allShown'));
         refresh(list.index());
     }
 
@@ -157,7 +162,7 @@ window.ManageCategories = function (hooks) {
         return hooks.load(section).then(function (categories) {
             show(section, categories);
         }).catch(function () {
-            hooks.toast('Could not load the categories');
+            hooks.toast(I18n.t('manage.loadFailed'));
         });
     }
 
@@ -167,24 +172,24 @@ window.ManageCategories = function (hooks) {
         var options = [];
         if (HiddenCategories.isReal(row)) {
             options.push({
-                label: 'Hide category',
+                label: I18n.t('manage.hide'),
                 run: function () {
                     HiddenCategories.hide(id, section, row.category_id);
-                    hooks.toast('Hidden: ' + row.category_name);
+                    hooks.toast(I18n.t('manage.toastHidden', { name: row.category_name }));
                     hooks.changed(section);
                 },
             });
             options.push({
-                label: 'Hide all except this',
+                label: I18n.t('manage.hideOthers'),
                 run: function () {
                     HiddenCategories.hideAllExcept(id, section, base, row.category_id);
-                    hooks.toast('Hidden all except: ' + row.category_name);
+                    hooks.toast(I18n.t('manage.toastHiddenOthers', { name: row.category_name }));
                     hooks.changed(section);
                 },
             });
         }
-        options.push({ label: 'Manage categories', run: function () { open(section); } });
-        options.push({ label: 'Cancel' });
+        options.push({ label: I18n.t('manage.title'), run: function () { open(section); } });
+        options.push({ label: I18n.t('common.cancel') });
         return options;
     }
 

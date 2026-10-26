@@ -57,7 +57,7 @@ window.ChannelList = function (hooks) {
         }
         node.appendChild(logo);
         var label = element('div', 'pl-channel-label');
-        label.appendChild(element('div', 'pl-channel-name', channel.name || 'Channel'));
+        label.appendChild(element('div', 'pl-channel-name', channel.name || I18n.t('player.hint.channel')));
         programme(label, channel);
         node.appendChild(label);
         return node;
@@ -78,22 +78,22 @@ window.ChannelList = function (hooks) {
     function render() {
         panel.textContent = '';
         var category = categories[categoryIndex];
-        panel.appendChild(element('div', 'pl-channel-header', '\u25c0  ' + (category ? category.category_name : 'Channel list') + '  \u25b6'));
+        panel.appendChild(element('div', 'pl-channel-header', '\u25c0  ' + (category ? I18n.categoryName(category) : I18n.t('player.hint.channelList')) + '  \u25b6'));
         // Empty / one / short / long lists all keep focus inside the window.
         var start = Math.max(0, Math.min(focus - Math.floor(ROWS / 2), channels.length - ROWS));
         var visible = channels.slice(start, start + ROWS);
         var list = element('div', 'pl-channel-rows');
         visible.forEach(function (channel, i) { list.appendChild(row(channel, start + i)); });
-        if (!visible.length) list.appendChild(element('div', 'pl-channel-empty', message || 'Empty category'));
+        if (!visible.length) list.appendChild(element('div', 'pl-channel-empty', message || I18n.t('empty.category.title')));
         panel.appendChild(list);
-        panel.appendChild(element('div', 'pl-channel-hint', 'OK: watch \u00b7 \u25c0 \u25b6: category \u00b7 Return: close'));
+        panel.appendChild(element('div', 'pl-channel-hint', I18n.t('channels.hint')));
         wantProgrammes(visible.filter(function (channel) { return channel.stream_id !== undefined; }));
     }
 
     function failed(mine) {
         if (!opened || mine !== token) return;
         channels = [];
-        message = 'Could not load channels';
+        message = I18n.t('channels.loadFailed');
         render();
         Log.error('CHANNEL LIST FAIL');
     }
@@ -102,11 +102,11 @@ window.ChannelList = function (hooks) {
         var mine = ++token;
         channels = [];
         focus = 0;
-        message = 'Loading\u2026';
+        message = I18n.t('common.loadingEllipsis');
         render();
         var category = categories[categoryIndex];
         if (!category) {
-            message = 'No categories';
+            message = I18n.t('browser.noCategories');
             return render();
         }
         hooks.channels.channels(category.category_id).then(function (loaded) {
@@ -122,7 +122,7 @@ window.ChannelList = function (hooks) {
         var mine = ++token;
         channels = [];
         categories = [];
-        message = 'Loading\u2026';
+        message = I18n.t('common.loadingEllipsis');
         render();
         hooks.channels.view().then(function (view) {
             if (!opened || mine !== token) return;

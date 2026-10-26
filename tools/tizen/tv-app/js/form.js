@@ -35,8 +35,8 @@ window.Form = (function () {
         ['form-name', 'form-url', 'form-user', 'form-pass'].forEach(function (id) {
             $(id).value = '';
         });
-        $('form-title').textContent = xtream ? 'Add Xtream account' : 'Add M3U playlist';
-        $('form-url-label').textContent = xtream ? 'Server URL' : 'Playlist link';
+        $('form-title').textContent = I18n.t(xtream ? 'form.addXtream' : 'form.addM3u');
+        $('form-url-label').textContent = I18n.t(xtream ? 'form.serverUrl' : 'form.playlistLink');
         $('form-url').placeholder = xtream ? 'http://example.com:8080' : 'https://example.com/playlist.m3u';
         $('form-login').classList.toggle('hidden', !xtream);
         $('form-source').classList.toggle('hidden', !!editing && !whole);
@@ -44,7 +44,7 @@ window.Form = (function () {
         $('form-epg-url').value = editing && editing.epgUrl || '';
         $('form-epg-offset').value = editing && editing.epgOffset || 0;
         $('form-epg-prefer').value = editing && editing.epgPrefer === false ? 'no' : 'yes';
-        if (editing) $('form-title').textContent = whole ? 'Edit source' : 'Guide link';
+        if (editing) $('form-title').textContent = I18n.t(whole ? 'form.editSource' : 'form.guideTitle');
         if (whole) {
             $('form-name').value = editing.name || '';
             $('form-url').value = editing.url || '';
@@ -66,8 +66,8 @@ window.Form = (function () {
     function save() {
         var guideUrl = $('form-epg-url').value.trim();
         var offset = Number($('form-epg-offset').value);
-        if (guideUrl && !/^https?:\/\//i.test(guideUrl)) return message('The guide link must start with http:// or https://');
-        if (!isFinite(offset) || offset < -12 || offset > 12) return message('The guide time offset must be from -12 to +12.');
+        if (guideUrl && !/^https?:\/\//i.test(guideUrl)) return message(I18n.t('form.guideLinkScheme'));
+        if (!isFinite(offset) || offset < -12 || offset > 12) return message(I18n.t('form.offsetRange'));
         var source = { type: type, name: $('form-name').value, url: $('form-url').value.trim() };
         if (editing) source = Object.assign({}, editing);
         var before = editing || {};
@@ -83,11 +83,11 @@ window.Form = (function () {
             source.user = $('form-user').value.trim();
             source.pass = $('form-pass').value.trim();
         }
-        if (!/^https?:\/\//i.test(source.url)) return message('The link must start with http:// or https://');
-        if (type === 'xtream' && (!source.user || !source.pass)) return message('Enter the username and password.');
+        if (!/^https?:\/\//i.test(source.url)) return message(I18n.t('form.linkScheme'));
+        if (type === 'xtream' && (!source.user || !source.pass)) return message(I18n.t('form.needLogin'));
         // Only a new login or server needs the provider's answer.
         if (whole && source.url === before.url && source.user === before.user && source.pass === before.pass) return close(source);
-        message('Checking…');
+        message(I18n.t('tmdb.checking'));
         var adapter = type === 'xtream' ? XtreamSource(source) : M3uSource(source);
         adapter
             .account()
@@ -98,7 +98,7 @@ window.Form = (function () {
                 // A lapsed account still has a valid login; the account screen explains it.
                 if (whole && err.code === 'account' && err.reason !== 'login') return close(source);
                 Log.error('ADD SOURCE FAIL ' + err.message);
-                message('Could not connect: ' + err.message);
+                message(I18n.t('form.connectFailed', { reason: err.message }));
             });
     }
 

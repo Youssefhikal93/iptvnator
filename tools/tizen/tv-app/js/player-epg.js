@@ -15,8 +15,7 @@ window.PlayerEpg = function () {
     }
 
     function clock(ms) {
-        var d = new Date(ms);
-        return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+        return I18n.time(ms);
     }
 
     function row(tag, programme) {
@@ -32,7 +31,7 @@ window.PlayerEpg = function () {
         box.textContent = '';
         s.parts = null;
         if (!p || !p.now) return box.classList.add('hidden');
-        var now = row('Now', p.now);
+        var now = row(I18n.t('epg.now'), p.now);
         var left = el('span', 'pl-epg-left');
         now.appendChild(left);
         box.appendChild(now);
@@ -41,8 +40,8 @@ window.PlayerEpg = function () {
         bar.appendChild(fill);
         box.appendChild(bar);
         if (p.now.desc) box.appendChild(el('div', 'pl-epg-desc', p.now.desc));
-        if (p.next) box.appendChild(row('Next', p.next));
-        if (s.req.watchFromStart) box.appendChild(el('div', 'pl-epg-catch-up', 'Yellow / Info: Watch from start'));
+        if (p.next) box.appendChild(row(I18n.t('epg.next'), p.next));
+        if (s.req.watchFromStart) box.appendChild(el('div', 'pl-epg-catch-up', I18n.t('epg.watchFromStart')));
         s.parts = { left: left, fill: fill };
         box.classList.remove('hidden');
     }
@@ -90,7 +89,7 @@ window.PlayerEpg = function () {
                 return;
             }
             s.parts.fill.style.width = Math.min(100, ((t - now.start) / (now.end - now.start)) * 100) + '%';
-            s.parts.left.textContent = Math.max(1, Math.round((now.end - t) / 60000)) + ' min left';
+            s.parts.left.textContent = I18n.t('epg.minLeft', { m: Math.max(1, Math.round((now.end - t) / 60000)) });
         },
     };
 };

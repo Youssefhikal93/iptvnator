@@ -67,7 +67,7 @@ window.Backup = (function () {
         var snapshot = reference.snapshot || reference.collectionItem || snapshots.filter(function (entry) {
             return entry && entry.type === reference.contentType && entry.xtream_id === reference.xtreamId;
         })[0] || {};
-        var title = snapshot.title || snapshot.name || 'Saved ' + reference.contentType + ' ' + reference.xtreamId;
+        var title = snapshot.title || snapshot.name || I18n.t('backup.savedTitle', { type: reference.contentType, id: reference.xtreamId });
         var item = { name: String(title), stream_icon: snapshot.posterUrl || snapshot.poster_url || snapshot.stream_icon || snapshot.cover || '', container_extension: snapshot.container_extension || 'mp4' };
         if (reference.contentType === 'series') { item.series_id = reference.xtreamId; item.cover = item.stream_icon; }
         else item.stream_id = reference.xtreamId;
@@ -233,7 +233,7 @@ window.Backup = (function () {
             SECTIONS.forEach(function (section) { favorites += source.favorites[section].length; });
             Object.assign(positions, source.progress);
         });
-        return backup.sources.length + ' sources, ' + favorites + ' favorites, ' + Object.keys(positions).length + ' watch positions';
+        return I18n.t('backup.summary', { sources: backup.sources.length, favorites: favorites, positions: Object.keys(positions).length });
     }
 
     return { parse: parse, build: build, apply: BackupStore.apply, summary: summary };

@@ -4,9 +4,9 @@
     z-index: 100;
     overflow: auto;
     padding: 50px;
-    background: #171b25;
-    color: #f3f4fa;
-    border: 2px solid #66708a;
+    background: var(--panel-bg);
+    color: var(--panel-fg);
+    border: 2px solid var(--panel-border);
     border-radius: 18px;
     font-size: 28px;
 }
@@ -18,10 +18,10 @@
     margin: 12px 20px 12px 0;
     padding: 18px 26px;
     border-radius: 8px;
-    border: 2px solid #66708a;
-    background: #252c3d;
-    color: #f3f4fa;
+    border: 2px solid var(--panel-border);
+    background: var(--field-bg);
+    color: var(--panel-fg);
     text-decoration: none;
     font-size: 27px;
 }
-#backup-screen :focus { outline: 4px solid #a9baff; outline-offset: 4px; }
+#backup-screen :focus { outline: 4px solid var(--panel-outline); outline-offset: 4px; }

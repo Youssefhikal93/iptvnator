@@ -15,20 +15,19 @@ window.GuideView = function (el) {
     }
 
     function clock(time) {
-        var date = new Date(time);
-        return ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2);
+        return I18n.time(time);
     }
 
     function day(time) {
-        return new Date(time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        return I18n.date(time, { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
     function build(title) {
         el.innerHTML = '';
-        el.appendChild(node('h1', 'gd-title', 'TV guide'));
+        el.appendChild(node('h1', 'gd-title', I18n.t('header.guide')));
         el.appendChild(node('p', 'gd-category', title));
         var header = node('div', 'gd-header');
-        header.appendChild(node('div', 'gd-channel', 'Channel'));
+        header.appendChild(node('div', 'gd-channel', I18n.t('player.hint.channel')));
         marks = node('div', 'gd-marks');
         header.appendChild(marks);
         el.appendChild(header);
@@ -37,14 +36,14 @@ window.GuideView = function (el) {
         body.appendChild(rows);
         var timeline = node('div', 'gd-timeline');
         nowLine = node('div', 'gd-now-line');
-        nowLine.setAttribute('aria-label', 'Now');
+        nowLine.setAttribute('aria-label', I18n.t('epg.now'));
         timeline.appendChild(nowLine);
         body.appendChild(timeline);
         el.appendChild(body);
-        el.appendChild(node('p', 'gd-hints', 'Arrows: move \u00b7 OK: watch / programme details \u00b7 CH +/-: page \u00b7 Return: Live TV'));
+        el.appendChild(node('p', 'gd-hints', I18n.t('guide.hints')));
         popup = node('div', 'gd-popup hidden');
         popup.setAttribute('role', 'dialog');
-        popup.setAttribute('aria-label', 'Programme details');
+        popup.setAttribute('aria-label', I18n.t('guide.programmeDetails'));
         el.appendChild(popup);
     }
 
@@ -74,7 +73,7 @@ window.GuideView = function (el) {
         tile.appendChild(node('strong', '', programme.title));
         if (programme.end <= Date.now() && CatchUp.playable(frame.channel, programme)) {
             var archive = node('span', 'gd-catch-up', '\u21ba');
-            archive.setAttribute('aria-label', 'Catch-up available');
+            archive.setAttribute('aria-label', I18n.t('guide.catchUpAvailable'));
             tile.appendChild(archive);
         }
         tile.appendChild(node('small', '', clock(programme.start) + ' - ' + clock(programme.end)));
@@ -89,12 +88,12 @@ window.GuideView = function (el) {
         var track = node('div', 'gd-track');
         strip.appendChild(track);
         if (frame.programmes === undefined) {
-            track.appendChild(node('div', 'gd-loading skeleton', 'Loading programmes\u2026'));
+            track.appendChild(node('div', 'gd-loading skeleton', I18n.t('guide.loading')));
         } else {
             frame.programmes.forEach(function (programme) {
                 if (programme.end > frame.start && programme.start < frame.start + GuideTime.span) track.appendChild(block(programme, frame));
             });
-            if (!track.childNodes.length) track.appendChild(node('div', 'gd-empty', 'No programme information'));
+            if (!track.childNodes.length) track.appendChild(node('div', 'gd-empty', I18n.t('guide.noInfo')));
         }
         var old = rows.querySelector('[data-index="' + frame.index + '"]');
         if (old) rows.replaceChild(strip, old);
@@ -106,9 +105,9 @@ window.GuideView = function (el) {
         var card = node('div', 'gd-popup-card');
         card.appendChild(node('h2', '', programme.title));
         card.appendChild(node('p', 'gd-popup-time', day(programme.start) + ' \u00b7 ' + clock(programme.start) + ' - ' + clock(programme.end)));
-        card.appendChild(node('p', 'gd-description', programme.desc || 'No description available'));
-        if (playable) card.appendChild(node('button', 'state-button gd-watch', 'Watch from start'));
-        card.appendChild(node('p', 'gd-hints', playable ? 'OK: Watch from start \u00b7 Return: close' : 'OK / Return: close'));
+        card.appendChild(node('p', 'gd-description', programme.desc || I18n.t('guide.noDescription')));
+        if (playable) card.appendChild(node('button', 'state-button gd-watch', I18n.t('player.watchFromStart')));
+        card.appendChild(node('p', 'gd-hints', I18n.t(playable ? 'guide.popupHintPlay' : 'guide.popupHint')));
         popup.appendChild(card);
         popup.classList.remove('hidden');
         if (playable) popup.querySelector('button').focus();
@@ -123,7 +122,7 @@ window.GuideView = function (el) {
         times: times,
         row: row,
         clearRows: function () { rows.innerHTML = ''; },
-        empty: function () { rows.appendChild(node('p', 'gd-empty', 'No channels in this category')); },
+        empty: function () { rows.appendChild(node('p', 'gd-empty', I18n.t('guide.noChannels'))); },
         details: details,
         closeDetails: function () { popup.classList.add('hidden'); },
         hide: function () { el.classList.add('hidden'); },

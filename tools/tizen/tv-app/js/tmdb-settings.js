@@ -14,8 +14,8 @@ window.TmdbSettings = (function () {
         dialog = document.createElement('div');
         dialog.id = 'tmdb-key-entry';
         dialog.className = 'tm-dialog';
-        dialog.innerHTML = '<h1>TMDB API key</h1><p>Use your own free TMDB API key. Titles are sent to TMDB only while a key is set.</p>' +
-            '<input type="text" aria-label="TMDB API key" autocomplete="off" /><div><button>Save</button><button>Cancel</button></div>';
+        dialog.innerHTML = '<h1>' + I18n.t('tmdb.keyTitle') + '</h1><p>' + I18n.t('tmdb.keyIntro') + '</p>' +
+            '<input type="text" aria-label="' + I18n.t('tmdb.keyTitle') + '" autocomplete="off" /><div><button>' + I18n.t('common.save') + '</button><button>' + I18n.t('common.cancel') + '</button></div>';
         var input = dialog.querySelector('input');
         input.value = Prefs.get('tmdbApiKey') || '';
         var buttons = dialog.querySelectorAll('button');
@@ -35,16 +35,16 @@ window.TmdbSettings = (function () {
         if (action === 'tmdb-remove') {
             Prefs.set('tmdbApiKey', '');
             status = '';
-            hooks.toast('Key removed');
+            hooks.toast(I18n.t('tmdb.keyRemoved'));
             return changed();
         }
-        if (!Tmdb.enabled()) return hooks.toast('Set a TMDB API key first');
-        status = 'Checking…';
+        if (!Tmdb.enabled()) return hooks.toast(I18n.t('tmdb.setFirst'));
+        status = I18n.t('tmdb.checking');
         changed();
         var secret = Prefs.get('tmdbApiKey');
         Tmdb.request('/configuration', {}, true).then(function (body) {
             if (secret !== Prefs.get('tmdbApiKey')) return;
-            status = body ? 'Key works' : 'Key refused';
+            status = I18n.t(body ? 'tmdb.keyWorks' : 'tmdb.keyRefused');
             hooks.toast(status);
             changed();
         });
@@ -52,13 +52,13 @@ window.TmdbSettings = (function () {
 
     return {
         rows: [
-            { group: 'TMDB', label: 'TMDB API key', action: 'tmdb-key', text: function () {
+            { group: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key', text: function () {
                 var secret = Prefs.get('tmdbApiKey');
-                return secret ? 'Set ••••' + secret.slice(-4) : 'Not set';
+                return secret ? I18n.t('tmdb.keySet', { last: secret.slice(-4) }) : I18n.t('tmdb.notSet');
             } },
-            { label: 'Test key', action: 'tmdb-test', text: function () { return status || 'OK to test'; } },
-            { label: 'Remove key', action: 'tmdb-remove', text: '' },
-            { label: 'The Movie Database', text: 'This product uses the TMDB API but is not endorsed or certified by TMDB.' },
+            { get label() { return I18n.t('tmdb.testKey'); }, action: 'tmdb-test', text: function () { return status || I18n.t('tmdb.okToTest'); } },
+            { get label() { return I18n.t('tmdb.removeKey'); }, action: 'tmdb-remove', text: '' },
+            { label: 'The Movie Database', text: I18n.t('tmdb.attribution') },
         ],
         act: act,
         isOpen: function () { return !!dialog; },

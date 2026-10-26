@@ -61,7 +61,7 @@ window.List = function (el, options) {
         if (!count) {
             var empty = document.createElement('div');
             empty.className = 'list-empty';
-            var lines = typeof state.empty === 'string' ? [state.empty, 'Choose another category or try again later.'] : state.empty;
+            var lines = typeof state.empty === 'string' ? [state.empty, I18n.t('list.chooseAnother')] : state.empty;
             empty.textContent = lines[0];
             var hint = document.createElement('small');
             hint.textContent = lines[1];
@@ -102,7 +102,7 @@ window.List = function (el, options) {
     function renderSkeleton(rows) {
         var strip = document.createElement('div');
         strip.className = state.grid ? 'grid' : '';
-        strip.setAttribute('aria-label', 'Loading');
+        strip.setAttribute('aria-label', I18n.t('common.loading'));
         for (var i = 0; i < (state.grid ? GRID.cols * GRID.rows : rows); i++) {
             var tile = document.createElement('div');
             tile.className = state.grid ? 'card skeleton' : 'row skeleton';
@@ -146,7 +146,7 @@ window.List = function (el, options) {
             state.loading = false;
             state.items = items || [];
             state.index = Math.max(0, Math.min(index || 0, state.items.length - 1));
-            state.empty = emptyText || 'Nothing here';
+            state.empty = emptyText || I18n.t('list.nothingHere');
             render();
         },
         loading: function () {

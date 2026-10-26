@@ -105,6 +105,17 @@ window.Player = (function () {
             showStatus(heading(current) + '\nThe stream stopped and could not reconnect.', true);
         },
     });
+    var sleep = PlayerSleep({
+        warn: closeMenu,
+        media: function () {
+            if (!current || current.live || !ready || (!started && !ended) || progressBlocked()) return null;
+            return { position: position(), duration: duration(), ended: ended, rate: speed };
+        },
+        stop: function () {
+            stop();
+            document.dispatchEvent(new Event('sleep-timer-stop'));
+        },
+    });
     var series = PlayerSeries({
         current: function () {
             return current;
@@ -115,9 +126,17 @@ window.Player = (function () {
         isEnded: function () {
             return ended;
         },
+        autoplayBlocked: sleep.blocksAutoplay,
         play: play,
         openMenu: openMenu,
         showControls: showControls,
+    });
+
+    PlayerPicture.init({
+        root: playerEl,
+        video: video,
+        avplay: function () { return usingAv && avplay(); },
+        box: function () { return box; },
     });
 
     function avplay() {
@@ -138,13 +157,7 @@ window.Player = (function () {
         playerEl.style.top = box ? at.y + 'px' : '';
         playerEl.style.width = box ? at.w + 'px' : '';
         playerEl.style.height = box ? at.h + 'px' : '';
-        if (usingAv && avplay()) {
-            try {
-                avplay().setDisplayRect(at.x, at.y, at.w, at.h);
-            } catch (e) {
-                // Not prepared yet; viaAvPlay sets the rectangle itself.
-            }
-        }
+        PlayerPicture.apply();
     }
 
     function wait(ms) {
@@ -182,6 +195,7 @@ window.Player = (function () {
     }
 
     function duration() {
+        if (current && current.catchUp) return current.catchUp.end - current.catchUp.start;
         try {
             var d = usingAv ? avplay().getDuration() : video.duration * 1000;
             return isFinite(d) && d > 0 ? d : 0;
@@ -334,8 +348,8 @@ window.Player = (function () {
         var pos = position();
         if (seek.target !== null) pos = seek.target;
         else if (Date.now() < seek.holdUntil) pos = seek.holdPos;
-        ui.cur.textContent = fmt(pos);
-        ui.total.textContent = fmt(dur);
+        ui.cur.textContent = current.catchUp ? CatchUp.clock(current.catchUp.start) : fmt(pos);
+        ui.total.textContent = current.catchUp ? CatchUp.clock(current.catchUp.end) : fmt(dur);
         var pct = dur > 0 ? Math.min(100, (pos / dur) * 100) : 0;
         ui.fill.style.width = pct + '%';
         ui.bar.style.setProperty('--pl-knob', pct + '%');
@@ -344,7 +358,8 @@ window.Player = (function () {
             ui.target.style.left = Math.min(basePct, pct) + '%';
             ui.target.style.width = Math.abs(pct - basePct) + '%';
             var delta = seek.target - seek.origin;
-            ui.jump.textContent = (delta < 0 ? '−' : '+') + fmt(Math.abs(delta)) + '  →  ' + fmt(seek.target);
+            ui.jump.textContent = (delta < 0 ? '−' : '+') + fmt(Math.abs(delta)) + '  →  ' +
+                (current.catchUp ? CatchUp.clock(current.catchUp.start + seek.target) : fmt(seek.target));
         } else {
             ui.target.style.width = '0';
             ui.jump.textContent = '';
@@ -399,6 +414,10 @@ window.Player = (function () {
     }
 
     function tick() {
+        if (current && current.catchUp && !ended && position() >= duration()) {
+            pause();
+            onCompleted();
+        }
         render();
         if (!ended && !isPaused() && Date.now() - lastSave > SAVE_EVERY_MS) saveProgress();
         if (!canHide()) scheduleHide();
@@ -691,12 +710,16 @@ window.Player = (function () {
             menu.actions.push(action);
             ui.menu.appendChild(node);
         }
+        var watch = epg.watchFromStart();
+        if (watch) item('Watch from start', false, watch);
+        if (current.backToLive) item('Back to live', false, current.backToLive);
         head('Audio');
         if (tracks.audio.length) tracks.audio.forEach(function (t) { item(t.label, t.active, t.select); });
         else ui.menu.appendChild(el('div', 'pl-menu-empty', 'Only one audio track'));
         head('Subtitles');
         if (tracks.text.length > 1) tracks.text.forEach(function (t) { item(t.label, t.active, t.select); });
         else ui.menu.appendChild(el('div', 'pl-menu-empty', 'No subtitles available'));
+        PlayerPicture.menuEntries(head, item);
         if (!current.live) {
             head('Playback speed');
             (usingAv ? SPEEDS_AV : SPEEDS_HTML).forEach(function (value) {
@@ -705,6 +728,8 @@ window.Player = (function () {
                 });
             });
         }
+        ui.menu.appendChild(el('div', 'pl-menu-head pl-sleep-head', sleep.heading()));
+        sleep.choices(current).forEach(function (choice) { item(choice.label, choice.active, choice.select); });
         head('Stream info');
         streamInfoLines().forEach(function (line) {
             ui.menu.appendChild(el('div', 'pl-menu-info', line));
@@ -745,7 +770,7 @@ window.Player = (function () {
                 } catch (e) {
                     Log.error('TRACK select failed ' + (e && e.message));
                 }
-                renderMenu();
+                if (menu.open) renderMenu();
             }
         }
         return true; // The menu swallows every key.
@@ -918,7 +943,7 @@ window.Player = (function () {
     function viaMpegts(url) {
         return function (finish) {
             if (!window.mpegts || !mpegts.isSupported()) return finish('mpegts.js unsupported');
-            var player = (lib = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: url }, { enableStashBuffer: false }));
+            var player = (lib = mpegts.createPlayer({ type: 'mpegts', isLive: current.live, url: url }, { enableStashBuffer: false }));
             player.on(mpegts.Events.ERROR, function (type, detail, info) {
                 var reason = type + ' ' + detail + ' ' + ((info && info.code) || '');
                 if (ready && lib === player) streamLost(reason, 'Playback stopped.');
@@ -973,8 +998,7 @@ window.Player = (function () {
                 oncurrentplaytime: restoration.onTime,
                 onsubtitlechange: showSub,
             });
-            var at = displayRect();
-            av.setDisplayRect(at.x, at.y, at.w, at.h);
+            PlayerPicture.apply();
             av.prepareAsync(
                 function () {
                     try {
@@ -1012,6 +1036,8 @@ window.Player = (function () {
         ended = true;
         if (current.id) Progress.finish(current.id, duration() / 1000);
         started = false;
+        sleep.check();
+        if (!current) return;
         showControls();
     }
 
@@ -1026,6 +1052,7 @@ window.Player = (function () {
     function onReady() {
         ready = true;
         playerEl.classList.toggle('av', usingAv);
+        PlayerPicture.apply();
         freeze.clear();
         hideStatus();
         video.onwaiting = function () {
@@ -1117,6 +1144,7 @@ window.Player = (function () {
     }
 
     function stop() {
+        sleep.cancel();
         playbackError = false;
         reconnect.cancel();
         freeze.clear();
@@ -1133,6 +1161,7 @@ window.Player = (function () {
     // playing to show (stopped or failed).
     function preview(rect) {
         if (!current || playbackError) return false;
+        sleep.cancel();
         setBox(rect);
         closeMenu();
         hideControls();

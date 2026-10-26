@@ -32,6 +32,7 @@
     // with the stream still playing; STOP closes everything.
     function closePlayer(stopped) {
         channelList.close();
+        if (!stopped && playing && playing.returnTo && !document.hidden) return play(playing.returnTo);
         if (stopped) preview.stop();
         if (preview.back(playing)) {
             playing = null;
@@ -125,6 +126,16 @@
         if (current && !browser.live.allows(current)) {
             preview.stop();
             if (screen === 'player') closePlayer(true);
+        }
+    });
+
+    document.addEventListener('sleep-timer-stop', function () {
+        closePlayer(true);
+        try {
+            tizen.application.getCurrentApplication().exit();
+        } catch (e) {
+            // Browser preview, or firmware that cannot exit: playback is already released.
+            browser.toast('Sleep timer stopped playback');
         }
     });
 

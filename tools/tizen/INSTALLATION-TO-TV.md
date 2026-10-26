@@ -194,6 +194,16 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Sleep timer**: open the player menu with **UP** (or **Yellow** on Live TV),
+  then choose Off, 15, 30, 60 or 90 minutes, or **End of episode/movie**.
+  The controls show the minutes left. During the final minute, **Keep watching**
+  adds the chosen duration again (or turns an end choice Off); **Return** does
+  the same. LEFT/RIGHT selects **Stop now**, and OK confirms. Expiry saves
+  progress, releases playback and closes the TV app; a browser returns to its
+  browsing screen with a toast. Changing channels or episodes keeps the timer;
+  leaving the player with Return cancels it, including a return to live preview.
+  The timer is never saved across app restarts.
+
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on
@@ -329,6 +339,19 @@ from step 8 must already be downloaded.
   offers OK to play. Skip intro jumps 90 s by default, adjustable in
   Settings: Xtream has no intro markers. Live TV: ▲▼ or CH change channel,
   OK shows now and next with times, description and progress when enabled.
+- **Subtitle style and picture**: in **Settings**, the **Subtitles** group
+  offers Size (Small, Medium, Large, Extra large), Text colour (White, Yellow),
+  Background (Off, Shadow, Box) and Position (Bottom, Higher). **Picture**
+  offers Aspect (Auto, Fit, Fill, 16:9, 4:3). Defaults are Medium, White,
+  Shadow, Bottom and Auto. While watching, press **UP** (movies or episodes)
+  or **Yellow** (Live TV), then select a **Subtitle style** or **Picture**
+  item and press **OK** to cycle it. Changes apply immediately and are saved
+  across restarts; Settings and the player menu share the same choices.
+  Fit keeps the whole picture; Fill fills the screen; 16:9 and 4:3 stretch
+  into a centred box of that shape. Live preview always uses Fit, restoring
+  the saved aspect in full screen. Styles apply wherever subtitles appear.
+  Most movies currently use HTML video because of AVPlay issue #29, so
+  embedded MKV subtitles do not appear there.
 - **Resume**: saved progress is kept until playback confirms the jump, including
   when you seek with LEFT/RIGHT. If the jump cannot be confirmed within 30 seconds,
   playback pauses: LEFT/RIGHT chooses Retry or Start over, OK runs it, and Return
@@ -336,13 +359,23 @@ from step 8 must already be downloaded.
   the beginning.
 - **Live TV rows** (Xtream) show the programme on now and its progress,
   fetched for the channels on screen once scrolling stops.
+- **Catch-up** (Xtream): channels offering past programmes show a **Catch-up N days**
+  badge in the list and grid. In the Guide, LEFT browses back through those days
+  (up to seven); past programmes marked **↺** offer **Watch from start** when
+  you press OK. Press OK again to watch. While watching live, Yellow or Info
+  opens the player menu with **Watch from start** for the current programme.
+  Catch-up has pause and LEFT/RIGHT seeking, with programme clock times on the
+  timeline. Return goes back to the Guide or live player where you opened it;
+  **Back to live** in the player menu watches the channel live. Catch-up is
+  never saved to Continue watching or marked watched.
 - **TV guide**: in Live TV, choose **TV guide** in the top toolbar or press
   the remote's Guide key. It opens the current category, including Favorites.
   UP/DOWN changes channel focus; LEFT/RIGHT browses programmes from two hours
   ago to 24 hours ahead. CH+/CH- or Page Up/Down jumps a screen of channels.
   OK on a programme on now watches that channel; Return from playback reopens
   the Guide. OK on another programme shows its details; OK or Return closes
-  those details. Return from the Guide focuses its channel in the Live TV list.
+  those details, except for the catch-up action above. Return from the Guide
+  focuses its channel in the Live TV list.
   The button is available when the programme guide setting is On and the
   source has a guide. Rows without programmes say "No programme information".
 - **Live preview**: in Live TV (list view), OK on a channel plays it in a

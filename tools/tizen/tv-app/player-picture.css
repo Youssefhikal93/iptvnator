@@ -1,0 +1,57 @@
+/* The same subtitle choices cover AVPlay text and native/hls.js cues. */
+#player #pl-subs {
+    left: 50%;
+    right: auto;
+    width: max-content;
+    max-width: calc(100% - 320px);
+    transform: translateX(-50%);
+    padding: 4px 12px;
+}
+#player #pl-subs:empty {
+    display: none;
+}
+#player.sub-size-s #pl-subs,
+#player.sub-size-s video::cue {
+    font-size: 32px;
+}
+#player.sub-size-m #pl-subs,
+#player.sub-size-m video::cue {
+    font-size: 44px;
+}
+#player.sub-size-l #pl-subs,
+#player.sub-size-l video::cue {
+    font-size: 56px;
+}
+#player.sub-size-xl #pl-subs,
+#player.sub-size-xl video::cue {
+    font-size: 68px;
+}
+#player.sub-colour-white #pl-subs,
+#player.sub-colour-white video::cue {
+    color: #fff;
+}
+#player.sub-colour-yellow #pl-subs,
+#player.sub-colour-yellow video::cue {
+    color: #ff0;
+}
+#player.sub-bg-off #pl-subs,
+#player.sub-bg-off video::cue {
+    background-color: transparent;
+    text-shadow: none;
+}
+#player.sub-bg-shadow #pl-subs,
+#player.sub-bg-shadow video::cue {
+    background-color: transparent;
+    text-shadow: 0 2px 6px #000, 0 0 3px #000, 0 0 12px #000;
+}
+#player.sub-bg-box #pl-subs,
+#player.sub-bg-box video::cue {
+    background-color: rgba(0, 0, 0, 0.8);
+    text-shadow: none;
+}
+#player.sub-pos-high #pl-subs {
+    bottom: 270px;
+}
+#player.sub-pos-high.controls-on #pl-subs {
+    bottom: 380px;
+}

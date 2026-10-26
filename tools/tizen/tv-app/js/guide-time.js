@@ -5,18 +5,19 @@ window.GuideTime = (function () {
     var STEP = 30 * 60000;
     var SPAN = 3 * 3600000;
 
-    function limits(now) {
-        return { from: now - 2 * 3600000, to: now + 24 * 3600000 };
+    function limits(now, channel) {
+        var back = channel && window.CatchUp && CatchUp.available(channel) ? Math.min(7, CatchUp.days(channel)) * 86400000 : 2 * 3600000;
+        return { from: now - back, to: now + 24 * 3600000 };
     }
 
-    function clamp(time, now) {
-        var range = limits(now);
+    function clamp(time, now, channel) {
+        var range = limits(now, channel);
         return Math.max(range.from, Math.min(range.to - 1, time));
     }
 
-    function windowStart(start, time, now) {
+    function windowStart(start, time, now, channel) {
         if (time < start || time >= start + SPAN) start = Math.floor(time / STEP) * STEP;
-        var range = limits(now);
+        var range = limits(now, channel);
         return Math.max(range.from, Math.min(range.to - SPAN, start));
     }
 

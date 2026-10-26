@@ -9,6 +9,11 @@ window.Prefs = (function () {
         skipIntroSeconds: 90,
         programmeGuide: true,
         livePreview: true,
+        subtitleSize: 'm',
+        subtitleColour: 'white',
+        subtitleBackground: 'shadow',
+        subtitlePosition: 'bottom',
+        pictureAspect: 'auto',
         homeLayout: 'cinema',
         'view:movies': 'grid',
         'view:series': 'grid',
@@ -73,6 +78,7 @@ window.Prefs = (function () {
 
     return {
         get: get,
+        getDefault: function (name) { return DEFAULTS[name]; },
         set: set,
         onChange: function (listener) { listeners.push(listener); },
     };

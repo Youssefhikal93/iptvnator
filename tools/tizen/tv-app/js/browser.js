@@ -346,6 +346,7 @@ window.Browser = function (hooks) {
         if (sortableSection() && addedOf(section).length) {
             rows.unshift({ category_id: '__added', category_name: 'Recently added', virtual: 'added', count: addedOf(section).length });
         }
+        if (section !== 'live' && Tmdb.enabled()) rows.unshift({ category_id: '__discover', category_name: 'Discover', virtual: 'discover' });
         return rows;
     }
 
@@ -382,7 +383,7 @@ window.Browser = function (hooks) {
         state.token++;
         state.showingSearch = false;
         applyView();
-        setItems(virtualList(category.virtual), index || 0, EMPTY[category.virtual]);
+        setItems(category.virtual === 'discover' ? [] : virtualList(category.virtual), index || 0, category.virtual === 'discover' ? ['Discover', 'Press OK for genres from TMDB.'] : EMPTY[category.virtual]);
         renderChrome();
     }
 
@@ -1178,6 +1179,8 @@ window.Browser = function (hooks) {
     function openMovie(movie) {
         detail.open({
             item: movie,
+            catalogue: tmdbCatalogue,
+            open: openEntry,
             load: function () {
                 if (!state.adapter.movieInfo) return Promise.resolve(null);
                 return state.catalogue.load({ kind: 'movie', id: movie.stream_id, item: movie });
@@ -1227,6 +1230,8 @@ window.Browser = function (hooks) {
         });
         detail.open({
             item: show,
+            catalogue: tmdbCatalogue,
+            open: openEntry,
             episodes: episodes,
             onClose: refreshLibrary,
             load: function () {
@@ -1261,6 +1266,17 @@ window.Browser = function (hooks) {
                 return list;
             },
         });
+    }
+
+    function tmdbCatalogue() {
+        return Promise.all(['movies', 'series'].map(function (section) {
+            if (state.adapter.sections.indexOf(section) === -1) return [];
+            return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (list) {
+                return HiddenCategories.filterItems(sourceId(), section, list).map(function (item) {
+                    return { item: item, type: section === 'movies' ? 'movie' : 'tv' };
+                });
+            }).catch(function () { return []; });
+        })).then(function (lists) { return lists[0].concat(lists[1]); });
     }
 
     // OK on a channel, movie, show or saved episode of `section`.
@@ -1367,6 +1383,7 @@ window.Browser = function (hooks) {
         if (Keys.repeat(code)) return true;
         if (Menu.isOpen()) return Menu.onKey(code);
         if (manage.isOpen()) return manage.onKey(code);
+        if (Actor.isOpen()) return Actor.key(code);
         if (detail.isOpen()) {
             var selection = detail.episodeSelection();
             if (code !== KEY.ENTER || !selection) return detail.onKey(code);
@@ -1377,6 +1394,7 @@ window.Browser = function (hooks) {
             });
             return true;
         }
+        if (Discover.isOpen()) return Discover.key(code);
         var loadKey = LoadScreen.key(code);
         if (loadKey === 'exit') hooks.exit();
         if (loadKey) return true;
@@ -1400,6 +1418,10 @@ window.Browser = function (hooks) {
             else return false;
         } else if (state.zone === 'categories') {
             var row = categories.item();
+            if (row && row.virtual === 'discover' && (code === KEY.ENTER || code === KEY.RIGHT)) {
+                Discover.open(state.section === 'movies' ? 'movie' : 'tv', { catalogue: tmdbCatalogue, open: openEntry });
+                return true;
+            }
             if (STEPS[code]) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
                 else if (code === KEY.UP) enterToolbar('categories');

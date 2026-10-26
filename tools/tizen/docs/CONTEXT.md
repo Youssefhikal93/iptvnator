@@ -110,6 +110,14 @@ _Avoid_: Preferences, configuration
 The full-screen page for one movie or show: artwork, facts, plot and its buttons; a show's page also lists its episodes.
 _Avoid_: Info page, details screen
 
+**Discover**:
+An optional Movies or Series category that finds catalogue titles by TMDB genre after the viewer saves their own TMDB API key.
+_Avoid_: Recommendations, trending
+
+**Actor screen**:
+A cast member's photo, biography and movie or show credits found in the current source's catalogue, labelled "In your library".
+_Avoid_: Profile, artist page
+
 **Options menu**:
 The list of actions that opens when the viewer holds OK on an item.
 _Avoid_: Context menu, long-press menu

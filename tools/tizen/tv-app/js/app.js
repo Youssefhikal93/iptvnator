@@ -109,6 +109,7 @@
     }
 
     document.addEventListener('keydown', function (event) {
+        if (TmdbSettings.isOpen()) return TmdbSettings.onKey(event);
         if (screen === 'form') return Form.onKey(event);
         var handled = screen === 'player' ? onPlayerKey(event.keyCode) : browser.onKey(event.keyCode);
         if (handled) event.preventDefault();

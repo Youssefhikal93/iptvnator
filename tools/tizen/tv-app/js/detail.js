@@ -20,9 +20,10 @@ window.Detail = function () {
         return node;
     }
 
-    function img(cls, src) {
+    function img(cls, src, fallback) {
         var node = el('img', cls);
         node.onerror = function () {
+            if (fallback && node.getAttribute('src') !== fallback) return node.src = fallback;
             node.style.visibility = 'hidden';
         };
         if (src) node.src = src;
@@ -65,7 +66,7 @@ window.Detail = function () {
     function buttons() {
         var d = details();
         var list = s.page.actions(d);
-        if (d.trailer) list.push({ label: 'Trailer', run: openTrailer });
+        if (s.tmdb ? s.tmdb.trailer() : d.trailer) list.push({ label: 'Trailer', run: s.tmdb ? s.tmdb.openTrailer : openTrailer });
         if (s.clipped) list.push({ label: 'More', run: openMore });
         return list;
     }
@@ -74,14 +75,17 @@ window.Detail = function () {
 
     function render() {
         var d = details();
+        var provider = s.provider || {};
         root.textContent = '';
         // A show's page scrolls up to its episodes while they have the focus.
         root.classList.toggle('dt-show', !!s.page.episodes);
         root.classList.toggle('dt-scrolled', s.zone === 'episodes');
-        root.appendChild(img('dt-backdrop', d.backdrop));
+        root.classList.toggle('dt-tmdb', !!s.tmdb && s.tmdb.hasRows());
+        root.classList.toggle('dt-tmdb-focus', s.zone === 'tmdb');
+        root.appendChild(img('dt-backdrop', d.backdrop, provider.backdrop || provider.poster));
         root.appendChild(el('div', 'dt-shade'));
         var body = el('div', 'dt-body');
-        body.appendChild(img('dt-poster', d.poster));
+        body.appendChild(img('dt-poster', d.poster, provider.poster));
         var info = el('div', 'dt-info');
         info.appendChild(el('h1', 'dt-title', d.title));
         var facts = [d.year, d.rating ? '★ ' + d.rating.toFixed(1) : '', d.genre, runtime(d.seconds)].filter(Boolean);
@@ -97,6 +101,8 @@ window.Detail = function () {
             root.appendChild(el('div', 'dt-ep-head', d.title));
             root.appendChild(s.page.episodes.render(s.zone === 'episodes'));
         }
+        if (s.tmdb) root.appendChild(s.tmdb.render(s.zone === 'tmdb'));
+        if (s.zone === 'tmdb') TmdbView.scroll(root);
         if (s.more) root.appendChild(renderMore(d));
         if (s.trailer) root.appendChild(s.trailer);
         // "More" only when the plot does not fit its lines.
@@ -160,6 +166,7 @@ window.Detail = function () {
         var list = buttons();
         if (code === KEY.LEFT && s.focus > 0) s.focus--;
         else if (code === KEY.RIGHT && s.focus < list.length - 1) s.focus++;
+        else if (code === KEY.DOWN && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
         else if (code === KEY.DOWN && s.page.episodes && s.page.episodes.hasRows()) {
             s.zone = 'episodes';
             s.page.episodes.enter();
@@ -178,7 +185,15 @@ window.Detail = function () {
             }
             return true;
         }
-        if (Keys.isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
+        if (s.zone === 'tmdb') {
+            var direction = s.tmdb.key(code);
+            if (direction === 'up') s.zone = 'buttons';
+            if (direction === 'down' && s.page.episodes && s.page.episodes.hasRows()) {
+                s.zone = 'episodes';
+                s.page.episodes.enter();
+            }
+        }
+        else if (Keys.isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
         else if (Keys.isBack(code)) return close(), true;
         else if (s.zone === 'episodes') {
             var result = s.page.episodes.key(code);
@@ -190,6 +205,7 @@ window.Detail = function () {
 
     function close() {
         var done = s.page.onClose;
+        if (s.tmdb) s.tmdb.dispose();
         s = null;
         root.textContent = '';
         root.classList.add('hidden');
@@ -198,14 +214,21 @@ window.Detail = function () {
 
     return {
         open: function (page) {
+            if (s && s.tmdb) s.tmdb.dispose();
             s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, trailer: null };
             var mine = s;
+            if (Tmdb.enabled() && page.catalogue) s.tmdb = TmdbDetail(page, function (enriched) {
+                if (s !== mine) return;
+                if (enriched) s.details = enriched;
+                render();
+            });
             root.classList.remove('hidden');
             render();
             page.load()
                 .then(function (d) {
                     if (s !== mine) return;
                     s.details = d;
+                    s.provider = d;
                 })
                 .catch(function (err) {
                     Log.error('DETAIL FAIL ' + err.message);
@@ -215,6 +238,7 @@ window.Detail = function () {
                     s.loading = false;
                     if (page.episodes) page.episodes.ready(s.details);
                     render();
+                    if (s.tmdb) s.tmdb.load(s.details || {});
                 });
         },
         isOpen: function () {

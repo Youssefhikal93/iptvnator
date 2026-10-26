@@ -194,6 +194,21 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **TMDB (optional)**: in **Settings → TMDB**, press **OK** on **TMDB API key**
+  to enter your own free TMDB v3 API key with the TV keyboard, then choose
+  **Save**. **Test key** shows **Key works** or **Key refused**; **Remove key**
+  turns it off. No TMDB requests are sent without a saved key. Movie and show
+  detail pages display the source's information first, then matching TMDB
+  artwork, facts and missing plots. Press **DOWN** from the buttons to **Cast**;
+  **LEFT/RIGHT** selects a person and **OK** opens their biography and **In your
+  library** titles. Press **DOWN** again for **Similar in your library**, then
+  again for a show's episodes. TMDB's **Trailer** appears only when the TV can open
+  YouTube; it opens that app. **Discover**, at the top of Movies and Series
+  categories, offers genre chips: choose with **LEFT/RIGHT**, press **OK**,
+  then **DOWN** to matched titles. **CH ▲▼** checks another page of 12 catalogue
+  titles, with at most three TMDB requests at once. **Return** goes back.
+  Metadata is kept separately for seven days (failed requests for one hour).
+
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on

@@ -16,6 +16,7 @@ window.Prefs = (function () {
         'sort:movies': 'newest',
         'sort:series': 'newest',
         onStart: 'last-channel',
+        parentalRelockMs: 900000,
     };
 
     function read(key, fallback) {

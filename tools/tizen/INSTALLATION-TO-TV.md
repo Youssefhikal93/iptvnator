@@ -303,6 +303,16 @@ from step 8 must already be downloaded.
   results, All channels, Recently added, the Home rows (not Continue watching)
   and the channel list while watching. Favorites, Recently watched and All
   channels cannot be hidden. The choice is kept per source and section.
+- **Parental lock**: set a four-digit PIN under **Settings > Parental lock >
+  PIN**, then hold OK on a category and choose **Lock category**. A lock icon
+  marks it. Open it with OK or RIGHT and enter the PIN using the remote's
+  digits, or arrows and OK on the number pad (Clear erases; Back cancels).
+  One correct PIN opens all locked categories for **Re-lock after**: 5 min,
+  15 min (default), 1 hour, or until the app closes. While locked, their items
+  leave Home, search, All lists, Favorites, Recently watched, Continue watching
+  and the player's channel list; PRE-CH cannot return to them. Five wrong
+  attempts require a 30-second wait. Change PIN, Remove PIN and Unlock category
+  ask for the current PIN; Remove PIN also clears locks for every source.
 - **Watched**: hold OK on a movie or show in a list or on Home to mark it
   watched or unwatched. A show applies the change to all its episodes.
   On a show's detail page, hold OK on an episode for episode and season

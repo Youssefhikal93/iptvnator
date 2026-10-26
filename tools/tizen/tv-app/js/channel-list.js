@@ -142,7 +142,7 @@ window.ChannelList = function (hooks) {
         if (!channels[focus]) return;
         var request = hooks.channels.play(channels[focus], channels);
         close();
-        hooks.play(request);
+        if (request) hooks.play(request);
     }
 
     function key(code) {

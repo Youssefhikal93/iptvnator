@@ -152,6 +152,7 @@ window.TvGuide = function (hooks) {
         open: open,
         isOpen: function () { return !!state; },
         key: key,
+        close: close,
         resume: function (channel) {
             if (!state || !state.suspended) return;
             var index = hooks.indexOf(state.channels, channel);

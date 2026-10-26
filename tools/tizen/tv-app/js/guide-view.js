@@ -72,6 +72,11 @@ window.GuideView = function (el) {
         tile.setAttribute('data-start', programme.start);
         tile.setAttribute('data-end', programme.end);
         tile.appendChild(node('strong', '', programme.title));
+        if (programme.end <= Date.now() && CatchUp.playable(frame.channel, programme)) {
+            var archive = node('span', 'gd-catch-up', '\u21ba');
+            archive.setAttribute('aria-label', 'Catch-up available');
+            tile.appendChild(archive);
+        }
         tile.appendChild(node('small', '', clock(programme.start) + ' - ' + clock(programme.end)));
         return tile;
     }
@@ -96,15 +101,17 @@ window.GuideView = function (el) {
         else rows.appendChild(strip);
     }
 
-    function details(programme) {
+    function details(programme, playable) {
         popup.innerHTML = '';
         var card = node('div', 'gd-popup-card');
         card.appendChild(node('h2', '', programme.title));
         card.appendChild(node('p', 'gd-popup-time', day(programme.start) + ' \u00b7 ' + clock(programme.start) + ' - ' + clock(programme.end)));
         card.appendChild(node('p', 'gd-description', programme.desc || 'No description available'));
-        card.appendChild(node('p', 'gd-hints', 'OK / Return: close'));
+        if (playable) card.appendChild(node('button', 'state-button gd-watch', 'Watch from start'));
+        card.appendChild(node('p', 'gd-hints', playable ? 'OK: Watch from start \u00b7 Return: close' : 'OK / Return: close'));
         popup.appendChild(card);
         popup.classList.remove('hidden');
+        if (playable) popup.querySelector('button').focus();
     }
 
     return {

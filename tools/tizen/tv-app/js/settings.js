@@ -12,6 +12,7 @@ window.Settings = function (hooks) {
         { label: 'Skip intro length', key: 'skipIntroSeconds', choices: [60, 75, 90, 120], labels: ['60 s', '75 s', '90 s', '120 s'] },
         { label: 'Programme guide (now and next)', key: 'programmeGuide', choices: [true, false], labels: ['On', 'Off'] },
         { label: 'Live preview', key: 'livePreview', choices: [true, false], labels: ['On', 'Off'] },
+    ].concat(PlayerPicture.rows, [
         { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
         { label: 'Favorites and recents from', key: 'librarySources', choices: ['current', 'all'], labels: ['This source', 'All sources'] },
         { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
@@ -20,12 +21,14 @@ window.Settings = function (hooks) {
         { label: 'Default sort for Movies', key: 'sort:movies', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
         { label: 'Default sort for Series', key: 'sort:series', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
         { group: 'Start-up', label: 'On start open', key: 'onStart', choices: ['last-channel', 'home'], labels: ['Last channel', 'Home'] },
+        { group: 'Parental lock', label: 'PIN', run: function () { ParentalMenu.settings(render); }, text: function () { return ParentalLock.hasPin() ? 'Change PIN\u2026 / Remove PIN' : 'Set PIN\u2026'; } },
+        { label: 'Re-lock after', key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], labels: ['5 min', '15 min', '1 hour', 'When the app closes'] },
         { group: 'Categories', label: 'Manage Live TV categories', action: 'live', text: hiddenText('live') },
         { label: 'Manage Movies categories', action: 'movies', text: hiddenText('movies') },
         { label: 'Manage Series categories', action: 'series', text: hiddenText('series') },
         { group: 'About', label: 'App version', text: VERSION },
         { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
-    ];
+    ]);
 
     // Read when drawn, so the count follows what the viewer hides.
     function hiddenText(section) {
@@ -72,6 +75,7 @@ window.Settings = function (hooks) {
         // LEFT at the first choice leaves the screen; RIGHT cycles forward.
         if (step < 0 && index === 0) return 'left';
         if (!row.key) {
+            if (row.run) row.run();
             if (row.action) hooks.manage(row.action);
             return;
         }

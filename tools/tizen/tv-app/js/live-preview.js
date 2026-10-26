@@ -125,6 +125,7 @@ window.LivePreview = function (hooks) {
                 return true;
             }
             var request = hooks.live.play(item, list);
+            if (!request) return true;
             s.channel = item;
             s.request = request;
             reveal();

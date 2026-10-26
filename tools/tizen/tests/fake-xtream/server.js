@@ -8,6 +8,12 @@ const root = process.argv[2] || path.resolve(__dirname, '../../tv-app');
 const port = Number(process.argv[3] || process.env.PORT || 8767);
 const origin = 'http://localhost:' + port;
 const json = (res, body) => {
+    if (Array.isArray(body)) body.forEach(channel => {
+        if (channel.stream_id >= 1001 && channel.stream_id <= 1500 && /[15]$/.test(String(channel.stream_id))) {
+            channel.tv_archive = 1;
+            channel.tv_archive_duration = 3;
+        }
+    });
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     res.end(JSON.stringify(body));
 };
@@ -117,6 +123,14 @@ http.createServer((req, res) => {
         return fs.createReadStream(path.join(__dirname, '..', 'media', path.basename(url.pathname))).on('error', () => res.end()).pipe(res);
     }
     if (url.pathname.startsWith('/live/') && url.pathname.endsWith('.ts')) {
+        res.writeHead(200, { 'Content-Type': 'video/mp2t', 'Access-Control-Allow-Origin': '*' });
+        return fs.createReadStream(path.join(__dirname, '..', 'media', 'live.ts')).pipe(res);
+    }
+    if (url.pathname.startsWith('/timeshift/')) {
+        if (fail.media) {
+            res.writeHead(Number(fail.media), { 'Access-Control-Allow-Origin': '*' });
+            return res.end();
+        }
         res.writeHead(200, { 'Content-Type': 'video/mp2t', 'Access-Control-Allow-Origin': '*' });
         return fs.createReadStream(path.join(__dirname, '..', 'media', 'live.ts')).pipe(res);
     }

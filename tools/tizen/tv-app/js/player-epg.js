@@ -42,6 +42,7 @@ window.PlayerEpg = function () {
         box.appendChild(bar);
         if (p.now.desc) box.appendChild(el('div', 'pl-epg-desc', p.now.desc));
         if (p.next) box.appendChild(row('Next', p.next));
+        if (s.req.watchFromStart) box.appendChild(el('div', 'pl-epg-catch-up', 'Yellow / Info: Watch from start'));
         s.parts = { left: left, fill: fill };
         box.classList.remove('hidden');
     }
@@ -66,6 +67,10 @@ window.PlayerEpg = function () {
     }
 
     return {
+        watchFromStart: function () {
+            var programme = s.shown && s.shown.now;
+            return s.req && s.req.watchFromStart && programme ? function () { s.req.watchFromStart(programme); } : null;
+        },
         reset: reset,
         load: function (req) {
             reset();

@@ -11,7 +11,7 @@ window.TvGuide = function (hooks) {
     var timer = null;
 
     function programmes(index) {
-        var range = GuideTime.limits(Date.now());
+        var range = GuideTime.limits(Date.now(), state.channels[index]);
         return state.guide.peek(state.channels[index], range.from, range.to);
     }
 
@@ -46,7 +46,7 @@ window.TvGuide = function (hooks) {
     }
 
     function fetchRow(request) {
-        var range = GuideTime.limits(Date.now());
+        var range = GuideTime.limits(Date.now(), request.channel);
         pending.push(request);
         request.guide.programmes(request.channel, range.from, range.to).then(function () {
             finished(request);
@@ -97,6 +97,8 @@ window.TvGuide = function (hooks) {
 
     function moveChannel(step) {
         state.index = Math.max(0, Math.min(state.channels.length - 1, state.index + step));
+        state.time = GuideTime.clamp(state.time, Date.now(), state.channels[state.index]);
+        state.start = GuideTime.windowStart(state.start, state.time, Date.now(), state.channels[state.index]);
         render();
         wantRows();
     }
@@ -108,8 +110,8 @@ window.TvGuide = function (hooks) {
         var current = GuideTime.at(list, state.time);
         var time = next ? (direction > 0 ? next.start : next.end - 1) :
             current ? (direction > 0 ? current.end : current.start - 1) : state.time + direction * GuideTime.step;
-        state.time = GuideTime.clamp(time, Date.now());
-        state.start = GuideTime.windowStart(state.start, state.time, Date.now());
+        state.time = GuideTime.clamp(time, Date.now(), state.channels[state.index]);
+        state.start = GuideTime.windowStart(state.start, state.time, Date.now(), state.channels[state.index]);
         render();
         wantRows();
     }
@@ -125,13 +127,25 @@ window.TvGuide = function (hooks) {
             view.hide();
             hooks.play(state.channels[state.index]);
         } else {
-            state.popup = true;
-            view.details(programme);
+            state.popup = programme;
+            view.details(programme, CatchUp.playable(state.channels[state.index], programme));
         }
     }
 
     function key(code) {
         if (state.popup) {
+            if (code === Keys.ENTER && CatchUp.playable(state.channels[state.index], state.popup)) {
+                var programme = state.popup;
+                state.popup = false;
+                state.catchUp = true;
+                state.suspended = true;
+                queue = [];
+                clearInterval(timer);
+                view.closeDetails();
+                view.hide();
+                hooks.catchUp(state.channels[state.index], programme);
+                return true;
+            }
             if (Keys.isBack(code) || code === Keys.ENTER) {
                 state.popup = false;
                 view.closeDetails();
@@ -152,10 +166,12 @@ window.TvGuide = function (hooks) {
         open: open,
         isOpen: function () { return !!state; },
         key: key,
+        close: close,
         resume: function (channel) {
             if (!state || !state.suspended) return;
             var index = hooks.indexOf(state.channels, channel);
-            if (index >= 0) state.index = index;
+            if (index >= 0 && !state.catchUp) state.index = index;
+            state.catchUp = false;
             state.suspended = false;
             view.show();
             render();

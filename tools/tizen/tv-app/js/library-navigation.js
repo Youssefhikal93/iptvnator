@@ -38,6 +38,9 @@ window.LibraryNavigation = function (hooks) {
                 LoadScreen.render();
                 run();
             });
+        }).catch(function () {
+            // The load screen shows the failure; keys must reach it again.
+            if (mine === generation) cancel();
         });
     }
 

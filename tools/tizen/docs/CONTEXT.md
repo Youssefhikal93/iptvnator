@@ -32,6 +32,10 @@ _Avoid_: Disabled, removed category
 The newest dated movies or shows added to a source's catalogue, regardless of release year; the category holds up to 50 items.
 _Avoid_: New releases, recently watched
 
+**Parental lock**:
+A four-digit PIN that keeps locked categories' items out of browsing and playback choices until the viewer unlocks them for a limited session.
+_Avoid_: Password, hidden category (hiding does not require a PIN)
+
 **Item**:
 One channel, movie or show in a category list.
 _Avoid_: Stream, entry (see Entry), content
@@ -123,6 +127,14 @@ The full-screen playback screen for a channel, movie or episode.
 The playing channel shown in a box beside the Live TV list, with its now and next, before OK on it goes full screen.
 _Avoid_: Mini player, picture-in-picture
 
+**Subtitle style**:
+The saved size, text colour, background and position of subtitles, shared by Settings and the player menu.
+_Avoid_: Subtitle theme, caption preset
+
+**Aspect**:
+How the picture fits the screen: Auto, Fit, Fill, or a forced 16:9 or 4:3 shape; live preview always uses Fit.
+_Avoid_: Zoom mode, screen resolution
+
 **Channel list**:
 The see-through list over live playback: browse channels and categories, then press OK to watch.
 _Avoid_: Drawer, sidebar
@@ -130,6 +142,10 @@ _Avoid_: Drawer, sidebar
 **Now and next**:
 The programme on a channel now and the one after it.
 _Avoid_: EPG (for this), guide
+
+**Catch-up**:
+Watching a channel's past programme, or restarting its current programme, when the source offers it.
+_Avoid_: Archive, replay, timeshift
 
 **Guide**:
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
@@ -145,3 +161,7 @@ _Avoid_: Autoplay card, next-episode popup
 
 **Skip intro**:
 A jump of a fixed length near the start of an episode; providers do not mark intros.
+
+**Sleep timer**:
+A player choice that stops playback and closes the TV app after a duration or at the end of the current movie or episode.
+_Avoid_: Auto-off, shutdown timer

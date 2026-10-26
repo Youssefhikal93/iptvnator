@@ -9,6 +9,11 @@ window.Prefs = (function () {
         skipIntroSeconds: 90,
         programmeGuide: true,
         livePreview: true,
+        subtitleSize: 'm',
+        subtitleColour: 'white',
+        subtitleBackground: 'shadow',
+        subtitlePosition: 'bottom',
+        pictureAspect: 'auto',
         homeLayout: 'cinema',
         librarySources: 'current',
         'view:movies': 'grid',
@@ -17,6 +22,7 @@ window.Prefs = (function () {
         'sort:movies': 'newest',
         'sort:series': 'newest',
         onStart: 'last-channel',
+        parentalRelockMs: 900000,
     };
 
     function read(key, fallback) {
@@ -73,6 +79,7 @@ window.Prefs = (function () {
 
     return {
         get: get,
+        getDefault: function (name) { return DEFAULTS[name]; },
         set: set,
         onChange: function (listener) { listeners.push(listener); },
     };

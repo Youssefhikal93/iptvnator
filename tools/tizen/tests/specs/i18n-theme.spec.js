@@ -62,7 +62,7 @@ test('Settings language list switches the app to Deutsch, survives a reload and 
     await expect(page.locator('#form-save')).toHaveText('Speichern');
     await expect(page.locator('#form-user').locator('xpath=preceding-sibling::label')).toHaveText('Nutzername');
     await expect(page.locator('.st-group', { hasText: 'Darstellung' })).toBeVisible();
-    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:settings')).language);
+    const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:settings')).language);
     expect(stored).toBe('de');
 
     await page.reload();

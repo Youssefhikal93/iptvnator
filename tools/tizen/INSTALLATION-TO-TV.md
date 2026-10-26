@@ -204,6 +204,16 @@ from step 8 must already be downloaded.
   a row, ▲ ▼ between rows, OK opens, hold OK for options.
 - **Sources** (left rail): add an Xtream account or an M3U link, switch
   between them, or remove one (press OK twice).
+- **Settings** (bottom of the rail, available without a source): UP/DOWN
+  selects a row, RIGHT or OK picks the next choice, LEFT the previous one.
+  LEFT at the first choice or Return goes back to the rail. Changes save
+  immediately for all sources: autoplay (Off, 5, 8 or 15 s), Skip intro
+  length (60, 75, 90 or 120 s), now and next On/Off, Cinema or compact
+  Showcase Home layout, List/Grid for each section, default Movies/Series
+  sort, and Last channel/Home on start. Turning now and next off stops
+  programme fetching and hides programme lines everywhere. Default sort
+  applies only where no sort has been chosen for that source and section.
+  About shows the app version and the install guide name.
 - **▲ at the top of a list** reaches the search bar and the list / grid
   buttons. Results follow the typing; the SmartThings phone app keyboard is
   easier than the remote.
@@ -212,8 +222,9 @@ from step 8 must already be downloaded.
 - **Sort in Movies and Series**: at the top of an item list, press Up, then
   Right three times to reach Sort and OK to choose Newest, Oldest, Name A-Z,
   Name Z-A, Top rated or Provider order. The current choice is marked; choosing
-  one returns focus to the first item. Newest is the default, and the choice
-  is saved separately for each source and section, including search and
+  one returns focus to the first item. Newest is the initial default (change
+  it in Settings), and the choice is saved separately for each source and
+  section, including search and
   Favorites. The header shows the order. Recently added is the first category
   when dated items exist: up to 50, always newest first by catalogue date,
   regardless of release year. Sort is hidden there, in Recently watched and
@@ -235,9 +246,11 @@ from step 8 must already be downloaded.
 - **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,
   subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
   Episodes, Audio & subtitles). Episodes show an Up next card near the end
-  and the next one plays 8 s after the current one ends. Skip intro jumps
-  90 s: Xtream has no intro markers. Live TV: ▲▼ or CH change channel, OK
-  shows Now and Next with times, description and progress.
+  and by default the next one plays 8 s after the current one ends.
+  Settings can change the countdown or turn autoplay off; Up next still
+  offers OK to play. Skip intro jumps 90 s by default, adjustable in
+  Settings: Xtream has no intro markers. Live TV: ▲▼ or CH change channel,
+  OK shows now and next with times, description and progress when enabled.
 - **Resume**: saved progress is kept until playback confirms the jump, including
   when you seek with LEFT/RIGHT. If the jump cannot be confirmed within 30 seconds,
   playback pauses: LEFT/RIGHT chooses Retry or Start over, OK runs it, and Return
@@ -256,9 +269,8 @@ from step 8 must already be downloaded.
   previously watched live channel. Yellow still opens Audio & subtitles.
 - **Last channel on start**: the last live channel is saved per source and
   plays on the next start if it is still in the catalogue. This is on by
-  default; until Settings exists, developers can disable it with
-  `Library.setting('lastChannelOnStart', false)` in the console (use `true`
-  to turn it back on). Return stops playback and opens Home.
+  default; choose **Settings → On start open → Home** to disable it.
+  Return stops playback and opens Home.
 - **Start-up**: the app opens on the lists saved on the TV and refreshes
   them in the background ("Updating…" next to the source name); new
   channels, movies and episodes then appear by themselves. **Sources →

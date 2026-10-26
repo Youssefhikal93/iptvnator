@@ -190,6 +190,7 @@ window.Home = function (api) {
     }
 
     function render() {
+        root.classList.toggle('showcase', Library.setting('homeLayout') === 'showcase');
         var list = blocks();
         root.textContent = '';
         if (!list.length) {

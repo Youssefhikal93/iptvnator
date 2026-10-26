@@ -4,13 +4,12 @@
 //
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
 // browser); open(i) returns the request for episode i. Xtream has no intro
-// markers, so Skip intro jumps a fixed 90 s during an episode's first minutes.
+// markers, so Skip intro jumps the chosen length during an episode's first minutes.
 window.PlayerSeries = function (api) {
     'use strict';
 
-    var INTRO = { from: 10000, until: 300000, jump: 90000 };
+    var INTRO = { from: 10000, until: 300000 };
     var UP_NEXT_BEFORE_MS = 30000;
-    var AUTOPLAY_MS = 8000;
     var PANEL_ROWS = 7;
     var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
 
@@ -70,7 +69,7 @@ window.PlayerSeries = function (api) {
 
     function skipIntro() {
         s.introDone = true;
-        api.seekTo(api.position() + INTRO.jump);
+        api.seekTo(api.position() + Library.setting('skipIntroSeconds') * 1000);
         api.showControls();
     }
 
@@ -99,11 +98,13 @@ window.PlayerSeries = function (api) {
         ui.next.classList.toggle('hidden', !shown);
         if (!shown) return;
         ui.nextTitle.textContent = episodes().items[nextIndex()].label;
-        if (!api.isEnded()) {
+        var autoplayMs = Library.setting('autoplayMs');
+        if (!api.isEnded() || !autoplayMs) {
+            s.autoplayAt = 0;
             ui.nextCount.textContent = 'OK: play now · Return: hide';
             return;
         }
-        if (!s.autoplayAt) s.autoplayAt = Date.now() + AUTOPLAY_MS;
+        if (!s.autoplayAt) s.autoplayAt = Date.now() + autoplayMs;
         var left = Math.ceil((s.autoplayAt - Date.now()) / 1000);
         if (left <= 0) return playNext();
         ui.nextCount.textContent = 'Playing in ' + left + ' s · OK: play now · Return: cancel';

@@ -14,6 +14,7 @@ window.Browser = function (hooks) {
         { id: 'live', label: 'Live TV', icon: 'M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zM9 10v8l7-4z' },
         { id: 'movies', label: 'Movies', icon: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z' },
         { id: 'series', label: 'Series', icon: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z' },
+        { id: 'settings', label: 'Settings', icon: 'M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.07-.94l2.03-1.58-1.92-3.32-2.39.96a7.1 7.1 0 0 0-1.62-.94L14.87 3h-3.74l-.36 3.18c-.59.24-1.13.56-1.62.94l-2.39-.96-1.92 3.32 2.03 1.58c-.05.31-.07.63-.07.94s.02.63.06.94l-2.02 1.58 1.92 3.32 2.39-.96c.49.38 1.03.7 1.62.94l.36 3.18h3.74l.36-3.18c.59-.24 1.13-.55 1.62-.94l2.39.96 1.92-3.32zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z' },
     ];
     var $ = function (id) {
         return document.getElementById(id);
@@ -52,6 +53,13 @@ window.Browser = function (hooks) {
         },
     });
     var detail = Detail();
+    var settings = Settings({
+        toast: toast,
+        changed: function (name) {
+            if (name === 'programmeGuide') updateEpg();
+            if (name === 'homeLayout' || name === 'programmeGuide') home.render();
+        },
+    });
     var watched = Watched({
         knownShow: function (show) {
             return state.cache['series:' + show.series_id];
@@ -168,6 +176,14 @@ window.Browser = function (hooks) {
     }
 
     // ---- Now/next on live channels ----
+
+    function updateEpg() {
+        clearTimeout(state.epgTimer);
+        clearTimeout(state.redrawTimer);
+        state.epgWanted = [];
+        if (state.epg) state.epg.stop();
+        state.epg = state.adapter && state.adapter.nowNext && Library.setting('programmeGuide') ? Epg(state.adapter) : null;
+    }
 
     function liveRequest(channel) {
         var req = state.adapter.liveRequest(channel);
@@ -524,7 +540,7 @@ window.Browser = function (hooks) {
 
     function available(id) {
         if (id === 'home') return !!state.adapter;
-        return id === 'sources' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
+        return id === 'sources' || id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
     }
 
     function isBack(code) {
@@ -615,6 +631,7 @@ window.Browser = function (hooks) {
                 'rail-item' +
                 (section.id === state.section ? ' active' : '') +
                 (section.id === state.section && state.zone === 'rail' ? ' focused' : '') +
+                (section.id === 'settings' ? ' rail-bottom' : '') +
                 (available(section.id) ? '' : ' disabled');
             el.innerHTML =
                 '<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="' + section.icon + '"/></svg><span></span>';
@@ -625,7 +642,9 @@ window.Browser = function (hooks) {
         $('source-type').textContent = state.source ? Sources.typeLabel(state.source) + (state.updating ? ' · Updating…' : '') : 'Add one in Sources';
         renderToolbar();
         $('hints').textContent =
-            state.zone === 'home'
+            state.section === 'settings'
+                ? '\u25b2\u25bc: row \u00b7 \u25c0 \u25b6 / OK: change \u00b7 Return: rail'
+                : state.zone === 'home'
                 ? 'OK: open · Hold OK: options · Arrows: move · Return: menu'
                 : state.zone === 'items' && state.section !== 'sources'
                 ? 'OK: open \u00b7 Hold OK: options \u00b7 \u25b2 at the top: toolbar \u00b7 Return: back'
@@ -650,9 +669,9 @@ window.Browser = function (hooks) {
         });
     }
 
-    // Where the focus goes from the rail: Home's rows or the category list.
+    // The rail opens the content area belonging to the selected screen.
     function contentZone() {
-        return state.section === 'home' ? 'home' : 'categories';
+        return state.section === 'settings' ? 'settings' : state.section === 'home' ? 'home' : 'categories';
     }
 
     function setZone(zone) {
@@ -661,6 +680,7 @@ window.Browser = function (hooks) {
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
         home.setActive(zone === 'home');
+        settings.setActive(zone === 'settings');
         renderChrome();
     }
 
@@ -768,7 +788,7 @@ window.Browser = function (hooks) {
         restoring = false;
         state.source = source;
         state.adapter = null;
-        state.epg = null;
+        updateEpg();
         state.info = null;
         state.cache = {};
         state.base = null;
@@ -781,12 +801,12 @@ window.Browser = function (hooks) {
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
-        state.epg = state.adapter.nowNext ? Epg(state.adapter) : null;
+        updateEpg();
         var adapter = state.adapter;
         account = LoadScreen.run(source.id + ':account', function () {
             return adapter.account();
         }, function () {
-            return adapter === state.adapter && state.section !== 'sources';
+            return adapter === state.adapter && state.section !== 'sources' && state.section !== 'settings';
         })
             .then(function (info) {
                 if (adapter !== state.adapter) return;
@@ -800,7 +820,10 @@ window.Browser = function (hooks) {
         if (!available(id)) return;
         var adapter = state.adapter;
         state.section = id;
+        clearTimeout(state.timer);
+        clearTimeout(state.searchTimer);
         $('content').classList.toggle('home', id === 'home');
+        $('content').classList.toggle('settings', id === 'settings');
         state.showingSearch = false;
         state.base = null;
         state.favKeys = null;
@@ -809,6 +832,10 @@ window.Browser = function (hooks) {
         items.set([], 0, '');
         if (id === 'sources') return showSources(0);
         if (id === 'home') return showHome();
+        if (id === 'settings') {
+            settings.render();
+            return renderChrome();
+        }
         categories.loading();
         items.loading();
         renderChrome();
@@ -1230,6 +1257,10 @@ window.Browser = function (hooks) {
         if (state.searching) return onSearchKey(code);
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
+        if (state.zone === 'settings') {
+            if (settings.key(code) === 'left') setZone('rail');
+            return true;
+        }
         if (state.zone === 'rail') {
             if (code === KEY.UP || code === KEY.DOWN) moveSection(code === KEY.UP ? -1 : 1);
             else if (code === KEY.RIGHT || code === KEY.ENTER) setZone(contentZone());

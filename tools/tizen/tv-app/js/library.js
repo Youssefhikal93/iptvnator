@@ -7,6 +7,18 @@ window.Library = (function () {
     var PREFIX = 'iptvnator-tv:';
     var PROGRESS_KEY = PREFIX + 'progress';
     var RECENT_MAX = 40;
+    var DEFAULTS = {
+        autoplayMs: 8000,
+        skipIntroSeconds: 90,
+        programmeGuide: true,
+        homeLayout: 'cinema',
+        'view:movies': 'grid',
+        'view:series': 'grid',
+        'view:live': 'list',
+        'sort:movies': 'newest',
+        'sort:series': 'newest',
+        onStart: 'last-channel',
+    };
     var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label', 'category_id', 'added', 'last_modified', 'rating_5based', 'rating'];
 
     function read(key, fallback) {
@@ -145,16 +157,44 @@ window.Library = (function () {
         }));
     }
 
-    return {
-        // Startup restore is on by default; false survives JSON storage.
-        setting: function (name, enabled) {
-            var settings = read(PREFIX + 'settings', { lastChannelOnStart: true });
-            if (enabled !== undefined) {
-                settings[name] = enabled;
-                write(PREFIX + 'settings', settings);
+    function setting(name) {
+        var settings = read(PREFIX + 'settings', {});
+        if (name === 'lastChannelOnStart') return setting('onStart') === 'last-channel';
+        if (settings[name] !== undefined) return settings[name];
+        if (name === 'onStart' && settings.lastChannelOnStart === false) return 'home';
+        // Keep the toolbar's existing view keys, including choices from older installs.
+        if (name.indexOf('view:') === 0) {
+            var saved;
+            try {
+                saved = localStorage.getItem(PREFIX + name);
+            } catch (e) {
+                // Use the default when storage is unavailable.
             }
-            return settings[name] === undefined && name === 'lastChannelOnStart' ? true : settings[name];
-        },
+            if (saved === 'grid' || saved === 'list') return saved;
+        }
+        return DEFAULTS[name];
+    }
+
+    function setSetting(name, value) {
+        var settings = read(PREFIX + 'settings', {});
+        if (name === 'lastChannelOnStart') {
+            name = 'onStart';
+            value = value ? 'last-channel' : 'home';
+        }
+        settings[name] = value;
+        write(PREFIX + 'settings', settings);
+        if (name.indexOf('view:') === 0) {
+            try {
+                localStorage.setItem(PREFIX + name, value);
+            } catch (e) {
+                // The settings object still holds the choice.
+            }
+        }
+    }
+
+    return {
+        setting: setting,
+        setSetting: setSetting,
         lastChannel: function (sourceId) {
             return read(PREFIX + 'last-channel:' + sourceId, null);
         },
@@ -223,7 +263,7 @@ window.Library = (function () {
             var saved = read(PREFIX + 'sort:' + sourceId, {})[section];
             return Sort.options.some(function (option) {
                 return option.id === saved;
-            }) ? saved : section === 'movies' || section === 'series' ? 'newest' : 'provider';
+            }) ? saved : section === 'movies' || section === 'series' ? setting('sort:' + section) : 'provider';
         },
         setSort: function (sourceId, section, mode) {
             var key = PREFIX + 'sort:' + sourceId;
@@ -232,19 +272,11 @@ window.Library = (function () {
             write(key, all);
         },
         view: function (section, fallback) {
-            try {
-                var saved = localStorage.getItem(PREFIX + 'view:' + section);
-                return saved === 'grid' || saved === 'list' ? saved : fallback;
-            } catch (e) {
-                return fallback;
-            }
+            var saved = setting('view:' + section);
+            return saved === 'grid' || saved === 'list' ? saved : fallback;
         },
         setView: function (section, mode) {
-            try {
-                localStorage.setItem(PREFIX + 'view:' + section, mode);
-            } catch (e) {
-                // Kept for this session only.
-            }
+            setSetting('view:' + section, mode);
         },
     };
 })();

@@ -1,0 +1,85 @@
+// App-wide choices live beside the library, independent of the active source.
+window.Settings = function (hooks) {
+    'use strict';
+
+    var VERSION = '0.1.0'; // Keep in step with config.xml.
+    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
+    var root = document.getElementById('settings');
+    var focus = 0;
+    var active = false;
+    var rows = [
+        { group: 'Playback', label: 'Autoplay next episode', key: 'autoplayMs', choices: [0, 5000, 8000, 15000], labels: ['Off', '5 s', '8 s', '15 s'] },
+        { label: 'Skip intro length', key: 'skipIntroSeconds', choices: [60, 75, 90, 120], labels: ['60 s', '75 s', '90 s', '120 s'] },
+        { label: 'Programme guide (now and next)', key: 'programmeGuide', choices: [true, false], labels: ['On', 'Off'] },
+        { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
+        { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
+        { label: 'Default view for Series', key: 'view:series', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
+        { label: 'Default view for Live TV', key: 'view:live', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
+        { label: 'Default sort for Movies', key: 'sort:movies', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
+        { label: 'Default sort for Series', key: 'sort:series', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
+        { group: 'Start-up', label: 'On start open', key: 'onStart', choices: ['last-channel', 'home'], labels: ['Last channel', 'Home'] },
+        { group: 'About', label: 'App version', text: VERSION },
+        { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
+    ];
+
+    function sortId(option) { return option.id; }
+    function sortLabel(option) { return option.label; }
+
+    function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        node.className = cls;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    function choice(row) {
+        return Math.max(0, row.choices.indexOf(Library.setting(row.key)));
+    }
+
+    function renderRow(row, index) {
+        if (row.group) root.appendChild(el('h2', 'st-group', row.group));
+        var node = el('div', 'st-row' + (active && focus === index ? ' focused' : ''));
+        node.appendChild(el('span', 'st-label', row.label));
+        node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : row.text));
+        root.appendChild(node);
+    }
+
+    function render() {
+        var scroll = root.scrollTop;
+        root.textContent = '';
+        root.appendChild(el('h1', 'st-title', 'Settings'));
+        rows.forEach(renderRow);
+        root.scrollTop = scroll;
+        var selected = root.querySelector('.focused');
+        if (selected) selected.scrollIntoView({ block: 'nearest' });
+    }
+
+    function change(step) {
+        var row = rows[focus];
+        var index = row.key ? choice(row) : 0;
+        // LEFT at the first choice leaves the screen; RIGHT cycles forward.
+        if (step < 0 && index === 0) return 'left';
+        if (!row.key) return;
+        Library.setSetting(row.key, row.choices[(index + step) % row.choices.length]);
+        hooks.changed(row.key);
+        hooks.toast('Saved');
+        render();
+    }
+
+    return {
+        render: render,
+        setActive: function (enabled) {
+            active = enabled;
+            render();
+        },
+        key: function (code) {
+            if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE) return 'left';
+            if (code === KEY.LEFT) return change(-1);
+            if (code === KEY.RIGHT || code === KEY.ENTER) return change(1);
+            if (code === KEY.UP || code === KEY.DOWN) {
+                focus = Math.max(0, Math.min(rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
+                render();
+            }
+        },
+    };
+};

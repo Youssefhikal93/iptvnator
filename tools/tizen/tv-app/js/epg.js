@@ -11,6 +11,7 @@ window.Epg = function (adapter) {
     var loading = {}; // stream id -> Promise
     var queue = [];
     var active = 0;
+    var stopped = false;
 
     function idOf(channel) {
         return String(channel.stream_id);
@@ -37,6 +38,7 @@ window.Epg = function (adapter) {
     }
 
     function fetchOne(channel) {
+        if (stopped || !Library.setting('programmeGuide')) return Promise.resolve({ now: null, next: null });
         var id = idOf(channel);
         if (!loading[id]) {
             loading[id] = adapter
@@ -56,19 +58,23 @@ window.Epg = function (adapter) {
     }
 
     function pump(done) {
-        while (active < PARALLEL && queue.length) {
+        while (!stopped && Library.setting('programmeGuide') && active < PARALLEL && queue.length) {
             var channel = queue.shift();
             if (peek(channel) !== undefined) continue;
             active++;
             fetchOne(channel).then(function () {
                 active--;
-                done();
+                if (!stopped) done();
                 pump(done);
             });
         }
     }
 
     return {
+        stop: function () {
+            stopped = true;
+            queue = [];
+        },
         peek: peek,
         // Programmes for one channel (the player), fetched if needed.
         load: function (channel) {

@@ -94,6 +94,10 @@ _Avoid_: Rail (the rail is the section menu), shelf, carousel
 The menu of sections on the left edge.
 _Avoid_: Sidebar, nav
 
+**Settings**:
+App-wide playback, display and start-up choices, available from the bottom of the rail even without a source.
+_Avoid_: Preferences, configuration
+
 **Detail page**:
 The full-screen page for one movie or show: artwork, facts, plot and its buttons; a show's page also lists its episodes.
 _Avoid_: Info page, details screen

@@ -86,6 +86,13 @@ svg {
 .rail-item.disabled {
     opacity: 0.3;
 }
+.rail-item.rail-bottom {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    margin-bottom: 0;
+}
 
 /* Header: source switcher pill and a search bar and view toggle */
 #header {
@@ -985,6 +992,50 @@ svg {
 #home {
     display: none;
 }
+#settings {
+    display: none;
+}
+#content.settings .pane {
+    display: none;
+}
+#content.settings #settings {
+    display: block;
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 56px 40px;
+    background: var(--content-bg);
+}
+.st-title {
+    margin: 0 0 24px;
+    font-size: 42px;
+    color: var(--heading);
+}
+.st-group {
+    margin: 24px 0 12px;
+    font-size: 26px;
+    color: var(--selection);
+}
+.st-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    min-height: 72px;
+    margin-bottom: 8px;
+    padding: 8px 24px;
+    box-sizing: border-box;
+    border: 3px solid transparent;
+    border-radius: 14px;
+    background: var(--widget-bg);
+}
+.st-row.focused {
+    border-color: var(--selection-border);
+    background: var(--selection-surface-strong);
+}
+.st-value {
+    color: var(--selection);
+    text-align: right;
+}
 #content.home .pane {
     display: none;
 }
@@ -1070,6 +1121,44 @@ svg {
     display: flex;
     gap: 18px;
     margin-top: 24px;
+}
+#home.showcase .hm-hero {
+    height: 320px;
+}
+#home.showcase .hm-hero-text {
+    top: 18px;
+}
+#home.showcase .hm-hero-title {
+    font-size: 48px;
+    margin-top: 6px;
+}
+#home.showcase .hm-hero-sub,
+#home.showcase .hm-hero-plot {
+    margin-top: 6px;
+}
+#home.showcase .hm-hero-sub {
+    font-size: 24px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#home.showcase .hm-hero-plot {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 24px;
+    line-height: 1.25;
+    max-height: 60px;
+}
+#home.showcase .hm-hero-bar {
+    margin-top: 10px;
+}
+#home.showcase .hm-hero-buttons {
+    margin-top: 12px;
+}
+#home.showcase .dt-btn {
+    padding: 12px 26px;
+    font-size: 26px;
 }
 .dt-btn.small {
     padding: 16px 26px;

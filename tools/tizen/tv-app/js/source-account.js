@@ -7,11 +7,11 @@ window.SourceAccount = (function () {
     var DAY = 86400000;
     var WARN_DAYS = 7;
     var FRESH_MS = 60000;
-    var CHIPS = { expired: 'Expired', inactive: 'Inactive', login: 'Login failed', down: 'Not responding' };
+    var CHIPS = { get expired() { return I18n.t('account.expired'); }, get inactive() { return I18n.t('account.inactive'); }, get login() { return I18n.t('account.loginFailed'); }, get down() { return I18n.t('account.down'); } };
     var COUNTED = {
-        live: 'channels',
-        movies: 'movies',
-        series: 'shows',
+        get live() { return I18n.t('account.unitChannels'); },
+        get movies() { return I18n.t('account.unitMovies'); },
+        get series() { return I18n.t('account.unitShows'); },
     };
     var KEYS = { live: 'live:items:', movies: 'movies:items:', series: 'series:items:' };
 
@@ -30,7 +30,7 @@ window.SourceAccount = (function () {
     }
 
     function day(ms) {
-        return new Date(ms).toLocaleDateString();
+        return I18n.date(ms);
     }
 
     // Why an Xtream account cannot be used, or null. Expired, inactive and a
@@ -38,15 +38,15 @@ window.SourceAccount = (function () {
     function problem(info, now) {
         now = now === undefined ? Date.now() : now;
         if (!info || String(info.auth) !== '1') {
-            return { reason: 'login', message: 'Check the source login and subscription', expires: null };
+            return { reason: 'login', message: I18n.t('account.checkLogin'), expires: null };
         }
         var expires = expiry(info);
         var status = String(info.status || '');
         var active = !status || /^active$/i.test(status);
         if (/^expired$/i.test(status) || (active && expires !== null && expires <= now)) {
-            return { reason: 'expired', message: 'Account expired', expires: expires };
+            return { reason: 'expired', message: I18n.t('account.accountExpired'), expires: expires };
         }
-        if (!active) return { reason: 'inactive', message: 'Account inactive', expires: expires };
+        if (!active) return { reason: 'inactive', message: I18n.t('account.accountInactive'), expires: expires };
         return null;
     }
 
@@ -59,7 +59,7 @@ window.SourceAccount = (function () {
     }
 
     function remaining(days) {
-        return days <= 1 ? 'in less than a day' : 'in ' + days + ' days';
+        return days <= 1 ? I18n.t('account.inLessThanDay') : I18n.t('account.inDays', { n: days });
     }
 
     function stateOf(err) {
@@ -142,15 +142,15 @@ window.SourceAccount = (function () {
 
     function channelCount(id) {
         var found = counts[id];
-        return found && found.live !== undefined ? found.live + ' channels' : '';
+        return found && found.live !== undefined ? I18n.t('account.nChannels', { n: found.live }) : '';
     }
 
     function expiryText(info, now) {
         var expires = expiry(info);
         if (expires === null) return '';
-        if (expires <= (now || Date.now())) return 'Expired ' + day(expires);
+        if (expires <= (now || Date.now())) return I18n.t('account.expiredOn', { date: day(expires) });
         var days = daysLeft(info, now);
-        return days ? 'Expires ' + remaining(days) : 'Expires ' + day(expires);
+        return I18n.t('account.expires', { when: days ? remaining(days) : day(expires) });
     }
 
     // The fields a Sources row needs: a right-hand chip and a subtitle line.
@@ -158,7 +158,7 @@ window.SourceAccount = (function () {
         var known = health[source.id];
         var info = known && known.info;
         var parts = [];
-        if (current) parts.push('Active');
+        if (current) parts.push(I18n.t('account.active'));
         if (guide) parts.push(guide);
         parts.push(channelCount(source.id));
         if (source.type === 'xtream') parts.push(expiryText(info));
@@ -194,9 +194,9 @@ window.SourceAccount = (function () {
     }
 
     function statusText(info, state) {
-        if (state === 'expired') return 'Expired';
-        if (state === 'inactive') return info && info.status ? info.status : 'Inactive';
-        return info && info.status || 'unknown';
+        if (state === 'expired') return I18n.t('account.expired');
+        if (state === 'inactive') return info && info.status ? info.status : I18n.t('account.inactive');
+        return info && info.status || I18n.t('account.unknown');
     }
 
     // Rows for the source details pane. `info` is the account the app is using
@@ -206,28 +206,28 @@ window.SourceAccount = (function () {
         var rows = [];
         if (source.type !== 'xtream') {
             if (info && info.channels !== undefined) {
-                var rows = [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
-                if (info.movies) rows.push({ label: info.movies + ' movies' });
-                if (info.shows) rows.push({ label: info.shows + ' shows' });
+                var rows = [{ label: I18n.t('account.channelsInGroups', { channels: info.channels, groups: info.groups }) }];
+                if (info.movies) rows.push({ label: I18n.t('account.nMovies', { n: info.movies }) });
+                if (info.shows) rows.push({ label: I18n.t('account.nShows', { n: info.shows }) });
                 return rows;
             }
-            return channelCount(source.id) ? [{ label: channelCount(source.id) + ' in the catalogue' }] : [];
+            return channelCount(source.id) ? [{ label: I18n.t('account.inCatalogue', { count: channelCount(source.id) }) }] : [];
         }
         info = info || (known && known.info);
-        if (known && known.state === 'down' && !info) return [{ label: 'Status: Not responding' }];
-        if (known && known.state === 'login' && !info) return [{ label: 'Status: Login failed' }];
+        if (known && known.state === 'down' && !info) return [{ label: I18n.t('account.statusDown') }];
+        if (known && known.state === 'login' && !info) return [{ label: I18n.t('account.statusLogin') }];
         if (!info) return [];
         var expires = expiry(info);
-        rows.push({ label: 'Status: ' + statusText(info, known && known.state) });
-        rows.push({ label: 'Expires: ' + (expires === null ? 'Never' : day(expires)) });
-        rows.push({ label: 'Connections: ' + (info.active_cons || 0) + ' / ' + (info.max_connections || '?') });
-        if (formats(info)) rows.push({ label: 'Formats: ' + formats(info) });
+        rows.push({ label: I18n.t('account.status', { status: statusText(info, known && known.state) }) });
+        rows.push({ label: I18n.t('account.expiresRow', { when: expires === null ? I18n.t('account.never') : day(expires) }) });
+        rows.push({ label: I18n.t('account.connections', { used: info.active_cons || 0, max: info.max_connections || '?' }) });
+        if (formats(info)) rows.push({ label: I18n.t('account.formats', { formats: formats(info) }) });
         var saved = Object.keys(COUNTED).filter(function (name) {
             return counts[source.id] && counts[source.id][name] !== undefined;
         }).map(function (name) {
             return counts[source.id][name] + ' ' + COUNTED[name];
         });
-        if (saved.length) rows.push({ label: 'In the catalogue: ' + saved.join(', ') });
+        if (saved.length) rows.push({ label: I18n.t('account.catalogueRow', { counts: saved.join(', ') }) });
         return rows;
     }
 
@@ -237,20 +237,20 @@ window.SourceAccount = (function () {
         var expires = expiry(info);
         if (!days || warned[source.id] === expires) return;
         warned[source.id] = expires;
-        notify('Account expires ' + remaining(days) + ' (' + day(expires) + ')', 6000);
+        notify(I18n.t('account.warn', { when: remaining(days), date: day(expires) }), 6000);
     }
 
     // The full-screen text for a failed account check.
     function screen(err) {
         var status = err.info && err.info.status ? String(err.info.status).toLowerCase() : '';
         if (err.reason === 'expired') {
-            return ['Account expired', (err.expires ? 'This account expired on ' + day(err.expires) + '.' : 'This account has expired.') +
-                ' Renew it with your provider, or choose another source.'];
+            return [I18n.t('account.accountExpired'), (err.expires ? I18n.t('account.expiredOnFull', { date: day(err.expires) }) : I18n.t('account.hasExpired')) +
+                ' ' + I18n.t('account.renew')];
         }
         if (err.reason === 'inactive') {
-            return ['Account inactive', 'The provider reports this account as ' + (status || 'not active') + '. Contact your provider, or choose another source.'];
+            return [I18n.t('account.accountInactive'), I18n.t('account.reportsInactive', { status: status || I18n.t('account.notActive') })];
         }
-        return ['Wrong login', 'The provider did not accept this username and password. Edit the source in Sources.'];
+        return [I18n.t('account.wrongLogin'), I18n.t('account.wrongLoginHint')];
     }
 
     return {

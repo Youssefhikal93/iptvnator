@@ -14,7 +14,7 @@ window.Watched = function (api) {
         var id = Progress.id(section, item);
         var done = Progress.isWatched(id);
         return {
-            label: item.episode ? 'Mark episode ' + (done ? 'unwatched' : 'watched') : 'Mark as ' + (done ? 'unwatched' : 'watched'),
+            label: I18n.t((item.episode ? 'watched.markEpisode' : 'watched.markAs') + (done ? '.unwatched' : '.watched')),
             run: function () {
                 Progress.mark([id], !done, [item.seconds]);
                 api.changed();
@@ -25,7 +25,7 @@ window.Watched = function (api) {
     function episodesOption(label, episodes) {
         var done = Progress.allWatched(episodes);
         return {
-            label: label + ' ' + (done ? 'unwatched' : 'watched'),
+            label: I18n.t(label + (done ? '.unwatched' : '.watched')),
             run: function () {
                 Progress.mark(episodes.map(Progress.episodeId), !done, episodes.map(function (ep) { return ep.seconds; }));
                 api.changed();
@@ -34,15 +34,15 @@ window.Watched = function (api) {
     }
 
     function openShowMenu(item, options, title) {
-        var current = Menu.open(title, [{ label: 'Loading episodes\u2026' }, { label: 'Cancel' }]);
+        var current = Menu.open(title, [{ label: I18n.t('episodes.loading') }, { label: I18n.t('common.cancel') }]);
         api.loadShow(item).then(function (info) {
             if (!current()) return;
-            if (info.episodes && info.episodes.length) options.splice(options.length - 1, 0, episodesOption('Mark show as', info.episodes));
-            else api.toast('No episodes');
+            if (info.episodes && info.episodes.length) options.splice(options.length - 1, 0, episodesOption('watched.markShow', info.episodes));
+            else api.toast(I18n.t('episodes.none'));
             Menu.open(title, options);
         }).catch(function () {
             if (!current()) return;
-            api.toast('Could not load episodes. Hold OK to try again.');
+            api.toast(I18n.t('watched.loadFailed'));
             Menu.open(title, options);
         });
     }
@@ -60,8 +60,8 @@ window.Watched = function (api) {
         });
         Menu.open(ep.label || ep.title, [
             itemOption({ episode: ep, seconds: ep.seconds }, 'series'),
-            episodesOption('Mark season', season),
-            { label: 'Cancel' },
+            episodesOption('watched.markSeason', season),
+            { label: I18n.t('common.cancel') },
         ]);
     }
 

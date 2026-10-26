@@ -139,7 +139,7 @@
             tizen.application.getCurrentApplication().exit();
         } catch (e) {
             // Browser preview, or firmware that cannot exit: playback is already released.
-            browser.toast('Sleep timer stopped playback');
+            browser.toast(I18n.t('sleep.stoppedToast'));
         }
     });
 

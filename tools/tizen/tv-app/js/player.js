@@ -93,7 +93,7 @@ window.Player = (function () {
         begin: function () {
             freeze.capture();
             release();
-            showStatus(heading(current) + '\nReconnecting…', false);
+            showStatus(heading(current) + '\n' + I18n.t('player.reconnecting'), false);
         },
         open: function (done) {
             start(current, done);
@@ -102,7 +102,7 @@ window.Player = (function () {
             Log.error('RECONNECT GAVE UP ' + current.title + ' (' + reason + ')');
             release();
             freeze.clear();
-            showStatus(heading(current) + '\nThe stream stopped and could not reconnect.', true);
+            showStatus(heading(current) + '\n' + I18n.t('player.reconnectFailed'), true);
         },
     });
     var sleep = PlayerSleep({
@@ -320,9 +320,9 @@ window.Player = (function () {
 
     function hintHtml() {
         var parts = current.live
-            ? [['OK', 'Info'], ['▲▼', 'Channel'], ['◀', 'Channel list'], ['PRE-CH / Green', 'Previous channel'], ['Yellow', 'Audio & subtitles']]
-            : [['OK', 'Pause'], ['◀ ▶', 'Seek'], ['▲', 'Audio, subtitles, speed'], ['▼', current.episodes ? 'Episodes & more' : 'More']];
-        parts.push(['Return', 'Close']);
+            ? [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / Green', I18n.t('player.hint.previous')], ['Yellow', I18n.t('player.hint.audioSubs')]]
+            : [['OK', I18n.t('player.hint.pause')], ['◀ ▶', I18n.t('player.hint.seek')], ['▲', I18n.t('player.hint.audioSubsSpeed')], ['▼', I18n.t(current.episodes ? 'player.hint.episodesMore' : 'detail.more')]];
+        parts.push(['Return', I18n.t('player.hint.close')]);
         return parts;
     }
 
@@ -465,7 +465,7 @@ window.Player = (function () {
     function languageName(code) {
         if (!code) return '';
         try {
-            return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code;
+            return new Intl.DisplayNames([I18n.locale()], { type: 'language' }).of(code) || code;
         } catch (e) {
             return String(code).toUpperCase();
         }
@@ -490,7 +490,7 @@ window.Player = (function () {
             // Not prepared.
         }
         out.forEach(function (track, i) {
-            if (!track.label) track.label = 'Track ' + (i + 1);
+            if (!track.label) track.label = I18n.t('player.track', { n: i + 1 });
         });
         return out;
     }
@@ -551,7 +551,7 @@ window.Player = (function () {
                 });
             });
             text.unshift({
-                label: 'Off',
+                label: I18n.t('common.off'),
                 active: avText < 0,
                 select: function () {
                     try {
@@ -566,7 +566,7 @@ window.Player = (function () {
         } else if (lib && window.Hls && lib instanceof Hls) {
             (lib.audioTracks || []).forEach(function (track, n) {
                 audio.push({
-                    label: track.name || languageName(track.lang) || 'Track ' + (n + 1),
+                    label: track.name || languageName(track.lang) || I18n.t('player.track', { n: n + 1 }),
                     active: lib.audioTrack === n,
                     select: function () {
                         lib.audioTrack = n;
@@ -574,7 +574,7 @@ window.Player = (function () {
                 });
             });
             text.push({
-                label: 'Off',
+                label: I18n.t('common.off'),
                 active: lib.subtitleTrack < 0,
                 select: function () {
                     lib.subtitleTrack = -1;
@@ -582,7 +582,7 @@ window.Player = (function () {
             });
             (lib.subtitleTracks || []).forEach(function (track, n) {
                 text.push({
-                    label: track.name || languageName(track.lang) || 'Subtitle ' + (n + 1),
+                    label: track.name || languageName(track.lang) || I18n.t('player.subtitle', { n: n + 1 }),
                     active: lib.subtitleTrack === n,
                     select: function () {
                         lib.subtitleDisplay = true;
@@ -593,7 +593,7 @@ window.Player = (function () {
         } else {
             nativeTracks(video.audioTracks).forEach(function (track, n) {
                 audio.push({
-                    label: track.label || languageName(track.language) || 'Track ' + (n + 1),
+                    label: track.label || languageName(track.language) || I18n.t('player.track', { n: n + 1 }),
                     active: track.enabled,
                     select: function () {
                         nativeTracks(video.audioTracks).forEach(function (other) {
@@ -605,7 +605,7 @@ window.Player = (function () {
             var subs = nativeTracks(video.textTracks, ['subtitles', 'captions']);
             if (subs.length) {
                 text.push({
-                    label: 'Off',
+                    label: I18n.t('common.off'),
                     active: subs.every(function (t) {
                         return t.mode !== 'showing';
                     }),
@@ -619,7 +619,7 @@ window.Player = (function () {
             for (i = 0; i < subs.length; i++) {
                 (function (track, n) {
                     text.push({
-                        label: track.label || languageName(track.language) || 'Subtitle ' + (n + 1),
+                        label: track.label || languageName(track.language) || I18n.t('player.subtitle', { n: n + 1 }),
                         active: track.mode === 'showing',
                         select: function () {
                             subs.forEach(function (t) {
@@ -668,7 +668,7 @@ window.Player = (function () {
                             if (w && h) parts.push(w + '×' + h);
                             parts.push(pick(extra, ['codec', 'fourcc']));
                             parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                            lines.push('Video  ' + parts.filter(Boolean).join(' · '));
+                            lines.push(I18n.t('player.info.video') + '  ' + parts.filter(Boolean).join(' · '));
                         } else if (info.type === 'AUDIO') {
                             parts.push(languageName(pick(extra, ['language'])));
                             parts.push(pick(extra, ['codec']));
@@ -677,19 +677,19 @@ window.Player = (function () {
                             var rate = pick(extra, ['sample_rate']);
                             if (rate) parts.push(rate + ' Hz');
                             parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                            lines.push('Audio  ' + parts.filter(Boolean).join(' · '));
+                            lines.push(I18n.t('player.audio') + '  ' + parts.filter(Boolean).join(' · '));
                         }
                     });
             } catch (e) {
                 // Not available.
             }
         } else {
-            if (video.videoWidth) lines.push('Video  ' + video.videoWidth + '×' + video.videoHeight);
+            if (video.videoWidth) lines.push(I18n.t('player.info.video') + '  ' + video.videoWidth + '×' + video.videoHeight);
             if (lib && window.Hls && lib instanceof Hls && lib.levels && lib.levels[lib.currentLevel]) {
-                lines.push('Bitrate  ' + bitrate(lib.levels[lib.currentLevel].bitrate));
+                lines.push(I18n.t('player.info.bitrate') + '  ' + bitrate(lib.levels[lib.currentLevel].bitrate));
             }
         }
-        lines.push('Player  ' + (usingAv ? 'Samsung AVPlay' : lib ? (window.Hls && lib instanceof Hls ? 'hls.js' : 'mpegts.js') : 'HTML5 video'));
+        lines.push(I18n.t('player.info.player') + '  ' + (usingAv ? 'Samsung AVPlay' : lib ? (window.Hls && lib instanceof Hls ? 'hls.js' : 'mpegts.js') : 'HTML5 video'));
         return lines;
     }
 
@@ -711,17 +711,17 @@ window.Player = (function () {
             ui.menu.appendChild(node);
         }
         var watch = epg.watchFromStart();
-        if (watch) item('Watch from start', false, watch);
-        if (current.backToLive) item('Back to live', false, current.backToLive);
-        head('Audio');
+        if (watch) item(I18n.t('player.watchFromStart'), false, watch);
+        if (current.backToLive) item(I18n.t('player.backToLive'), false, current.backToLive);
+        head(I18n.t('player.audio'));
         if (tracks.audio.length) tracks.audio.forEach(function (t) { item(t.label, t.active, t.select); });
-        else ui.menu.appendChild(el('div', 'pl-menu-empty', 'Only one audio track'));
-        head('Subtitles');
+        else ui.menu.appendChild(el('div', 'pl-menu-empty', I18n.t('player.oneAudio')));
+        head(I18n.t('picture.subtitles'));
         if (tracks.text.length > 1) tracks.text.forEach(function (t) { item(t.label, t.active, t.select); });
-        else ui.menu.appendChild(el('div', 'pl-menu-empty', 'No subtitles available'));
+        else ui.menu.appendChild(el('div', 'pl-menu-empty', I18n.t('player.noSubtitles')));
         PlayerPicture.menuEntries(head, item);
         if (!current.live) {
-            head('Playback speed');
+            head(I18n.t('player.speed'));
             (usingAv ? SPEEDS_AV : SPEEDS_HTML).forEach(function (value) {
                 item(value + '×', value === speed, function () {
                     applySpeed(value);
@@ -730,7 +730,7 @@ window.Player = (function () {
         }
         ui.menu.appendChild(el('div', 'pl-menu-head pl-sleep-head', sleep.heading()));
         sleep.choices(current).forEach(function (choice) { item(choice.label, choice.active, choice.select); });
-        head('Stream info');
+        head(I18n.t('player.streamInfo'));
         streamInfoLines().forEach(function (line) {
             ui.menu.appendChild(el('div', 'pl-menu-info', line));
         });
@@ -806,8 +806,8 @@ window.Player = (function () {
         resume.open = true;
         resume.failed = true;
         resume.focus = 0;
-        ui.resumeTitle.textContent = 'Could not restore saved progress.';
-        ui.resumeYes.textContent = 'Retry';
+        ui.resumeTitle.textContent = I18n.t('player.restoreFailed');
+        ui.resumeYes.textContent = I18n.t('common.retry');
         ui.resume.classList.remove('hidden');
         renderResume();
     }
@@ -835,7 +835,7 @@ window.Player = (function () {
         resume.focus = 0;
         resume.position = saved.position;
         ui.resumeTitle.textContent = current.title + (current.subtitle ? ' · ' + current.subtitle : '');
-        ui.resumeYes.textContent = 'Resume from ' + fmt(saved.position * 1000);
+        ui.resumeYes.textContent = I18n.t('player.resumeFrom', { time: fmt(saved.position * 1000) });
         ui.resume.classList.remove('hidden');
         renderResume();
     }
@@ -946,7 +946,7 @@ window.Player = (function () {
             var player = (lib = mpegts.createPlayer({ type: 'mpegts', isLive: current.live, url: url }, { enableStashBuffer: false }));
             player.on(mpegts.Events.ERROR, function (type, detail, info) {
                 var reason = type + ' ' + detail + ' ' + ((info && info.code) || '');
-                if (ready && lib === player) streamLost(reason, 'Playback stopped.');
+                if (ready && lib === player) streamLost(reason, I18n.t('player.stopped'));
                 finish(reason);
             });
             video.onplaying = function () {
@@ -967,7 +967,7 @@ window.Player = (function () {
                 if (!data.fatal) return;
                 var status = data.response && data.response.code;
                 var reason = data.details + (status ? ' HTTP ' + status : '');
-                if (ready && lib === player) streamLost(reason, 'Playback stopped.');
+                if (ready && lib === player) streamLost(reason, I18n.t('player.stopped'));
                 finish(reason);
             });
             video.onplaying = function () {
@@ -991,7 +991,7 @@ window.Player = (function () {
                 },
                 onbufferingcomplete: hideStatus,
                 onerror: function (type) {
-                    if (ready) streamLost(String(type), 'Playback stopped (' + type + ').');
+                    if (ready) streamLost(String(type), I18n.t('player.stoppedType', { type: type }));
                     finish(String(type));
                 },
                 onstreamcompleted: onCompleted,
@@ -1031,7 +1031,7 @@ window.Player = (function () {
 
     function onCompleted() {
         if (!current) return;
-        if (current.live) return streamLost('stream ended', 'Playback stopped.');
+        if (current.live) return streamLost('stream ended', I18n.t('player.stopped'));
         if (!started || progressBlocked()) return;
         ended = true;
         if (current.id) Progress.finish(current.id, duration() / 1000);
@@ -1061,7 +1061,7 @@ window.Player = (function () {
         video.onplaying = hideStatus;
         video.onended = onCompleted;
         video.onerror = function () {
-            streamLost('media error ' + (video.error ? video.error.code : '?'), 'Playback stopped.');
+            streamLost('media error ' + (video.error ? video.error.code : '?'), I18n.t('player.stopped'));
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
         renderHint();
@@ -1097,7 +1097,7 @@ window.Player = (function () {
         ui.title.textContent = req.title;
         ui.subtitle.textContent = req.subtitle || '';
         epg.load(req);
-        if (!onAttempt) showStatus(heading(req) + '\nLoading…', false);
+        if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
 
         var attempts = req.sources.map(function (source) {
             return [source.via, STARTERS[source.via](source.url)];
@@ -1111,7 +1111,7 @@ window.Player = (function () {
         function next(index, retried) {
             if (mine !== session) return Promise.resolve();
             if (index >= attempts.length) {
-                fail('Could not play this. It may be offline.');
+                fail(I18n.t('player.offline'));
                 return Promise.resolve();
             }
             var name = attempts[index][0];
@@ -1130,7 +1130,7 @@ window.Player = (function () {
                 // would get the same answer, so stop).
                 if (/503/.test(error)) {
                     if (retried) {
-                        fail('This channel is offline or your connection is busy.');
+                        fail(I18n.t('player.busy'));
                         return;
                     }
                     return wait(BUSY_RETRY_MS).then(function () {

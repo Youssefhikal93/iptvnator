@@ -3,12 +3,12 @@ window.Sort = (function () {
     'use strict';
 
     var OPTIONS = [
-        { id: 'newest', label: 'Newest' },
-        { id: 'oldest', label: 'Oldest' },
-        { id: 'name-asc', label: 'Name A-Z' },
-        { id: 'name-desc', label: 'Name Z-A' },
-        { id: 'rating', label: 'Top rated' },
-        { id: 'provider', label: 'Provider order' },
+        { id: 'newest', get label() { return I18n.t('sort.newest'); } },
+        { id: 'oldest', get label() { return I18n.t('sort.oldest'); } },
+        { id: 'name-asc', get label() { return I18n.t('sort.nameAsc'); } },
+        { id: 'name-desc', get label() { return I18n.t('sort.nameDesc'); } },
+        { id: 'rating', get label() { return I18n.t('sort.rating'); } },
+        { id: 'provider', get label() { return I18n.t('sort.provider'); } },
     ];
 
     function number(value) {

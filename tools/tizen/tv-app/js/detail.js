@@ -35,7 +35,7 @@ window.Detail = function () {
         if (!secs) return '';
         var h = Math.floor(secs / 3600);
         var m = Math.round((secs % 3600) / 60);
-        return h ? h + ' h ' + m + ' min' : m + ' min';
+        return I18n.t(h ? 'unit.hoursMinutes' : 'unit.minutesOnly', { h: h, m: m });
     }
 
     // A YouTube id from an id or any youtube.com / youtu.be link.
@@ -66,8 +66,8 @@ window.Detail = function () {
     function buttons() {
         var d = details();
         var list = s.page.actions(d);
-        if (s.tmdb ? s.tmdb.trailer() : d.trailer) list.push({ label: 'Trailer', run: s.tmdb ? s.tmdb.openTrailer : openTrailer });
-        if (s.clipped) list.push({ label: 'More', run: openMore });
+        if (s.tmdb ? s.tmdb.trailer() : d.trailer) list.push({ label: I18n.t('detail.trailer'), run: s.tmdb ? s.tmdb.openTrailer : openTrailer });
+        if (s.clipped) list.push({ label: I18n.t('detail.more'), run: openMore });
         return list;
     }
 
@@ -89,11 +89,11 @@ window.Detail = function () {
         var info = el('div', 'dt-info');
         info.appendChild(el('h1', 'dt-title', d.title));
         var facts = [d.year, d.rating ? '★ ' + d.rating.toFixed(1) : '', d.genre, runtime(d.seconds)].filter(Boolean);
-        info.appendChild(el('div', 'dt-meta', s.loading ? 'Loading details…' : facts.join('  ·  ')));
+        info.appendChild(el('div', 'dt-meta', s.loading ? I18n.t('detail.loading') : facts.join('  ·  ')));
         var plot = el('div', 'dt-plot', d.plot);
         info.appendChild(plot);
-        if (d.cast) info.appendChild(el('div', 'dt-credit', 'Cast: ' + d.cast));
-        if (d.director) info.appendChild(el('div', 'dt-credit', 'Director: ' + d.director));
+        if (d.cast) info.appendChild(el('div', 'dt-credit', I18n.t('detail.cast', { cast: d.cast })));
+        if (d.director) info.appendChild(el('div', 'dt-credit', I18n.t('detail.director', { director: d.director })));
         info.appendChild(renderButtons());
         body.appendChild(info);
         root.appendChild(body);
@@ -136,9 +136,9 @@ window.Detail = function () {
         var box = el('div', 'dt-more');
         box.appendChild(el('div', 'dt-more-title', d.title));
         box.appendChild(el('div', 'dt-more-plot', d.plot));
-        if (d.cast) box.appendChild(el('div', 'dt-credit', 'Cast: ' + d.cast));
-        if (d.director) box.appendChild(el('div', 'dt-credit', 'Director: ' + d.director));
-        box.appendChild(el('div', 'dt-more-hint', 'Return: close'));
+        if (d.cast) box.appendChild(el('div', 'dt-credit', I18n.t('detail.cast', { cast: d.cast })));
+        if (d.director) box.appendChild(el('div', 'dt-credit', I18n.t('detail.director', { director: d.director })));
+        box.appendChild(el('div', 'dt-more-hint', I18n.t('detail.returnClose')));
         return box;
     }
 
@@ -156,7 +156,7 @@ window.Detail = function () {
         frame.src = 'https://www.youtube.com/embed/' + details().trailer + '?autoplay=1&controls=0&rel=0';
         s.trailer = el('div', 'dt-trailer-box');
         s.trailer.appendChild(frame);
-        s.trailer.appendChild(el('div', 'dt-more-hint', 'Return: close the trailer'));
+        s.trailer.appendChild(el('div', 'dt-more-hint', I18n.t('detail.returnCloseTrailer')));
         render();
     }
 

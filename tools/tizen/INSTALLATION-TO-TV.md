@@ -311,6 +311,15 @@ from step 8 must already be downloaded.
   programme fetching and hides programme lines everywhere. Default sort
   applies only where no sort has been chosen for that source and section.
   About shows the app version and the install guide name.
+- **Language and theme** (Settings, group **Appearance**): **Language** lists
+  English plus every language the desktop app translates, each by its own
+  name (Deutsch, Français, 日本語, …); press OK on the row, choose one with
+  UP/DOWN and OK. **Theme** switches **Dark** (default) and **Light** with OK.
+  Both apply at once, are kept for all sources and survive a restart. Text the
+  desktop translation lacks stays English; provider names, channel names and
+  descriptions are never translated. Times and dates follow the language.
+  The translation tables are `tv-app/js/i18n/<code>.js`; rebuild them from the
+  desktop files with `node tests/i18n/build-tables.js`.
 - **▲ at the top of a list** reaches the search bar and the list / grid
   buttons. Results follow the typing; the SmartThings phone app keyboard is
   easier than the remote.

@@ -103,7 +103,7 @@ window.NewEpisodes = (function () {
         badge: function () {
             var node = document.createElement('span');
             node.className = 'new-badge';
-            node.textContent = 'New episodes';
+            node.textContent = I18n.t('home.newEpisodes');
             return node;
         },
     };

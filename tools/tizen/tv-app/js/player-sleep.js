@@ -19,8 +19,8 @@ window.PlayerSleep = function (api) {
     warning.setAttribute('aria-labelledby', 'pl-sleep-count');
     var count = node('div', 'pl-sleep-count');
     var buttons = node('div', 'pl-sleep-buttons');
-    var keep = node('button', 'pl-sleep-keep', 'Keep watching');
-    var stop = node('button', 'pl-sleep-stop', 'Stop now');
+    var keep = node('button', 'pl-sleep-keep', I18n.t('sleep.keep'));
+    var stop = node('button', 'pl-sleep-stop', I18n.t('sleep.stop'));
     warning.appendChild(count);
     warning.appendChild(buttons);
     buttons.appendChild(keep);
@@ -36,7 +36,7 @@ window.PlayerSleep = function (api) {
     }
 
     function heading() {
-        return 'Sleep timer' + (snapshot.choice && snapshot.remaining !== null ? ' · ' + minutes() + ' min left' : '');
+        return I18n.t('sleep.timer') + (snapshot.choice && snapshot.remaining !== null ? ' · ' + I18n.t('epg.minLeft', { m: minutes() }) : '');
     }
 
     function focusButton() {
@@ -48,11 +48,11 @@ window.PlayerSleep = function (api) {
     function render(next) {
         snapshot = next;
         badge.classList.toggle('hidden', !next.choice);
-        badge.textContent = next.remaining === null ? 'Sleep at end' : 'Sleep in ' + minutes() + ' min';
+        badge.textContent = I18n.t(next.remaining === null ? 'sleep.atEnd' : 'sleep.in', { m: minutes() });
         var head = document.querySelector('.pl-sleep-head');
         if (head) head.textContent = heading();
         warning.classList.toggle('hidden', !next.warning);
-        if (next.warning) count.textContent = 'Playback stops in ' + Math.ceil(next.remaining / 1000) + ' s';
+        if (next.warning) count.textContent = I18n.t('sleep.stopsIn', { s: Math.ceil(next.remaining / 1000) });
         if (next.warning && !shown) {
             api.warn();
             focus = 0;
@@ -76,6 +76,11 @@ window.PlayerSleep = function (api) {
     }
 
     document.addEventListener('keydown', warningKey, true);
+    // The warning's buttons are built once; follow a language change.
+    I18n.onChange(function () {
+        keep.textContent = I18n.t('sleep.keep');
+        stop.textContent = I18n.t('sleep.stop');
+    });
     keep.onclick = timer.keepWatching;
     stop.onclick = timer.stopNow;
 
@@ -89,7 +94,7 @@ window.PlayerSleep = function (api) {
             if (!request.live) choices.push('end');
             return choices.map(function (choice) {
                 return {
-                    label: choice === 'end' ? 'End of ' + (request.episodes ? 'episode' : 'movie') : choice ? choice + ' min' : 'Off',
+                    label: choice === 'end' ? I18n.t(request.episodes ? 'sleep.endEpisode' : 'sleep.endMovie') : choice ? I18n.t('unit.minutesOnly', { m: choice }) : I18n.t('common.off'),
                     active: choice === snapshot.choice,
                     select: function () { timer.select(choice); },
                 };

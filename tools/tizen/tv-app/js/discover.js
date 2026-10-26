@@ -14,16 +14,16 @@ window.Discover = (function () {
 
     function render() {
         root.textContent = '';
-        root.appendChild(TmdbView.el('h1', '', 'Discover'));
+        root.appendChild(TmdbView.el('h1', '', I18n.t('browser.discover')));
         var chips = TmdbView.el('div', 'tm-chips');
         state.genres.forEach(function (genre, i) {
             chips.appendChild(TmdbView.el('span', 'tm-chip' + (state.genre === i ? ' selected' : '') + (state.zone === 'chips' && state.chip === i ? ' focus' : ''), genre.name));
         });
         root.appendChild(chips);
         var start = state.all.length ? state.offset + 1 : 0;
-        root.appendChild(TmdbView.el('p', '', 'Titles ' + start + '–' + Math.min(state.offset + 12, state.all.length) + ' of ' + state.all.length + ' · CH ▲▼: browse more titles'));
-        root.appendChild(TmdbView.cards('In your library', state.entries.map(TmdbView.catalogueCard), state.zone === 'items' ? state.focus : -1));
-        root.appendChild(TmdbView.el('p', '', state.loading ? 'Matching visible titles…' : state.genre < 0 ? 'Choose a genre with OK' : state.entries.length ? 'OK: detail page · Return: categories' : 'No matches on this page · CH ▼: next titles'));
+        root.appendChild(TmdbView.el('p', '', I18n.t('discover.titles', { from: start, to: Math.min(state.offset + 12, state.all.length), total: state.all.length })));
+        root.appendChild(TmdbView.cards(I18n.t('tmdb.inLibrary'), state.entries.map(TmdbView.catalogueCard), state.zone === 'items' ? state.focus : -1));
+        root.appendChild(TmdbView.el('p', '', I18n.t(state.loading ? 'discover.matching' : state.genre < 0 ? 'discover.chooseGenre' : state.entries.length ? 'discover.hint' : 'discover.noMatches')));
         TmdbView.scroll(root);
     }
 

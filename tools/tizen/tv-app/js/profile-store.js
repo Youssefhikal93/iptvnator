@@ -138,12 +138,12 @@ window.ProfileStore = (function () {
     }
 
     function nameError(name, exceptId) {
-        if (!name) return 'Enter a name.';
-        if (name.length > NAME_MAX) return 'Use at most ' + NAME_MAX + ' characters.';
+        if (!name) return I18n.t('profile.errEmpty');
+        if (name.length > NAME_MAX) return I18n.t('profile.errLong', { n: NAME_MAX });
         var taken = profiles.some(function (profile) {
             return profile.id !== exceptId && profile.name.toLowerCase() === name.toLowerCase();
         });
-        return taken ? 'That name is already used.' : '';
+        return taken ? I18n.t('profile.errTaken') : '';
     }
 
     function setActive(id) {

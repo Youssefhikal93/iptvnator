@@ -3,11 +3,11 @@ window.PlayerPicture = (function () {
     'use strict';
 
     var rows = [
-        { group: 'Subtitles', label: 'Size', key: 'subtitleSize', choices: ['s', 'm', 'l', 'xl'], labels: ['Small', 'Medium', 'Large', 'Extra large'], prefix: 'sub-size-' },
-        { label: 'Text colour', menuLabel: 'Colour', key: 'subtitleColour', choices: ['white', 'yellow'], labels: ['White', 'Yellow'], prefix: 'sub-colour-' },
-        { label: 'Background', key: 'subtitleBackground', choices: ['off', 'shadow', 'box'], labels: ['Off', 'Shadow', 'Box'], prefix: 'sub-bg-' },
-        { label: 'Position', key: 'subtitlePosition', choices: ['bottom', 'high'], labels: ['Bottom', 'Higher'], prefix: 'sub-pos-' },
-        { group: 'Picture', label: 'Aspect', key: 'pictureAspect', choices: ['auto', 'fit', 'fill', '16:9', '4:3'], labels: ['Auto', 'Fit', 'Fill', '16:9', '4:3'] },
+        { get group() { return I18n.t('picture.subtitles'); }, get label() { return I18n.t('picture.size'); }, key: 'subtitleSize', choices: ['s', 'm', 'l', 'xl'], get labels() { return [I18n.t('picture.small'), I18n.t('picture.medium'), I18n.t('picture.large'), I18n.t('picture.xlarge')]; }, prefix: 'sub-size-' },
+        { get label() { return I18n.t('picture.textColour'); }, get menuLabel() { return I18n.t('picture.colour'); }, key: 'subtitleColour', choices: ['white', 'yellow'], get labels() { return [I18n.t('picture.white'), I18n.t('picture.yellow')]; }, prefix: 'sub-colour-' },
+        { get label() { return I18n.t('picture.background'); }, key: 'subtitleBackground', choices: ['off', 'shadow', 'box'], get labels() { return [I18n.t('common.off'), I18n.t('picture.shadow'), I18n.t('picture.box')]; }, prefix: 'sub-bg-' },
+        { get label() { return I18n.t('picture.position'); }, key: 'subtitlePosition', choices: ['bottom', 'high'], get labels() { return [I18n.t('picture.bottom'), I18n.t('picture.higher')]; }, prefix: 'sub-pos-' },
+        { get group() { return I18n.t('picture.picture'); }, get label() { return I18n.t('picture.aspect'); }, key: 'pictureAspect', choices: ['auto', 'fit', 'fill', '16:9', '4:3'], get labels() { return [I18n.t('picture.auto'), I18n.t('picture.fit'), I18n.t('picture.fill'), '16:9', '4:3']; } },
     ];
     var target;
 
@@ -117,7 +117,7 @@ window.PlayerPicture = (function () {
 
     function menuEntries(head, item) {
         rows.forEach(function (row) {
-            if (row.group) head(row.group === 'Subtitles' ? 'Subtitle style' : row.group);
+            if (row.group) head(row.key === 'subtitleSize' ? I18n.t('picture.subtitleStyle') : row.group);
             item((row.menuLabel || row.label) + ': ' + row.labels[choice(row, Prefs.get(row.key))], false, function () { cycle(row); });
         });
     }

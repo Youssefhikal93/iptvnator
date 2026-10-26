@@ -29,8 +29,8 @@ window.TmdbDetail = function (page, changed) {
 
     function rows() {
         var list = [];
-        if (cast.length) list.push({ label: 'Cast', entries: cast });
-        if (similar.length) list.push({ label: 'Similar in your library', entries: similar });
+        if (cast.length) list.push({ label: I18n.t('tmdb.cast'), entries: cast });
+        if (similar.length) list.push({ label: I18n.t('tmdb.similar'), entries: similar });
         return list;
     }
 

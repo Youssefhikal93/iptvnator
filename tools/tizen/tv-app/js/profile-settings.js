@@ -10,12 +10,12 @@ window.ProfileSettings = (function () {
         }
 
         function add() {
-            if (ProfileStore.list().length >= ProfileStore.max) return hooks.toast('Up to ' + ProfileStore.max + ' profiles');
+            if (ProfileStore.list().length >= ProfileStore.max) return hooks.toast(I18n.t('profile.upTo', { n: ProfileStore.max }));
             ProfileDialog.open({
-                title: 'Add profile',
-                text: 'Name the new profile. It starts empty and opens now.',
+                title: I18n.t('profile.add'),
+                text: I18n.t('profile.addHintOpen'),
                 value: '',
-                ok: 'Add',
+                ok: I18n.t('profile.addButton'),
                 validate: function (name) { return ProfileStore.nameError(name, null); },
                 done: function (name) {
                     var profile = name && ProfileStore.add(name);
@@ -27,10 +27,10 @@ window.ProfileSettings = (function () {
         function rename() {
             var profile = ProfileStore.active();
             ProfileDialog.open({
-                title: 'Rename profile',
-                text: 'New name for ' + profile.name + '.',
+                title: I18n.t('profile.rename'),
+                text: I18n.t('profile.renameHint', { name: profile.name }),
                 value: profile.name,
-                ok: 'Save',
+                ok: I18n.t('common.save'),
                 validate: function (name) { return ProfileStore.nameError(name, profile.id); },
                 done: function (name) {
                     if (name) ProfileStore.rename(profile.id, name);
@@ -41,15 +41,15 @@ window.ProfileSettings = (function () {
 
         function remove() {
             var profile = ProfileStore.active();
-            if (ProfileStore.list().length < 2) return hooks.toast('The last profile cannot be deleted');
+            if (ProfileStore.list().length < 2) return hooks.toast(I18n.t('profile.lastCannotDelete'));
             ProfileDialog.open({
-                title: 'Delete profile',
-                text: 'Delete ' + profile.name + '? Its favorites, history and settings are removed. Sources stay.',
-                ok: 'Delete',
+                title: I18n.t('profile.delete'),
+                text: I18n.t('profile.deleteHint', { name: profile.name }),
+                ok: I18n.t('profile.deleteButton'),
                 done: function (confirmed) {
                     if (confirmed) {
                         ProfileStore.remove(profile.id);
-                        hooks.toast('Profile deleted');
+                        hooks.toast(I18n.t('profile.deleted'));
                     }
                     changed(!!confirmed);
                 },
@@ -57,11 +57,11 @@ window.ProfileSettings = (function () {
         }
 
         return [
-            { group: 'Profiles', label: 'Current profile', run: function () { ProfileScreen.open(changed); }, text: function () { return ProfileStore.active().name; } },
-            { label: 'Add profile…', run: add, text: function () { return ProfileStore.list().length >= ProfileStore.max ? 'Up to ' + ProfileStore.max : ''; } },
-            { label: 'Rename profile…', run: rename, text: '' },
-            { label: 'Delete profile', run: remove, text: function () { return ProfileStore.list().length < 2 ? 'Needs another profile' : ''; } },
-            { label: 'Ask who’s watching on start', key: 'askProfile', choices: [true, false], labels: ['On', 'Off'] },
+            { get group() { return I18n.t('profile.group'); }, get label() { return I18n.t('profile.current'); }, run: function () { ProfileScreen.open(changed); }, text: function () { return ProfileStore.active().name; } },
+            { get label() { return I18n.t('profile.addMenu'); }, run: add, text: function () { return ProfileStore.list().length >= ProfileStore.max ? I18n.t('profile.upToShort', { n: ProfileStore.max }) : ''; } },
+            { get label() { return I18n.t('profile.renameMenu'); }, run: rename, text: '' },
+            { get label() { return I18n.t('profile.delete'); }, run: remove, text: function () { return ProfileStore.list().length < 2 ? I18n.t('profile.needsAnother') : ''; } },
+            { get label() { return I18n.t('profile.ask'); }, key: 'askProfile', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
         ];
     }
 

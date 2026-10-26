@@ -27,8 +27,7 @@ window.LivePreview = function (hooks) {
     }
 
     function clock(ms) {
-        var d = new Date(ms);
-        return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+        return I18n.time(ms);
     }
 
     function enabled() {
@@ -58,13 +57,13 @@ window.LivePreview = function (hooks) {
         info.appendChild(el('div', 'lp-title', s.request ? s.request.title : ''));
         var p = s.programmes;
         if (!p || !p.now) return;
-        info.appendChild(programmeRow('Now', p.now));
+        info.appendChild(programmeRow(I18n.t('epg.now'), p.now));
         var bar = el('div', 'lp-bar');
         var fill = el('div', 'lp-fill');
         fill.style.width = Math.round(Math.min(1, Math.max(0, (Date.now() - p.now.start) / (p.now.end - p.now.start))) * 100) + '%';
         bar.appendChild(fill);
         info.appendChild(bar);
-        if (p.next) info.appendChild(programmeRow('Next', p.next));
+        if (p.next) info.appendChild(programmeRow(I18n.t('epg.next'), p.next));
     }
 
     function loadInfo() {

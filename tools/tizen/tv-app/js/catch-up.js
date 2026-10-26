@@ -58,13 +58,12 @@ window.CatchUp = (function () {
         if (!available(channel)) return;
         var badge = document.createElement('span');
         badge.className = 'catch-up-badge';
-        badge.textContent = 'Catch-up ' + days(channel) + ' days';
+        badge.textContent = I18n.t('catchUp.badge', { n: days(channel) });
         el.appendChild(badge);
     }
 
     function clock(time) {
-        var date = new Date(time);
-        return pad(date.getHours()) + ':' + pad(date.getMinutes());
+        return I18n.time(time);
     }
 
     return { available: available, days: days, playable: playable, request: request, decorate: decorate, clock: clock };

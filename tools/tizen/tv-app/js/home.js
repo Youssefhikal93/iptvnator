@@ -90,8 +90,8 @@ window.Home = function (api) {
 
     function heroButtons(hero) {
         var list = [
-            { label: '▶  Continue watching', run: 'open' },
-            { label: 'Details', run: 'details' },
+            { label: I18n.t('home.continueButton'), run: 'open' },
+            { label: I18n.t('menu.details'), run: 'details' },
         ];
         if (hero.length > 1) list.push({ label: '‹', run: 'prev', small: true }, { label: '›', run: 'next', small: true });
         return list;
@@ -118,7 +118,7 @@ window.Home = function (api) {
         box.appendChild(img('hm-hero-art', d.backdrop || d.poster || art(entry.item)));
         box.appendChild(el('div', 'hm-hero-shade'));
         var text = el('div', 'hm-hero-text');
-        text.appendChild(el('div', 'hm-eyebrow', 'Continue watching' + (hero.length > 1 ? '  ·  ' + (s.hero + 1) + ' / ' + hero.length : '')));
+        text.appendChild(el('div', 'hm-eyebrow', I18n.t('browser.continueWatching') + (hero.length > 1 ? '  ·  ' + (s.hero + 1) + ' / ' + hero.length : '')));
         text.appendChild(el('div', 'hm-hero-title', titleOf(entry)));
         var sub = episodeOf(entry) || [d.year, d.genre].filter(Boolean).join('  ·  ');
         if (sub) text.appendChild(el('div', 'hm-hero-sub', sub));
@@ -154,7 +154,7 @@ window.Home = function (api) {
         var p = live ? null : api.progress(entry);
         if (api.watched(entry)) {
             var tick = el('span', 'watched-tick', '\u2713');
-            tick.setAttribute('aria-label', 'Watched');
+            tick.setAttribute('aria-label', I18n.t('browser.watched'));
             poster.appendChild(tick);
         }
         if (api.isNew(entry)) poster.appendChild(NewEpisodes.badge());
@@ -177,7 +177,7 @@ window.Home = function (api) {
         box.appendChild(el('div', 'hm-row-title', row.title));
         var strip = el('div', 'hm-strip');
         if (row.loading) {
-            strip.setAttribute('aria-label', 'Loading');
+            strip.setAttribute('aria-label', I18n.t('common.loading'));
             for (var i = 0; i < VISIBLE; i++) {
                 var card = el('div', 'hm-card skeleton');
                 card.setAttribute('aria-hidden', 'true');
@@ -200,8 +200,8 @@ window.Home = function (api) {
         var list = blocks();
         root.textContent = '';
         if (!list.length) {
-            var empty = el('div', 'hm-empty', 'Nothing here yet');
-            empty.appendChild(el('small', '', 'Watch something or hold OK on an item to add it to your favorites.'));
+            var empty = el('div', 'hm-empty', I18n.t('home.nothingHere'));
+            empty.appendChild(el('small', '', I18n.t('home.nothingHint')));
             root.appendChild(empty);
             return;
         }

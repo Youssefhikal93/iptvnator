@@ -96,7 +96,7 @@ window.Sources = (function () {
             write(CURRENT_KEY, id);
         },
         typeLabel: function (source) {
-            return source.type === 'xtream' ? 'Xtream Code' : 'M3U playlist';
+            return I18n.t(source.type === 'xtream' ? 'sources.typeXtream' : 'sources.typeM3u');
         },
     };
 })();

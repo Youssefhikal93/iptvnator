@@ -168,11 +168,10 @@ window.XmltvGuide = (function () {
     guide.subtitle = function (source) {
         if (!source.epgUrl) return '';
         var saved = status(source.id);
-        if (saved.state === 'updating' && jobs[source.id]) return 'Guide: updating\u2026';
-        if (saved.state === 'failed') return 'Guide: failed';
-        if (!saved.updatedAt || Date.now() - saved.updatedAt >= FRESH) return 'Guide: stale';
-        var date = new Date(saved.updatedAt);
-        return 'Guide: updated ' + ('0' + date.getHours()).slice(-2) + ':' + ('0' + date.getMinutes()).slice(-2);
+        if (saved.state === 'updating' && jobs[source.id]) return I18n.t('guide.updating');
+        if (saved.state === 'failed') return I18n.t('guide.failed');
+        if (!saved.updatedAt || Date.now() - saved.updatedAt >= FRESH) return I18n.t('guide.stale');
+        return I18n.t('guide.updated', { time: I18n.time(saved.updatedAt) });
     };
     return guide;
 })();

@@ -33,7 +33,8 @@ module.exports = function (files, stored, overrides) {
     if (files.indexOf('profile-store.js') === -1 && !sandbox.ProfileStore) sandbox.ProfileStore = PLAIN_PROFILES;
     sandbox.window = sandbox;
     vm.createContext(sandbox);
-    files.forEach(function (file) {
+    // Every module may ask I18n for its English text.
+    ['i18n.js', 'i18n/en.js'].concat(files).forEach(function (file) {
         var filename = path.join(__dirname, '../../tv-app/js', file);
         vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: filename });
     });

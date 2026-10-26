@@ -17,14 +17,14 @@ window.SourceGuide = function (source, hooks) {
         });
     }
 
-    var options = [{ label: 'Guide link\u2026', run: edit }];
+    var options = [{ label: I18n.t('guide.link'), run: edit }];
     if (source.epgUrl) {
         if (source.type === 'xtream') options.push({
-            label: 'Prefer my guide: ' + (source.epgPrefer === false ? 'Off' : 'On'),
+            label: I18n.t('guide.prefer', { state: I18n.t(source.epgPrefer === false ? 'common.off' : 'common.on') }),
             run: function () { save(Object.assign({}, source, { epgPrefer: source.epgPrefer === false })); },
         });
-        options.push({ label: 'Refresh guide', run: function () { XmltvGuide.refresh(source); } });
-        options.push({ label: 'Remove guide link', run: function () {
+        options.push({ label: I18n.t('guide.refresh'), run: function () { XmltvGuide.refresh(source); } });
+        options.push({ label: I18n.t('guide.remove'), run: function () {
             save(Object.assign({}, source, { epgUrl: '' }));
             XmltvGuide.remove(source.id);
         } });

@@ -23,14 +23,14 @@ window.ProfileScreen = (function () {
 
     function render() {
         root.textContent = '';
-        root.appendChild(el('h1', 'pf-title', 'Who’s watching?'));
+        root.appendChild(el('h1', 'pf-title', I18n.t('profile.whosWatching')));
         var tiles = el('div', 'pf-tiles');
         slots().forEach(function (profile, index) {
             var tile = el('div', 'pf-tile' + (focus === index ? ' focused' : ''));
             var avatar = el('div', 'pf-avatar' + (profile ? '' : ' pf-add'), profile ? profile.name.charAt(0).toUpperCase() : '+');
             if (profile) avatar.style.background = profile.color;
             tile.appendChild(avatar);
-            tile.appendChild(el('div', 'pf-name', profile ? profile.name : 'Add profile'));
+            tile.appendChild(el('div', 'pf-name', profile ? profile.name : I18n.t('profile.add')));
             tiles.appendChild(tile);
         });
         root.appendChild(tiles);
@@ -51,10 +51,10 @@ window.ProfileScreen = (function () {
         var profile = slots()[focus];
         if (profile) return finish(ProfileStore.setActive(profile.id));
         ProfileDialog.open({
-            title: 'Add profile',
-            text: 'Name the new profile. It starts empty.',
+            title: I18n.t('profile.add'),
+            text: I18n.t('profile.addHint'),
             value: '',
-            ok: 'Add',
+            ok: I18n.t('profile.addButton'),
             validate: function (name) { return ProfileStore.nameError(name, null); },
             done: function (name) {
                 var added = name && ProfileStore.add(name);
@@ -80,7 +80,7 @@ window.ProfileScreen = (function () {
             root.id = 'profiles';
             root.setAttribute('role', 'dialog');
             root.setAttribute('aria-modal', 'true');
-            root.setAttribute('aria-label', 'Who’s watching?');
+            root.setAttribute('aria-label', I18n.t('profile.whosWatching'));
             document.body.appendChild(root);
             render();
         },

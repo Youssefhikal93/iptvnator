@@ -52,7 +52,7 @@ window.ProfileDialog = (function () {
             input.id = 'profile-name';
             input.maxLength = 20;
             input.autocomplete = 'off';
-            input.setAttribute('aria-label', 'Profile name');
+            input.setAttribute('aria-label', I18n.t('profile.name'));
             input.value = opts.value;
             root.appendChild(input);
         }
@@ -60,7 +60,7 @@ window.ProfileDialog = (function () {
         var ok = el('button', opts.ok || 'OK');
         ok.id = 'profile-dialog-ok';
         ok.addEventListener('click', submit);
-        var cancel = el('button', 'Cancel');
+        var cancel = el('button', I18n.t('common.cancel'));
         cancel.id = 'profile-dialog-cancel';
         cancel.addEventListener('click', function () { close(null); });
         buttons.appendChild(ok);

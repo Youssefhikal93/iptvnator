@@ -7,7 +7,7 @@ window.PinPad = (function () {
     root.className = 'hidden';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
-    root.setAttribute('aria-label', 'Parental lock');
+    root.setAttribute('aria-label', I18n.t('settings.parentalLock'));
     document.body.appendChild(root);
     var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Clear', '0', 'Back'];
     var state = null;
@@ -21,9 +21,9 @@ window.PinPad = (function () {
     }
 
     function title() {
-        if (state.stage === 'new') return 'Enter a new PIN';
-        if (state.stage === 'confirm') return 'Confirm the PIN';
-        return state.mode === 'unlock' ? 'Enter the PIN' : 'Enter the current PIN';
+        if (state.stage === 'new') return I18n.t('pin.enterNew');
+        if (state.stage === 'confirm') return I18n.t('pin.confirm');
+        return I18n.t(state.mode === 'unlock' ? 'pin.enter' : 'pin.enterCurrent');
     }
 
     function render() {
@@ -33,13 +33,13 @@ window.PinPad = (function () {
         card.appendChild(el('h1', 'pin-title', title()));
         card.appendChild(el('div', 'pin-dots', new Array(state.digits.length + 1).join('\u25cf') + new Array(5 - state.digits.length).join('\u25cb')));
         var wait = ParentalLock.waitSeconds();
-        card.appendChild(el('div', 'pin-message', wait ? 'Wait ' + wait + ' s' : state.message));
+        card.appendChild(el('div', 'pin-message', wait ? I18n.t('pin.wait', { s: wait }) : state.message));
         var pad = el('div', 'pin-keys', '');
         labels.forEach(function (label, index) {
-            pad.appendChild(el('div', 'pin-key' + (index === state.focus ? ' focused' : ''), label));
+            pad.appendChild(el('div', 'pin-key' + (index === state.focus ? ' focused' : ''), index === 9 ? I18n.t('pin.clear') : index === 11 ? I18n.t('common.back') : label));
         });
         card.appendChild(pad);
-        card.appendChild(el('p', 'pin-hint', 'Digits or arrows and OK \u00b7 Return: cancel'));
+        card.appendChild(el('p', 'pin-hint', I18n.t('pin.hint')));
         root.appendChild(card);
     }
 
@@ -60,13 +60,13 @@ window.PinPad = (function () {
         if (state.digits !== state.first) {
             state.first = '';
             state.stage = 'new';
-            state.message = 'PINs do not match. Start again';
+            state.message = I18n.t('pin.mismatch');
         } else {
             try {
                 ParentalLock.setPin(state.digits);
             } catch (e) {
                 if (e.name !== 'QuotaExceededError' && e.name !== 'SecurityError') throw e;
-                state.message = 'Could not save the PIN. Try again';
+                state.message = I18n.t('pin.saveFailed');
                 return;
             }
             finish();
@@ -86,7 +86,7 @@ window.PinPad = (function () {
             ParentalLock.removePin();
         } catch (e) {
             if (e.name !== 'QuotaExceededError' && e.name !== 'SecurityError') throw e;
-            state.message = 'Could not remove the PIN. Try again';
+            state.message = I18n.t('pin.removeFailed');
             return;
         }
         finish();
@@ -94,7 +94,7 @@ window.PinPad = (function () {
 
     function submitCurrent() {
         var accepted = state.mode === 'unlock' ? ParentalLock.unlock(state.digits) : ParentalLock.verify(state.digits);
-        if (!accepted) state.message = 'Wrong PIN';
+        if (!accepted) state.message = I18n.t('pin.wrong');
         else if (state.mode === 'change') state.stage = 'new';
         else if (state.mode === 'remove') removePin();
         else finish();

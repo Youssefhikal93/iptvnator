@@ -14,15 +14,15 @@ window.LoadScreen = (function () {
     var openSources = null;
 
     function message(err) {
-        if (err.code === 'saved') return ['Could not read saved data', 'Try again, or press Return to close the app.'];
+        if (err.code === 'saved') return [I18n.t('load.savedTitle'), I18n.t('load.savedHint')];
         if (err.code === 'account') return SourceAccount.screen(err);
         if (navigator.onLine === false || err.name === 'TypeError' || /network|failed to fetch|load failed/i.test(err.message)) {
-            return ['No network connection', 'Check the TV\'s network connection and try again.'];
+            return [I18n.t('load.networkTitle'), I18n.t('load.networkHint')];
         }
         if (err.code === 'timeout' || /timeout|timed out|HTTP 5\d\d/i.test(err.message)) {
-            return ['Source not responding', 'Please wait a moment and try again.'];
+            return [I18n.t('load.slowTitle'), I18n.t('load.slowHint')];
         }
-        return ['Could not load', 'Try again, or choose another source in Sources.'];
+        return [I18n.t('empty.failed.title'), I18n.t('load.genericHint')];
     }
 
     function render() {
@@ -44,8 +44,8 @@ window.LoadScreen = (function () {
         var lines = message(job.status.error);
         document.getElementById('load-message').textContent = lines[0];
         document.getElementById('load-hint').textContent = lines[1];
-        document.getElementById('load-countdown').textContent = job.status.running ? 'Trying again\u2026' :
-            job.status.seconds !== null ? 'Retrying in ' + job.status.seconds + ' s\u2026' : '';
+        document.getElementById('load-countdown').textContent = job.status.running ? I18n.t('load.tryingAgain') :
+            job.status.seconds !== null ? I18n.t('load.retryingIn', { s: job.status.seconds }) : '';
         button.setAttribute('aria-disabled', job.status.running ? 'true' : 'false');
         // An account problem is fixed in Sources, so offer the way there.
         sourcesButton.classList.toggle('hidden', job.status.error.code !== 'account' || !openSources);

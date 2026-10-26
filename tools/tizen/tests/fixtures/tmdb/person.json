@@ -1,0 +1,11 @@
+{
+    "id": 71,
+    "name": "Alex Example",
+    "profile_path": "/alex.jpg",
+    "biography": "Alex is a screen actor known for detective stories.",
+    "combined_credits": {"cast": [
+        {"id": 125, "title": "Movie 25", "release_date": "2021-03-14", "media_type": "movie"},
+        {"id": 204, "name": "Show 4", "first_air_date": "2019-09-01", "media_type": "tv"},
+        {"id": 9000, "title": "Absent movie", "media_type": "movie"}
+    ]}
+}

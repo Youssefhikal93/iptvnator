@@ -1,0 +1,170 @@
+window.Tmdb = (function () {
+    'use strict';
+
+    var queue = [];
+    var running = 0;
+    var pending = {};
+    var matches = {};
+    var expiries = new WeakMap();
+
+    function key() { return Prefs.get('tmdbApiKey') || ''; }
+    function enabled() { return !!key(); }
+
+    function pump() {
+        while (running < 3 && queue.length) {
+            running++;
+            queue.shift()();
+        }
+    }
+
+    // Scope refused-key responses without storing the secret in IndexedDB keys.
+    function fingerprint(secret) {
+        var hash = 2166136261;
+        for (var i = 0; i < secret.length; i++) hash = Math.imul(hash ^ secret.charCodeAt(i), 16777619);
+        return (hash >>> 0).toString(16);
+    }
+
+    function fetchResponse(job) {
+        var controller = new AbortController();
+        var timer = setTimeout(function () { controller.abort(); }, 8000);
+        return fetch('https://api.themoviedb.org/3' + job.path + '?api_key=' + encodeURIComponent(job.secret) + (job.query ? '&' + job.query : ''), { signal: controller.signal })
+            .then(function (res) {
+                if (!res.ok) throw new Error('TMDB refused');
+                return res.json();
+            }).then(function (body) {
+                return TmdbStore.put(job.cacheKey, body, false);
+            }).catch(function () {
+                Log.error('TMDB FAIL ' + job.path);
+                return TmdbStore.put(job.cacheKey, null, true);
+            }).then(function (record) {
+                clearTimeout(timer);
+                return record;
+            });
+    }
+
+    function schedule(job) {
+        return new Promise(function (resolve) {
+            queue.push(function () {
+                function finish(record) {
+                    running--;
+                    resolve(key() === job.secret ? record : null);
+                    pump();
+                }
+                if (key() !== job.secret) return finish(null);
+                fetchResponse(job).then(finish);
+            });
+            pump();
+        });
+    }
+
+    function request(path, params, force) {
+        var secret = key();
+        if (!secret) return Promise.resolve(null);
+        var query = Object.keys(params || {}).sort().map(function (name) {
+            return encodeURIComponent(name) + '=' + encodeURIComponent(params[name]);
+        }).join('&');
+        var cacheKey = fingerprint(secret) + '|' + path + '?' + query;
+        if (pending[cacheKey]) return pending[cacheKey];
+        var promise = (force ? Promise.resolve(null) : TmdbStore.get(cacheKey)).then(function (saved) {
+            if (key() !== secret) return null;
+            return saved || schedule({ path: path, query: query, secret: secret, cacheKey: cacheKey });
+        });
+        pending[cacheKey] = promise.then(function (record) {
+            delete pending[cacheKey];
+            if (!record) return null;
+            if (record.body && typeof record.body === 'object') expiries.set(record.body, record.expires);
+            return record.body;
+        });
+        return pending[cacheKey];
+    }
+
+    function clean(title) {
+        return String(title || '').replace(/^\s*[A-Z]{2,3}\s*[:|\-]\s*/, '')
+            .replace(/\b(?:2160p|1080p|720p|4k|uhd|fhd|hd)\b/gi, '').trim()
+            .replace(/(?:\s+[\[(]?(?:19|20)\d{2}[\])]?$|[\[(](?:19|20)\d{2}[\])]$)/, '')
+            .replace(/[()[\]{}]/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalize(title) {
+        return clean(title).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+            .replace(/[^a-z0-9\u0370-\u9fff]+/g, ' ').trim();
+    }
+
+    function year(item) {
+        var explicit = /\b(?:19|20)\d{2}\b/.exec(String(item.year || item.release_date || item.first_air_date || ''));
+        if (explicit) return explicit[0];
+        var match = /(?:\s|[\[(])((?:19|20)\d{2})[\])]?(?:\s+(?:2160p|1080p|720p|4k|uhd|fhd|hd))*\s*$/i.exec(title(item));
+        return match ? match[1] : '';
+    }
+
+    function id(item) { return Number(item.tmdb_id || item.tmdb || 0); }
+    function title(item) { return item.title || item.name || ''; }
+
+    function same(item, candidate) {
+        if (id(item) && candidate.id) return id(item) === Number(candidate.id);
+        return normalize(title(item)) === normalize(title(candidate)) && (!year(item) || !year(candidate) || year(item) === year(candidate));
+    }
+
+    function pick(item, results) {
+        var candidates = (results || []).filter(function (candidate) { return same(item, candidate); });
+        return candidates.length === 1 ? candidates[0] : null;
+    }
+
+    function identity(item, type) { return type + '|' + id(item) + '|' + normalize(title(item)) + '|' + year(item); }
+
+    function match(item, type, wanted) {
+        if (!enabled() || (wanted && !wanted())) return Promise.resolve(null);
+        var params = { query: clean(title(item)) };
+        if (year(item)) params[type === 'movie' ? 'year' : 'first_air_date_year'] = year(item);
+        var resolving = id(item) ? Promise.resolve({ id: id(item) }) : request('/search/' + type, params).then(function (body) {
+            return body && pick(item, body.results);
+        });
+        return resolving.then(function (found) {
+            if (!found || (wanted && !wanted())) return null;
+            return request('/' + type + '/' + found.id, { append_to_response: 'credits,videos,similar' });
+        }).then(function (body) {
+            if (body) matches[identity(item, type)] = { body: body, expires: expiries.get(body) };
+            return body;
+        });
+    }
+
+    function creditIndex(credits, type) {
+        var index = { ids: Object.create(null), titles: Object.create(null) };
+        credits.forEach(function (credit) {
+            if (credit.media_type && credit.media_type !== type) return;
+            index.ids[credit.id] = true;
+            var name = normalize(title(credit));
+            if (!index.titles[name]) index.titles[name] = [];
+            index.titles[name].push(credit);
+        });
+        return index;
+    }
+
+    function inLibrary(credits, catalogue) {
+        var indexes = { movie: creditIndex(credits, 'movie'), tv: creditIndex(credits, 'tv') };
+        return catalogue.filter(function (entry) {
+            var index = indexes[entry.type];
+            var known = matches[identity(entry.item, entry.type)];
+            var tmdbId = id(entry.item) || (known && TmdbStore.fresh(known) ? known.body.id : 0);
+            if (tmdbId) return !!index.ids[tmdbId];
+            return !!pick(entry.item, index.titles[normalize(title(entry.item))]);
+        });
+    }
+
+    function image(path, size) { return enabled() && path ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
+
+    return {
+        enabled: enabled,
+        request: request,
+        match: match,
+        normalize: normalize,
+        year: year,
+        pick: pick,
+        inLibrary: inLibrary,
+        image: image,
+        cached: function (item, type) {
+            var known = matches[identity(item, type)];
+            return known && TmdbStore.fresh(known) ? known.body : null;
+        },
+    };
+})();

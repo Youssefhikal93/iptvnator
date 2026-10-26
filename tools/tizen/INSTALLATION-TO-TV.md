@@ -270,6 +270,13 @@ from step 8 must already be downloaded.
   easier than the remote.
 - **OK** opens or plays; **hold OK** opens the options menu (favorites,
   remove from Continue watching or Recently watched).
+- **Favorites and recents from** in Settings, under Display after Home layout:
+  **This source** is the default. Choose **All sources** to merge Favorites,
+  Recently watched and their Home rows. Favorites group the current source
+  first; recently watched items sort by last play, with older saved items
+  without a date afterwards. A source-name chip marks items from another
+  source. OK switches to that source and opens the item; Return keeps that
+  list in the new source. Hold OK removes the item from its own source.
 - **Sort in Movies and Series**: at the top of an item list, press Up, then
   Right three times to reach Sort and OK to choose Newest, Oldest, Name A-Z,
   Name Z-A, Top rated or Provider order. The current choice is marked; choosing
@@ -279,7 +286,7 @@ from step 8 must already be downloaded.
   Favorites. The header shows the order. Recently added is the first category
   when dated items exist: up to 50, always newest first by catalogue date,
   regardless of release year. Sort is hidden there, in Recently watched and
-  Continue watching, and for Live TV and M3U sources.
+  Continue watching, merged All sources Favorites, and for Live TV and M3U sources.
 - **Movies**: OK opens a detail page (artwork, year, rating, genre, length,
   plot, cast) with Play or Resume from X / Start over, Favorites, Trailer
   (when the provider has one; it plays from YouTube) and More for a long

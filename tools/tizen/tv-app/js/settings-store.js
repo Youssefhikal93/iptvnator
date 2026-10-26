@@ -10,6 +10,7 @@ window.Prefs = (function () {
         programmeGuide: true,
         livePreview: true,
         homeLayout: 'cinema',
+        librarySources: 'current',
         'view:movies': 'grid',
         'view:series': 'grid',
         'view:live': 'list',

@@ -150,6 +150,7 @@ window.Home = function (api) {
         var src = art(entry.item);
         if (src) poster.appendChild(img('', src));
         else poster.appendChild(el('span', 'hm-initials', titleOf(entry).replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()));
+        LibraryChip(poster, entry.item, Sources.current().id);
         var p = live ? null : api.progress(entry);
         if (api.watched(entry)) {
             var tick = el('span', 'watched-tick', '\u2713');
@@ -278,9 +279,9 @@ window.Home = function (api) {
             if (!block || block.hero || block.row.loading) return null;
             return block.row.entries[rowState(block.row).focus];
         },
-        // A new source: start from the top again.
-        reset: function () {
-            s = { block: 0, hero: 0, button: 0, rows: {}, details: {}, active: s.active };
+        // A library pick keeps its row; other source changes start at the top.
+        reset: function (fromLibrary) {
+            s = { block: 0, blockKey: fromLibrary ? s.blockKey : null, hero: 0, button: 0, rows: {}, details: {}, active: s.active };
         },
     };
 };

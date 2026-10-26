@@ -31,6 +31,7 @@
     // with the stream still playing; STOP closes everything.
     function closePlayer(stopped) {
         channelList.close();
+        if (!stopped && playing && playing.returnTo && !document.hidden) return play(playing.returnTo);
         if (stopped) preview.stop();
         if (preview.back(playing)) {
             playing = null;

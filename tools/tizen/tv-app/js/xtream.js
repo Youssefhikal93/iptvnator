@@ -29,6 +29,10 @@ window.XtreamSource = function (source, options) {
         return url + '/' + kind + '/' + enc(user) + '/' + enc(pass) + '/' + id + '.' + ext;
     }
 
+    function timeshiftUrl(id, minutes, start) {
+        return url + '/timeshift/' + enc(user) + '/' + enc(pass) + '/' + minutes + '/' + start + '/' + id + '.ts';
+    }
+
     // Movies and episodes: AVPlay first; HLS containers can use hls.js too.
     function vodChain(src, ext) {
         var chain = [{ via: 'avplay', url: src }];
@@ -88,6 +92,7 @@ window.XtreamSource = function (source, options) {
     }
 
     return {
+        timeshiftUrl: timeshiftUrl,
         sections: ['live', 'movies', 'series'],
         movieInfo: function (movie) {
             return call('get_vod_info', { vod_id: movie.stream_id }).then(function (res) {
@@ -110,7 +115,8 @@ window.XtreamSource = function (source, options) {
                 var programmes = listings.filter(function (p) { return p && typeof p.title === 'string'; })
                     .map(programme).filter(function (p) {
                         return p.title.trim() && isFinite(p.start) && isFinite(p.end) && p.end > p.start &&
-                            p.end > now - 3 * 3600000 && p.start < now + 26 * 3600000;
+                            p.end > now - (window.CatchUp && CatchUp.available(channel) ? Math.min(7, CatchUp.days(channel)) * 86400000 : 3 * 3600000) &&
+                            p.start < now + 26 * 3600000;
                     }).sort(function (a, b) { return a.start - b.start; });
                 return programmes.length ? programmes : null;
             });
@@ -127,6 +133,7 @@ window.XtreamSource = function (source, options) {
                     err.info = info || null;
                     throw err;
                 }
+                info.server_info = res.server_info || {};
                 return info;
             });
         },

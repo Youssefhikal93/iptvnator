@@ -16,10 +16,10 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Continue hero on Home: up to 3 titles, Previous/Next, Continue watching + Details | Done (not yet tested on the TV) | #5 | Yes |
 | Full-width backdrop on Home and details, gradients, no blur | Done | #3, #4, #5 | Yes |
 | TMDB artwork and description (optional key, 8 s limit, session cache) | Missing | #20 | Yes, the TV calls TMDB |
-| Catalogue sort: Recently added (default), Title A–Z, Provider order | Missing (Home has Recently added rows) | #9 | Yes |
+| Catalogue sort: Recently added (default), Title A–Z, Provider order | Done (not yet tested on the TV): six orders and a Recently added category | #9 | Yes |
 | Live category browser with restored focus per category | Partial | #8 | Yes |
 | Live preview: OK previews beside the list, OK again fullscreen | Missing | #32 | Yes, one stream at a time |
-| Channel drawer over fullscreen live (◀), Channels / Programme / TV Guide buttons | Missing | #8 | Yes |
+| Channel drawer over fullscreen live (◀), Channels / Programme / TV Guide buttons | Drawer done (not yet tested on the TV); buttons missing | #8 | Yes |
 | Single-channel programme list (dates, Now, descriptions) | Missing (now and next only) | #1, #6 | Yes |
 | Multi-channel guide grid (2-hour window, Watch live button) | Missing | #6 | Yes |
 | Resume confirmed by retrying the seek; progress protected on failure | Partial | #33 | Yes |

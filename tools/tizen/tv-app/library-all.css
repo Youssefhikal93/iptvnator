@@ -1,0 +1,24 @@
+.source-chip {
+    display: inline-block;
+    max-width: 180px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--card-hover-bg);
+    color: var(--on-surface);
+    font-size: 16px;
+    line-height: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.row .source-chip {
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+.poster .source-chip,
+.hm-poster .source-chip {
+    position: absolute;
+    bottom: 12px;
+    left: 8px;
+    max-width: calc(100% - 16px);
+}

@@ -14,6 +14,7 @@ window.Settings = function (hooks) {
         { label: 'Live preview', key: 'livePreview', choices: [true, false], labels: ['On', 'Off'] },
     ].concat(PlayerPicture.rows, [
         { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
+        { label: 'Favorites and recents from', key: 'librarySources', choices: ['current', 'all'], labels: ['This source', 'All sources'] },
         { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default view for Series', key: 'view:series', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default view for Live TV', key: 'view:live', choices: ['list', 'grid'], labels: ['List', 'Grid'] },

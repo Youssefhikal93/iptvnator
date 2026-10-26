@@ -15,6 +15,7 @@ window.Prefs = (function () {
         subtitlePosition: 'bottom',
         pictureAspect: 'auto',
         homeLayout: 'cinema',
+        librarySources: 'current',
         'view:movies': 'grid',
         'view:series': 'grid',
         'view:live': 'list',

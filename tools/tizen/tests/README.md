@@ -42,6 +42,7 @@ Coverage is grouped by viewer journey:
 | `resume` | Restore and save progress; rejected seeks, real 30-second deadline and recovery |
 | `settings` | Current values, programme guide requests, Showcase hero size and persistence |
 | `sources` | Xtream form validation/add/switch, M3U groups, refresh, cancel and confirmed removal |
+| `reconnect` | Live stall and error reconnect with Reconnecting status and kept frame, give-up Retry screen, Return and zapping cancel, one live connection at a time, movies unchanged |
 | `player` | Pause/play/seek/speed, track availability and stream info, intro skip, episode/season selection, next episode and autoplay/cancel |
 
 Each test gets an empty browser context, seeds its own source/library state,

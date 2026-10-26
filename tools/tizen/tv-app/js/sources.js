@@ -84,6 +84,8 @@ window.Sources = (function () {
 
     return {
         all: all,
+        // Backup restore needs a checked write so it can roll back on failure.
+        replace: function (sources) { localStorage.setItem(LIST_KEY, JSON.stringify(sources)); },
         add: add,
         update: function (source) {
             write(LIST_KEY, all().map(function (saved) { return saved.id === source.id ? source : saved; }));

@@ -26,6 +26,8 @@ window.Settings = function (hooks) {
         { group: 'Categories', label: 'Manage Live TV categories', action: 'live', text: hiddenText('live') },
         { label: 'Manage Movies categories', action: 'movies', text: hiddenText('movies') },
         { label: 'Manage Series categories', action: 'series', text: hiddenText('series') },
+        { group: 'Backup', label: 'Import from link\u2026', backup: 'import', text: '' },
+        { label: 'Export', backup: 'export', text: '' },
     ], TmdbSettings.rows, [
         { group: 'About', label: 'App version', text: VERSION },
         { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
@@ -76,6 +78,7 @@ window.Settings = function (hooks) {
         // LEFT at the first choice leaves the screen; RIGHT cycles forward.
         if (step < 0 && index === 0) return 'left';
         if (!row.key) {
+            if (row.backup) BackupScreen.open(row.backup);
             if (row.action && row.action.indexOf('tmdb-') === 0) return TmdbSettings.act(row.action, hooks, render);
             if (row.run) row.run();
             if (row.action) hooks.manage(row.action);

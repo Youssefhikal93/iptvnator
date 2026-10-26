@@ -1,0 +1,57 @@
+{
+    "kind": "iptvnator-playlist-backup",
+    "version": 1,
+    "exportedAt": "2026-10-26T12:00:00.000Z",
+    "includeSecrets": true,
+    "settings": { "epgUrls": ["https://example.invalid/guide.xml"] },
+    "playlists": [
+        {
+            "portalType": "xtream",
+            "exportedId": "desktop-main",
+            "title": "Desktop TV",
+            "autoRefresh": true,
+            "position": 0,
+            "connection": { "serverUrl": "https://tv.example.invalid", "username": "fake-viewer", "password": "fake-password" },
+            "userState": {
+                "hiddenCategories": [{ "categoryType": "movies", "xtreamId": 8 }],
+                "favorites": [
+                    { "contentType": "movie", "xtreamId": 2025, "addedAt": "2026-10-25T12:00:00.000Z", "position": 0, "snapshot": { "title": "Movie 25", "posterUrl": "" } },
+                    { "contentType": "series", "xtreamId": 3004, "snapshot": { "title": "Show 4", "posterUrl": "" } },
+                    { "contentType": "live", "xtreamId": 1001, "snapshot": { "title": "Channel 1", "posterUrl": "" } }
+                ],
+                "recentlyViewed": [
+                    { "contentType": "movie", "xtreamId": 2025, "viewedAt": "2026-10-26T11:00:00.000Z" },
+                    { "contentType": "series", "xtreamId": 3004, "viewedAt": "2026-10-26T10:00:00.000Z" }
+                ],
+                "playbackPositions": [
+                    { "contentXtreamId": 2025, "contentType": "vod", "positionSeconds": 200, "durationSeconds": 6730, "playlistId": "desktop-main", "updatedAt": "2026-10-26T11:00:00.000Z", "sessionId": "fake-session" },
+                    { "contentXtreamId": 2026, "contentType": "vod", "positionSeconds": 600, "durationSeconds": 600, "playlistId": "desktop-main", "updatedAt": "2026-10-26T11:00:00.000Z" },
+                    { "contentXtreamId": 4001, "contentType": "episode", "seriesXtreamId": 3004, "seasonNumber": 1, "episodeNumber": 1, "positionSeconds": 400, "durationSeconds": 2640, "playlistId": "desktop-main", "updatedAt": "2026-10-26T10:00:00.000Z" }
+                ],
+                "sourcePins": [{ "matchKey": "fake-film", "contentId": 2025 }]
+            }
+        },
+        {
+            "portalType": "xtream",
+            "exportedId": "desktop-extra",
+            "title": "Extra TV",
+            "autoRefresh": false,
+            "position": 1,
+            "connection": { "serverUrl": "https://extra.example.invalid", "username": "fake-extra", "password": "fake-extra-password" },
+            "userState": { "hiddenCategories": [], "favorites": [], "recentlyViewed": [], "playbackPositions": [] }
+        },
+        {
+            "portalType": "m3u",
+            "exportedId": "desktop-m3u",
+            "title": "Desktop channels",
+            "autoRefresh": false,
+            "position": 2,
+            "source": { "kind": "url", "url": "https://channels.example.invalid/list.m3u", "rawM3u": "#EXTM3U\n#EXTINF:-1 tvg-id=\"news\" group-title=\"News\",News\nhttps://channels.example.invalid/news.m3u8\n", "userAgent": "Fake desktop agent" },
+            "userState": {
+                "favorites": ["https://channels.example.invalid/news.m3u8"],
+                "recentlyViewed": [{ "source": "m3u", "id": "fake-channel-id", "url": "https://channels.example.invalid/news.m3u8", "title": "News", "category_id": "live", "added_at": "2026-10-26T09:00:00.000Z", "group_title": "News" }],
+                "hiddenGroupTitles": ["Hidden"]
+            }
+        }
+    ]
+}

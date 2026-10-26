@@ -1,0 +1,101 @@
+// Backup writes are checked and rolled back: the normal playback stores are best effort.
+window.BackupStore = (function () {
+    'use strict';
+
+    var PREFIX = 'iptvnator-tv:';
+    var SECTIONS = ['live', 'movies', 'series'];
+
+    function read(key, fallback) {
+        var saved = localStorage.getItem(PREFIX + key);
+        return saved === null ? fallback : JSON.parse(saved);
+    }
+
+    function fingerprint(source) {
+        var address = new URL(source.url);
+        address.hash = '';
+        var url = address.href;
+        if (source.type === 'xtream') url = url.replace(/\/+$/, '');
+        return JSON.stringify([source.type, url, source.type === 'xtream' ? source.user : '']);
+    }
+
+    function lists(saved, incoming, kind) {
+        var merged = {};
+        SECTIONS.forEach(function (section) {
+            var byId = Object.create(null);
+            (saved[section] || []).concat(incoming[section] || []).forEach(function (entry) {
+                var key = Library.keyOf(section, entry);
+                if (!byId[key] || (entry.watchedAt || 0) > (byId[key].watchedAt || 0)) byId[key] = entry;
+            });
+            merged[section] = Object.keys(byId).map(function (key) { return byId[key]; });
+            if (kind === 'recent') merged[section].sort(function (a, b) { return (b.watchedAt || 0) - (a.watchedAt || 0); });
+        });
+        return merged;
+    }
+
+    function positions(saved, incoming) {
+        Object.keys(incoming).forEach(function (key) {
+            if (!saved[key] || incoming[key].updatedAt > (saved[key].updatedAt || 0)) saved[key] = incoming[key];
+        });
+        return saved;
+    }
+
+    function commit(writes, sources) {
+        var before = {};
+        Object.keys(writes).concat(['sources']).forEach(function (key) {
+            before[key] = localStorage.getItem(PREFIX + key);
+        });
+        try {
+            Object.keys(writes).forEach(function (key) { localStorage.setItem(PREFIX + key, JSON.stringify(writes[key])); });
+            Sources.replace(sources);
+        } catch (error) {
+            // Release newly occupied space before restoring the previous footprint.
+            Object.keys(before).forEach(function (key) { localStorage.removeItem(PREFIX + key); });
+            Object.keys(before).forEach(function (key) {
+                if (before[key] !== null) localStorage.setItem(PREFIX + key, before[key]);
+            });
+            throw new Error('Could not save backup. Free TV storage and try again.');
+        }
+    }
+
+    function apply(backup, mode) {
+        if (mode !== 'merge' && mode !== 'replace') throw new Error('Choose Replace or Merge.');
+        var existing = Sources.all();
+        var sources = mode === 'merge' ? existing.slice() : [];
+        var writes = {};
+        var catalogues = [];
+        var progress = mode === 'merge' ? read('progress', {}) : {};
+        if (mode === 'replace') existing.forEach(function (source) {
+            ['favorites:', 'recent:', 'last-channel:', 'backup:'].forEach(function (kind) { writes[kind + source.id] = null; });
+        });
+        backup.sources.forEach(function (entry, index) {
+            var match = sources.filter(function (source) { return fingerprint(source) === fingerprint(entry.source); })[0];
+            var id = 'backup-' + Date.now() + '-' + index;
+            while (existing.concat(sources).some(function (source) { return source.id === id; })) id += '-new';
+            var source = match || Object.assign({}, entry.source, { id: id });
+            if (!match) sources.push(source);
+            ['favorites', 'recent'].forEach(function (kind) {
+                var key = kind + ':' + source.id;
+                var saved = writes[key] || (mode === 'merge' ? read(key, {}) : {});
+                writes[key] = lists(saved, entry[kind], kind);
+            });
+            var metadataKey = 'backup:' + source.id;
+            var metadata = writes[metadataKey] || (mode === 'merge' ? read(metadataKey, {}) : {});
+            writes[metadataKey] = {
+                progressIds: (metadata.progressIds || []).concat(Object.keys(entry.progress)).filter(function (key, index, ids) { return ids.indexOf(key) === index; }),
+            };
+            if (entry.rawM3u) catalogues.push({ id: source.id, url: source.url, text: entry.rawM3u });
+            positions(progress, entry.progress);
+        });
+        positions(progress, backup.progress || {});
+        writes.progress = progress;
+        var current = mode === 'merge' && Sources.current();
+        writes.current = current ? current.id : sources.length ? sources[0].id : null;
+        commit(writes, sources);
+        // Raw playlists are catalogue data, never part of the localStorage library budget.
+        return Promise.all(catalogues.map(function (catalogue) {
+            return window.Catalogue ? Catalogue.put(catalogue.id, 'backup:m3u', { url: catalogue.url, text: catalogue.text }) : null;
+        }));
+    }
+
+    return { read: read, fingerprint: fingerprint, apply: apply };
+})();

@@ -2,8 +2,7 @@
 window.ParentalLock = (function (clock) {
     'use strict';
 
-    var PIN_KEY = 'iptvnator-tv:pin';
-    var PREFIX = 'iptvnator-tv:locked-categories:';
+    // Each profile has its own PIN and locks.
     var listeners = [];
     var openedAt = null;
     var timer = null;
@@ -18,8 +17,16 @@ window.ParentalLock = (function (clock) {
         }
     }
 
+    function pinKey() {
+        return ProfileStore.key('pin');
+    }
+
+    function locksKey(sourceId) {
+        return ProfileStore.key('locked-categories:' + sourceId);
+    }
+
     function hasPin() {
-        return !!read(PIN_KEY, null);
+        return !!read(pinKey(), null);
     }
 
     // A salted non-cryptographic hash is a TV convenience lock, not encryption.
@@ -69,7 +76,7 @@ window.ParentalLock = (function (clock) {
 
     function verify(pin) {
         if (waitSeconds()) return false;
-        var saved = read(PIN_KEY, null);
+        var saved = read(pinKey(), null);
         if (saved && /^\d{4}$/.test(pin) && saved.hash === hash(pin, saved.salt)) {
             failures = 0;
             return true;
@@ -85,14 +92,14 @@ window.ParentalLock = (function (clock) {
     function setPin(pin) {
         if (!/^\d{4}$/.test(pin)) throw new Error('Enter four digits');
         var salt = Date.now().toString(36) + Math.random().toString(36).slice(2);
-        localStorage.setItem(PIN_KEY, JSON.stringify({ salt: salt, hash: hash(pin, salt) }));
+        localStorage.setItem(pinKey(), JSON.stringify({ salt: salt, hash: hash(pin, salt) }));
         failures = 0;
         closeSession();
         changed();
     }
 
     function ids(sourceId, section) {
-        var saved = read(PREFIX + sourceId, {})[section];
+        var saved = read(locksKey(sourceId), {})[section];
         return Array.isArray(saved) ? saved.map(String) : [];
     }
 
@@ -102,10 +109,10 @@ window.ParentalLock = (function (clock) {
 
     function setCategory(sourceId, section, categoryId, locked) {
         if (!hasPin() || String(categoryId) === '') return;
-        var saved = read(PREFIX + sourceId, {});
+        var saved = read(locksKey(sourceId), {});
         var list = ids(sourceId, section).filter(function (id) { return id !== String(categoryId); });
         saved[section] = locked ? list.concat(String(categoryId)) : list;
-        localStorage.setItem(PREFIX + sourceId, JSON.stringify(saved));
+        localStorage.setItem(locksKey(sourceId), JSON.stringify(saved));
         changed();
     }
 
@@ -114,10 +121,10 @@ window.ParentalLock = (function (clock) {
         var keys = [];
         for (var i = 0; i < localStorage.length; i++) {
             var key = localStorage.key(i);
-            if (key.indexOf(PREFIX) === 0) keys.push(key);
+            if (key.indexOf(locksKey('')) === 0) keys.push(key);
         }
         keys.forEach(function (key) { localStorage.removeItem(key); });
-        localStorage.removeItem(PIN_KEY);
+        localStorage.removeItem(pinKey());
         failures = 0;
         blockedUntil = 0;
         closeSession();
@@ -135,6 +142,13 @@ window.ParentalLock = (function (clock) {
             return category !== '' && locked.indexOf(category) === -1;
         });
     }
+
+    // The next viewer starts locked and has their own PIN.
+    ProfileStore.onSwitch(function () {
+        failures = 0;
+        blockedUntil = 0;
+        relock();
+    });
 
     Prefs.onChange(function (name) {
         if (name === 'parentalRelockMs') schedule();

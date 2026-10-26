@@ -1,0 +1,51 @@
+#profiles {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--shell-bg);
+    color: var(--on-surface);
+}
+.pf-title { margin: 0 0 70px; font-size: 56px; font-weight: 500; }
+.pf-tiles { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; max-width: 1700px; }
+.pf-tile { width: 220px; padding: 18px; text-align: center; border: 4px solid transparent; border-radius: 20px; }
+.pf-tile.focused { border-color: var(--focus-ring); background: var(--selection-surface); }
+.pf-avatar {
+    width: 160px;
+    height: 160px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 78px;
+    font-weight: 600;
+    color: #071225;
+}
+.pf-avatar.pf-add { background: var(--widget-bg); color: var(--muted); }
+.pf-name { font-size: 30px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-dialog {
+    position: fixed;
+    inset: 200px 360px;
+    z-index: 70;
+    padding: 70px 110px;
+    background: var(--shell-bg);
+    color: var(--on-surface);
+    border: 3px solid var(--focus-ring);
+    border-radius: 20px;
+    font-size: 28px;
+}
+.pf-dialog h1 { margin: 0 0 20px; font-size: 40px; }
+.pf-dialog p { margin: 0 0 20px; color: var(--muted); }
+.pf-dialog input, .pf-dialog button {
+    padding: 18px;
+    font: inherit;
+    margin: 16px 20px 0 0;
+    border: 3px solid transparent;
+    border-radius: 10px;
+}
+.pf-dialog input { width: 90%; }
+.pf-dialog :focus { outline: none; border-color: var(--focus-ring); background: var(--selection); color: var(--selection-on); }

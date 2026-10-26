@@ -2,7 +2,8 @@
 window.Prefs = (function () {
     'use strict';
 
-    var PREFIX = 'iptvnator-tv:';
+    // Read before a profile is chosen, or shared by every profile.
+    var SHARED = { tmdbApiKey: true, askProfile: true };
     var listeners = [];
     var DEFAULTS = {
         autoplayMs: 8000,
@@ -16,6 +17,7 @@ window.Prefs = (function () {
         pictureAspect: 'auto',
         homeLayout: 'cinema',
         librarySources: 'current',
+        askProfile: true,
         'view:movies': 'grid',
         'view:series': 'grid',
         'view:live': 'list',
@@ -43,8 +45,12 @@ window.Prefs = (function () {
         }
     }
 
+    function store(name) {
+        return SHARED[name] ? ProfileStore.sharedKey : ProfileStore.key('settings');
+    }
+
     function get(name) {
-        var settings = read(PREFIX + 'settings', {});
+        var settings = read(store(name), {});
         if (name === 'lastChannelOnStart') return get('onStart') === 'last-channel';
         if (settings[name] !== undefined) return settings[name];
         if (name === 'onStart' && settings.lastChannelOnStart === false) return 'home';
@@ -52,7 +58,7 @@ window.Prefs = (function () {
         if (name.indexOf('view:') === 0) {
             var saved;
             try {
-                saved = localStorage.getItem(PREFIX + name);
+                saved = localStorage.getItem(ProfileStore.key(name));
             } catch (e) {
                 // Use the default when storage is unavailable.
             }
@@ -62,16 +68,16 @@ window.Prefs = (function () {
     }
 
     function set(name, value) {
-        var settings = read(PREFIX + 'settings', {});
+        var settings = read(store(name), {});
         if (name === 'lastChannelOnStart') {
             name = 'onStart';
             value = value ? 'last-channel' : 'home';
         }
         settings[name] = value;
-        write(PREFIX + 'settings', settings);
+        write(store(name), settings);
         if (name.indexOf('view:') === 0) {
             try {
-                localStorage.setItem(PREFIX + name, value);
+                localStorage.setItem(ProfileStore.key(name), value);
             } catch (e) {
                 // The settings object still holds the choice.
             }

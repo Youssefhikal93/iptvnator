@@ -80,7 +80,7 @@ test('Settings PIN protects a category, search and All channels; unlock expires 
     await expect(page.locator('.pin-title')).toHaveText('Enter the current PIN');
     await digits(page, '1234');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Set PIN…');
-    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:locked-categories:s1'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:locked-categories:s1'))).toBeNull();
     await section(page, 'Live TV');
     await category(page, 'get_live_categories cat 5');
     await expect(page.locator('#categories .focused .badge')).toHaveCount(0);

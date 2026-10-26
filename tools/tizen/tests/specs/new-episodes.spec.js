@@ -115,7 +115,7 @@ test('a catalogue refresh that adds episodes brings the badge back on Home and i
 test('resuming an episode of the show clears the badge too', async ({ page }) => {
     await boot(page, watchedSeed());
     await expect(newRow(page)).toBeVisible();
-    const seen = () => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:seen:s1') || '{}')['3004'] || 0);
+    const seen = () => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:seen:s1') || '{}')['3004'] || 0);
     expect(await seen()).toBe(0);
     await press(page, 'Enter'); // the hero's Continue watching button
     await playing(page);

@@ -68,6 +68,22 @@ window.Home = function (api) {
 
     // ---- Hero -------------------------------------------------------------
 
+    function entryKey(entry) {
+        var item = entry.item.show || entry.item;
+        return entry.section + ':' + (item.series_id || item.stream_id);
+    }
+
+    // The hero keeps showing the same title when the list reorders (after
+    // playback the title just watched moves first).
+    function heroIndex(hero) {
+        for (var i = 0; i < hero.length; i++) {
+            if (entryKey(hero[i]) === s.heroKey) return (s.hero = i);
+        }
+        s.hero = Math.min(s.hero, hero.length - 1);
+        s.heroKey = entryKey(hero[s.hero]);
+        return s.hero;
+    }
+
     function heroButtons(hero) {
         var list = [
             { label: '▶  Continue watching', run: 'open' },
@@ -92,8 +108,7 @@ window.Home = function (api) {
     }
 
     function renderHero(hero, focused) {
-        s.hero = Math.min(s.hero, hero.length - 1);
-        var entry = hero[s.hero];
+        var entry = hero[heroIndex(hero)];
         var d = heroDetails(entry);
         var box = el('div', 'hm-hero');
         box.appendChild(img('hm-hero-art', d.backdrop || d.poster || art(entry.item)));
@@ -184,10 +199,12 @@ window.Home = function (api) {
         else if (code === KEY.RIGHT && s.button < buttons.length - 1) s.button++;
         else if (code === KEY.ENTER) {
             var run = buttons[s.button].run;
-            if (run === 'prev') s.hero = (s.hero + hero.length - 1) % hero.length;
-            else if (run === 'next') s.hero = (s.hero + 1) % hero.length;
-            else if (run === 'details') api.openDetails(hero[s.hero]);
-            else api.resume(hero[s.hero]);
+            var at = heroIndex(hero);
+            if (run === 'prev' || run === 'next') {
+                s.hero = (at + (run === 'prev' ? hero.length - 1 : 1)) % hero.length;
+                s.heroKey = entryKey(hero[s.hero]);
+            } else if (run === 'details') api.openDetails(hero[at]);
+            else api.resume(hero[at]);
         }
         return undefined;
     }

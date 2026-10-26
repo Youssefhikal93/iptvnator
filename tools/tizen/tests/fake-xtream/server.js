@@ -44,7 +44,7 @@ http.createServer((req, res) => {
     if (url.pathname === '/player_api.php') {
         const action = url.searchParams.get('action');
         const cat = url.searchParams.get('category_id');
-        if (!action) return json(res, { user_info: { auth: 1, status: 'Active', exp_date: '1800206249', active_cons: '0', max_connections: '1' } });
+        if (!action) return json(res, { user_info: { auth: 1, status: 'Active', exp_date: String(Math.floor(Date.now() / 1000) + 365 * 86400), active_cons: '0', max_connections: '1' } });
         if (action.endsWith('_categories')) return json(res, range(30, (i) => ({ category_id: String(i), category_name: action + ' cat ' + i })));
         if (action === 'get_live_streams') return json(res, range(cat ? 40 : 500, (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, epg_channel_id: 'ch' + (1000 + i) + '.se', category_id: cat || String(1 + (i % 30)) })));
         if (action === 'get_vod_streams') return json(res, range(25, (i) => ({ name: 'Movie ' + i, stream_id: 2000 + i, container_extension: 'mkv', stream_icon: i % 3 ? origin + '/img/poster.jpg' : '', added: i === 5 ? '' : String(1700000000 + i * 3600), rating_5based: String(((i * 7) % 10) / 2) })));

@@ -42,6 +42,7 @@ Coverage is grouped by viewer journey:
 | `resume` | Restore and save progress; rejected seeks, real 30-second deadline and recovery |
 | `settings` | Current values, programme guide requests, Showcase hero size and persistence |
 | `sources` | Xtream form validation/add/switch, M3U groups, refresh, cancel and confirmed removal |
+| `account` | Expiry warning and badges, expired/inactive/wrong-login screens and Go to Sources, health badges, saved channel counts, Edit source |
 | `player` | Pause/play/seek/speed, track availability and stream info, intro skip, episode/season selection, next episode and autoplay/cancel |
 
 Each test gets an empty browser context, seeds its own source/library state,

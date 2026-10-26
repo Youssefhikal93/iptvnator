@@ -39,12 +39,12 @@
     var browser = Browser({
         play: play,
         exit: exitApp,
-        openForm: function (kind, done) {
+        openForm: function (kind, done, mode) {
             screen = 'form';
             Form.open(kind, function (source) {
                 screen = 'browser';
                 done(source);
-            });
+            }, mode);
         },
     });
     var channelList = ChannelList({ channels: browser.live, epg: browser.epg, play: play, visibility: Player.channelList });

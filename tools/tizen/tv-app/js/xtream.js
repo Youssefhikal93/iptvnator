@@ -1,14 +1,15 @@
 // Xtream Codes source, called directly from the TV (no proxy). Stream URLs
 // follow IPTVnator's XtreamUrlService: {server}/{kind}/{user}/{pass}/{id}.{ext}
 // with URL-encoded credentials.
-window.XtreamSource = function (source) {
+// options.quiet keeps the log's secrets for the source in use (background checks).
+window.XtreamSource = function (source, options) {
     'use strict';
 
     var enc = encodeURIComponent;
     var url = source.url.trim().replace(/\/+$/, '');
     var user = source.user.trim();
     var pass = source.pass.trim();
-    Log.setSecrets([user, pass, enc(user), enc(pass)]);
+    if (!(options && options.quiet)) Log.setSecrets([user, pass, enc(user), enc(pass)]);
 
     var ACTIONS = {
         categories: { live: 'get_live_categories', movies: 'get_vod_categories', series: 'get_series_categories' },
@@ -117,10 +118,13 @@ window.XtreamSource = function (source) {
         account: function () {
             return call('').then(function (res) {
                 var info = res && res.user_info;
-                if (!info || String(info.auth) !== '1' || (info.status && info.status !== 'Active') ||
-                    (Number(info.exp_date) > 0 && Number(info.exp_date) * 1000 <= Date.now())) {
-                    var err = new Error('Check the source login and subscription');
+                var failure = SourceAccount.problem(info);
+                if (failure) {
+                    var err = new Error(failure.message);
                     err.code = 'account';
+                    err.reason = failure.reason; // expired, inactive or login
+                    err.expires = failure.expires;
+                    err.info = info || null;
                     throw err;
                 }
                 return info;

@@ -315,6 +315,10 @@ svg {
 #load-countdown {
     min-height: 40px;
 }
+.load-buttons {
+    display: flex;
+    gap: 24px;
+}
 .state-button {
     border: 3px solid var(--line);
     border-radius: 12px;
@@ -472,6 +476,21 @@ svg {
     font-size: 20px;
     font-weight: 400;
     color: var(--muted);
+}
+.source-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+.source-text .source-guide-status {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.row .badge.warn,
+.row.focused .badge.warn,
+.row.selected .badge.warn {
+    background: #6b2b2b;
+    color: #ffd9d2;
 }
 
 /* Player */

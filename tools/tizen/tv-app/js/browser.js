@@ -42,6 +42,13 @@ window.Browser = function (hooks) {
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
     });
+    // "Go to Sources" on the account screen lands on the source with the problem.
+    LoadScreen.onSources(function () {
+        var at = Sources.all().map(function (s) { return s.id; }).indexOf(state.source && state.source.id);
+        openSection('sources');
+        showSources(Math.max(0, at));
+        setZone('categories');
+    });
     XmltvGuide.onChange(function (id) {
         if (state.section === 'sources') categories.set(sourceRows(), categories.index(), '');
         if (!state.source || state.source.id !== id) return;
@@ -61,14 +68,10 @@ window.Browser = function (hooks) {
             return row.category_name;
         },
         badge: function (row) {
-            return row.guide ? '' : row.count;
+            return row.source ? row.chip : row.count;
         },
         decorate: function (el, row) {
-            if (!row.guide) return;
-            var subtitle = document.createElement('div');
-            subtitle.className = 'source-guide-status';
-            subtitle.textContent = row.count + ' · ' + row.guide;
-            el.querySelector('.label').appendChild(subtitle);
+            if (row.source) SourceAccount.decorate(el, row);
         },
     });
     var detail = Detail();
@@ -349,14 +352,14 @@ window.Browser = function (hooks) {
         renderChrome();
     }
 
-    function toast(text) {
+    function toast(text, ms) {
         var el = $('toast');
         el.textContent = text;
         el.classList.remove('hidden');
         clearTimeout(state.toastTimer);
         state.toastTimer = setTimeout(function () {
             el.classList.add('hidden');
-        }, 1800);
+        }, ms || 1800);
     }
 
     function toggleFavorite(item, section) {
@@ -696,26 +699,12 @@ window.Browser = function (hooks) {
         var current = state.source && state.source.id;
         return Sources.all()
             .map(function (s) {
-                var label = s.id === current ? 'Active' : s.type === 'xtream' ? 'Xtream' : 'M3U';
-                var guide = XmltvGuide.subtitle(s);
-                return { category_name: s.name, count: label, guide: guide, source: s };
+                return Object.assign({ category_name: s.name, source: s }, SourceAccount.row(s, s.id === current, XmltvGuide.subtitle(s)));
             })
             .concat([
                 { category_name: '+  Add Xtream account', action: 'xtream' },
                 { category_name: '+  Add M3U playlist', action: 'm3u' },
             ]);
-    }
-
-    function infoRows() {
-        var info = state.info;
-        if (!info) return [];
-        if (info.channels !== undefined) return [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
-        var expires = info.exp_date ? new Date(Number(info.exp_date) * 1000).toLocaleDateString() : 'unknown';
-        return [
-            { label: 'Status: ' + (info.status || 'unknown') },
-            { label: 'Expires: ' + expires },
-            { label: 'Connections: ' + (info.active_cons || 0) + ' / ' + (info.max_connections || '?') },
-        ];
     }
 
     function showSourceDetails() {
@@ -728,10 +717,11 @@ window.Browser = function (hooks) {
             var rows = [
                 { label: isCurrent ? 'Watch this source' : 'Switch to this source', action: 'open' },
                 { label: 'Refresh source', action: 'refresh' },
+                { label: 'Edit source…', action: 'edit' },
                 { label: 'Remove', action: 'remove' },
                 { label: Sources.typeLabel(row.source) + ' · ' + row.source.url },
             ];
-            items.set(isCurrent ? rows.concat(infoRows()) : rows, 0);
+            items.set(rows.concat(SourceAccount.detailRows(row.source, isCurrent ? state.info : null)), 0);
         }
         renderChrome();
     }
@@ -739,6 +729,35 @@ window.Browser = function (hooks) {
     function showSources(index) {
         categories.set(sourceRows(), index || 0, '');
         showSourceDetails();
+        SourceAccount.refresh(Sources.all(), sourcesChecked);
+    }
+
+    // A background check finished: redraw the rows, and the details unless the
+    // viewer is inside them.
+    function sourcesChecked() {
+        if (state.section !== 'sources') return;
+        categories.set(sourceRows(), categories.index(), '');
+        if (state.zone !== 'items') showSourceDetails();
+    }
+
+    function sourceEdited(updated, reconnect) {
+        var current = state.source && state.source.id === updated.id;
+        if (reconnect && current) {
+            state.catalogue.drop().then(function () {
+                setSource(updated);
+                sourcesChecked();
+            });
+        } else if (reconnect) {
+            Catalogue.drop(updated.id);
+        } else if (current) {
+            state.source = updated;
+            updateEpg();
+        }
+        showSources(categories.index());
+    }
+
+    function editSource(source) {
+        SourceEdit(source, { openForm: hooks.openForm, saved: sourceEdited })();
     }
 
     function sourceGuideOptions(source) {
@@ -753,7 +772,9 @@ window.Browser = function (hooks) {
 
     function openSourceMenu() {
         var row = categories.item();
-        if (row && row.source) Menu.open(row.source.name, sourceGuideOptions(row.source));
+        if (!row || !row.source) return;
+        var edit = { label: 'Edit source…', run: function () { editSource(row.source); } };
+        Menu.open(row.source.name, [edit].concat(sourceGuideOptions(row.source)));
     }
 
     function sourceAction() {
@@ -772,6 +793,8 @@ window.Browser = function (hooks) {
                 openSection('home');
                 setZone(contentZone());
             });
+        } else if (action === 'edit') {
+            editSource(row.source);
         } else if (action === 'remove') {
             if (state.armed !== row.source.id) {
                 state.armed = row.source.id;
@@ -823,13 +846,14 @@ window.Browser = function (hooks) {
         updateEpg();
         var adapter = state.adapter;
         account = LoadScreen.run(source.id + ':account', function () {
-            return adapter.account();
+            return SourceAccount.track(source, adapter.account());
         }, function () {
             return adapter === state.adapter && state.section !== 'sources' && state.section !== 'settings';
         })
             .then(function (info) {
                 if (adapter !== state.adapter) return;
                 state.info = info;
+                SourceAccount.warn(source, info, toast);
                 if (state.section === 'sources') showSourceDetails();
             });
         var checked = account;

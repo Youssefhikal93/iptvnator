@@ -5,14 +5,17 @@
 // api: hero() / rows() -> entries { item, section } and [{ id, title, entries }]
 //      open(entry) (OK on a poster), resume(entry) and openDetails(entry)
 //      (hero buttons), details(entry) -> Promise of detail-page details,
-//      progress(entry) -> Library.progress shape or null, watched(entry) -> boolean,
+//      progress(entry) -> Progress.of shape or null, watched(entry) -> boolean,
 //      programme(item) -> the programme on now for a channel, or null
 window.Home = function (api) {
     'use strict';
 
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13 };
+    var KEY = Keys;
     var VISIBLE = 7; // cards on screen per row
     var root = document.getElementById('home');
+    Prefs.onChange(function (name) {
+        if (name === 'homeLayout' || name === 'programmeGuide') render();
+    });
     var s = { block: 0, hero: 0, button: 0, rows: {}, details: {} };
 
     function el(tag, cls, text) {
@@ -123,7 +126,7 @@ window.Home = function (api) {
         if (p) {
             var bar = el('div', 'hm-hero-bar');
             var fill = el('div', 'hm-hero-fill');
-            fill.style.width = Math.max(3, Math.round(p.ratio * 100)) + '%';
+            fill.style.width = Progress.bar(p.ratio);
             bar.appendChild(fill);
             text.appendChild(bar);
         }
@@ -152,10 +155,10 @@ window.Home = function (api) {
             tick.setAttribute('aria-label', 'Watched');
             poster.appendChild(tick);
         }
-        if (p && p.ratio < 0.95) {
+        if (p && p.status === 'continue') {
             var bar = el('div', 'hm-bar');
             var fill = el('div', 'hm-fill');
-            fill.style.width = Math.max(3, Math.round(p.ratio * 100)) + '%';
+            fill.style.width = Progress.bar(p.ratio);
             bar.appendChild(fill);
             poster.appendChild(bar);
         }
@@ -190,7 +193,7 @@ window.Home = function (api) {
     }
 
     function render() {
-        root.classList.toggle('showcase', Library.setting('homeLayout') === 'showcase');
+        root.classList.toggle('showcase', Prefs.get('homeLayout') === 'showcase');
         var list = blocks();
         root.textContent = '';
         if (!list.length) {

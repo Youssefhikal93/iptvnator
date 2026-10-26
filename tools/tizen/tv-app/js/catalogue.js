@@ -57,7 +57,34 @@ window.Catalogue = (function () {
         return sourceId + '|' + key;
     }
 
+    function sameItem(current, saved) {
+        if (current === saved) return true;
+        if (!current || !saved || typeof current !== 'object' || typeof saved !== 'object') return false;
+        var fields = Object.keys(current);
+        var previous = Object.keys(saved);
+        if (fields.length !== previous.length) return false;
+        return fields.every(function (field, index) {
+            if (field !== previous[index]) return false;
+            if (current[field] === saved[field]) return true;
+            // Nested provider metadata is uncommon in lists; retain the old comparison there.
+            return JSON.stringify(current[field]) === JSON.stringify(saved[field]);
+        });
+    }
+
+    function same(current, saved) {
+        if (current === saved) return true;
+        if (!Array.isArray(current) || !Array.isArray(saved)) return JSON.stringify(current) === JSON.stringify(saved);
+        if (current.length !== saved.length) return false;
+        var identity = ['stream_id', 'series_id', 'num', 'name'];
+        var matching = current.every(function (item, index) {
+            if (!item || !saved[index]) return item === saved[index];
+            return identity.every(function (field) { return item[field] === saved[index][field]; });
+        });
+        return matching && current.every(function (item, index) { return sameItem(item, saved[index]); });
+    }
+
     return {
+        same: same,
         get: function (sourceId, key) {
             return run('readonly', function (store) {
                 return store.get(keyOf(sourceId, key));

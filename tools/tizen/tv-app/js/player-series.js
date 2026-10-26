@@ -11,7 +11,7 @@ window.PlayerSeries = function (api) {
     var INTRO = { from: 10000, until: 300000 };
     var UP_NEXT_BEFORE_MS = 30000;
     var PANEL_ROWS = 7;
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
+    var KEY = Keys;
 
     function $(id) {
         return document.getElementById(id);
@@ -35,10 +35,6 @@ window.PlayerSeries = function (api) {
         if (cls) node.className = cls;
         if (text !== undefined) node.textContent = text;
         return node;
-    }
-
-    function isBack(code) {
-        return code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE;
     }
 
     function episodes() {
@@ -69,7 +65,7 @@ window.PlayerSeries = function (api) {
 
     function skipIntro() {
         s.introDone = true;
-        api.seekTo(api.position() + Library.setting('skipIntroSeconds') * 1000);
+        api.seekTo(api.position() + Prefs.get('skipIntroSeconds') * 1000);
         api.showControls();
     }
 
@@ -98,7 +94,7 @@ window.PlayerSeries = function (api) {
         ui.next.classList.toggle('hidden', !shown);
         if (!shown) return;
         ui.nextTitle.textContent = episodes().items[nextIndex()].label;
-        var autoplayMs = Library.setting('autoplayMs');
+        var autoplayMs = Prefs.get('autoplayMs');
         if (!api.isEnded() || !autoplayMs) {
             s.autoplayAt = 0;
             ui.nextCount.textContent = 'OK: play now · Return: hide';
@@ -165,11 +161,11 @@ window.PlayerSeries = function (api) {
             var row = el('div', 'pl-ep-row' + (start + i === p.focus ? ' focus' : '') + (index === eps.index ? ' playing' : ''));
             row.appendChild(el('span', 'pl-ep-label', String(ep.label).replace(/\s+/g, ' ')));
             if (index === eps.index) row.appendChild(el('span', 'pl-ep-tag', 'Playing'));
-            var ratio = api.progressOf('episode:' + ep.id);
-            if (ratio > 0) {
+            var progress = Progress.of(Progress.episodeId(ep));
+            if (progress) {
                 var bar = el('div', 'pl-ep-bar');
                 var fill = el('div', 'pl-ep-fill');
-                fill.style.width = Math.max(3, Math.round(ratio * 100)) + '%';
+                fill.style.width = Progress.bar(progress.ratio);
                 bar.appendChild(fill);
                 row.appendChild(bar);
             }
@@ -193,7 +189,7 @@ window.PlayerSeries = function (api) {
             if (index === episodes().index) closePanel();
             else if (index !== undefined) playEpisode(index);
             return true;
-        } else if (isBack(code)) {
+        } else if (Keys.isBack(code)) {
             closePanel();
             return true;
         }
@@ -220,7 +216,7 @@ window.PlayerSeries = function (api) {
             var button = list[s.focus];
             s.focus = -1;
             if (button) button.run();
-        } else if (code === KEY.UP || isBack(code)) s.focus = -1;
+        } else if (code === KEY.UP || Keys.isBack(code)) s.focus = -1;
         else if (code !== KEY.LEFT && code !== KEY.RIGHT && code !== KEY.DOWN) {
             s.focus = -1;
             return false;
@@ -258,7 +254,7 @@ window.PlayerSeries = function (api) {
             if (s.panel) return panelKey(code);
             if (s.focus >= 0) return buttonsKey(code);
             if (upNextShown() && code === KEY.ENTER) return playNext(), true;
-            if (upNextShown() && isBack(code)) {
+            if (upNextShown() && Keys.isBack(code)) {
                 s.dismissed = true;
                 renderUpNext();
                 return true;

@@ -3,11 +3,14 @@
 window.Browser = function (hooks) {
     'use strict';
 
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27, CH_UP: 427, CH_DOWN: 428, IME_DONE: 65376, IME_CANCEL: 65385 };
-    var HOLD_MS = 600;
+    var KEY = Keys;
     // Header toolbar, left to right: search bar, list view, grid view, sort.
     var TOOLS = ['search', 'list', 'grid', 'sort'];
-    var STEPS = { 38: -1, 40: 1, 427: -10, 428: 10 };
+    var STEPS = {};
+    STEPS[KEY.UP] = -1;
+    STEPS[KEY.DOWN] = 1;
+    STEPS[KEY.CH_UP] = -10;
+    STEPS[KEY.CH_DOWN] = 10;
     var SECTIONS = [
         { id: 'home', label: 'Home', icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' },
         { id: 'sources', label: 'Sources', icon: 'M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z' },
@@ -19,7 +22,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
+    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -38,6 +41,9 @@ window.Browser = function (hooks) {
             Library.setLastChannel(sourceId(), channel);
         },
     });
+    Prefs.onChange(function (name) {
+        if (name === 'programmeGuide') updateEpg();
+    });
     var visible = { list: [], empty: '' };
 
     var categories = List($('categories'), {
@@ -53,13 +59,7 @@ window.Browser = function (hooks) {
         },
     });
     var detail = Detail();
-    var settings = Settings({
-        toast: toast,
-        changed: function (name) {
-            if (name === 'programmeGuide') updateEpg();
-            if (name === 'homeLayout' || name === 'programmeGuide') home.render();
-        },
-    });
+    var settings = Settings({ toast: toast });
     var watched = Watched({
         knownShow: function (show) {
             return state.cache['series:' + show.series_id];
@@ -163,13 +163,13 @@ window.Browser = function (hooks) {
             tick.setAttribute('aria-label', 'Watched');
             el.appendChild(tick);
         }
-        var p = Library.progress(Library.progressId(state.section, item));
-        if (p && p.ratio < 0.95) {
+        var p = Progress.of(Progress.id(state.section, item));
+        if (p && p.status === 'continue') {
             var bar = document.createElement('div');
             bar.className = 'bar';
             var fill = document.createElement('div');
             fill.className = 'fill';
-            fill.style.width = Math.max(3, Math.round(p.ratio * 100)) + '%';
+            fill.style.width = Progress.bar(p.ratio);
             bar.appendChild(fill);
             el.appendChild(bar);
         }
@@ -182,7 +182,7 @@ window.Browser = function (hooks) {
         clearTimeout(state.redrawTimer);
         state.epgWanted = [];
         if (state.epg) state.epg.stop();
-        state.epg = state.adapter && state.adapter.nowNext && Library.setting('programmeGuide') ? Epg(state.adapter) : null;
+        state.epg = state.adapter && state.adapter.nowNext && Prefs.get('programmeGuide') ? Epg(state.adapter) : null;
     }
 
     function liveRequest(channel) {
@@ -347,13 +347,13 @@ window.Browser = function (hooks) {
                 toggleFavorite(item, section);
             },
         });
-        var progressId = Library.progressId(section, item);
-        var progress = section === 'live' ? null : Library.progress(progressId);
-        if (progress && progress.ratio < 0.95) {
+        var progressId = Progress.id(section, item);
+        var progress = section === 'live' ? null : Progress.of(progressId);
+        if (progress && progress.status === 'continue') {
             options.push({
                 label: 'Remove from Continue watching',
                 run: function () {
-                    Library.clearProgress(progressId);
+                    Progress.clear(progressId);
                     toast('Removed from Continue watching');
                     refreshLibrary();
                 },
@@ -523,7 +523,7 @@ window.Browser = function (hooks) {
         if (code === KEY.LEFT && state.tool > 0) state.tool--;
         else if (code === KEY.RIGHT && state.tool < tools.length - 1) state.tool++;
         else if (code === KEY.LEFT) setZone('rail');
-        else if (code === KEY.DOWN || isBack(code)) leaveToolbar();
+        else if (code === KEY.DOWN || Keys.isBack(code)) leaveToolbar();
         else if (code === KEY.ENTER && tool === 'search') startTyping();
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER) setView(tool);
@@ -541,10 +541,6 @@ window.Browser = function (hooks) {
     function available(id) {
         if (id === 'home') return !!state.adapter;
         return id === 'sources' || id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
-    }
-
-    function isBack(code) {
-        return code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE;
     }
 
     // Memory, then the saved catalogue, then the provider. A saved list is
@@ -601,7 +597,7 @@ window.Browser = function (hooks) {
                 Catalogue.put(id, key, value);
                 if (!state.source || id !== sourceId()) return;
                 state.cache[key] = value;
-                if (onFresh && JSON.stringify(value) !== JSON.stringify(saved)) onFresh(value);
+                if (onFresh && !Catalogue.same(value, saved)) onFresh(value);
             })
             .catch(function (err) {
                 Log.error('REFRESH FAIL ' + key + ' ' + err.message);
@@ -946,7 +942,7 @@ window.Browser = function (hooks) {
     }
 
     function progressOf(entry) {
-        return Library.progress(Library.progressId(entry.section, entry.item));
+        return Progress.of(Progress.id(entry.section, entry.item));
     }
 
     // Unfinished movies, and each show's latest episode while it is
@@ -960,7 +956,7 @@ window.Browser = function (hooks) {
                 var show = item.show ? item.show.series_id : item.series_id;
                 if (seen[show]) return;
                 seen[show] = true;
-                if (item.episode && Library.unfinished('series', item)) list.push({ item: item, section: 'series' });
+                if (item.episode && Progress.unfinished('series', item)) list.push({ item: item, section: 'series' });
             });
         }
         return list.sort(function (a, b) {
@@ -1047,8 +1043,15 @@ window.Browser = function (hooks) {
 
     // Details are kept for the session only; they are cheap to fetch again.
     function remembered(key, load) {
-        if (!state.cache[key]) state.cache[key] = load();
-        return state.cache[key];
+        var cache = state.cache;
+        if (!cache[key]) {
+            var pending = load().catch(function (error) {
+                if (cache[key] === pending) delete cache[key];
+                throw error;
+            });
+            cache[key] = pending;
+        }
+        return cache[key];
     }
 
     // resume: true / false skips the player's Resume prompt.
@@ -1069,7 +1072,7 @@ window.Browser = function (hooks) {
                 });
             },
             actions: function () {
-                var p = Library.unfinished('movies', movie);
+                var p = Progress.unfinished('movies', movie);
                 var list = p
                     ? [
                           { label: '▶  Resume from ' + clock(p.position), progress: p.ratio, run: playMovie.bind(null, movie, true) },
@@ -1110,7 +1113,7 @@ window.Browser = function (hooks) {
     function openShow(show) {
         var episodes = DetailEpisodes({
             progressOf: function (ep) {
-                return Library.progress('episode:' + ep.id);
+                return Progress.of(Progress.episodeId(ep));
             },
             play: function (list, index, resume) {
                 playEpisode(show, list, index, resume);
@@ -1207,20 +1210,10 @@ window.Browser = function (hooks) {
         return items.move(target - at);
     }
 
-    // Holding OK opens the options menu; a short press runs tap on release.
-    function startPress(tap, hold) {
-        var press = { fired: false, tap: tap };
-        press.timer = setTimeout(function () {
-            press.fired = true;
-            hold();
-        }, HOLD_MS);
-        state.press = press;
-    }
-
     function onHomeKey(code) {
         var entry = home.focused();
         if (code === KEY.ENTER && entry) {
-            startPress(
+            Keys.press(
                 function () {
                     openEntry(entry.item, entry.section);
                 },
@@ -1228,23 +1221,18 @@ window.Browser = function (hooks) {
                     openItemMenu(entry.item, entry.section);
                 }
             );
-        } else if (isBack(code) || home.key(code) === 'left') setZone('rail');
+        } else if (Keys.isBack(code) || home.key(code) === 'left') setZone('rail');
         return true;
     }
 
     function onKey(code) {
         restoring = false;
-        // OK repeats while held; the hold timer and keyup own that press.
-        if (state.press) {
-            if (code === KEY.ENTER) return true;
-            clearTimeout(state.press.timer);
-            state.press = null;
-        }
+        if (Keys.repeat(code)) return true;
         if (Menu.isOpen()) return Menu.onKey(code);
         if (detail.isOpen()) {
             var selection = detail.episodeSelection();
             if (code !== KEY.ENTER || !selection) return detail.onKey(code);
-            startPress(function () {
+            Keys.press(function () {
                 detail.onKey(code);
             }, function () {
                 watched.openEpisodeMenu(selection);
@@ -1264,14 +1252,14 @@ window.Browser = function (hooks) {
         if (state.zone === 'rail') {
             if (code === KEY.UP || code === KEY.DOWN) moveSection(code === KEY.UP ? -1 : 1);
             else if (code === KEY.RIGHT || code === KEY.ENTER) setZone(contentZone());
-            else if (isBack(code)) hooks.exit();
+            else if (Keys.isBack(code)) hooks.exit();
             else return false;
         } else if (state.zone === 'categories') {
             var row = categories.item();
             if (STEPS[code]) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
                 else if (code === KEY.UP) enterToolbar('categories');
-            } else if (code === KEY.LEFT || isBack(code)) setZone('rail');
+            } else if (code === KEY.LEFT || Keys.isBack(code)) setZone('rail');
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
             else if ((code === KEY.RIGHT || code === KEY.ENTER) && items.items().length) setZone('items');
             else return code === KEY.RIGHT || code === KEY.ENTER;
@@ -1285,23 +1273,15 @@ window.Browser = function (hooks) {
                 // Holding OK opens the options menu; a short press opens on release.
                 if (state.section === 'sources') activateItem();
                 else {
-                    startPress(activateItem, function () {
+                    Keys.press(activateItem, function () {
                         openItemMenu(items.item(), state.section);
                     });
                 }
-            } else if (code === KEY.LEFT || isBack(code)) setZone('categories');
+            } else if (code === KEY.LEFT || Keys.isBack(code)) setZone('categories');
             else return false;
         }
         return true;
     }
-
-    document.addEventListener('keyup', function (event) {
-        var press = state.press;
-        if (!press || event.keyCode !== KEY.ENTER) return;
-        clearTimeout(press.timer);
-        state.press = null;
-        if (!press.fired) press.tap();
-    });
 
     function start() {
         return LoadScreen.run('saved', function () {

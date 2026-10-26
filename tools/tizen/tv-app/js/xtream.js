@@ -166,14 +166,14 @@ window.XtreamSource = function (source) {
         movieRequest: function (movie) {
             var ext = movie.container_extension || 'mp4';
             var src = streamUrl('movie', movie.stream_id, ext);
-            return { live: false, id: 'movie:' + movie.stream_id, title: movie.name, sources: vodChain(src, ext) };
+            return { live: false, id: Progress.id('movies', movie), title: movie.name, sources: vodChain(src, ext) };
         },
         episodeRequest: function (show, episode) {
             var ext = episode.container_extension || 'mp4';
             var src = streamUrl('series', episode.id, ext);
             return {
                 live: false,
-                id: 'episode:' + episode.id,
+                id: Progress.episodeId(episode),
                 title: show.name,
                 subtitle: episode.label,
                 sources: vodChain(src, ext),

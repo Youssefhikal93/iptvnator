@@ -3,7 +3,7 @@
 window.LoadScreen = (function () {
     'use strict';
 
-    var KEY = { LEFT: 37, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27 };
+    var KEY = Keys;
     var jobs = {};
     var paused = false;
     var shown = null;
@@ -93,7 +93,7 @@ window.LoadScreen = (function () {
         key: function (code) {
             if (!shown) return false;
             if (code === KEY.ENTER) shown.retry.now();
-            else if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.LEFT) {
+            else if (Keys.isBack(code) || code === KEY.LEFT) {
                 if (shown.status.error.code === 'saved') return code === KEY.LEFT ? true : 'exit';
                 shown.dismissed = true;
                 render();

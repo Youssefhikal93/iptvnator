@@ -243,6 +243,9 @@ from step 8 must already be downloaded.
   On a show's detail page, hold OK on an episode for episode and season
   actions. A tick marks watched items; season counts and the next episode
   button update immediately. Watched items leave Continue watching.
+- **Progress near the end**: movies and episodes count as watched at 95 % or
+  with fewer than 30 seconds left. Continue watching, watched ticks and Resume
+  use the same rule, including progress saved by an older version.
 - **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,
   subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
   Episodes, Audio & subtitles). Episodes show an Up next card near the end

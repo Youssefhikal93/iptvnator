@@ -3,7 +3,7 @@
 window.Form = (function () {
     'use strict';
 
-    var KEY = { UP: 38, DOWN: 40, LEFT: 37, RIGHT: 39, RETURN: 10009, ESCAPE: 27 };
+    var KEY = Keys;
     var $ = function (id) {
         return document.getElementById(id);
     };

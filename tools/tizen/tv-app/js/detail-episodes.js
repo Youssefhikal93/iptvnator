@@ -2,12 +2,12 @@
 // watched" and episode rows (thumbnail, title, length, plot, progress).
 // It also picks the episode for the page's main button (nextUp).
 //
-// opts: progressOf(episode) -> Library.progress shape or null
+// opts: progressOf(episode) -> Progress.of shape or null
 //       play(list, index, resume) starts episode `index` of the whole list
 window.DetailEpisodes = function (opts) {
     'use strict';
 
-    var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13 };
+    var KEY = Keys;
     var ROWS = 5;
     var s = { list: [], seasons: [], season: 0, focus: 0, zone: 'pills', loaded: false };
 
@@ -24,7 +24,7 @@ window.DetailEpisodes = function (opts) {
 
     function watched(ep) {
         var p = opts.progressOf(ep);
-        return !!p && p.ratio >= 0.95;
+        return !!p && p.status === 'watched';
     }
 
     // Indexes (in the whole list) of the episodes in the shown season.
@@ -114,14 +114,14 @@ window.DetailEpisodes = function (opts) {
         if (p) {
             var bar = el('div', 'dt-ep-bar');
             var fill = el('div', 'dt-ep-fill');
-            fill.style.width = Math.max(3, Math.round(p.ratio * 100)) + '%';
+            fill.style.width = Progress.bar(p.ratio);
             bar.appendChild(fill);
             thumb.appendChild(bar);
         }
         row.appendChild(thumb);
         var text = el('div', 'dt-ep-text');
         text.appendChild(el('div', 'dt-ep-title', ep.num + '. ' + (ep.title || code(ep))));
-        var meta = [runtime(ep.seconds), p && p.ratio >= 0.95 ? 'Watched' : p ? Math.round(p.ratio * 100) + '% watched' : ''].filter(Boolean);
+        var meta = [runtime(ep.seconds), p && p.status === 'watched' ? 'Watched' : p ? Math.round(p.ratio * 100) + '% watched' : ''].filter(Boolean);
         if (meta.length) text.appendChild(el('div', 'dt-ep-meta', meta.join('  ·  ')));
         if (ep.plot) text.appendChild(el('div', 'dt-ep-plot', ep.plot));
         row.appendChild(text);
@@ -173,7 +173,7 @@ window.DetailEpisodes = function (opts) {
             var index = shown[s.focus];
             if (index === undefined) return undefined;
             var p = opts.progressOf(s.list[index]);
-            opts.play(s.list, index, p && p.ratio < 0.95 ? true : undefined);
+            opts.play(s.list, index, p && p.status === 'continue' ? true : undefined);
         }
         return undefined;
     }

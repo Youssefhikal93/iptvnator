@@ -105,6 +105,17 @@ window.Player = (function () {
             showStatus(heading(current) + '\nThe stream stopped and could not reconnect.', true);
         },
     });
+    var sleep = PlayerSleep({
+        warn: closeMenu,
+        media: function () {
+            if (!current || current.live || !ready || (!started && !ended) || progressBlocked()) return null;
+            return { position: position(), duration: duration(), ended: ended, rate: speed };
+        },
+        stop: function () {
+            stop();
+            document.dispatchEvent(new Event('sleep-timer-stop'));
+        },
+    });
     var series = PlayerSeries({
         current: function () {
             return current;
@@ -115,6 +126,7 @@ window.Player = (function () {
         isEnded: function () {
             return ended;
         },
+        autoplayBlocked: sleep.blocksAutoplay,
         play: play,
         openMenu: openMenu,
         showControls: showControls,
@@ -716,6 +728,8 @@ window.Player = (function () {
                 });
             });
         }
+        ui.menu.appendChild(el('div', 'pl-menu-head pl-sleep-head', sleep.heading()));
+        sleep.choices(current).forEach(function (choice) { item(choice.label, choice.active, choice.select); });
         head('Stream info');
         streamInfoLines().forEach(function (line) {
             ui.menu.appendChild(el('div', 'pl-menu-info', line));
@@ -1022,6 +1036,8 @@ window.Player = (function () {
         ended = true;
         if (current.id) Progress.finish(current.id, duration() / 1000);
         started = false;
+        sleep.check();
+        if (!current) return;
         showControls();
     }
 
@@ -1128,6 +1144,7 @@ window.Player = (function () {
     }
 
     function stop() {
+        sleep.cancel();
         playbackError = false;
         reconnect.cancel();
         freeze.clear();
@@ -1144,6 +1161,7 @@ window.Player = (function () {
     // playing to show (stopped or failed).
     function preview(rect) {
         if (!current || playbackError) return false;
+        sleep.cancel();
         setBox(rect);
         closeMenu();
         hideControls();

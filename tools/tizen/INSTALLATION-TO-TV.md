@@ -203,6 +203,15 @@ from step 8 must already be downloaded.
   PUT/POST endpoint. A phone link is shown only after a successful read-back.
   The endpoint must allow CORS requests. See [backup compatibility](docs/backup.md)
   for the exact desktop fields supported and the M3U progress limitation.
+- **Sleep timer**: open the player menu with **UP** (or **Yellow** on Live TV),
+  then choose Off, 15, 30, 60 or 90 minutes, or **End of episode/movie**.
+  The controls show the minutes left. During the final minute, **Keep watching**
+  adds the chosen duration again (or turns an end choice Off); **Return** does
+  the same. LEFT/RIGHT selects **Stop now**, and OK confirms. Expiry saves
+  progress, releases playback and closes the TV app; a browser returns to its
+  browsing screen with a toast. Changing channels or episodes keeps the timer;
+  leaving the player with Return cancels it, including a return to live preview.
+  The timer is never saved across app restarts.
 
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
@@ -280,6 +289,13 @@ from step 8 must already be downloaded.
   easier than the remote.
 - **OK** opens or plays; **hold OK** opens the options menu (favorites,
   remove from Continue watching or Recently watched).
+- **Favorites and recents from** in Settings, under Display after Home layout:
+  **This source** is the default. Choose **All sources** to merge Favorites,
+  Recently watched and their Home rows. Favorites group the current source
+  first; recently watched items sort by last play, with older saved items
+  without a date afterwards. A source-name chip marks items from another
+  source. OK switches to that source and opens the item; Return keeps that
+  list in the new source. Hold OK removes the item from its own source.
 - **Sort in Movies and Series**: at the top of an item list, press Up, then
   Right three times to reach Sort and OK to choose Newest, Oldest, Name A-Z,
   Name Z-A, Top rated or Provider order. The current choice is marked; choosing
@@ -289,7 +305,7 @@ from step 8 must already be downloaded.
   Favorites. The header shows the order. Recently added is the first category
   when dated items exist: up to 50, always newest first by catalogue date,
   regardless of release year. Sort is hidden there, in Recently watched and
-  Continue watching, and for Live TV and M3U sources.
+  Continue watching, merged All sources Favorites, and for Live TV and M3U sources.
 - **Movies**: OK opens a detail page (artwork, year, rating, genre, length,
   plot, cast) with Play or Resume from X / Start over, Favorites, Trailer
   (when the provider has one; it plays from YouTube) and More for a long
@@ -313,6 +329,16 @@ from step 8 must already be downloaded.
   results, All channels, Recently added, the Home rows (not Continue watching)
   and the channel list while watching. Favorites, Recently watched and All
   channels cannot be hidden. The choice is kept per source and section.
+- **Parental lock**: set a four-digit PIN under **Settings > Parental lock >
+  PIN**, then hold OK on a category and choose **Lock category**. A lock icon
+  marks it. Open it with OK or RIGHT and enter the PIN using the remote's
+  digits, or arrows and OK on the number pad (Clear erases; Back cancels).
+  One correct PIN opens all locked categories for **Re-lock after**: 5 min,
+  15 min (default), 1 hour, or until the app closes. While locked, their items
+  leave Home, search, All lists, Favorites, Recently watched, Continue watching
+  and the player's channel list; PRE-CH cannot return to them. Five wrong
+  attempts require a 30-second wait. Change PIN, Remove PIN and Unlock category
+  ask for the current PIN; Remove PIN also clears locks for every source.
 - **Watched**: hold OK on a movie or show in a list or on Home to mark it
   watched or unwatched. A show applies the change to all its episodes.
   On a show's detail page, hold OK on an episode for episode and season

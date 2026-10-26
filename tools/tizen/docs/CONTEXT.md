@@ -32,6 +32,10 @@ _Avoid_: Disabled, removed category
 The newest dated movies or shows added to a source's catalogue, regardless of release year; the category holds up to 50 items.
 _Avoid_: New releases, recently watched
 
+**Parental lock**:
+A four-digit PIN that keeps locked categories' items out of browsing and playback choices until the viewer unlocks them for a limited session.
+_Avoid_: Password, hidden category (hiding does not require a PIN)
+
 **Item**:
 One channel, movie or show in a category list.
 _Avoid_: Stream, entry (see Entry), content
@@ -161,3 +165,7 @@ _Avoid_: Autoplay card, next-episode popup
 
 **Skip intro**:
 A jump of a fixed length near the start of an episode; providers do not mark intros.
+
+**Sleep timer**:
+A player choice that stops playback and closes the TV app after a duration or at the end of the current movie or episode.
+_Avoid_: Auto-off, shutdown timer

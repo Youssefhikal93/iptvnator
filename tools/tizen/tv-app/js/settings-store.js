@@ -15,12 +15,14 @@ window.Prefs = (function () {
         subtitlePosition: 'bottom',
         pictureAspect: 'auto',
         homeLayout: 'cinema',
+        librarySources: 'current',
         'view:movies': 'grid',
         'view:series': 'grid',
         'view:live': 'list',
         'sort:movies': 'newest',
         'sort:series': 'newest',
         onStart: 'last-channel',
+        parentalRelockMs: 900000,
     };
 
     function read(key, fallback) {

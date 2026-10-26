@@ -22,8 +22,8 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Channel drawer over fullscreen live (◀), Channels / Programme / TV Guide buttons | Drawer done (not yet tested on the TV); buttons missing | #8 | Yes |
 | Single-channel programme list (dates, Now, descriptions) | Missing (now and next only) | #1, #6 | Yes |
 | Multi-channel guide grid (2-hour window, Watch live button) | Missing | #6 | Yes |
-| Resume confirmed by retrying the seek; progress protected on failure | Partial | #33 | Yes |
-| Automatic retry (2, 5, 10, 30 s), Retry buttons, recovery screens | Partial | #17, #14 | Yes |
+| Resume confirmed by retrying the seek; progress protected on failure | Done (not yet tested on the TV) | #33 | Yes |
+| Automatic retry (2, 5, 10, 30 s), Retry buttons, recovery screens | Done (not yet tested on the TV); coming back online is #14 | #17, #14 | Yes |
 | Remote Stop returns to where playback started | Done | — | Yes |
 | Long lists with focus restored after details | Done | — | Yes |
 | Settings: Home layout **Cinema** (tall hero) or **Showcase** (compact hero, more rows) | Missing (our hero is Cinema-like) | #10 | Yes |

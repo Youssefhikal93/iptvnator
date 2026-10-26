@@ -122,9 +122,10 @@ window.XtreamSource = function (source) {
                 return Array.isArray(list) ? list : [];
             });
         },
-        episodes: function (show) {
-            return call('get_series_info', { series_id: show.series_id }).then(function (info) {
-                var seasons = (info && info.episodes) || {};
+        // The show's details and all its episodes, in season order.
+        seriesInfo: function (show) {
+            return call('get_series_info', { series_id: show.series_id }).then(function (res) {
+                var seasons = (res && res.episodes) || {};
                 var episodes = [];
                 Object.keys(seasons)
                     .sort(function (a, b) {
@@ -132,15 +133,22 @@ window.XtreamSource = function (source) {
                     })
                     .forEach(function (season) {
                         (seasons[season] || []).forEach(function (ep) {
+                            var info = ep.info || {};
+                            var number = ep.season || season;
                             episodes.push({
                                 id: ep.id,
                                 container_extension: ep.container_extension,
-                                season: String(ep.season || season),
-                                label: 'S' + (ep.season || season) + ' E' + (ep.episode_num || '?') + '  ' + (ep.title || ''),
+                                season: String(number),
+                                num: String(ep.episode_num || '?'),
+                                title: ep.title || '',
+                                label: 'S' + number + ' E' + (ep.episode_num || '?') + '  ' + (ep.title || ''),
+                                image: info.movie_image || info.cover_big || '',
+                                plot: info.plot || '',
+                                seconds: seconds(info),
                             });
                         });
                     });
-                return episodes;
+                return { details: details((res && res.info) || {}, show), episodes: episodes };
             });
         },
         liveRequest: function (channel) {

@@ -79,6 +79,9 @@ window.Detail = function () {
     function render() {
         var d = details();
         root.textContent = '';
+        // A show's page scrolls up to its episodes while they have the focus.
+        root.classList.toggle('dt-show', !!s.page.episodes);
+        root.classList.toggle('dt-scrolled', s.zone === 'episodes');
         root.appendChild(img('dt-backdrop', d.backdrop));
         root.appendChild(el('div', 'dt-shade'));
         var body = el('div', 'dt-body');
@@ -94,7 +97,10 @@ window.Detail = function () {
         info.appendChild(renderButtons());
         body.appendChild(info);
         root.appendChild(body);
-        if (s.page.episodes) root.appendChild(s.page.episodes.render(s.zone === 'episodes'));
+        if (s.page.episodes) {
+            root.appendChild(el('div', 'dt-ep-head', d.title));
+            root.appendChild(s.page.episodes.render(s.zone === 'episodes'));
+        }
         if (s.more) root.appendChild(renderMore(d));
         if (s.trailer) root.appendChild(s.trailer);
         // "More" only when the plot does not fit its lines.
@@ -158,7 +164,10 @@ window.Detail = function () {
         var list = buttons();
         if (code === KEY.LEFT && s.focus > 0) s.focus--;
         else if (code === KEY.RIGHT && s.focus < list.length - 1) s.focus++;
-        else if (code === KEY.DOWN && s.page.episodes && s.page.episodes.hasRows()) s.zone = 'episodes';
+        else if (code === KEY.DOWN && s.page.episodes && s.page.episodes.hasRows()) {
+            s.zone = 'episodes';
+            s.page.episodes.enter();
+        }
         else if (code === KEY.ENTER && list[s.focus]) return list[s.focus].run(), true;
         render();
         return true;
@@ -173,14 +182,14 @@ window.Detail = function () {
             }
             return true;
         }
-        if (isBack(code)) return close(), true;
-        if (s.zone === 'episodes') {
+        if (isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
+        else if (isBack(code)) return close(), true;
+        else if (s.zone === 'episodes') {
             var result = s.page.episodes.key(code);
             if (result === 'up') s.zone = 'buttons';
-            render();
-            return true;
-        }
-        return buttonsKey(code);
+        } else return buttonsKey(code);
+        render();
+        return true;
     }
 
     function close() {

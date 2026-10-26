@@ -26,22 +26,8 @@ window.List = function (el, options) {
         return img;
     }
 
-    // Optional pill row under the header (seasons of a show).
-    function renderPills(pills) {
-        var row = document.createElement('div');
-        row.className = 'pills' + (pills.focused ? ' focused' : '');
-        pills.labels.forEach(function (text, i) {
-            var pill = document.createElement('span');
-            pill.className = 'pill' + (i === pills.active ? ' active' : '');
-            pill.textContent = text;
-            row.appendChild(pill);
-        });
-        el.appendChild(row);
-    }
-
     function render() {
-        var pills = options.pills && options.pills();
-        var rows = state.grid ? GRID.rows : options.rows - (pills ? 1 : 0);
+        var rows = state.grid ? GRID.rows : options.rows;
         var count = state.items.length;
         var start;
         if (state.grid) {
@@ -63,7 +49,6 @@ window.List = function (el, options) {
             header.appendChild(position);
         }
         el.appendChild(header);
-        if (pills) renderPills(pills);
 
         if (!count) {
             var empty = document.createElement('div');

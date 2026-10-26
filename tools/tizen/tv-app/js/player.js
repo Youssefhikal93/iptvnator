@@ -222,13 +222,20 @@ window.Player = (function () {
         }
     }
 
+    // A finished item stays saved at 100 %: it leaves Continue watching but
+    // still counts as watched (series pages, next episode to play).
+    function markWatched(map, dur) {
+        var secs = Math.max(1, Math.floor(dur || 0));
+        map[current.id] = { position: secs, duration: secs, updatedAt: Date.now() };
+    }
+
     function saveProgress() {
         if (!started || !current || current.live || !current.id) return;
         var pos = position() / 1000;
         var dur = duration() / 1000;
         if (!(dur > 0)) return;
         var map = loadProgress();
-        if (ended || pos > dur - FINISHED_MARGIN_S) delete map[current.id];
+        if (ended || pos > dur - FINISHED_MARGIN_S) markWatched(map, dur);
         else if (pos >= 5) map[current.id] = { position: Math.floor(pos), duration: Math.floor(dur), updatedAt: Date.now() };
         else return;
         storeProgress(map);
@@ -901,7 +908,7 @@ window.Player = (function () {
         ended = true;
         if (started && current.id) {
             var map = loadProgress();
-            delete map[current.id];
+            markWatched(map, duration() / 1000);
             storeProgress(map);
         }
         started = false;

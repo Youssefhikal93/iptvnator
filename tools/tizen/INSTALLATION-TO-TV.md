@@ -196,8 +196,12 @@ from step 8 must already be downloaded.
   plot, cast) with Play or Resume from X / Start over, Favorites, Trailer
   (when the provider has one; it plays from YouTube) and More for a long
   plot. Return goes back to the list. Hold OK → Play skips the page.
-- **Series**: shows with several seasons have season pills above the
-  episodes (▲ then ◀ ▶).
+- **Series**: OK opens the show's page. The main button continues the
+  last episode watched, or plays the next one. ▼ goes to the episodes
+  (thumbnail, length, plot, progress); ▲ from the first episode reaches the
+  season pills (◀ ▶), which show how many episodes of the season are
+  watched. Finished episodes count as watched; hold OK → Mark as not
+  watched resets one.
 - **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,
   subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
   Episodes, Audio & subtitles). Episodes show an Up next card near the end

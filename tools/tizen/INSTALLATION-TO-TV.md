@@ -194,6 +194,16 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Sleep timer**: open the player menu with **UP** (or **Yellow** on Live TV),
+  then choose Off, 15, 30, 60 or 90 minutes, or **End of episode/movie**.
+  The controls show the minutes left. During the final minute, **Keep watching**
+  adds the chosen duration again (or turns an end choice Off); **Return** does
+  the same. LEFT/RIGHT selects **Stop now**, and OK confirms. Expiry saves
+  progress, releases playback and closes the TV app; a browser returns to its
+  browsing screen with a toast. Changing channels or episodes keeps the timer;
+  leaving the player with Return cancels it, including a return to live preview.
+  The timer is never saved across app restarts.
+
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on

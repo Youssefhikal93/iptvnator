@@ -83,6 +83,7 @@ window.PlayerSeries = function (api) {
     // ---- Up next ----------------------------------------------------------
 
     function upNextShown() {
+        if (api.autoplayBlocked()) return false;
         if (nextIndex() < 0 || s.dismissed || s.panel) return false;
         if (api.isEnded()) return true;
         var dur = api.duration();
@@ -92,7 +93,10 @@ window.PlayerSeries = function (api) {
     function renderUpNext() {
         var shown = upNextShown();
         ui.next.classList.toggle('hidden', !shown);
-        if (!shown) return;
+        if (!shown) {
+            s.autoplayAt = 0;
+            return;
+        }
         ui.nextTitle.textContent = episodes().items[nextIndex()].label;
         var autoplayMs = Prefs.get('autoplayMs');
         if (!api.isEnded() || !autoplayMs) {

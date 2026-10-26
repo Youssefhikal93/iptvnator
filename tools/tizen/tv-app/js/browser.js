@@ -1436,6 +1436,7 @@ window.Browser = function (hooks) {
 
     return {
         start: start,
+        toast: toast,
         onKey: onKey,
         // The player closed: new progress, recents and Resume labels.
         afterPlayback: function () {

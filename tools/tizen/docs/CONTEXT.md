@@ -145,3 +145,7 @@ _Avoid_: Autoplay card, next-episode popup
 
 **Skip intro**:
 A jump of a fixed length near the start of an episode; providers do not mark intros.
+
+**Sleep timer**:
+A player choice that stops playback and closes the TV app after a duration or at the end of the current movie or episode.
+_Avoid_: Auto-off, shutdown timer

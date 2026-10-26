@@ -200,6 +200,15 @@ from step 8 must already be downloaded.
   easier than the remote.
 - **OK** opens or plays; **hold OK** opens the options menu (favorites,
   remove from Continue watching or Recently watched).
+- **Sort in Movies and Series**: at the top of an item list, press Up, then
+  Right three times to reach Sort and OK to choose Newest, Oldest, Name A-Z,
+  Name Z-A, Top rated or Provider order. The current choice is marked; choosing
+  one returns focus to the first item. Newest is the default, and the choice
+  is saved separately for each source and section, including search and
+  Favorites. The header shows the order. Recently added is the first category
+  when dated items exist: up to 50, always newest first by catalogue date,
+  regardless of release year. Sort is hidden there, in Recently watched and
+  Continue watching, and for Live TV and M3U sources.
 - **Movies**: OK opens a detail page (artwork, year, rating, genre, length,
   plot, cast) with Play or Resume from X / Start over, Favorites, Trailer
   (when the provider has one; it plays from YouTube) and More for a long

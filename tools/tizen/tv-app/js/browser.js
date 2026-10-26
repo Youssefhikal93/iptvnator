@@ -5,8 +5,8 @@ window.Browser = function (hooks) {
 
     var KEY = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13, RETURN: 10009, BACKSPACE: 8, ESCAPE: 27, CH_UP: 427, CH_DOWN: 428, IME_DONE: 65376, IME_CANCEL: 65385 };
     var HOLD_MS = 600;
-    // Header toolbar, left to right: search bar, list view, grid view.
-    var TOOLS = ['search', 'list', 'grid'];
+    // Header toolbar, left to right: search bar, list view, grid view, sort.
+    var TOOLS = ['search', 'list', 'grid', 'sort'];
     var STEPS = { 38: -1, 40: 1, 427: -10, 428: 10 };
     var SECTIONS = [
         { id: 'home', label: 'Home', icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' },
@@ -35,6 +35,7 @@ window.Browser = function (hooks) {
             Library.setLastChannel(sourceId(), channel);
         },
     });
+    var visible = { list: [], empty: '' };
 
     var categories = List($('categories'), {
         rows: 11,
@@ -98,6 +99,7 @@ window.Browser = function (hooks) {
             var category = categories.item();
             return category ? category.category_name : '';
         },
+        subtitle: sortSubtitle,
         decorate: decorate,
         label: itemLabel,
         icon: function (it) {
@@ -229,6 +231,9 @@ window.Browser = function (hooks) {
         if (section !== 'live') {
             rows.push({ category_id: '__continue', category_name: 'Continue watching', virtual: 'continue', count: Library.continueWatching(id, section).length });
         }
+        if (sortableSection() && state.added[section] && state.added[section].length) {
+            rows.unshift({ category_id: '__added', category_name: 'Recently added', virtual: 'added', count: state.added[section].length });
+        }
         return rows;
     }
 
@@ -238,7 +243,8 @@ window.Browser = function (hooks) {
 
     function virtualList(kind) {
         var id = sourceId();
-        if (kind === 'favorites') return Library.favorites(id, state.section);
+        if (kind === 'added') return state.added[state.section] || [];
+        if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.cache[state.section + ':items:'] || []) : Library.favorites(id, state.section);
         if (kind === 'recent') return Library.recent(id, state.section);
         return Library.continueWatching(id, state.section);
     }
@@ -247,13 +253,14 @@ window.Browser = function (hooks) {
         favorites: 'No favorites yet. Hold OK on an item to add it.',
         recent: 'Nothing watched yet.',
         continue: 'Nothing to continue.',
+        added: 'Nothing recently added.',
     };
 
     function showVirtual(category, index) {
         state.token++;
         state.showingSearch = false;
         applyView();
-        items.set(virtualList(category.virtual), index || 0, EMPTY[category.virtual]);
+        setItems(virtualList(category.virtual), index || 0, EMPTY[category.virtual]);
         renderChrome();
     }
 
@@ -365,6 +372,52 @@ window.Browser = function (hooks) {
 
     // ---- Header toolbar and search ----
 
+    function sortableSection() {
+        return state.source && state.source.type === 'xtream' && (state.section === 'movies' || state.section === 'series');
+    }
+
+    function sortMode() {
+        if (!sortableSection()) return null;
+        var category = !state.showingSearch && categories.item();
+        if (category && category.virtual === 'added') return 'newest';
+        if (category && category.virtual && category.virtual !== 'favorites') return null;
+        return Library.sort(sourceId(), state.section);
+    }
+
+    function sortSubtitle() {
+        var mode = sortMode();
+        var option = Sort.options.filter(function (entry) {
+            return entry.id === mode;
+        })[0];
+        return option ? 'Sorted by ' + option.label.toLowerCase() : '';
+    }
+
+    function setItems(list, index, empty) {
+        visible = { list: list, empty: empty };
+        var mode = sortMode();
+        items.set(mode ? Sort.order(list, state.section, mode) : list.slice(), index, empty);
+    }
+
+    function toolbarTools() {
+        var category = !state.showingSearch && categories.item();
+        var canSort = sortableSection() && (!category || !category.virtual || category.virtual === 'favorites');
+        return canSort ? TOOLS : TOOLS.slice(0, 3);
+    }
+
+    function openSortMenu() {
+        var current = Library.sort(sourceId(), state.section);
+        Menu.open('Sort', Sort.options.map(function (option) {
+            return {
+                label: (option.id === current ? '\u2713 ' : '') + option.label,
+                run: function () {
+                    Library.setSort(sourceId(), state.section, option.id);
+                    setItems(visible.list, 0, visible.empty);
+                    setZone(items.items().length ? 'items' : 'categories');
+                },
+            };
+        }));
+    }
+
     function hasTools() {
         return state.section !== 'sources' && !!state.base;
     }
@@ -408,7 +461,7 @@ window.Browser = function (hooks) {
         state.search = { section: section, query: query, results: [] };
         state.showingSearch = true;
         applyView();
-        items.set([], 0, 'Searching\u2026');
+        setItems([], 0, 'Searching\u2026');
         return cached(section + ':items:', function () {
             return state.adapter.items(section, '');
         })
@@ -417,7 +470,7 @@ window.Browser = function (hooks) {
                 state.search.results = all.filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1;
                 });
-                items.set(state.search.results, 0, 'No results for "' + query + '"');
+                setItems(state.search.results, 0, 'No results for "' + query + '"');
                 renderChrome();
                 return state.search.results.length;
             })
@@ -446,12 +499,14 @@ window.Browser = function (hooks) {
     }
 
     function onToolbarKey(code) {
-        var tool = TOOLS[state.tool];
+        var tools = toolbarTools();
+        var tool = tools[state.tool];
         if (code === KEY.LEFT && state.tool > 0) state.tool--;
-        else if (code === KEY.RIGHT && state.tool < TOOLS.length - 1) state.tool++;
+        else if (code === KEY.RIGHT && state.tool < tools.length - 1) state.tool++;
         else if (code === KEY.LEFT) setZone('rail');
         else if (code === KEY.DOWN || isBack(code)) leaveToolbar();
         else if (code === KEY.ENTER && tool === 'search') startTyping();
+        else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER) setView(tool);
         else return code === KEY.UP || code === KEY.RIGHT;
         renderChrome();
@@ -545,13 +600,15 @@ window.Browser = function (hooks) {
             state.zone === 'home'
                 ? 'OK: open · Hold OK: options · Arrows: move · Return: menu'
                 : state.zone === 'items' && state.section !== 'sources'
-                ? 'OK: open \u00b7 Hold OK: options \u00b7 \u25b2 at the top: search and view \u00b7 Return: back'
+                ? 'OK: open \u00b7 Hold OK: options \u00b7 \u25b2 at the top: toolbar \u00b7 Return: back'
                 : 'Arrows: move \u00b7 OK: open \u00b7 CH \u25b2\u25bc: page \u00b7 Return: back';
     }
 
     function renderToolbar() {
         var on = hasTools();
-        var focus = state.zone === 'toolbar' ? TOOLS[state.tool] : null;
+        var tools = toolbarTools();
+        state.tool = Math.min(state.tool, tools.length - 1);
+        var focus = state.zone === 'toolbar' ? tools[state.tool] : null;
         $('header').classList.toggle('no-tools', !on);
         $('searchbar').classList.toggle('focused', focus === 'search');
         var input = $('search-input');
@@ -559,6 +616,7 @@ window.Browser = function (hooks) {
         if (!state.searching) input.value = state.showingSearch ? state.search.query : '';
         Array.prototype.forEach.call(document.querySelectorAll('.view-btn'), function (btn) {
             var mode = btn.getAttribute('data-mode');
+            if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
             btn.classList.toggle('active', on && viewMode() === mode);
             btn.classList.toggle('focused', focus === mode);
         });
@@ -736,6 +794,7 @@ window.Browser = function (hooks) {
                 state.base = list;
                 showCategories(virtualRows().length);
                 loadItems();
+                if (sortableSection()) loadRecentlyAdded(id);
             })
             .catch(fail(categories, 'CATEGORIES'));
     }
@@ -748,7 +807,7 @@ window.Browser = function (hooks) {
         var token = ++state.token;
         state.showingSearch = false;
         applyView();
-        items.set([], 0, 'Loading…');
+        setItems([], 0, 'Loading…');
         renderChrome();
         cached(
             section + ':items:' + category.category_id,
@@ -756,11 +815,15 @@ window.Browser = function (hooks) {
                 return state.adapter.items(section, category.category_id);
             },
             function (list) {
-                if (token === state.token) items.set(list, indexIn(list, items.item(), items.index()), 'Empty category');
+                if (token !== state.token) return;
+                var item = items.item();
+                var index = items.index();
+                setItems(list, 0, 'Empty category');
+                items.select(Math.max(0, Math.min(items.items().length - 1, indexIn(items.items(), item, index))));
             }
         )
             .then(function (list) {
-                if (token === state.token) items.set(list, 0, 'Empty category');
+                if (token === state.token) setItems(list, 0, 'Empty category');
             })
             .catch(fail(items, 'ITEMS'));
     }
@@ -865,37 +928,37 @@ window.Browser = function (hooks) {
         });
     }
 
-    // Newest movies by `added` and shows by `last_modified`, from the
-    // section's full list (saved like the other lists).
-    function loadRecentlyAdded() {
-        [
-            ['movies', 'added'],
-            ['series', 'last_modified'],
-        ].forEach(function (pair) {
-            var section = pair[0];
-            var field = pair[1];
+    // Home takes 20 from the same dated items used by the section's category.
+    function loadRecentlyAdded(onlySection) {
+        (onlySection ? [onlySection] : ['movies', 'series']).forEach(function (section) {
             var adapter = state.adapter;
             if (!available(section) || state.added[section]) return;
             state.added[section] = [];
+            var update = function (list) {
+                if (adapter !== state.adapter) return;
+                updateRecentlyAdded(section, list);
+            };
             cached(section + ':items:', function () {
                 return adapter.items(section, '');
-            })
-                .then(function (list) {
-                    if (adapter !== state.adapter) return;
-                    state.added[section] = list
-                        .filter(function (it) {
-                            return Number(it[field]) > 0;
-                        })
-                        .sort(function (a, b) {
-                            return Number(b[field]) - Number(a[field]);
-                        })
-                        .slice(0, HOME_ROW_MAX);
-                    if (state.section === 'home') home.render();
-                })
+            }, update)
+                .then(update)
                 .catch(function (err) {
+                    if (adapter === state.adapter) delete state.added[section];
                     Log.error('RECENTLY ADDED FAIL ' + err.message);
                 });
         });
+    }
+
+    function updateRecentlyAdded(section, list) {
+        state.added[section] = Sort.recentlyAdded(list, section, 50);
+        if (state.section === 'home') return home.render();
+        if (state.section !== section || !state.base) return;
+        var category = categories.item();
+        showCategories(indexIn(virtualRows().concat(state.base), category, categories.index()));
+        if (category && !state.showingSearch && (category.virtual === 'added' || category.virtual === 'favorites')) {
+            showVirtual(categories.item(), items.index());
+        }
+        renderChrome();
     }
 
     function showHome() {

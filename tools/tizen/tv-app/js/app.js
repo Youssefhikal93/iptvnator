@@ -114,6 +114,16 @@
         if (handled) event.preventDefault();
     });
 
+    document.addEventListener('sleep-timer-stop', function () {
+        closePlayer(true);
+        try {
+            tizen.application.getCurrentApplication().exit();
+        } catch (e) {
+            // Browser preview, or firmware that cannot exit: playback is already released.
+            browser.toast('Sleep timer stopped playback');
+        }
+    });
+
     // Leaving the app (Home, Source) must free the account's connection.
     document.addEventListener('visibilitychange', function () {
         if (document.hidden) preview.stop();

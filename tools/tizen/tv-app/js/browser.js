@@ -17,7 +17,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, episodesOf: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0 };
+    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, episodesOf: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
 
     var categories = List($('categories'), {
         rows: 11,
@@ -92,7 +92,8 @@ window.Browser = function (hooks) {
             star.textContent = '\u2605';
             el.appendChild(star);
         }
-        var id = state.episodesOf ? 'episode:' + item.id : Library.progressId(state.section, item);
+        if (state.section === 'live') return showProgramme(el, item);
+        var id =state.episodesOf ? 'episode:' + item.id : Library.progressId(state.section, item);
         var p = state.section === 'live' ? null : Library.progress(id);
         if (p && p.ratio < 0.95) {
             var bar = document.createElement('div');
@@ -103,6 +104,60 @@ window.Browser = function (hooks) {
             bar.appendChild(fill);
             el.appendChild(bar);
         }
+    }
+
+    // ---- Now/next on live channels ----
+
+    function liveRequest(channel) {
+        var req = state.adapter.liveRequest(channel);
+        var epg = state.epg;
+        if (epg && channel.stream_id !== undefined) {
+            req.programmes = function () {
+                return epg.load(channel);
+            };
+        }
+        return req;
+    }
+
+    // The current programme under a channel's name, and how far it is.
+    function showProgramme(el, item) {
+        if (!state.epg || item.stream_id === undefined) return;
+        var programmes = state.epg.peek(item);
+        if (programmes === undefined) return wantProgramme(item);
+        var now = programmes.now;
+        if (!now) return;
+        var label = el.querySelector('.label');
+        var line = document.createElement('div');
+        line.className = 'epg-now';
+        line.textContent = now.title;
+        (label || el).appendChild(line);
+        var bar = document.createElement('div');
+        bar.className = label ? 'epg-bar' : 'bar';
+        var fill = document.createElement('div');
+        fill.className = 'fill';
+        fill.style.width = Math.round(Math.min(1, (Date.now() - now.start) / (now.end - now.start)) * 100) + '%';
+        bar.appendChild(fill);
+        (label || el).appendChild(bar);
+    }
+
+    // Rows ask while they render; the fetch waits until scrolling stops and
+    // only covers the last screenful.
+    function wantProgramme(item) {
+        state.epgWanted.push(item);
+        clearTimeout(state.epgTimer);
+        state.epgTimer = setTimeout(function () {
+            var epg = state.epg;
+            var wanted = state.epgWanted;
+            state.epgWanted = [];
+            if (!epg) return;
+            epg.want(wanted, 12, function () {
+                if (epg !== state.epg || state.section !== 'live') return;
+                clearTimeout(state.redrawTimer);
+                state.redrawTimer = setTimeout(function () {
+                    if (state.section === 'live') items.select(items.index());
+                }, 150);
+            });
+        }, 300);
     }
 
     function virtualRows() {
@@ -548,6 +603,7 @@ window.Browser = function (hooks) {
     function setSource(source) {
         state.source = source;
         state.adapter = null;
+        state.epg = null;
         state.info = null;
         state.cache = {};
         state.base = null;
@@ -557,6 +613,7 @@ window.Browser = function (hooks) {
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
+        state.epg = state.adapter.nowNext ? Epg(state.adapter) : null;
         var adapter = state.adapter;
         adapter
             .account()
@@ -729,7 +786,7 @@ window.Browser = function (hooks) {
         if (item.episode) return playSavedEpisode(item);
         if (state.section === 'live') {
             record(item);
-            return hooks.play(state.adapter.liveRequest(item));
+            return hooks.play(liveRequest(item));
         }
         if (state.section === 'movies') {
             record(item);
@@ -868,7 +925,7 @@ window.Browser = function (hooks) {
     function zap(delta) {
         if (state.section !== 'live' || !items.move(delta)) return null;
         record(items.item());
-        return state.adapter.liveRequest(items.item());
+        return liveRequest(items.item());
     }
 
     function start() {

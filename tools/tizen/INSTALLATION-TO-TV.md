@@ -198,7 +198,10 @@ from step 8 must already be downloaded.
   subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
   Episodes, Audio & subtitles). Episodes show an Up next card near the end
   and the next one plays 8 s after the current one ends. Skip intro jumps
-  90 s: Xtream has no intro markers. Live TV: ▲▼ or CH change channel.
+  90 s: Xtream has no intro markers. Live TV: ▲▼ or CH change channel, OK
+  shows Now and Next with times, description and progress.
+- **Live TV rows** (Xtream) show the programme on now and its progress,
+  fetched for the channels on screen once scrolling stops.
 - **Start-up**: the app opens on the lists saved on the TV and refreshes
   them in the background ("Updating…" next to the source name); new
   channels, movies and episodes then appear by themselves. **Sources →

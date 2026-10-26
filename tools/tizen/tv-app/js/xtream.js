@@ -39,8 +39,36 @@ window.XtreamSource = function (source) {
         return chain;
     }
 
+    // Short EPG titles and descriptions are base64-encoded UTF-8.
+    function decode(text) {
+        try {
+            var bytes = atob(text || '');
+            var buf = new Uint8Array(bytes.length);
+            for (var i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+            return new TextDecoder().decode(buf);
+        } catch (e) {
+            return text || '';
+        }
+    }
+
     return {
         sections: ['live', 'movies', 'series'],
+        nowNext: function (channel) {
+            return call('get_short_epg', { stream_id: channel.stream_id, limit: 2 }).then(function (res) {
+                return ((res && res.epg_listings) || [])
+                    .map(function (p) {
+                        return {
+                            title: decode(p.title),
+                            desc: decode(p.description),
+                            start: Number(p.start_timestamp) * 1000,
+                            end: Number(p.stop_timestamp) * 1000,
+                        };
+                    })
+                    .filter(function (p) {
+                        return p.title && p.end > p.start;
+                    });
+            });
+        },
         account: function () {
             return call('').then(function (res) {
                 if (!res.user_info || String(res.user_info.auth) !== '1') {

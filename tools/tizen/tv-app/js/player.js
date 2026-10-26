@@ -88,6 +88,7 @@ window.Player = (function () {
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
     var menu = { open: false, focus: 0, actions: [] };
     var resume = { open: false, focus: 0, position: 0 };
+    var epg = PlayerEpg();
     var series = PlayerSeries({
         current: function () {
             return current;
@@ -275,7 +276,7 @@ window.Player = (function () {
         ui.live.classList.toggle('hidden', !live);
         var paused = isPaused();
         ui.state.textContent = ended ? '■' : paused ? '❚❚' : '▶';
-        if (live) return;
+        if (live) return epg.render();
         var dur = duration();
         var pos = position();
         if (seek.target !== null) pos = seek.target;
@@ -751,6 +752,7 @@ window.Player = (function () {
         ui.resume.classList.add('hidden');
         clearSubs();
         series.reset();
+        epg.reset();
         avAudio = avText = -1;
         speed = 1;
         ui.speed.classList.add('hidden');
@@ -930,6 +932,7 @@ window.Player = (function () {
         hideControls();
         ui.title.textContent = req.title;
         ui.subtitle.textContent = req.subtitle || '';
+        epg.load(req);
         showStatus(heading(req) + '\nLoading…', false);
 
         var attempts = req.sources.map(function (source) {

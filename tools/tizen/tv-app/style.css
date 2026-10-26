@@ -583,3 +583,43 @@ svg {
     border-color: var(--selection-border);
     box-shadow: 0 0 18px var(--selection-glow);
 }
+/* Now/next under live channels */
+.row .label {
+    white-space: nowrap;
+}
+.row .epg-now {
+    margin-top: 2px;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.poster .epg-now {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    padding: 24px 10px 6px;
+    font-size: 20px;
+    color: #fff;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.row .epg-bar {
+    width: 260px;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.22);
+    overflow: hidden;
+}
+.row .epg-bar .fill {
+    height: 100%;
+    background: var(--selection);
+}
+.row .label {
+    line-height: 1.1;
+}

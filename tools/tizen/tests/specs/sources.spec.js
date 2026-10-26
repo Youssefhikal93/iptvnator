@@ -8,7 +8,7 @@ test('add form validates Xtream fields, saves an account, and restores it after 
     await expect(page.locator('#form-title')).toHaveText('Add Xtream account');
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toHaveText('The link must start with http:// or https://');
-    await page.locator('#form-url').fill('http://localhost:8767');
+    await page.locator('#form-url').fill(new URL(page.url()).origin);
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toHaveText('Enter the username and password.');
     await page.locator('#form-name').fill('Second account');
@@ -33,7 +33,7 @@ test('M3U import preserves comma-containing group names and exposes only Live TV
     await press(page, 'Enter');
     await expect(page.locator('#form-login')).toBeHidden();
     await page.locator('#form-name').fill('Test playlist');
-    await page.locator('#form-url').fill('http://localhost:8767/playlist.m3u');
+    await page.locator('#form-url').fill(new URL(page.url()).origin + '/playlist.m3u');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await section(page, 'Live TV');

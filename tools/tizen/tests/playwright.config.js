@@ -1,5 +1,8 @@
 const { defineConfig } = require('@playwright/test');
 
+// TV_TEST_PORT lets two worktrees run the suite at the same time.
+const port = Number(process.env.TV_TEST_PORT || 8767);
+
 module.exports = defineConfig({
     testDir: './specs',
     workers: 1,
@@ -10,15 +13,15 @@ module.exports = defineConfig({
     reporter: 'list',
     use: {
         channel: 'chrome',
-        baseURL: 'http://localhost:8767',
+        baseURL: 'http://localhost:' + port,
         viewport: { width: 1920, height: 1080 },
         launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] },
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
     webServer: {
-        command: 'node fake-xtream/server.js',
-        url: 'http://localhost:8767',
+        command: 'node fake-xtream/server.js "" ' + port,
+        url: 'http://localhost:' + port,
         reuseExistingServer: true,
     },
 });

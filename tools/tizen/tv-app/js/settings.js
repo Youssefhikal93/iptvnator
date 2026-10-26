@@ -19,9 +19,19 @@ window.Settings = function (hooks) {
         { label: 'Default sort for Movies', key: 'sort:movies', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
         { label: 'Default sort for Series', key: 'sort:series', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
         { group: 'Start-up', label: 'On start open', key: 'onStart', choices: ['last-channel', 'home'], labels: ['Last channel', 'Home'] },
+        { group: 'Categories', label: 'Manage Live TV categories', action: 'live', text: hiddenText('live') },
+        { label: 'Manage Movies categories', action: 'movies', text: hiddenText('movies') },
+        { label: 'Manage Series categories', action: 'series', text: hiddenText('series') },
         { group: 'About', label: 'App version', text: VERSION },
         { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
     ];
+
+    // Read when drawn, so the count follows what the viewer hides.
+    function hiddenText(section) {
+        return function () {
+            return hooks.hiddenText(section);
+        };
+    }
 
     function sortId(option) { return option.id; }
     function sortLabel(option) { return option.label; }
@@ -41,7 +51,7 @@ window.Settings = function (hooks) {
         if (row.group) root.appendChild(el('h2', 'st-group', row.group));
         var node = el('div', 'st-row' + (active && focus === index ? ' focused' : ''));
         node.appendChild(el('span', 'st-label', row.label));
-        node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : row.text));
+        node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text));
         root.appendChild(node);
     }
 
@@ -60,7 +70,10 @@ window.Settings = function (hooks) {
         var index = row.key ? choice(row) : 0;
         // LEFT at the first choice leaves the screen; RIGHT cycles forward.
         if (step < 0 && index === 0) return 'left';
-        if (!row.key) return;
+        if (!row.key) {
+            if (row.action) hooks.manage(row.action);
+            return;
+        }
         Prefs.set(row.key, row.choices[(index + step) % row.choices.length]);
         hooks.toast('Saved');
         render();

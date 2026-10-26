@@ -38,6 +38,8 @@ Coverage is grouped by viewer journey:
 | `channel-list` | Drawer category/focus, preview vs playback, switching, previous-channel keys, Return ordering, startup last channel, return focus |
 | `sorting` | Live sort visibility, newest, stable rating ties, oldest/undated, recently added count |
 | `watched` | Movie, season and show watched actions; Continue watching removal; favorites add/remove |
+| `new-episodes` | New episodes badge in lists and on Home, cleared on open or play, back after a catalogue refresh |
+| `categories` | Hold-OK hide and hide-all-except, Manage categories screen, persistence, search/All channels/Home/channel list exclusion |
 | `loading-errors` | Skeletons, source error/countdown/retry, playback error/focus/retry |
 | `resume` | Restore and save progress; rejected seeks, real 30-second deadline and recovery |
 | `settings` | Current values, programme guide requests, Showcase hero size and persistence |

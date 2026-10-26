@@ -6,6 +6,7 @@
 //      open(entry) (OK on a poster), resume(entry) and openDetails(entry)
 //      (hero buttons), details(entry) -> Promise of detail-page details,
 //      progress(entry) -> Progress.of shape or null, watched(entry) -> boolean,
+//      isNew(entry) -> whether a show has new episodes since it was watched,
 //      programme(item) -> the programme on now for a channel, or null
 window.Home = function (api) {
     'use strict';
@@ -155,6 +156,7 @@ window.Home = function (api) {
             tick.setAttribute('aria-label', 'Watched');
             poster.appendChild(tick);
         }
+        if (api.isNew(entry)) poster.appendChild(NewEpisodes.badge());
         if (p && p.status === 'continue') {
             var bar = el('div', 'hm-bar');
             var fill = el('div', 'hm-fill');

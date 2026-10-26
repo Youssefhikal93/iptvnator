@@ -28,7 +28,9 @@ window.Browser = function (hooks) {
     var homeLoading = {};
     var live = LiveChannels({
         categories: function () {
-            return loadCatalogue({ section: 'live', kind: 'categories' });
+            return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
+                return HiddenCategories.visible(sourceId(), 'live', list);
+            });
         },
         channels: function (categoryId) {
             return loadCatalogue({ section: 'live', kind: 'items', id: categoryId });
@@ -75,7 +77,15 @@ window.Browser = function (hooks) {
         },
     });
     var detail = Detail();
-    var settings = Settings({ toast: toast });
+    var manage = ManageCategories({
+        sourceId: sourceId,
+        load: function (section) {
+            return state.catalogue.load({ section: section, kind: 'categories' }, { screen: false });
+        },
+        changed: categoriesChanged,
+        toast: toast,
+    });
+    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText });
     var watched = Watched({
         knownShow: function (show) {
             return state.catalogue.peek({ kind: 'show', id: show.series_id });
@@ -107,6 +117,9 @@ window.Browser = function (hooks) {
         },
         details: homeDetails,
         progress: progressOf,
+        isNew: function (entry) {
+            return entry.section === 'series' && NewEpisodes.isNew(sourceId(), entry.item, seriesList());
+        },
         watched: function (entry) {
             return watched.isWatched(entry.item, entry.section);
         },
@@ -180,6 +193,11 @@ window.Browser = function (hooks) {
         return item.episode ? item.show : item;
     }
 
+    // The series catalogue, whose dates tell whether a show has new episodes.
+    function seriesList() {
+        return state.catalogue && state.catalogue.peek({ section: 'series', kind: 'items' });
+    }
+
     // section: the item's own section (Home mixes them); the open one by default.
     function isFavorite(item, section) {
         section = section || state.section;
@@ -204,6 +222,7 @@ window.Browser = function (hooks) {
             el.appendChild(star);
         }
         if (state.section === 'live') return showProgramme(el, item);
+        if (state.section === 'series' && NewEpisodes.isNew(sourceId(), item, seriesList())) el.appendChild(NewEpisodes.badge());
         if (watched.isWatched(item, state.section)) {
             var tick = document.createElement('span');
             tick.className = 'watched-tick';
@@ -300,19 +319,29 @@ window.Browser = function (hooks) {
         if (section !== 'live') {
             rows.push({ category_id: '__continue', category_name: 'Continue watching', virtual: 'continue', count: Library.continueWatching(id, section).length });
         }
-        if (sortableSection() && state.added[section] && state.added[section].length) {
-            rows.unshift({ category_id: '__added', category_name: 'Recently added', virtual: 'added', count: state.added[section].length });
+        if (sortableSection() && addedOf(section).length) {
+            rows.unshift({ category_id: '__added', category_name: 'Recently added', virtual: 'added', count: addedOf(section).length });
         }
         return rows;
     }
 
+    // The catalogue's categories minus the hidden ones, after the virtual rows.
+    function categoryRows(list) {
+        return virtualRows().concat(HiddenCategories.visible(sourceId(), state.section, list || state.base || []));
+    }
+
     function showCategories(index) {
-        categories.set(virtualRows().concat(state.base || []), index, 'No categories');
+        categories.set(categoryRows(), index, 'No categories');
+    }
+
+    // Recently added, without items of hidden categories.
+    function addedOf(section) {
+        return HiddenCategories.filterItems(sourceId(), section, state.added[section] || []);
     }
 
     function virtualList(kind) {
         var id = sourceId();
-        if (kind === 'added') return state.added[state.section] || [];
+        if (kind === 'added') return addedOf(state.section);
         if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []) : Library.favorites(id, state.section);
         if (kind === 'recent') return Library.recent(id, state.section);
         return Library.continueWatching(id, state.section);
@@ -334,6 +363,7 @@ window.Browser = function (hooks) {
     }
 
     function record(item, show, episode, section) {
+        if (episode) NewEpisodes.markSeen(sourceId(), show, seriesList());
         Library.addRecent(sourceId(), episode ? 'series' : section || state.section, item, show, episode);
         state.played = true;
     }
@@ -535,7 +565,7 @@ window.Browser = function (hooks) {
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
                 if (token !== state.token) return 0;
-                state.search.results = all.filter(function (it) {
+                state.search.results = HiddenCategories.filterItems(sourceId(), section, all).filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1;
                 });
                 setItems(state.search.results, 0, ['No results for "' + query + '"', 'Try a different title or a shorter search.']);
@@ -650,6 +680,8 @@ window.Browser = function (hooks) {
                 ? 'OK: open · Hold OK: options · Arrows: move · Return: menu'
                 : state.zone === 'items' && state.section !== 'sources'
                 ? 'OK: open \u00b7 Hold OK: options \u00b7 \u25b2 at the top: toolbar \u00b7 Return: back'
+                : state.zone === 'categories' && state.section !== 'sources'
+                ? 'Arrows: move \u00b7 OK: open \u00b7 Hold OK: hide categories \u00b7 CH \u25b2\u25bc: page \u00b7 Return: back'
                 : 'Arrows: move \u00b7 OK: open \u00b7 CH \u25b2\u25bc: page \u00b7 Return: back';
     }
 
@@ -907,7 +939,7 @@ window.Browser = function (hooks) {
             function (list) {
                 if (state.section !== id || !state.base) return;
                 state.base = list;
-                showCategories(indexIn(virtualRows().concat(list), categories.item(), categories.index()));
+                showCategories(indexIn(categoryRows(), categories.item(), categories.index()));
             }
         )
             .then(function (list) {
@@ -920,6 +952,11 @@ window.Browser = function (hooks) {
             .catch(function (err) {
                 if (token === state.token) fail(categories, 'CATEGORIES')(err);
             });
+    }
+
+    // "All channels" spans categories; any other list is just its own category.
+    function shownItems(category, list) {
+        return String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
     }
 
     function loadItems() {
@@ -938,12 +975,12 @@ window.Browser = function (hooks) {
                 if (token !== state.token) return;
                 var item = items.item();
                 var index = items.index();
-                setItems(list, 0, 'Empty category');
+                setItems(shownItems(category, list), 0, 'Empty category');
                 items.select(Math.max(0, Math.min(items.items().length - 1, indexIn(items.items(), item, index))));
             }
         )
             .then(function (list) {
-                if (token === state.token) setItems(list, 0, ['Empty category', 'Choose another category or check again after a refresh.']);
+                if (token === state.token) setItems(shownItems(category, list), 0, ['Empty category', 'Choose another category or check again after a refresh.']);
             })
             .catch(function (err) {
                 if (token === state.token) fail(items, 'ITEMS')(err);
@@ -1025,16 +1062,22 @@ window.Browser = function (hooks) {
         });
     }
 
+    // Home rows leave out items of hidden categories (Continue watching stays).
+    function shownEntries(section, list) {
+        return entriesOf(section, HiddenCategories.filterItems(sourceId(), section, list));
+    }
+
     function homeRows() {
         var id = sourceId();
         return [
             { id: 'continue', title: 'Continue watching', entries: continueEntries().slice(0, HOME_ROW_MAX) },
-            { id: 'live', title: 'Live now on your favorite channels', entries: entriesOf('live', Library.favorites(id, 'live')) },
-            { id: 'fav-movies', title: 'Favorite movies', entries: entriesOf('movies', Library.favorites(id, 'movies')) },
-            { id: 'fav-series', title: 'Favorite series', entries: entriesOf('series', Library.favorites(id, 'series')) },
-            { id: 'new-movies', title: 'Recently added movies', entries: entriesOf('movies', state.added.movies || []), loading: homeLoading.movies },
-            { id: 'new-series', title: 'Recently added series', entries: entriesOf('series', state.added.series || []), loading: homeLoading.series },
-            { id: 'recent-live', title: 'Recently watched channels', entries: entriesOf('live', Library.recent(id, 'live')) },
+            { id: 'new-episodes', title: 'New episodes', entries: shownEntries('series', NewEpisodes.entries(id, seriesList())) },
+            { id: 'live', title: 'Live now on your favorite channels', entries: shownEntries('live', Library.favorites(id, 'live')) },
+            { id: 'fav-movies', title: 'Favorite movies', entries: shownEntries('movies', Library.favorites(id, 'movies')) },
+            { id: 'fav-series', title: 'Favorite series', entries: shownEntries('series', Library.favorites(id, 'series')) },
+            { id: 'new-movies', title: 'Recently added movies', entries: entriesOf('movies', addedOf('movies')), loading: homeLoading.movies },
+            { id: 'new-series', title: 'Recently added series', entries: entriesOf('series', addedOf('series')), loading: homeLoading.series },
+            { id: 'recent-live', title: 'Recently watched channels', entries: shownEntries('live', Library.recent(id, 'live')) },
         ];
     }
 
@@ -1075,10 +1118,12 @@ window.Browser = function (hooks) {
         if (state.section === 'home') return home.render();
         if (state.section !== section || !state.base) return;
         var category = categories.item();
-        showCategories(indexIn(virtualRows().concat(state.base), category, categories.index()));
+        showCategories(indexIn(categoryRows(), category, categories.index()));
         if (category && !state.showingSearch && (category.virtual === 'added' || category.virtual === 'favorites')) {
             showVirtual(categories.item(), items.index());
         }
+        // Badges follow the refreshed dates in every list of shows.
+        if (section === 'series' && items.items().length) items.select(items.index());
         renderChrome();
     }
 
@@ -1147,6 +1192,7 @@ window.Browser = function (hooks) {
     }
 
     function openShow(show) {
+        NewEpisodes.markSeen(sourceId(), show, seriesList());
         var episodes = DetailEpisodes({
             progressOf: function (ep) {
                 return Progress.of(Progress.episodeId(ep));
@@ -1231,6 +1277,35 @@ window.Browser = function (hooks) {
         renderChrome();
     }
 
+    // ---- Hidden categories ----
+
+    function openManage(section) {
+        if (!state.adapter || !available(section)) return toast('Choose a source with ' + sectionOf(section).label + ' first');
+        manage.open(section);
+    }
+
+    function hiddenText(section) {
+        if (!state.adapter || !available(section)) return 'Not available';
+        var count = HiddenCategories.count(sourceId(), section);
+        return count ? count + ' hidden' : 'All shown';
+    }
+
+    // Hold OK on a category: hide it, hide the rest, or manage them all.
+    function openCategoryMenu(row) {
+        Menu.open(row.category_name, manage.menu(state.section, row, state.base));
+    }
+
+    // After hiding or showing categories: redraw the list. A category that
+    // went away hands the focus to the next one, whose items then open.
+    function categoriesChanged(section) {
+        if (state.section === 'settings') return settings.render();
+        if (state.section !== section || !state.base) return;
+        showCategories(indexIn(categoryRows(), categories.item(), categories.index()));
+        if (state.showingSearch) runSearch();
+        else loadItems();
+        renderChrome();
+    }
+
     // Moves the focus in the items list; returns whether it moved.
     function moveItems(code) {
         var cols = items.cols();
@@ -1267,6 +1342,7 @@ window.Browser = function (hooks) {
         restoring = false;
         if (Keys.repeat(code)) return true;
         if (Menu.isOpen()) return Menu.onKey(code);
+        if (manage.isOpen()) return manage.onKey(code);
         if (detail.isOpen()) {
             var selection = detail.episodeSelection();
             if (code !== KEY.ENTER || !selection) return detail.onKey(code);
@@ -1306,6 +1382,13 @@ window.Browser = function (hooks) {
             } else if (code === KEY.LEFT || Keys.isBack(code)) setZone('rail');
             else if (code === KEY.ENTER && row && row.source) Keys.press(function () { setZone('items'); }, openSourceMenu);
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
+            else if (code === KEY.ENTER && row && state.base) {
+                Keys.press(function () {
+                    if (items.items().length) setZone('items');
+                }, function () {
+                    openCategoryMenu(row);
+                });
+            }
             else if ((code === KEY.RIGHT || code === KEY.ENTER) && items.items().length) setZone('items');
             else return code === KEY.RIGHT || code === KEY.ENTER;
         } else {

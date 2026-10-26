@@ -1340,3 +1340,100 @@ svg {
 .gd-popup-card h2 { margin: 0 0 16px; font-size: 36px; }
 .gd-popup-time { color: var(--selection); }
 .gd-description { max-height: 400px; overflow: auto; }
+
+/* "New episodes" badge on shows */
+.new-badge {
+    flex: none;
+    padding: 2px 14px;
+    border-radius: 12px;
+    background: var(--selection);
+    color: var(--selection-on);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+.poster .new-badge,
+.hm-poster .new-badge {
+    position: absolute;
+    left: 8px;
+    bottom: 16px;
+}
+
+/* Manage categories: full screen, over everything but the menu and toast */
+#manage {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    padding: 32px 48px;
+    box-sizing: border-box;
+    background: var(--shell-bg);
+}
+.mc-title {
+    margin: 0;
+    font-size: 40px;
+    line-height: 50px;
+    color: var(--heading);
+}
+.mc-bar {
+    display: flex;
+    gap: 16px;
+    margin: 18px 0;
+}
+.mc-search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 68px;
+    padding: 0 24px;
+    border-radius: 16px;
+    border: 3px solid var(--search-border);
+    background: var(--search-bg);
+}
+.mc-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--on-surface);
+    font: inherit;
+    font-size: 26px;
+}
+.mc-search.focused,
+.mc-btn.focused {
+    border-color: var(--selection-border);
+    box-shadow: 0 0 18px var(--selection-glow);
+    color: var(--selection);
+}
+.mc-search.typing {
+    border-color: var(--selection);
+    background: var(--widget-bg);
+}
+.mc-btn {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 68px;
+    padding: 0 36px;
+    border-radius: 16px;
+    border: 3px solid var(--search-border);
+    background: var(--search-bg);
+    color: var(--muted);
+}
+.mc-list {
+    height: 810px;
+    border-radius: 16px;
+}
+.row.mc-off {
+    opacity: 0.55;
+}
+.mc-hint {
+    position: absolute;
+    left: 48px;
+    bottom: 14px;
+    color: var(--eyebrow);
+    font-size: 24px;
+}

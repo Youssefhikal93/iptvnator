@@ -24,6 +24,10 @@ _Avoid_: Tab, type, mode
 A named group of items inside a section, supplied by the source or the app.
 _Avoid_: Group (except for M3U `group-title`), genre, folder
 
+**Hidden category**:
+A category the viewer chose not to see, kept per source and section; Favorites, Recently added and All channels are never hidden.
+_Avoid_: Disabled, removed category
+
 **Recently added**:
 The newest dated movies or shows added to a source's catalogue, regardless of release year; the category holds up to 50 items.
 _Avoid_: New releases, recently watched
@@ -71,6 +75,10 @@ _Avoid_: Position (alone), bookmark
 **Watched**:
 A movie or episode played to the end; its progress stays at 100 %.
 _Avoid_: Finished, completed, seen
+
+**New episodes**:
+The badge, and the Home row, for a favorite or recently watched show that has episodes added since the viewer last watched or opened it.
+_Avoid_: Unwatched episodes, updates
 
 **Continue watching**:
 Movies and episodes with progress that are not watched yet.

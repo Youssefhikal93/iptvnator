@@ -2,6 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const root = process.argv[2] || path.resolve(__dirname, '../../tv-app');
 const port = Number(process.argv[3] || process.env.PORT || 8767);
@@ -11,6 +12,18 @@ const json = (res, body) => {
     res.end(JSON.stringify(body));
 };
 const range = (n, f) => Array.from({ length: n }, (_, i) => f(i + 1));
+// A day of programmes (6 h back, 18 h ahead) on whole hours, 30/60/90 min long; times in s.
+const schedule = (seed, name) => {
+    const list = [];
+    let t = Math.floor(Date.now() / 3600000) * 3600 - 6 * 3600;
+    const end = t + 24 * 3600;
+    for (let n = 0; t < end; n++) {
+        const mins = [30, 60, 90][(seed + n) % 3];
+        list.push({ title: name + ' ' + (n + 1), desc: 'Episode ' + (n + 1) + ' of the day.', start: t, stop: t + mins * 60 });
+        t += mins * 60;
+    }
+    return list;
+};
 
 // Test switch: /__fail?api=503&media=404 breaks provider calls / streams; /__fail clears.
 let fail = {};
@@ -33,7 +46,7 @@ http.createServer((req, res) => {
         const cat = url.searchParams.get('category_id');
         if (!action) return json(res, { user_info: { auth: 1, status: 'Active', exp_date: '1800206249', active_cons: '0', max_connections: '1' } });
         if (action.endsWith('_categories')) return json(res, range(30, (i) => ({ category_id: String(i), category_name: action + ' cat ' + i })));
-        if (action === 'get_live_streams') return json(res, range(cat ? 40 : 500, (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, category_id: cat || String(1 + (i % 30)) })));
+        if (action === 'get_live_streams') return json(res, range(cat ? 40 : 500, (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, epg_channel_id: 'ch' + (1000 + i) + '.se', category_id: cat || String(1 + (i % 30)) })));
         if (action === 'get_vod_streams') return json(res, range(25, (i) => ({ name: 'Movie ' + i, stream_id: 2000 + i, container_extension: 'mkv', stream_icon: i % 3 ? origin + '/img/poster.jpg' : '', added: i === 5 ? '' : String(1700000000 + i * 3600), rating_5based: String(((i * 7) % 10) / 2) })));
         if (action === 'get_series') return json(res, range(15, (i) => ({ name: 'Show ' + i, series_id: 3000 + i, cover: origin + '/img/poster.jpg', last_modified: String(1700000000 + (i % 5) * 7200) })));
         if (action === 'get_series_info') {
@@ -71,7 +84,33 @@ http.createServer((req, res) => {
             const p = (title, from, mins, desc) => ({ title: b64(title), description: b64(desc), start_timestamp: String(from), stop_timestamp: String(from + mins * 60) });
             return json(res, { epg_listings: [p('Nyheter på svenska ' + id, start, 60, 'Dagens nyheter med väder och sport. Ett långt program om allt som hänt i världen idag, med reportage från hela landet.'), p('Kvällsfilm ' + id, start + 3600, 90, 'En film.')] });
         }
+        if (action === 'get_simple_data_table') {
+            // Full day for the TV guide; every third channel has no guide here either.
+            const id = Number(url.searchParams.get('stream_id'));
+            if (id % 3 === 0) return json(res, { epg_listings: [] });
+            const b64 = (s) => Buffer.from(s, 'utf8').toString('base64');
+            return json(res, {
+                epg_listings: schedule(id, 'Program').map((p) => ({ title: b64(p.title), description: b64(p.desc), start_timestamp: String(p.start), stop_timestamp: String(p.stop) })),
+            });
+        }
         return json(res, []);
+    }
+    if (url.pathname === '/epg.xml' || url.pathname === '/epg.xml.gz') {
+        // The viewer's own guide link: every channel, including those the provider lacks, plus the M3U ones.
+        const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        const stamp = (s) => new Date(s * 1000).toISOString().replace(/[-:T]/g, '').slice(0, 14) + ' +0000';
+        const ids = range(500, (i) => 'ch' + (1000 + i) + '.se').concat(range(12, (i) => 'm3u' + i + '.se'));
+        let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<tv generator-info-name="fake">\n';
+        ids.forEach((cid) => (xml += '<channel id="' + cid + '"><display-name>' + cid + '</display-name></channel>\n'));
+        ids.forEach((cid, n) =>
+            schedule(n, 'XMLTV show').forEach((p) => {
+                xml += '<programme start="' + stamp(p.start) + '" stop="' + stamp(p.stop) + '" channel="' + cid + '"><title lang="sv">' + esc(p.title + ' ' + cid) + '</title><desc>' + esc(p.desc) + '</desc></programme>\n';
+            })
+        );
+        xml += '</tv>\n';
+        const gz = url.pathname.endsWith('.gz');
+        res.writeHead(200, { 'Content-Type': gz ? 'application/gzip' : 'application/xml', 'Access-Control-Allow-Origin': '*' });
+        return res.end(gz ? zlib.gzipSync(xml) : xml);
     }
     if (url.pathname.startsWith('/img/')) {
         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -96,7 +135,7 @@ http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl', 'Access-Control-Allow-Origin': '*' });
         return res.end(
             '#EXTM3U\n' +
-                range(12, (i) => `#EXTINF:-1 tvg-logo="" group-title="${i % 2 ? 'News' : 'Sports, HD'}",M3U Channel ${i}\nhttp://example.test/${i}.m3u8`).join('\n')
+                range(12, (i) => `#EXTINF:-1 tvg-id="m3u${i}.se" tvg-logo="" group-title="${i % 2 ? 'News' : 'Sports, HD'}",M3U Channel ${i}\nhttp://example.test/${i}.m3u8`).join('\n')
         );
     }
     const file = path.join(root, url.pathname === '/' ? 'index.html' : decodeURIComponent(url.pathname));

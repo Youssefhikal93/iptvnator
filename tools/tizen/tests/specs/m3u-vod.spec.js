@@ -79,6 +79,8 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await playing(page);
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E2');
     await page.locator('#video').evaluate(v => { v.currentTime = 30; });
+    // Under load the seek can land late; confirm it before leaving so progress saves.
+    await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(30);
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect.poll(() => savedIds(page, 'episode:m3u:')).toHaveLength(2);

@@ -5,8 +5,13 @@ window.BackupStore = (function () {
     var PREFIX = 'iptvnator-tv:';
     var SECTIONS = ['live', 'movies', 'series'];
 
+    // Sources are shared; everything else is the active profile's data.
+    function storageKey(key) {
+        return key === 'sources' || key === 'current' ? PREFIX + key : ProfileStore.key(key);
+    }
+
     function read(key, fallback) {
-        var saved = localStorage.getItem(PREFIX + key);
+        var saved = localStorage.getItem(storageKey(key));
         return saved === null ? fallback : JSON.parse(saved);
     }
 
@@ -42,16 +47,16 @@ window.BackupStore = (function () {
     function commit(writes, sources) {
         var before = {};
         Object.keys(writes).concat(['sources']).forEach(function (key) {
-            before[key] = localStorage.getItem(PREFIX + key);
+            before[key] = localStorage.getItem(storageKey(key));
         });
         try {
-            Object.keys(writes).forEach(function (key) { localStorage.setItem(PREFIX + key, JSON.stringify(writes[key])); });
+            Object.keys(writes).forEach(function (key) { localStorage.setItem(storageKey(key), JSON.stringify(writes[key])); });
             Sources.replace(sources);
         } catch (error) {
             // Release newly occupied space before restoring the previous footprint.
-            Object.keys(before).forEach(function (key) { localStorage.removeItem(PREFIX + key); });
+            Object.keys(before).forEach(function (key) { localStorage.removeItem(storageKey(key)); });
             Object.keys(before).forEach(function (key) {
-                if (before[key] !== null) localStorage.setItem(PREFIX + key, before[key]);
+                if (before[key] !== null) localStorage.setItem(storageKey(key), before[key]);
             });
             throw new Error('Could not save backup. Free TV storage and try again.');
         }

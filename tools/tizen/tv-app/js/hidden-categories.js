@@ -4,11 +4,9 @@
 window.HiddenCategories = (function () {
     'use strict';
 
-    var PREFIX = 'iptvnator-tv:hidden-categories:';
-
     function read(sourceId) {
         try {
-            var saved = JSON.parse(localStorage.getItem(PREFIX + sourceId));
+            var saved = JSON.parse(localStorage.getItem(ProfileStore.key('hidden-categories:' + sourceId)));
             return saved && typeof saved === 'object' ? saved : {};
         } catch (e) {
             return {};
@@ -25,7 +23,7 @@ window.HiddenCategories = (function () {
         if (list.length) all[section] = list;
         else delete all[section];
         try {
-            localStorage.setItem(PREFIX + sourceId, JSON.stringify(all));
+            localStorage.setItem(ProfileStore.key('hidden-categories:' + sourceId), JSON.stringify(all));
         } catch (e) {
             // Kept for this session only.
         }

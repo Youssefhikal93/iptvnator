@@ -63,8 +63,8 @@ test('guide past programme plays a timeshift request, seeks, and returns without
     await back(page);
     await expect(page.locator('#guide')).toBeVisible();
     await expect(page.locator('.gd-programme.focused')).toHaveAttribute('data-start', String(start));
-    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:progress'))).toBeNull();
-    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:recent:s1'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:progress'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:recent:s1'))).toBeNull();
 });
 
 test('past programmes on non-archive channels keep the details-only popup', async ({ page }) => {
@@ -177,5 +177,5 @@ test('seeking clamps at the programme end and finishing never marks catch-up wat
     expect(await page.locator('#video').evaluate(video => video.currentTime)).toBeLessThan(21);
     await back(page);
     await expect(page.locator('#guide')).toBeVisible();
-    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:progress'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:progress'))).toBeNull();
 });

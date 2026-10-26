@@ -62,8 +62,12 @@ _Avoid_: Sync, reload
 ### What the viewer keeps
 
 **Library**:
-Everything kept for the viewer per source: favorites, recently watched and progress.
-_Avoid_: History (for all of it), profile
+Everything kept for one viewer per source: favorites, recently watched and progress. Each profile has its own.
+_Avoid_: History (for all of it)
+
+**Profile**:
+One viewer of the TV (up to six) with their own library, watched marks, app settings, hidden and locked categories and PIN; sources, catalogues and the TMDB key are shared. "Who's watching?" picks one on start when there are two or more.
+_Avoid_: User, account, family member
 
 **Favorite**:
 An item the viewer marked to find again quickly. Episodes are favorited through their show.
@@ -124,7 +128,7 @@ _Avoid_: Recommendations, trending
 
 **Actor screen**:
 A cast member's photo, biography and movie or show credits found in the current source's catalogue, labelled "In your library".
-_Avoid_: Profile, artist page
+_Avoid_: Person page, artist page
 
 **Options menu**:
 The list of actions that opens when the viewer holds OK on an item.

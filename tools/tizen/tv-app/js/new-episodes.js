@@ -7,12 +7,11 @@
 window.NewEpisodes = (function () {
     'use strict';
 
-    var PREFIX = 'iptvnator-tv:';
     var indexed = { list: null, map: {} };
 
     function readSeen(sourceId) {
         try {
-            var saved = JSON.parse(localStorage.getItem(PREFIX + 'seen:' + sourceId));
+            var saved = JSON.parse(localStorage.getItem(ProfileStore.key('seen:' + sourceId)));
             return saved && typeof saved === 'object' ? saved : {};
         } catch (e) {
             return {};
@@ -82,7 +81,7 @@ window.NewEpisodes = (function () {
             if (all[key] >= at) return;
             all[key] = at;
             try {
-                localStorage.setItem(PREFIX + 'seen:' + sourceId, JSON.stringify(all));
+                localStorage.setItem(ProfileStore.key('seen:' + sourceId), JSON.stringify(all));
             } catch (e) {
                 // The badge may come back after a restart.
             }

@@ -115,6 +115,8 @@
             event.preventDefault();
             return;
         }
+        if (ProfileDialog.isOpen()) return ProfileDialog.onKey(event);
+        if (ProfileScreen.isOpen()) return ProfileScreen.onKey(event);
         if (BackupScreen.isOpen()) return BackupScreen.onKey(event);
         if (TmdbSettings.isOpen()) return TmdbSettings.onKey(event);
         if (screen === 'form') return Form.onKey(event);
@@ -161,6 +163,8 @@
     }
 
     LoadScreen.pause(document.hidden);
-    browser.start();
+    // With two or more profiles, ask who is watching before anything loads.
+    if (ProfileScreen.shouldAsk()) ProfileScreen.open(function () { browser.start(); }, exitApp);
+    else browser.start();
     Log.info('IPTVnator TV started');
 })();

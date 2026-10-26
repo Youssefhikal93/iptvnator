@@ -4,13 +4,14 @@
 window.Library = (function () {
     'use strict';
 
-    var PREFIX = 'iptvnator-tv:';
+    // ProfileStore adds the shared prefix and the profile segment.
+    var PREFIX = '';
     var RECENT_MAX = 40;
     var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label', 'category_id', 'added', 'last_modified', 'rating_5based', 'rating'];
 
     function read(key, fallback) {
         try {
-            return JSON.parse(localStorage.getItem(key)) || fallback;
+            return JSON.parse(localStorage.getItem(ProfileStore.key(key))) || fallback;
         } catch (e) {
             return fallback;
         }
@@ -18,7 +19,7 @@ window.Library = (function () {
 
     function write(key, value) {
         try {
-            localStorage.setItem(key, JSON.stringify(value));
+            localStorage.setItem(ProfileStore.key(key), JSON.stringify(value));
         } catch (e) {
             // Kept for this session only.
         }

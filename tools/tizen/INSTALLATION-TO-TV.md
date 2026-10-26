@@ -288,6 +288,19 @@ from step 8 must already be downloaded.
   with seasons. A playlist has no plot or cast, so a movie's page shows its
   name, logo and group. Favorites, Continue watching, resume and Next episode
   work as with Xtream.
+- **Profiles**: several people can share the TV. With two or more profiles the app
+  starts on **Who's watching?**: LEFT/RIGHT picks a tile, OK opens that profile,
+  Return exits the app. Each profile has its own favorites, recently watched,
+  Continue watching, watched marks, new-episode badges, hidden and locked
+  categories, PIN and settings; sources and the TMDB key are shared. In
+  **Settings > Profiles** (the first group): **Current profile** (OK opens
+  Who's watching? to switch), **Add profile…** (up to 6; the new profile starts
+  empty and opens at once), **Rename profile…**, **Delete profile** (asks to
+  confirm; the last profile cannot be deleted) and **Ask who's watching on
+  start** On/Off (On by default; with one profile it is never asked). Switching
+  stops playback and reloads Home from the new profile. Data saved before profiles
+  existed moves to the first profile, **Me**, on the first start. Backup
+  export and import use the current profile.
 - **Settings** (bottom of the rail, available without a source): UP/DOWN
   selects a row, RIGHT or OK picks the next choice, LEFT the previous one.
   LEFT at the first choice or Return goes back to the rail. Changes save

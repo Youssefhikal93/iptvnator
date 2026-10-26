@@ -244,7 +244,7 @@ from step 8 must already be downloaded.
   immediately for all sources: autoplay (Off, 5, 8 or 15 s), Skip intro
   length (60, 75, 90 or 120 s), now and next On/Off, Cinema or compact
   Showcase Home layout, List/Grid for each section, default Movies/Series
-  sort, and Last channel/Home on start. Turning now and next off stops
+  sort, Live preview On/Off and Last channel/Home on start. Turning now and next off stops
   programme fetching and hides programme lines everywhere. Default sort
   applies only where no sort has been chosen for that source and section.
   About shows the app version and the install guide name.
@@ -304,6 +304,15 @@ from step 8 must already be downloaded.
   those details. Return from the Guide focuses its channel in the Live TV list.
   The button is available when the programme guide setting is On and the
   source has a guide. Rows without programmes say "No programme information".
+- **Live preview**: in Live TV (list view), OK on a channel plays it in a
+  box beside the list, with its now and next under it. Moving through the
+  list does not change the stream; OK on another channel switches the box
+  to it. OK on the playing channel goes full screen on the same stream, and
+  Return from full screen comes back to the box. Return in the list stops
+  the preview first; a second Return does what it always did. The preview
+  also stops when you leave Live TV, open the TV guide, change source or
+  leave the app. Turn it off in **Settings → Live preview** and OK opens
+  full screen directly, as does the grid view.
 - **Channel list while watching**: with live player controls hidden, press
   LEFT to open a see-through channel list on the playing channel. UP/DOWN
   move focus without changing channel; OK watches the focused channel.

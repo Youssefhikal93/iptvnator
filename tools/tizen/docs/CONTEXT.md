@@ -111,6 +111,10 @@ _Avoid_: Context menu, long-press menu
 **Player**:
 The full-screen playback screen for a channel, movie or episode.
 
+**Live preview**:
+The playing channel shown in a box beside the Live TV list, with its now and next, before OK on it goes full screen.
+_Avoid_: Mini player, picture-in-picture
+
 **Channel list**:
 The see-through list over live playback: browse channels and categories, then press OK to watch.
 _Avoid_: Drawer, sidebar

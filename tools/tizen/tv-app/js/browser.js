@@ -20,6 +20,8 @@ window.Browser = function (hooks) {
     };
     var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
     var restoring = false;
+    var account = Promise.resolve();
+    var homeLoading = {};
     var live = LiveChannels({
         categories: function () {
             var adapter = state.adapter;
@@ -250,10 +252,10 @@ window.Browser = function (hooks) {
     }
 
     var EMPTY = {
-        favorites: 'No favorites yet. Hold OK on an item to add it.',
-        recent: 'Nothing watched yet.',
-        continue: 'Nothing to continue.',
-        added: 'Nothing recently added.',
+        favorites: ['No favorites yet', 'Hold OK on any movie, show or channel to add it.'],
+        recent: ['Nothing watched yet', 'Play a movie, episode or channel to find it here later.'],
+        continue: ['Nothing to continue', 'Movies and episodes you start will appear here until watched.'],
+        added: ['Nothing recently added', 'Choose another category or check again after a refresh.'],
     };
 
     function showVirtual(category, index) {
@@ -452,6 +454,7 @@ window.Browser = function (hooks) {
         clearTimeout(state.searchTimer);
         var query = $('search-input').value.trim();
         var section = state.section;
+        var adapter = state.adapter;
         if (!query) {
             if (state.showingSearch) loadItems();
             return Promise.resolve(0);
@@ -461,21 +464,21 @@ window.Browser = function (hooks) {
         state.search = { section: section, query: query, results: [] };
         state.showingSearch = true;
         applyView();
-        setItems([], 0, 'Searching\u2026');
+        items.loading();
         return cached(section + ':items:', function () {
-            return state.adapter.items(section, '');
+            return adapter.items(section, '');
         })
             .then(function (all) {
                 if (token !== state.token) return 0;
                 state.search.results = all.filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1;
                 });
-                setItems(state.search.results, 0, 'No results for "' + query + '"');
+                setItems(state.search.results, 0, ['No results for "' + query + '"', 'Try a different title or a shorter search.']);
                 renderChrome();
                 return state.search.results.length;
             })
             .catch(function (err) {
-                fail(items, 'SEARCH')(err);
+                if (token === state.token) fail(items, 'SEARCH')(err);
                 return 0;
             });
     }
@@ -543,17 +546,41 @@ window.Browser = function (hooks) {
     }
 
     function loadFresh(id, key, load) {
-        return load().then(function (value) {
+        return fetchCatalogue(id, key, load).then(function (value) {
             if (state.source && id === sourceId()) state.cache[key] = value;
             Catalogue.put(id, key, value);
             return value;
         });
     }
 
+    function fetchCatalogue(id, key, load) {
+        // Detail pages and the player's channel list keep their own failures.
+        var kind = key.split(':')[1];
+        if (Player.isOpen() || (kind !== 'categories' && kind !== 'items')) return load();
+        var checked = account;
+        return LoadScreen.run(id + ':' + key, function () {
+            return checked.then(load);
+        }, function () {
+            return !!state.source && id === sourceId() && catalogueActive(key);
+        });
+    }
+
+    function catalogueActive(key) {
+        var section = key.split(':')[0];
+        if (state.section === 'home') return !!homeLoading[section] && key === section + ':items:';
+        if (state.section !== section) return false;
+        if (key === section + ':categories') return !state.base;
+        if (state.showingSearch) return key === section + ':items:';
+        var category = categories.item();
+        if (!category) return false;
+        if (category.virtual) return key === section + ':items:' && (category.virtual === 'added' || category.virtual === 'favorites');
+        return key === section + ':items:' + category.category_id;
+    }
+
     function refreshSaved(id, key, load, saved, onFresh) {
         state.updating++;
         renderChrome();
-        load()
+        fetchCatalogue(id, key, load)
             .then(function (value) {
                 Catalogue.put(id, key, value);
                 if (!state.source || id !== sourceId()) return;
@@ -580,6 +607,7 @@ window.Browser = function (hooks) {
     }
 
     function renderChrome() {
+        LoadScreen.render();
         $('rail').innerHTML = '';
         SECTIONS.forEach(function (section) {
             var el = document.createElement('div');
@@ -628,6 +656,7 @@ window.Browser = function (hooks) {
     }
 
     function setZone(zone) {
+        if (state.zone === 'rail' && zone !== 'rail') LoadScreen.enter();
         state.zone = zone;
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
@@ -636,9 +665,9 @@ window.Browser = function (hooks) {
     }
 
     function fail(list, label) {
-        return function (err) {
-            Log.error(label + ' FAIL ' + err.message);
-            list.set([], 0, 'Could not load: ' + err.message);
+        return function () {
+            Log.error(label + ' FAIL');
+            list.set([], 0, ['Could not load', 'Choose another section and try again.']);
         };
     }
 
@@ -733,6 +762,8 @@ window.Browser = function (hooks) {
     // ---- Content sections ----
 
     function setSource(source) {
+        LoadScreen.reset();
+        state.token++;
         live.reset();
         restoring = false;
         state.source = source;
@@ -745,27 +776,29 @@ window.Browser = function (hooks) {
         state.showingSearch = false;
         state.favKeys = null;
         state.added = {};
+        homeLoading = {};
         home.reset();
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
         state.epg = state.adapter.nowNext ? Epg(state.adapter) : null;
         var adapter = state.adapter;
-        adapter
-            .account()
+        account = LoadScreen.run(source.id + ':account', function () {
+            return adapter.account();
+        }, function () {
+            return adapter === state.adapter && state.section !== 'sources';
+        })
             .then(function (info) {
                 if (adapter !== state.adapter) return;
                 state.info = info;
                 if (state.section === 'sources') showSourceDetails();
-            })
-            .catch(function (err) {
-                Log.error('SOURCE CHECK FAIL ' + err.message);
             });
         renderChrome();
     }
 
     function openSection(id) {
         if (!available(id)) return;
+        var adapter = state.adapter;
         state.section = id;
         $('content').classList.toggle('home', id === 'home');
         state.showingSearch = false;
@@ -776,12 +809,13 @@ window.Browser = function (hooks) {
         items.set([], 0, '');
         if (id === 'sources') return showSources(0);
         if (id === 'home') return showHome();
-        categories.set([], 0, 'Loading…');
+        categories.loading();
+        items.loading();
         renderChrome();
         cached(
             id + ':categories',
             function () {
-                return state.adapter.categories(id);
+                return adapter.categories(id);
             },
             function (list) {
                 if (state.section !== id || !state.base) return;
@@ -796,7 +830,9 @@ window.Browser = function (hooks) {
                 loadItems();
                 if (sortableSection()) loadRecentlyAdded(id);
             })
-            .catch(fail(categories, 'CATEGORIES'));
+            .catch(function (err) {
+                if (token === state.token) fail(categories, 'CATEGORIES')(err);
+            });
     }
 
     function loadItems() {
@@ -804,15 +840,16 @@ window.Browser = function (hooks) {
         if (!category || state.section === 'sources') return;
         if (category.virtual) return showVirtual(category);
         var section = state.section;
+        var adapter = state.adapter;
         var token = ++state.token;
         state.showingSearch = false;
         applyView();
-        setItems([], 0, 'Loading…');
+        items.loading();
         renderChrome();
         cached(
             section + ':items:' + category.category_id,
             function () {
-                return state.adapter.items(section, category.category_id);
+                return adapter.items(section, category.category_id);
             },
             function (list) {
                 if (token !== state.token) return;
@@ -823,9 +860,11 @@ window.Browser = function (hooks) {
             }
         )
             .then(function (list) {
-                if (token === state.token) setItems(list, 0, 'Empty category');
+                if (token === state.token) setItems(list, 0, ['Empty category', 'Choose another category or check again after a refresh.']);
             })
-            .catch(fail(items, 'ITEMS'));
+            .catch(function (err) {
+                if (token === state.token) fail(items, 'ITEMS')(err);
+            });
     }
 
     // An episode request that knows the whole show, so the player can offer
@@ -909,8 +948,8 @@ window.Browser = function (hooks) {
             { id: 'live', title: 'Live now on your favorite channels', entries: entriesOf('live', Library.favorites(id, 'live')) },
             { id: 'fav-movies', title: 'Favorite movies', entries: entriesOf('movies', Library.favorites(id, 'movies')) },
             { id: 'fav-series', title: 'Favorite series', entries: entriesOf('series', Library.favorites(id, 'series')) },
-            { id: 'new-movies', title: 'Recently added movies', entries: entriesOf('movies', state.added.movies || []) },
-            { id: 'new-series', title: 'Recently added series', entries: entriesOf('series', state.added.series || []) },
+            { id: 'new-movies', title: 'Recently added movies', entries: entriesOf('movies', state.added.movies || []), loading: homeLoading.movies },
+            { id: 'new-series', title: 'Recently added series', entries: entriesOf('series', state.added.series || []), loading: homeLoading.series },
             { id: 'recent-live', title: 'Recently watched channels', entries: entriesOf('live', Library.recent(id, 'live')) },
         ];
     }
@@ -934,8 +973,10 @@ window.Browser = function (hooks) {
             var adapter = state.adapter;
             if (!available(section) || state.added[section]) return;
             state.added[section] = [];
+            homeLoading[section] = true;
             var update = function (list) {
                 if (adapter !== state.adapter) return;
+                homeLoading[section] = false;
                 updateRecentlyAdded(section, list);
             };
             cached(section + ':items:', function () {
@@ -965,6 +1006,7 @@ window.Browser = function (hooks) {
         home.render();
         renderChrome();
         loadRecentlyAdded();
+        home.render();
     }
 
     // ---- Detail pages ----
@@ -1172,7 +1214,6 @@ window.Browser = function (hooks) {
             state.press = null;
         }
         if (Menu.isOpen()) return Menu.onKey(code);
-        if (state.searching) return onSearchKey(code);
         if (detail.isOpen()) {
             var selection = detail.episodeSelection();
             if (code !== KEY.ENTER || !selection) return detail.onKey(code);
@@ -1183,6 +1224,10 @@ window.Browser = function (hooks) {
             });
             return true;
         }
+        var loadKey = LoadScreen.key(code);
+        if (loadKey === 'exit') hooks.exit();
+        if (loadKey) return true;
+        if (state.searching) return onSearchKey(code);
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
         if (state.zone === 'rail') {
@@ -1228,7 +1273,12 @@ window.Browser = function (hooks) {
     });
 
     function start() {
-        var source = Sources.current();
+        return LoadScreen.run('saved', function () {
+            return Sources.current();
+        }, function () { return true; }).then(startSource);
+    }
+
+    function startSource(source) {
         setSource(source);
         if (source) openSection('home');
         else openSection('sources');

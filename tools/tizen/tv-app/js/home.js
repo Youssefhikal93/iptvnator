@@ -52,7 +52,7 @@ window.Home = function (api) {
         var hero = api.hero();
         if (hero.length) list.push({ hero: hero });
         api.rows().forEach(function (row) {
-            if (row.entries.length) list.push({ row: row });
+            if (row.entries.length || row.loading) list.push({ row: row });
         });
         return list;
     }
@@ -167,10 +167,21 @@ window.Home = function (api) {
     }
 
     function renderRow(row, focused) {
-        var r = rowState(row);
         var box = el('div', 'hm-row');
         box.appendChild(el('div', 'hm-row-title', row.title));
         var strip = el('div', 'hm-strip');
+        if (row.loading) {
+            strip.setAttribute('aria-label', 'Loading');
+            for (var i = 0; i < VISIBLE; i++) {
+                var card = el('div', 'hm-card skeleton');
+                card.setAttribute('aria-hidden', 'true');
+                card.appendChild(el('div', 'hm-poster'));
+                strip.appendChild(card);
+            }
+            box.appendChild(strip);
+            return box;
+        }
+        var r = rowState(row);
         row.entries.slice(r.offset, r.offset + VISIBLE).forEach(function (entry, i) {
             strip.appendChild(renderCard(entry, focused && r.offset + i === r.focus));
         });
@@ -182,10 +193,16 @@ window.Home = function (api) {
         var list = blocks();
         root.textContent = '';
         if (!list.length) {
-            root.appendChild(el('div', 'hm-empty', 'Nothing here yet. Watch something or hold OK on an item to add it to your favorites.'));
+            var empty = el('div', 'hm-empty', 'Nothing here yet');
+            empty.appendChild(el('small', '', 'Watch something or hold OK on an item to add it to your favorites.'));
+            root.appendChild(empty);
             return;
         }
+        list.forEach(function (block, index) {
+            if ((block.hero ? 'hero' : block.row.id) === s.blockKey) s.block = index;
+        });
         s.block = Math.min(s.block, list.length - 1);
+        s.blockKey = list[s.block].hero ? 'hero' : list[s.block].row.id;
         // The hero shows while it or the first row has the focus; further
         // down, the focused row moves to the top.
         var first = list[0].hero && s.block <= 1 ? 0 : s.block;
@@ -219,12 +236,18 @@ window.Home = function (api) {
         var list = blocks();
         var block = list[s.block];
         if (!block) return code === KEY.LEFT ? 'left' : undefined;
-        if (code === KEY.UP && s.block > 0) s.block--;
-        else if (code === KEY.DOWN && s.block < list.length - 1) s.block++;
-        else if (block.hero) {
+        if (code === KEY.UP && s.block > 0) {
+            s.block--;
+            s.blockKey = null;
+        } else if (code === KEY.DOWN && s.block < list.length - 1) {
+            s.block++;
+            s.blockKey = null;
+        } else if (block.hero) {
             var out = heroKey(code, block.hero);
             render();
             return out;
+        } else if (block.row.loading) {
+            if (code === KEY.LEFT) return 'left';
         } else {
             var r = rowState(block.row);
             if (code === KEY.LEFT && r.focus === 0) return 'left';
@@ -246,7 +269,7 @@ window.Home = function (api) {
         // null on the hero, whose buttons take OK themselves.
         focused: function () {
             var block = blocks()[s.block];
-            if (!block || block.hero) return null;
+            if (!block || block.hero || block.row.loading) return null;
             return block.row.entries[rowState(block.row).focus];
         },
         // A new source: start from the top again.

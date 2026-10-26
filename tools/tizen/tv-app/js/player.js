@@ -34,6 +34,7 @@ window.Player = (function () {
         RETURN: 10009,
         BACKSPACE: 8,
         ESCAPE: 27,
+        STOP: 413,
         PLAY_PAUSE: 10252,
         PLAY: 415,
         PAUSE: 19,
@@ -81,6 +82,8 @@ window.Player = (function () {
     var channelListOpen = false;
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
+    var playbackError = false;
+    var errorFocus = 0;
     var speed = 1;
     var hideAt = 0;
     var tickTimer = null;
@@ -318,13 +321,37 @@ window.Player = (function () {
     }
 
     function showStatus(text, error) {
+        if (playbackError) return;
         ui.statusText.textContent = text;
         ui.status.classList.toggle('error', !!error);
         ui.status.classList.remove('hidden');
+        $('pl-error-actions').classList.toggle('hidden', !error);
+        if (error) {
+            playbackError = true;
+            errorFocus = 0;
+            clearInterval(tickTimer);
+            hideControls();
+            ui.menu.classList.add('hidden');
+            ui.resume.classList.add('hidden');
+            $('pl-error-actions').children[0].focus();
+        }
     }
 
     function hideStatus() {
+        if (playbackError) return;
         ui.status.classList.add('hidden');
+    }
+
+    function errorKey(code) {
+        if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE) return false;
+        if (code === KEY.LEFT || code === KEY.RIGHT) {
+            errorFocus = code === KEY.LEFT ? 0 : 1;
+            $('pl-error-actions').children[errorFocus].focus();
+        } else if (code === KEY.ENTER) {
+            if (errorFocus) return 'back';
+            play(current);
+        } else return code !== KEY.STOP;
+        return true;
     }
 
     function heading(req) {
@@ -867,7 +894,7 @@ window.Player = (function () {
                 },
                 onbufferingcomplete: hideStatus,
                 onerror: function (type) {
-                    if (ready) showStatus('Playback stopped (' + type + ').\nPress Return to go back.', true);
+                    if (ready) showStatus('Playback stopped (' + type + ').', true);
                     finish(String(type));
                 },
                 onstreamcompleted: onCompleted,
@@ -905,7 +932,8 @@ window.Player = (function () {
     }
 
     function onCompleted() {
-        if (!current || current.live) return;
+        if (!current) return;
+        if (current.live) return showStatus('Playback stopped.', true);
         ended = true;
         if (started && current.id) {
             var map = loadProgress();
@@ -926,7 +954,7 @@ window.Player = (function () {
         video.onplaying = hideStatus;
         video.onended = onCompleted;
         video.onerror = function () {
-            showStatus('Playback stopped.\nPress Return to go back.', true);
+            showStatus('Playback stopped.', true);
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
         renderHint();
@@ -940,6 +968,7 @@ window.Player = (function () {
     var STARTERS = { mpegts: viaMpegts, hls: viaHls, avplay: viaAvPlay, video: viaVideo };
 
     function play(req) {
+        playbackError = false;
         release();
         var mine = ++session;
         current = req;
@@ -955,7 +984,7 @@ window.Player = (function () {
         });
 
         function fail(message) {
-            showStatus(heading(req) + '\n' + message + '\nPress Return to go back.', true);
+            showStatus(heading(req) + '\n' + message, true);
         }
 
         function next(index, retried) {
@@ -993,6 +1022,7 @@ window.Player = (function () {
     }
 
     function stop() {
+        playbackError = false;
         session++;
         release();
         current = null;
@@ -1008,10 +1038,11 @@ window.Player = (function () {
         showControls();
     }
 
-    // Handles a player key. Returns true when consumed; Return/Stop and live
-    // channel zapping are left to the caller.
+    // Returns true when consumed, or 'back' for OK on the error's Back button.
+    // Return/Stop and live channel zapping are left to the caller.
     function key(code, live) {
         if (!current) return false;
+        if (playbackError) return errorKey(code);
         if (resume.open) return resumeKey(code);
         if (!ready) return false;
         if (menu.open) return menuKey(code);

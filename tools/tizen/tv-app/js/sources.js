@@ -32,7 +32,16 @@ window.Sources = (function () {
     }
 
     function all() {
-        var list = read(LIST_KEY);
+        var list;
+        try {
+            list = JSON.parse(localStorage.getItem(LIST_KEY));
+            if (list !== null && !Array.isArray(list)) throw new Error('Invalid sources list');
+        } catch (e) {
+            // A read failure is not an empty library. Leave the original intact.
+            var err = new Error('Could not read saved data');
+            err.code = 'saved';
+            throw err;
+        }
         if (list) return list;
         var legacy = read(LEGACY_KEY);
         list = [];

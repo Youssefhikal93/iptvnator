@@ -49,11 +49,7 @@ window.M3uSource = function (source) {
 
     function load() {
         if (parsed) return Promise.resolve(parsed);
-        return fetch(source.url.trim())
-            .then(function (res) {
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return res.text();
-            })
+        return SourceRequest(source.url.trim(), 'text')
             .then(function (text) {
                 if (text.indexOf('#EXTINF') === -1) throw new Error('not an M3U playlist');
                 parsed = parse(text);

@@ -21,10 +21,7 @@ window.XtreamSource = function (source) {
         Object.keys(params || {}).forEach(function (key) {
             request += '&' + key + '=' + enc(params[key]);
         });
-        return fetch(request).then(function (res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-        });
+        return SourceRequest(request, 'json');
     }
 
     function streamUrl(kind, id, ext) {
@@ -105,10 +102,14 @@ window.XtreamSource = function (source) {
         },
         account: function () {
             return call('').then(function (res) {
-                if (!res.user_info || String(res.user_info.auth) !== '1') {
-                    throw new Error('the server rejected this login');
+                var info = res && res.user_info;
+                if (!info || String(info.auth) !== '1' || (info.status && info.status !== 'Active') ||
+                    (Number(info.exp_date) > 0 && Number(info.exp_date) * 1000 <= Date.now())) {
+                    var err = new Error('Check the source login and subscription');
+                    err.code = 'account';
+                    throw err;
                 }
-                return res.user_info;
+                return info;
             });
         },
         categories: function (section) {

@@ -257,8 +257,72 @@ svg {
     color: var(--muted);
 }
 .list-empty {
-    padding: 24px 16px;
+    min-height: 420px;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    font-size: 30px;
     color: var(--muted);
+}
+.list-empty small,
+.hm-empty small {
+    display: block;
+    margin-top: 18px;
+    font-size: 24px;
+    line-height: 1.5;
+}
+.skeleton {
+    animation: skeleton-pulse 1.8s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+.row.skeleton,
+.card.skeleton .poster,
+.hm-card.skeleton .hm-poster {
+    background: #373b43;
+}
+@keyframes skeleton-pulse {
+    from { opacity: 0.45; }
+    to { opacity: 0.85; }
+}
+#load-error {
+    position: fixed;
+    inset: 112px 0 56px 168px;
+    z-index: 7;
+    background: var(--content-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 38px;
+}
+#load-hint,
+#load-countdown {
+    font-size: 26px;
+    color: var(--muted);
+    max-width: 900px;
+}
+#load-countdown {
+    min-height: 40px;
+}
+.state-button {
+    border: 3px solid var(--line);
+    border-radius: 12px;
+    background: var(--widget-bg);
+    color: var(--on-surface);
+    padding: 18px 32px;
+    font: inherit;
+    font-size: 30px;
+}
+.state-button:focus {
+    outline: 4px solid var(--focus-ring);
+    background: var(--selection);
+    color: var(--selection-on);
+}
+.state-button[aria-disabled='true'] {
+    opacity: 0.6;
 }
 .row {
     display: flex;
@@ -932,6 +996,7 @@ svg {
 }
 .hm-empty {
     padding: 80px 64px;
+    text-align: center;
     font-size: 32px;
     color: var(--muted);
 }

@@ -188,6 +188,15 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Loading and failures**: grey rows and cards pulse while a list loads.
+  Empty lists explain how to add or find items. If a source cannot load,
+  Retry takes the focus; press OK to try the same load again. The app also
+  retries after 2, 5, 10 and 30 seconds, pausing while you watch or the app
+  is hidden. A successful load returns to the same list position. Playback
+  failures offer Retry playback and Back; LEFT/RIGHT chooses a button, OK
+  presses it, and Return goes back. Unreadable saved sources stay untouched;
+  Retry reads them again.
+
 - **Home** (opens on start unless resuming a channel): a banner for up to 3 things you are watching
   (Continue watching, Details, ‹ › to switch), then rows: Continue
   watching, Live now on your favorite channels, Favorite movies and series,

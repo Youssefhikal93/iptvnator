@@ -26,7 +26,9 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Automatic retry (2, 5, 10, 30 s), Retry buttons, recovery screens | Partial | #17, #14 | Yes |
 | Remote Stop returns to where playback started | Done | — | Yes |
 | Long lists with focus restored after details | Done | — | Yes |
-| Visual refinement: compact header, 2:3 posters, TV icon for missing logos | Partial | #31 | Yes |
+| Settings: Home layout **Cinema** (tall hero) or **Showcase** (compact hero, more rows) | Missing (our hero is Cinema-like) | #10 | Yes |
+| Settings: programme guide on/off | Missing | #10 | Yes |
+| Visual refinement: compact header, 2:3 posters, TV icon for missing logos, favorites split into Movies / Series / TV | Partial (Home has separate favorite rows; missing logos show initials) | #31 | Yes |
 | History kept apart when a source's account changes | Missing | #34 | Yes |
 | Phone QR setup for sources and settings | Not planned | #28 | No, needs the backend session |
 | Server source library and backend discovery | Not planned | #28 | No |

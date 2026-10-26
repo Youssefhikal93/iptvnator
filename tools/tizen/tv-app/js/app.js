@@ -109,6 +109,7 @@
     }
 
     document.addEventListener('keydown', function (event) {
+        if (BackupScreen.isOpen()) return BackupScreen.onKey(event);
         if (screen === 'form') return Form.onKey(event);
         var handled = screen === 'player' ? onPlayerKey(event.keyCode) : browser.onKey(event.keyCode);
         if (handled) event.preventDefault();

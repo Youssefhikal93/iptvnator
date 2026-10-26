@@ -58,6 +58,20 @@ window.Catalogue = (function () {
     }
 
     return {
+        // Backup can attribute watched items that have no favorite or recent snapshot.
+        entries: function (sourceId) {
+            var entries = [];
+            return run('readonly', function (store) {
+                var req = store.openCursor(IDBKeyRange.bound(keyOf(sourceId, ''), keyOf(sourceId, '\uffff')));
+                req.onsuccess = function () {
+                    var cursor = req.result;
+                    if (!cursor) return;
+                    entries.push({ key: cursor.key.slice(sourceId.length + 1), value: cursor.value });
+                    cursor.continue();
+                };
+                return { result: entries };
+            });
+        },
         get: function (sourceId, key) {
             return run('readonly', function (store) {
                 return store.get(keyOf(sourceId, key));

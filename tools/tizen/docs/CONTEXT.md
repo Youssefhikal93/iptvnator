@@ -64,6 +64,10 @@ _Avoid_: History (for all of it), profile
 **Favorite**:
 An item the viewer marked to find again quickly. Episodes are favorited through their show.
 
+**Backup**:
+A portable JSON copy of sources and the library, imported from a link or exported to move them to another device.
+_Avoid_: Sync, database dump
+
 **Recently watched**:
 The items the viewer last played in a section, newest first.
 _Avoid_: History

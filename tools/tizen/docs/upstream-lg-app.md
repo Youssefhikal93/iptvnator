@@ -31,6 +31,7 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Subtitle style and picture aspect in Settings and the player menu | Done (not yet tested on the TV): AVPlay text and HTML/hls.js cues; live preview uses Fit | #26 | Yes |
 | Visual refinement: compact header, 2:3 posters, TV icon for missing logos, favorites split into Movies / Series / TV | Partial (Home has separate favorite rows; missing logos show initials) | #31 | Yes |
 | History kept apart when a source's account changes | Missing | #34 | Yes |
+| Desktop-compatible backup and restore | Done (not yet tested on the TV): import link, Replace/Merge, password warning and PUT/POST export; QR encoding unavailable | #25 | Yes, with a viewer-supplied HTTP endpoint for phone export |
 | Phone QR setup for sources and settings | Not planned | #28 | No, needs the backend session |
 | Server source library and backend discovery | Not planned | #28 | No |
 

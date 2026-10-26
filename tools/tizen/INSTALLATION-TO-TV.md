@@ -194,6 +194,16 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Backup** (Settings, before About): **Import from link…** downloads a desktop
+  backup JSON from an HTTP(S) link and previews source, favorite and progress
+  counts. **Cancel** starts focused; choose **Replace** to overwrite the TV's
+  sources and library, or **Merge** to keep sources and combine the library.
+  **Export** warns **Contains your passwords** before preparing the backup.
+  QR encoding is unavailable; **Copy to a link…** sends it to your trusted
+  PUT/POST endpoint. A phone link is shown only after a successful read-back.
+  The endpoint must allow CORS requests. See [backup compatibility](docs/backup.md)
+  for the exact desktop fields supported and the M3U progress limitation.
+
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on

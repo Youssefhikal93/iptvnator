@@ -97,6 +97,7 @@ window.M3uSource = function (source) {
     }
 
     var api = {
+        parse: parse,
         sections: ['live'],
         account: function () {
             return load().then(function (p) {

@@ -108,6 +108,7 @@ window.Progress = (function () {
 
     return {
         id: id,
+        finished: finished,
         episodeId: episodeId,
         of: of,
         save: save,

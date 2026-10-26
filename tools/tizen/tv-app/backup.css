@@ -1,0 +1,27 @@
+#backup-screen {
+    position: fixed;
+    inset: 100px 180px;
+    z-index: 100;
+    overflow: auto;
+    padding: 50px;
+    background: #171b25;
+    color: #f3f4fa;
+    border: 2px solid #66708a;
+    border-radius: 18px;
+    font-size: 28px;
+}
+#backup-screen p { margin: 28px 0; overflow-wrap: anywhere; }
+#backup-screen label { display: block; margin-bottom: 15px; }
+#backup-screen input { display: block; width: 100%; box-sizing: border-box; padding: 18px; font-size: 28px; margin-bottom: 32px; }
+#backup-screen button, #backup-screen a {
+    display: inline-block;
+    margin: 12px 20px 12px 0;
+    padding: 18px 26px;
+    border-radius: 8px;
+    border: 2px solid #66708a;
+    background: #252c3d;
+    color: #f3f4fa;
+    text-decoration: none;
+    font-size: 27px;
+}
+#backup-screen :focus { outline: 4px solid #a9baff; outline-offset: 4px; }

@@ -120,6 +120,13 @@ window.Player = (function () {
         showControls: showControls,
     });
 
+    PlayerPicture.init({
+        root: playerEl,
+        video: video,
+        avplay: function () { return usingAv && avplay(); },
+        box: function () { return box; },
+    });
+
     function avplay() {
         return window.webapis && window.webapis.avplay;
     }
@@ -138,13 +145,7 @@ window.Player = (function () {
         playerEl.style.top = box ? at.y + 'px' : '';
         playerEl.style.width = box ? at.w + 'px' : '';
         playerEl.style.height = box ? at.h + 'px' : '';
-        if (usingAv && avplay()) {
-            try {
-                avplay().setDisplayRect(at.x, at.y, at.w, at.h);
-            } catch (e) {
-                // Not prepared yet; viaAvPlay sets the rectangle itself.
-            }
-        }
+        PlayerPicture.apply();
     }
 
     function wait(ms) {
@@ -697,6 +698,7 @@ window.Player = (function () {
         head('Subtitles');
         if (tracks.text.length > 1) tracks.text.forEach(function (t) { item(t.label, t.active, t.select); });
         else ui.menu.appendChild(el('div', 'pl-menu-empty', 'No subtitles available'));
+        PlayerPicture.menuEntries(head, item);
         if (!current.live) {
             head('Playback speed');
             (usingAv ? SPEEDS_AV : SPEEDS_HTML).forEach(function (value) {
@@ -973,8 +975,7 @@ window.Player = (function () {
                 oncurrentplaytime: restoration.onTime,
                 onsubtitlechange: showSub,
             });
-            var at = displayRect();
-            av.setDisplayRect(at.x, at.y, at.w, at.h);
+            PlayerPicture.apply();
             av.prepareAsync(
                 function () {
                     try {
@@ -1026,6 +1027,7 @@ window.Player = (function () {
     function onReady() {
         ready = true;
         playerEl.classList.toggle('av', usingAv);
+        PlayerPicture.apply();
         freeze.clear();
         hideStatus();
         video.onwaiting = function () {

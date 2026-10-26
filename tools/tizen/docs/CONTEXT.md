@@ -21,8 +21,12 @@ One kind of content a source offers: Live TV, Movies or Series. M3U sources only
 _Avoid_: Tab, type, mode
 
 **Category**:
-A provider's group of items inside a section, such as "Sports" or "Netflix movies".
+A named group of items inside a section, supplied by the source or the app.
 _Avoid_: Group (except for M3U `group-title`), genre, folder
+
+**Recently added**:
+The newest dated movies or shows added to a source's catalogue, regardless of release year; the category holds up to 50 items.
+_Avoid_: New releases, recently watched
 
 **Item**:
 One channel, movie or show in a category list.

@@ -7,7 +7,7 @@ window.Library = (function () {
     var PREFIX = 'iptvnator-tv:';
     var PROGRESS_KEY = PREFIX + 'progress';
     var RECENT_MAX = 40;
-    var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label'];
+    var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label', 'added', 'last_modified', 'rating_5based', 'rating'];
 
     function read(key, fallback) {
         try {
@@ -77,6 +77,25 @@ window.Library = (function () {
         return p && p.ratio < 0.95 ? p : null;
     }
 
+    // Older favorites lack sort fields; use the catalogue and its provider order
+    // where available, retaining snapshots for items the source no longer lists.
+    function favoriteItems(sourceId, section, catalogue) {
+        var saved = listOf('favorites', sourceId, section);
+        var wanted = {};
+        saved.forEach(function (item) {
+            wanted[keyOf(section, item)] = true;
+        });
+        var matched = catalogue.filter(function (item) {
+            var key = keyOf(section, item);
+            if (!wanted[key]) return false;
+            delete wanted[key];
+            return true;
+        });
+        return matched.concat(saved.filter(function (item) {
+            return wanted[keyOf(section, item)];
+        }));
+    }
+
     return {
         keyOf: keyOf,
         progress: progress,
@@ -84,6 +103,7 @@ window.Library = (function () {
         favorites: function (sourceId, section) {
             return listOf('favorites', sourceId, section);
         },
+        favoriteItems: favoriteItems,
         isFavorite: function (sourceId, section, item) {
             return listOf('favorites', sourceId, section).some(function (entry) {
                 return keyOf(section, entry) === keyOf(section, item);
@@ -133,6 +153,18 @@ window.Library = (function () {
             });
         },
         unfinished: unfinished,
+        sort: function (sourceId, section) {
+            var saved = read(PREFIX + 'sort:' + sourceId, {})[section];
+            return Sort.options.some(function (option) {
+                return option.id === saved;
+            }) ? saved : section === 'movies' || section === 'series' ? 'newest' : 'provider';
+        },
+        setSort: function (sourceId, section, mode) {
+            var key = PREFIX + 'sort:' + sourceId;
+            var all = read(key, {});
+            all[section] = mode;
+            write(key, all);
+        },
         view: function (section, fallback) {
             try {
                 var saved = localStorage.getItem(PREFIX + 'view:' + section);

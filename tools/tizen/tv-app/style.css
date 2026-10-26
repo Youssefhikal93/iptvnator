@@ -250,6 +250,12 @@ svg {
     font-size: 24px;
     margin-left: 14px;
 }
+.list-header .list-subtitle {
+    margin-left: 20px;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--muted);
+}
 .list-empty {
     padding: 24px 16px;
     color: var(--muted);

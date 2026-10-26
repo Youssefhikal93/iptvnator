@@ -42,6 +42,13 @@ window.List = function (el, options) {
         var header = document.createElement('div');
         header.className = 'list-header';
         header.textContent = options.title();
+        var subtitle = options.subtitle && options.subtitle();
+        if (subtitle) {
+            var caption = document.createElement('small');
+            caption.className = 'list-subtitle';
+            caption.textContent = subtitle;
+            header.appendChild(caption);
+        }
         if (count) {
             var position = document.createElement('span');
             position.className = 'count';

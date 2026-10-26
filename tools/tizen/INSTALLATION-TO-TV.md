@@ -199,8 +199,10 @@ from step 8 must already be downloaded.
   Episodes, Audio & subtitles). Episodes show an Up next card near the end
   and the next one plays 8 s after the current one ends. Skip intro jumps
   90 s: Xtream has no intro markers. Live TV: ▲▼ or CH change channel.
-- New channels, movies and episodes appear by themselves: the TV asks the
-  provider each time the app opens.
+- **Start-up**: the app opens on the lists saved on the TV and refreshes
+  them in the background ("Updating…" next to the source name); new
+  channels, movies and episodes then appear by themselves. **Sources →
+  Refresh source** throws the saved lists away and reloads them.
 
 ### Installing on another TV
 

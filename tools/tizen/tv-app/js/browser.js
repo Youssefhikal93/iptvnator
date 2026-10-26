@@ -17,7 +17,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, episodesOf: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null };
+    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, episodesOf: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', press: null, played: false, favKeys: null, toastTimer: null, updating: 0 };
 
     var categories = List($('categories'), {
         rows: 11,
@@ -352,12 +352,55 @@ window.Browser = function (hooks) {
         return code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE;
     }
 
-    function cached(key, load) {
+    // Memory, then the saved catalogue, then the provider. A saved list is
+    // returned at once and refreshed in the background (once per session);
+    // onFresh(list) swaps in the new list when it changed.
+    function cached(key, load, onFresh) {
         if (state.cache[key]) return Promise.resolve(state.cache[key]);
+        var id = sourceId();
+        return Catalogue.get(id, key).then(function (saved) {
+            if (saved === undefined || id !== sourceId()) return loadFresh(id, key, load);
+            state.cache[key] = saved;
+            refreshSaved(id, key, load, saved, onFresh);
+            return saved;
+        });
+    }
+
+    function loadFresh(id, key, load) {
         return load().then(function (value) {
-            state.cache[key] = value;
+            if (state.source && id === sourceId()) state.cache[key] = value;
+            Catalogue.put(id, key, value);
             return value;
         });
+    }
+
+    function refreshSaved(id, key, load, saved, onFresh) {
+        state.updating++;
+        renderChrome();
+        load()
+            .then(function (value) {
+                Catalogue.put(id, key, value);
+                if (!state.source || id !== sourceId()) return;
+                state.cache[key] = value;
+                if (onFresh && JSON.stringify(value) !== JSON.stringify(saved)) onFresh(value);
+            })
+            .catch(function (err) {
+                Log.error('REFRESH FAIL ' + key + ' ' + err.message);
+            })
+            .then(function () {
+                state.updating--;
+                renderChrome();
+            });
+    }
+
+    // Position of `item` in a refreshed list, matched by provider id.
+    function indexIn(list, item, fallback) {
+        var id = item && (item.stream_id || item.series_id || item.category_id || item.id || item.url);
+        for (var i = 0; id !== undefined && i < list.length; i++) {
+            var other = list[i];
+            if ((other.stream_id || other.series_id || other.category_id || other.id || other.url) === id) return i;
+        }
+        return fallback;
     }
 
     function renderChrome() {
@@ -375,7 +418,7 @@ window.Browser = function (hooks) {
             $('rail').appendChild(el);
         });
         $('source-name').textContent = state.source ? state.source.name : 'No source yet';
-        $('source-type').textContent = state.source ? Sources.typeLabel(state.source) : 'Add one in Sources';
+        $('source-type').textContent = state.source ? Sources.typeLabel(state.source) + (state.updating ? ' · Updating…' : '') : 'Add one in Sources';
         renderToolbar();
         $('hints').textContent =
             state.zone === 'items' && state.section !== 'sources'
@@ -447,6 +490,7 @@ window.Browser = function (hooks) {
             var isCurrent = state.source && row.source.id === state.source.id;
             var rows = [
                 { label: isCurrent ? 'Watch this source' : 'Switch to this source', action: 'open' },
+                { label: 'Refresh source', action: 'refresh' },
                 { label: 'Remove', action: 'remove' },
                 { label: Sources.typeLabel(row.source) + ' · ' + row.source.url },
             ];
@@ -467,6 +511,14 @@ window.Browser = function (hooks) {
             setSource(row.source);
             openSection('live');
             setZone('categories');
+        } else if (action === 'refresh') {
+            // Forget the saved lists; the next section opened reloads them.
+            Catalogue.drop(row.source.id).then(function () {
+                toast('Reloading ' + row.source.name + '…');
+                setSource(row.source);
+                openSection('live');
+                setZone('categories');
+            });
         } else if (action === 'remove') {
             if (state.armed !== row.source.id) {
                 state.armed = row.source.id;
@@ -475,6 +527,7 @@ window.Browser = function (hooks) {
                 return;
             }
             Sources.remove(row.source.id);
+            Catalogue.drop(row.source.id);
             if (state.source && state.source.id === row.source.id) setSource(Sources.current());
             showSources(0);
             setZone('categories');
@@ -531,9 +584,17 @@ window.Browser = function (hooks) {
         if (id === 'sources') return showSources(0);
         categories.set([], 0, 'Loading…');
         renderChrome();
-        cached(id + ':categories', function () {
-            return state.adapter.categories(id);
-        })
+        cached(
+            id + ':categories',
+            function () {
+                return state.adapter.categories(id);
+            },
+            function (list) {
+                if (state.section !== id || !state.base) return;
+                state.base = list;
+                showCategories(indexIn(virtualRows().concat(list), categories.item(), categories.index()));
+            }
+        )
             .then(function (list) {
                 if (token !== state.token) return;
                 state.base = list;
@@ -554,9 +615,15 @@ window.Browser = function (hooks) {
         applyView();
         items.set([], 0, 'Loading…');
         renderChrome();
-        cached(section + ':items:' + category.category_id, function () {
-            return state.adapter.items(section, category.category_id);
-        })
+        cached(
+            section + ':items:' + category.category_id,
+            function () {
+                return state.adapter.items(section, category.category_id);
+            },
+            function (list) {
+                if (token === state.token) items.set(list, indexIn(list, items.item(), items.index()), 'Empty category');
+            }
+        )
             .then(function (list) {
                 if (token === state.token) items.set(list, 0, 'Empty category');
             })
@@ -568,19 +635,33 @@ window.Browser = function (hooks) {
         state.episodesOf = { show: show, name: show.name, list: items.items(), index: items.index() };
         applyView();
         items.set([], 0, 'Loading episodes…');
-        cached('episodes:' + show.series_id, function () {
-            return state.adapter.episodes(show);
-        })
+        cached(
+            'episodes:' + show.series_id,
+            function () {
+                return state.adapter.episodes(show);
+            },
+            function (episodes) {
+                if (token === state.token) setEpisodes(episodes, true);
+            }
+        )
             .then(function (episodes) {
-                if (token !== state.token) return;
-                state.episodesOf.all = episodes;
-                state.episodesOf.seasons = [];
-                episodes.forEach(function (ep) {
-                    if (state.episodesOf.seasons.indexOf(ep.season) === -1) state.episodesOf.seasons.push(ep.season);
-                });
-                showSeason(0);
+                if (token === state.token) setEpisodes(episodes, false);
             })
             .catch(fail(items, 'EPISODES'));
+    }
+
+    // keep: a background refresh, so stay on the same season and episode.
+    function setEpisodes(episodes, keep) {
+        var show = state.episodesOf;
+        var season = keep ? show.seasons[show.season] : null;
+        var focused = keep ? items.item() : null;
+        show.all = episodes;
+        show.seasons = [];
+        episodes.forEach(function (ep) {
+            if (show.seasons.indexOf(ep.season) === -1) show.seasons.push(ep.season);
+        });
+        showSeason(Math.max(0, show.seasons.indexOf(season)));
+        if (focused) items.select(indexIn(items.items(), focused, items.index()));
     }
 
     function showSeason(index) {

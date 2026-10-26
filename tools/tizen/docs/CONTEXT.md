@@ -123,6 +123,14 @@ The full-screen playback screen for a channel, movie or episode.
 The playing channel shown in a box beside the Live TV list, with its now and next, before OK on it goes full screen.
 _Avoid_: Mini player, picture-in-picture
 
+**Subtitle style**:
+The saved size, text colour, background and position of subtitles, shared by Settings and the player menu.
+_Avoid_: Subtitle theme, caption preset
+
+**Aspect**:
+How the picture fits the screen: Auto, Fit, Fill, or a forced 16:9 or 4:3 shape; live preview always uses Fit.
+_Avoid_: Zoom mode, screen resolution
+
 **Channel list**:
 The see-through list over live playback: browse channels and categories, then press OK to watch.
 _Avoid_: Drawer, sidebar

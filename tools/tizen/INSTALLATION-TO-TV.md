@@ -166,8 +166,22 @@ Expected output: `Tizen application is successfully installed.` and
 `Tizen application is successfully launched.`
 
 The app appears under **Apps** on the TV and starts from there; the PC can be
-off. To update it later, pull the branch and repeat steps 6, 8 and 9: saved
-sources, favorites and progress stay on the TV.
+off. Saved sources, favorites and progress stay on the TV across updates.
+
+### Updating the TV app
+
+With the TV on and in Developer Mode (step 4), run from the repository root:
+
+```powershell
+git pull
+.\tools\tizen\deploy-tv.ps1                       # TV at 192.168.0.18
+.\tools\tizen\deploy-tv.ps1 -TvIp 192.168.0.50    # another TV
+```
+
+The script connects to the TV (step 6), then runs steps 8 and 9: it packages
+a copy of `tools\tizen\tv-app`, signs it with the `iptvnator-tv` profile
+(`-CertProfile` to change), installs it and starts it. The `vendor` scripts
+from step 8 must already be downloaded.
 
 ### Using the TV app
 

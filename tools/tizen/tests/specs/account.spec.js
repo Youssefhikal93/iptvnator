@@ -168,7 +168,7 @@ test('Edit source reuses the add form; a new name keeps everything, a new login 
     const saved = () => page.evaluate(() => ({
         sources: JSON.parse(localStorage.getItem('iptvnator-tv:sources')),
         current: JSON.parse(localStorage.getItem('iptvnator-tv:current')),
-        recent: localStorage.getItem('iptvnator-tv:recent:s1'),
+        recent: localStorage.getItem('iptvnator-tv:p:default:recent:s1'),
     }));
     let now = await saved();
     expect(now.sources.map(s => s.id + ':' + s.name)).toEqual(['s1:Living room']);

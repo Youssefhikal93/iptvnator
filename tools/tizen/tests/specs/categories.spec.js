@@ -1,7 +1,7 @@
 const { test, expect, boot, channel, section, category, enterItems, toolbar, press, back, holdOK, menuChoice, moveTo, playing } = require('./helpers');
 
 const labels = page => page.locator('#categories .row .label').allTextContents();
-const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:hidden-categories:s1') || '{}'));
+const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:hidden-categories:s1') || '{}'));
 const focusedCategory = page => page.locator('#categories .focused .label');
 
 test('hold OK on a category hides it, opens the next one and stays hidden after a reload', async ({ page }) => {

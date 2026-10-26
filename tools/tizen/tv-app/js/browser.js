@@ -110,7 +110,7 @@ window.Browser = function (hooks) {
         changed: categoriesChanged,
         toast: toast,
     });
-    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText });
+    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged });
     var watched = Watched({
         knownShow: function (show) {
             return state.catalogue.peek({ kind: 'show', id: show.series_id });
@@ -1393,6 +1393,17 @@ window.Browser = function (hooks) {
         clearTimeout(state.timer);
         state.timer = setTimeout(loadItems, 350);
         renderChrome();
+    }
+
+    // ---- Profiles ----
+
+    // Another profile is active: stop playback and reload the Home of the
+    // current source from that profile's library.
+    function profileChanged() {
+        var source = Sources.current();
+        setSource(source);
+        openSection(source ? 'home' : 'sources');
+        setZone(contentZone());
     }
 
     // ---- Hidden categories ----

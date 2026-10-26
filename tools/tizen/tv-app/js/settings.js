@@ -33,6 +33,8 @@ window.Settings = function (hooks) {
         { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
     ]);
 
+    rows.unshift.apply(rows, ProfileSettings.rows(hooks, render));
+
     // Read when drawn, so the count follows what the viewer hides.
     function hiddenText(section) {
         return function () {

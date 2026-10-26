@@ -2,13 +2,13 @@
 window.Progress = (function () {
     'use strict';
 
-    var KEY = 'iptvnator-tv:progress';
+    var KEY = 'progress';
     var RESUME_MIN_S = 30;
     var FINISHED_MARGIN_S = 30;
 
     function read() {
         try {
-            return JSON.parse(localStorage.getItem(KEY)) || {};
+            return JSON.parse(localStorage.getItem(ProfileStore.key(KEY))) || {};
         } catch (e) {
             return {};
         }
@@ -16,7 +16,7 @@ window.Progress = (function () {
 
     function write(records) {
         try {
-            localStorage.setItem(KEY, JSON.stringify(records));
+            localStorage.setItem(ProfileStore.key(KEY), JSON.stringify(records));
         } catch (e) {
             // Storage full or unavailable; playback can still continue.
         }

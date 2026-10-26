@@ -135,7 +135,7 @@ async function playing(page) {
 }
 
 async function savedProgress(page, id) {
-    return page.evaluate(id => JSON.parse(localStorage.getItem('iptvnator-tv:progress') || '{}')[id], id);
+    return page.evaluate(id => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:progress') || '{}')[id], id);
 }
 
 const resumeSeed = (id = 2025) => ({ storage: {

@@ -1,0 +1,31 @@
+.catch-up-badge {
+    display: inline-block;
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--widget-bg);
+    color: var(--selection);
+    font-size: 18px;
+}
+.poster .catch-up-badge {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+}
+.gd-catch-up {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    color: var(--selection);
+    font-size: 24px;
+}
+.gd-watch:focus {
+    outline: 3px solid var(--focus-ring);
+    background: var(--selection);
+    color: var(--widget-bg);
+}
+.pl-epg-catch-up {
+    margin-top: 10px;
+    color: var(--selection);
+    font-size: 22px;
+}

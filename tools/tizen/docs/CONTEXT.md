@@ -139,6 +139,10 @@ _Avoid_: Drawer, sidebar
 The programme on a channel now and the one after it.
 _Avoid_: EPG (for this), guide
 
+**Catch-up**:
+Watching a channel's past programme, or restarting its current programme, when the source offers it.
+_Avoid_: Archive, replay, timeshift
+
 **Guide**:
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
 _Avoid_: EPG grid (use TV guide only for the button label)

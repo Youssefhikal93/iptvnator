@@ -339,13 +339,23 @@ from step 8 must already be downloaded.
   the beginning.
 - **Live TV rows** (Xtream) show the programme on now and its progress,
   fetched for the channels on screen once scrolling stops.
+- **Catch-up** (Xtream): channels offering past programmes show a **Catch-up N days**
+  badge in the list and grid. In the Guide, LEFT browses back through those days
+  (up to seven); past programmes marked **↺** offer **Watch from start** when
+  you press OK. Press OK again to watch. While watching live, Yellow or Info
+  opens the player menu with **Watch from start** for the current programme.
+  Catch-up has pause and LEFT/RIGHT seeking, with programme clock times on the
+  timeline. Return goes back to the Guide or live player where you opened it;
+  **Back to live** in the player menu watches the channel live. Catch-up is
+  never saved to Continue watching or marked watched.
 - **TV guide**: in Live TV, choose **TV guide** in the top toolbar or press
   the remote's Guide key. It opens the current category, including Favorites.
   UP/DOWN changes channel focus; LEFT/RIGHT browses programmes from two hours
   ago to 24 hours ahead. CH+/CH- or Page Up/Down jumps a screen of channels.
   OK on a programme on now watches that channel; Return from playback reopens
   the Guide. OK on another programme shows its details; OK or Return closes
-  those details. Return from the Guide focuses its channel in the Live TV list.
+  those details, except for the catch-up action above. Return from the Guide
+  focuses its channel in the Live TV list.
   The button is available when the programme guide setting is On and the
   source has a guide. Rows without programmes say "No programme information".
 - **Live preview**: in Live TV (list view), OK on a channel plays it in a

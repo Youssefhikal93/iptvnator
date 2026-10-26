@@ -221,6 +221,7 @@ window.Detail = function () {
             return !!s;
         },
         onKey: onKey,
+        close: close,
         episodeSelection: function () {
             if (!s || s.zone !== 'episodes' || s.more || s.trailer) return null;
             return s.page.episodes.selection();

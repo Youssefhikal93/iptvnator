@@ -10,7 +10,7 @@ test('hold OK on a category hides it, opens the next one and stays hidden after 
     await category(page, 'get_live_categories cat 1');
     await holdOK(page);
     await expect(page.locator('#menu .menu-title')).toHaveText('get_live_categories cat 1');
-    await expect(page.locator('#menu .menu-row')).toHaveText(['Hide category', 'Hide all except this', 'Manage categories', 'Cancel']);
+    await expect(page.locator('#menu .menu-row')).toHaveText(['Hide category', 'Hide all except this', 'Manage categories', 'Set a PIN first', 'Cancel']);
     await menuChoice(page, 'Hide category');
     await expect(focusedCategory(page)).toHaveText('get_live_categories cat 2');
     await expect(page.locator('#items .skeleton')).toHaveCount(0);

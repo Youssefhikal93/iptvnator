@@ -33,8 +33,11 @@ window.Browser = function (hooks) {
             });
         },
         channels: function (categoryId) {
-            return loadCatalogue({ section: 'live', kind: 'items', id: categoryId });
+            return loadCatalogue({ section: 'live', kind: 'items', id: categoryId }).then(function (list) {
+                return ParentalLock.filterItems(sourceId(), 'live', list);
+            });
         },
+        allows: function (channel) { return ParentalLock.allows(sourceId(), 'live', channel); },
         request: liveRequest,
         record: function (channel) {
             record(channel, null, null, 'live');
@@ -43,6 +46,18 @@ window.Browser = function (hooks) {
     });
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
+    });
+    ParentalLock.onChange(function () {
+        if (!ParentalLock.isUnlocked()) {
+            // A pending OK must not open an item from the old unlocked list.
+            Keys.repeat(KEY.RETURN);
+            if (detail.isOpen()) detail.close();
+            if (guide.isOpen()) guide.close();
+            if (Menu.isOpen()) Menu.onKey(KEY.RETURN);
+        }
+        if (state.section === 'home') home.render();
+        else if (state.section === 'settings') settings.render();
+        else categoriesChanged(state.section);
     });
     // "Go to Sources" on the account screen lands on the source with the problem.
     LoadScreen.onSources(function () {
@@ -70,6 +85,7 @@ window.Browser = function (hooks) {
             return row.category_name;
         },
         badge: function (row) {
+            if (HiddenCategories.isReal(row) && ParentalLock.isLocked(sourceId(), state.section, row.category_id)) return '\ud83d\udd12';
             return row.source ? row.chip : row.count;
         },
         decorate: function (el, row) {
@@ -360,7 +376,7 @@ window.Browser = function (hooks) {
 
     // Recently added, without items of hidden categories.
     function addedOf(section) {
-        return HiddenCategories.filterItems(sourceId(), section, state.added[section] || []);
+        return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, state.added[section] || []));
     }
 
     function virtualList(kind) {
@@ -382,7 +398,7 @@ window.Browser = function (hooks) {
         state.token++;
         state.showingSearch = false;
         applyView();
-        setItems(virtualList(category.virtual), index || 0, EMPTY[category.virtual]);
+        setItems(ParentalLock.filterItems(sourceId(), state.section, virtualList(category.virtual)), index || 0, EMPTY[category.virtual]);
         renderChrome();
     }
 
@@ -589,7 +605,7 @@ window.Browser = function (hooks) {
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
                 if (token !== state.token) return 0;
-                state.search.results = HiddenCategories.filterItems(sourceId(), section, all).filter(function (it) {
+                state.search.results = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)).filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1;
                 });
                 setItems(state.search.results, 0, ['No results for "' + query + '"', 'Try a different title or a shorter search.']);
@@ -980,13 +996,20 @@ window.Browser = function (hooks) {
 
     // "All channels" spans categories; any other list is just its own category.
     function shownItems(category, list) {
-        return String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
+        list = String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
+        return ParentalLock.filterItems(sourceId(), state.section, list);
     }
 
     function loadItems() {
         var category = categories.item();
         if (!category || state.section === 'sources') return;
         if (category.virtual) return showVirtual(category);
+        if (ParentalLock.isLocked(sourceId(), state.section, category.category_id) && !ParentalLock.isUnlocked()) {
+            state.token++;
+            state.showingSearch = false;
+            setItems([], 0, ['Locked category', 'Press OK on the category to enter the PIN.']);
+            return renderChrome();
+        }
         var section = state.section;
         var token = ++state.token;
         state.showingSearch = false;
@@ -1081,14 +1104,16 @@ window.Browser = function (hooks) {
                 if (item.episode && Progress.unfinished('series', item)) list.push({ item: item, section: 'series' });
             });
         }
-        return list.sort(function (a, b) {
+        return list.filter(function (entry) {
+            return ParentalLock.allows(id, entry.section, entry.item);
+        }).sort(function (a, b) {
             return progressOf(b).updatedAt - progressOf(a).updatedAt;
         });
     }
 
     // Home rows leave out items of hidden categories (Continue watching stays).
     function shownEntries(section, list) {
-        return entriesOf(section, HiddenCategories.filterItems(sourceId(), section, list));
+        return entriesOf(section, ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, list)));
     }
 
     function homeRows() {
@@ -1316,7 +1341,19 @@ window.Browser = function (hooks) {
 
     // Hold OK on a category: hide it, hide the rest, or manage them all.
     function openCategoryMenu(row) {
-        Menu.open(row.category_name, manage.menu(state.section, row, state.base));
+        var options = manage.menu(state.section, row, state.base);
+        if (HiddenCategories.isReal(row)) options.splice(options.length - 1, 0, ParentalMenu.category(sourceId(), state.section, row));
+        Menu.open(row.category_name, options);
+    }
+
+    function enterCategory() {
+        var row = categories.item();
+        if (row && ParentalLock.isLocked(sourceId(), state.section, row.category_id) && !ParentalLock.isUnlocked()) {
+            return PinPad.open('unlock', function () {
+                setZone('items');
+            });
+        }
+        if (items.items().length) setZone('items');
     }
 
     // After hiding or showing categories: redraw the list. A category that
@@ -1408,12 +1445,12 @@ window.Browser = function (hooks) {
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
             else if (code === KEY.ENTER && row && state.base) {
                 Keys.press(function () {
-                    if (items.items().length) setZone('items');
+                    enterCategory();
                 }, function () {
                     openCategoryMenu(row);
                 });
             }
-            else if ((code === KEY.RIGHT || code === KEY.ENTER) && items.items().length) setZone('items');
+            else if (code === KEY.RIGHT || code === KEY.ENTER) enterCategory();
             else return code === KEY.RIGHT || code === KEY.ENTER;
         } else {
             var grid = items.cols() > 1;

@@ -113,6 +113,7 @@ window.Library = (function () {
                 entry.show = snapshot(show);
                 entry.label = show.name + ' · ' + String(episode.label || '').replace(/\s+/g, ' ').trim();
             }
+            entry.watchedAt = Date.now();
             var list = without(listOf('recent', sourceId, section), section, entry);
             save('recent', sourceId, section, [entry].concat(list).slice(0, RECENT_MAX));
         },

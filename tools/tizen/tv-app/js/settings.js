@@ -14,12 +14,15 @@ window.Settings = function (hooks) {
         { label: 'Live preview', key: 'livePreview', choices: [true, false], labels: ['On', 'Off'] },
     ].concat(PlayerPicture.rows, [
         { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
+        { label: 'Favorites and recents from', key: 'librarySources', choices: ['current', 'all'], labels: ['This source', 'All sources'] },
         { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default view for Series', key: 'view:series', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default view for Live TV', key: 'view:live', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default sort for Movies', key: 'sort:movies', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
         { label: 'Default sort for Series', key: 'sort:series', choices: Sort.options.map(sortId), labels: Sort.options.map(sortLabel) },
         { group: 'Start-up', label: 'On start open', key: 'onStart', choices: ['last-channel', 'home'], labels: ['Last channel', 'Home'] },
+        { group: 'Parental lock', label: 'PIN', run: function () { ParentalMenu.settings(render); }, text: function () { return ParentalLock.hasPin() ? 'Change PIN\u2026 / Remove PIN' : 'Set PIN\u2026'; } },
+        { label: 'Re-lock after', key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], labels: ['5 min', '15 min', '1 hour', 'When the app closes'] },
         { group: 'Categories', label: 'Manage Live TV categories', action: 'live', text: hiddenText('live') },
         { label: 'Manage Movies categories', action: 'movies', text: hiddenText('movies') },
         { label: 'Manage Series categories', action: 'series', text: hiddenText('series') },
@@ -74,6 +77,7 @@ window.Settings = function (hooks) {
         if (step < 0 && index === 0) return 'left';
         if (!row.key) {
             if (row.action && row.action.indexOf('tmdb-') === 0) return TmdbSettings.act(row.action, hooks, render);
+            if (row.run) row.run();
             if (row.action) hooks.manage(row.action);
             return;
         }

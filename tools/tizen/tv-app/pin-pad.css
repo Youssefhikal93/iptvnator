@@ -1,0 +1,24 @@
+#pin-pad {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.94);
+}
+.pin-card {
+    width: 600px;
+    padding: 38px;
+    border: 3px solid var(--line);
+    border-radius: 20px;
+    background: var(--widget-bg);
+    text-align: center;
+}
+.pin-title { margin: 0; font-size: 38px; color: var(--heading); }
+.pin-dots { margin: 22px; font-size: 46px; letter-spacing: 18px; }
+.pin-message { min-height: 42px; color: var(--selection); font-size: 26px; }
+.pin-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pin-key { padding: 18px; border: 3px solid transparent; border-radius: 12px; font-size: 32px; background: var(--content-bg); }
+.pin-key.focused { border-color: var(--focus-ring); background: var(--selection); color: var(--selection-on); }
+.pin-hint { margin: 24px 0 0; color: var(--muted); font-size: 24px; }

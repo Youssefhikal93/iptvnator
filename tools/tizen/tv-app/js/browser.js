@@ -26,6 +26,14 @@ window.Browser = function (hooks) {
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
+    var libraryNavigation = LibraryNavigation({
+        current: sourceId,
+        capture: function () { return { section: state.section, category: categories.item() }; },
+        switchSource: setSource,
+        restore: restoreLibraryView,
+        stop: function () { hooks.preview.stop(); },
+        refresh: refreshLibrary,
+    });
     var live = LiveChannels({
         categories: function () {
             return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
@@ -33,8 +41,11 @@ window.Browser = function (hooks) {
             });
         },
         channels: function (categoryId) {
-            return loadCatalogue({ section: 'live', kind: 'items', id: categoryId });
+            return loadCatalogue({ section: 'live', kind: 'items', id: categoryId }).then(function (list) {
+                return ParentalLock.filterItems(sourceId(), 'live', list);
+            });
         },
+        allows: function (channel) { return ParentalLock.allows(sourceId(), 'live', channel); },
         request: liveRequest,
         record: function (channel) {
             record(channel, null, null, 'live');
@@ -44,8 +55,21 @@ window.Browser = function (hooks) {
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
     });
+    ParentalLock.onChange(function () {
+        if (!ParentalLock.isUnlocked()) {
+            // A pending OK must not open an item from the old unlocked list.
+            Keys.repeat(KEY.RETURN);
+            if (detail.isOpen()) detail.close();
+            if (guide.isOpen()) guide.close();
+            if (Menu.isOpen()) Menu.onKey(KEY.RETURN);
+        }
+        if (state.section === 'home') home.render();
+        else if (state.section === 'settings') settings.render();
+        else categoriesChanged(state.section);
+    });
     // "Go to Sources" on the account screen lands on the source with the problem.
     LoadScreen.onSources(function () {
+        libraryNavigation.cancel();
         var at = Sources.all().map(function (s) { return s.id; }).indexOf(state.source && state.source.id);
         openSection('sources');
         showSources(Math.max(0, at));
@@ -70,6 +94,7 @@ window.Browser = function (hooks) {
             return row.category_name;
         },
         badge: function (row) {
+            if (HiddenCategories.isReal(row) && ParentalLock.isLocked(sourceId(), state.section, row.category_id)) return '\ud83d\udd12';
             return row.source ? row.chip : row.count;
         },
         decorate: function (el, row) {
@@ -118,13 +143,13 @@ window.Browser = function (hooks) {
         details: homeDetails,
         progress: progressOf,
         isNew: function (entry) {
-            return entry.section === 'series' && NewEpisodes.isNew(sourceId(), entry.item, seriesList());
+            return !otherSource(entry.item) && entry.section === 'series' && NewEpisodes.isNew(sourceId(), entry.item, seriesList());
         },
         watched: function (entry) {
-            return watched.isWatched(entry.item, entry.section);
+            return !otherSource(entry.item) && watched.isWatched(entry.item, entry.section);
         },
         programme: function (item) {
-            if (!state.epg) return null;
+            if (!state.epg || otherSource(item)) return null;
             var programmes = state.epg.peek(item);
             if (programmes === undefined) return wantProgramme(item), null;
             return programmes.now;
@@ -195,6 +220,34 @@ window.Browser = function (hooks) {
         return state.source.id;
     }
 
+    function otherSource(item) {
+        return item.sourceId && item.sourceId !== sourceId();
+    }
+
+    function libraryList(kind, section) {
+        return Prefs.get('librarySources') === 'all' ? LibraryAll[kind](section, sourceId()) : Library[kind](sourceId(), section);
+    }
+
+    function restoreLibraryView(view, item) {
+        if (view.section === 'home') {
+            openSection('home');
+            setZone('home');
+            return Promise.resolve();
+        }
+        var adapter = state.adapter;
+        return openSection(view.section).then(function () {
+            if (adapter !== state.adapter || view.section !== state.section) return;
+            var rows = categoryRows();
+            showCategories(indexIn(rows, view.category, 0));
+            loadItems();
+            var at = items.items().map(function (entry) {
+                return (entry.sourceId || sourceId()) + ':' + Library.keyOf(view.section, entry);
+            }).indexOf(item.sourceId + ':' + Library.keyOf(view.section, item));
+            if (at >= 0) items.select(at);
+            setZone('items');
+        });
+    }
+
     function favoriteTarget(item) {
         return item.episode ? item.show : item;
     }
@@ -207,6 +260,7 @@ window.Browser = function (hooks) {
     // section: the item's own section (Home mixes them); the open one by default.
     function isFavorite(item, section) {
         section = section || state.section;
+        if (otherSource(item)) return Library.isFavorite(item.sourceId, section, favoriteTarget(item));
         state.favKeys = state.favKeys || {};
         var keys = state.favKeys[section];
         if (!keys) {
@@ -221,12 +275,14 @@ window.Browser = function (hooks) {
     // Star for favorites and a thin progress bar for unfinished movies and episodes.
     function decorate(el, item) {
         if (state.section === 'sources' || !state.source) return;
+        LibraryChip(el, item, sourceId());
         if (isFavorite(item)) {
             var star = document.createElement('span');
             star.className = 'star';
             star.textContent = '\u2605';
             el.appendChild(star);
         }
+        if (otherSource(item)) return;
         if (state.section === 'live') {
             if (state.source.type === 'xtream') CatchUp.decorate(el, item);
             return showProgramme(el, item);
@@ -337,8 +393,8 @@ window.Browser = function (hooks) {
         var id = sourceId();
         var section = state.section;
         var rows = [
-            { category_id: '__fav', category_name: 'Favorites', virtual: 'favorites', count: Library.favorites(id, section).length },
-            { category_id: '__recent', category_name: 'Recently watched', virtual: 'recent', count: Library.recent(id, section).length },
+            { category_id: '__fav', category_name: 'Favorites', virtual: 'favorites', count: libraryList('favorites', section).length },
+            { category_id: '__recent', category_name: 'Recently watched', virtual: 'recent', count: libraryList('recent', section).length },
         ];
         if (section !== 'live') {
             rows.push({ category_id: '__continue', category_name: 'Continue watching', virtual: 'continue', count: Library.continueWatching(id, section).length });
@@ -361,12 +417,13 @@ window.Browser = function (hooks) {
 
     // Recently added, without items of hidden categories.
     function addedOf(section) {
-        return HiddenCategories.filterItems(sourceId(), section, state.added[section] || []);
+        return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, state.added[section] || []));
     }
 
     function virtualList(kind) {
         var id = sourceId();
         if (kind === 'added') return addedOf(state.section);
+        if (Prefs.get('librarySources') === 'all' && (kind === 'favorites' || kind === 'recent')) return libraryList(kind, state.section);
         if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []) : Library.favorites(id, state.section);
         if (kind === 'recent') return Library.recent(id, state.section);
         return Library.continueWatching(id, state.section);
@@ -383,7 +440,9 @@ window.Browser = function (hooks) {
         state.token++;
         state.showingSearch = false;
         applyView();
-        setItems(category.virtual === 'discover' ? [] : virtualList(category.virtual), index || 0, category.virtual === 'discover' ? ['Discover', 'Press OK for genres from TMDB.'] : EMPTY[category.virtual]);
+        setItems(category.virtual === 'discover' ? [] : virtualList(category.virtual).filter(function (item) {
+            return ParentalLock.allows(item.sourceId || sourceId(), state.section, item);
+        }), index || 0, category.virtual === 'discover' ? ['Discover', 'Press OK for genres from TMDB.'] : EMPTY[category.virtual]);
         renderChrome();
     }
 
@@ -422,7 +481,7 @@ window.Browser = function (hooks) {
         section = section || state.section;
         if (!item || section === 'sources') return;
         var target = favoriteTarget(item);
-        var added = Library.toggleFavorite(sourceId(), section, target);
+        var added = Library.toggleFavorite(item.sourceId || sourceId(), section, target);
         toast((added ? 'Added to Favorites: ' : 'Removed from Favorites: ') + target.name);
         refreshLibrary();
     }
@@ -454,7 +513,7 @@ window.Browser = function (hooks) {
             },
         });
         var progressId = Progress.id(section, item);
-        var progress = section === 'live' ? null : Progress.of(progressId);
+        var progress = section === 'live' || otherSource(item) ? null : Progress.of(progressId);
         if (progress && progress.status === 'continue') {
             options.push({
                 label: 'Remove from Continue watching',
@@ -465,18 +524,19 @@ window.Browser = function (hooks) {
                 },
             });
         }
-        if (Library.isRecent(sourceId(), section, item)) {
+        if (Library.isRecent(item.sourceId || sourceId(), section, item)) {
             options.push({
                 label: 'Remove from Recently watched',
                 run: function () {
-                    Library.removeRecent(sourceId(), section, item);
+                    Library.removeRecent(item.sourceId || sourceId(), section, item);
                     toast('Removed from Recently watched');
                     refreshLibrary();
                 },
             });
         }
         options.push({ label: 'Cancel' });
-        watched.openItemMenu(item, section, options, itemLabel(item));
+        if (otherSource(item)) Menu.open(itemLabel(item), options);
+        else watched.openItemMenu(item, section, options, itemLabel(item));
     }
 
     function viewMode() {
@@ -503,6 +563,7 @@ window.Browser = function (hooks) {
     function sortMode() {
         if (!sortableSection()) return null;
         var category = !state.showingSearch && categories.item();
+        if (category && category.virtual === 'favorites' && Prefs.get('librarySources') === 'all') return null;
         if (category && category.virtual === 'added') return 'newest';
         if (category && category.virtual && category.virtual !== 'favorites') return null;
         return Library.sort(sourceId(), state.section);
@@ -524,7 +585,7 @@ window.Browser = function (hooks) {
 
     function toolbarTools() {
         var category = !state.showingSearch && categories.item();
-        var canSort = sortableSection() && (!category || !category.virtual || category.virtual === 'favorites');
+        var canSort = sortableSection() && (!category || !category.virtual || (category.virtual === 'favorites' && Prefs.get('librarySources') !== 'all'));
         var tools = canSort ? TOOLS : TOOLS.slice(0, 3);
         return guideAvailable() ? tools.concat(['guide']) : tools;
     }
@@ -590,7 +651,7 @@ window.Browser = function (hooks) {
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
                 if (token !== state.token) return 0;
-                state.search.results = HiddenCategories.filterItems(sourceId(), section, all).filter(function (it) {
+                state.search.results = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)).filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1;
                 });
                 setItems(state.search.results, 0, ['No results for "' + query + '"', 'Try a different title or a shorter search.']);
@@ -879,7 +940,7 @@ window.Browser = function (hooks) {
 
     // ---- Content sections ----
 
-    function setSource(source) {
+    function setSource(source, screenReady) {
         hooks.preview.stop();
         if (state.catalogue) state.catalogue.dispose();
         state.catalogue = null;
@@ -897,7 +958,7 @@ window.Browser = function (hooks) {
         state.favKeys = null;
         state.added = {};
         homeLoading = {};
-        home.reset();
+        home.reset(!!screenReady);
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
@@ -907,7 +968,7 @@ window.Browser = function (hooks) {
         account = LoadScreen.run(source.id + ':account', function () {
             return SourceAccount.track(source, adapter.account());
         }, function () {
-            return adapter === state.adapter && state.section !== 'sources' && state.section !== 'settings';
+            return adapter === state.adapter && state.section !== 'sources' && state.section !== 'settings' && (!screenReady || screenReady());
         })
             .then(function (info) {
                 if (adapter !== state.adapter) return;
@@ -926,7 +987,7 @@ window.Browser = function (hooks) {
             sourceId: source.id,
             store: Catalogue,
             screen: function (key, load, active) {
-                return LoadScreen.run(key, function () { return checked.then(load); }, active);
+                return LoadScreen.run(key, function () { return checked.then(load); }, function () { return active() && (!screenReady || screenReady()); });
             },
             onUpdating: function (count) {
                 state.updating = count;
@@ -934,6 +995,7 @@ window.Browser = function (hooks) {
             },
         });
         renderChrome();
+        return account;
     }
 
     function openSection(id) {
@@ -959,7 +1021,7 @@ window.Browser = function (hooks) {
         categories.loading();
         items.loading();
         renderChrome();
-        loadCatalogue(
+        return loadCatalogue(
             { section: id, kind: 'categories' },
             function (list) {
                 if (state.section !== id || !state.base) return;
@@ -981,13 +1043,20 @@ window.Browser = function (hooks) {
 
     // "All channels" spans categories; any other list is just its own category.
     function shownItems(category, list) {
-        return String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
+        list = String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
+        return ParentalLock.filterItems(sourceId(), state.section, list);
     }
 
     function loadItems() {
         var category = categories.item();
         if (!category || state.section === 'sources') return;
         if (category.virtual) return showVirtual(category);
+        if (ParentalLock.isLocked(sourceId(), state.section, category.category_id) && !ParentalLock.isUnlocked()) {
+            state.token++;
+            state.showingSearch = false;
+            setItems([], 0, ['Locked category', 'Press OK on the category to enter the PIN.']);
+            return renderChrome();
+        }
         var section = state.section;
         var token = ++state.token;
         state.showingSearch = false;
@@ -1065,6 +1134,7 @@ window.Browser = function (hooks) {
     }
 
     function progressOf(entry) {
+        if (otherSource(entry.item)) return null;
         return Progress.of(Progress.id(entry.section, entry.item));
     }
 
@@ -1082,14 +1152,19 @@ window.Browser = function (hooks) {
                 if (item.episode && Progress.unfinished('series', item)) list.push({ item: item, section: 'series' });
             });
         }
-        return list.sort(function (a, b) {
+        return list.filter(function (entry) {
+            return ParentalLock.allows(id, entry.section, entry.item);
+        }).sort(function (a, b) {
             return progressOf(b).updatedAt - progressOf(a).updatedAt;
         });
     }
 
     // Home rows leave out items of hidden categories (Continue watching stays).
     function shownEntries(section, list) {
-        return entriesOf(section, HiddenCategories.filterItems(sourceId(), section, list));
+        return entriesOf(section, list.filter(function (item) {
+            var id = item.sourceId || sourceId();
+            return HiddenCategories.allows(id, section, item) && ParentalLock.allows(id, section, item);
+        }));
     }
 
     function homeRows() {
@@ -1097,12 +1172,12 @@ window.Browser = function (hooks) {
         return [
             { id: 'continue', title: 'Continue watching', entries: continueEntries().slice(0, HOME_ROW_MAX) },
             { id: 'new-episodes', title: 'New episodes', entries: shownEntries('series', NewEpisodes.entries(id, seriesList())) },
-            { id: 'live', title: 'Live now on your favorite channels', entries: shownEntries('live', Library.favorites(id, 'live')) },
-            { id: 'fav-movies', title: 'Favorite movies', entries: shownEntries('movies', Library.favorites(id, 'movies')) },
-            { id: 'fav-series', title: 'Favorite series', entries: shownEntries('series', Library.favorites(id, 'series')) },
+            { id: 'live', title: 'Live now on your favorite channels', entries: shownEntries('live', libraryList('favorites', 'live')) },
+            { id: 'fav-movies', title: 'Favorite movies', entries: shownEntries('movies', libraryList('favorites', 'movies')) },
+            { id: 'fav-series', title: 'Favorite series', entries: shownEntries('series', libraryList('favorites', 'series')) },
             { id: 'new-movies', title: 'Recently added movies', entries: entriesOf('movies', addedOf('movies')), loading: homeLoading.movies },
             { id: 'new-series', title: 'Recently added series', entries: entriesOf('series', addedOf('series')), loading: homeLoading.series },
-            { id: 'recent-live', title: 'Recently watched channels', entries: shownEntries('live', Library.recent(id, 'live')) },
+            { id: 'recent-live', title: 'Recently watched channels', entries: shownEntries('live', libraryList('recent', 'live')) },
         ];
     }
 
@@ -1170,6 +1245,7 @@ window.Browser = function (hooks) {
 
     // resume: true / false skips the player's Resume prompt.
     function playMovie(movie, resume) {
+        if (otherSource(movie)) return libraryNavigation.open(movie, function () { playMovie(movie, resume); });
         record(movie, null, null, 'movies');
         var req = state.adapter.movieRequest(movie);
         if (resume !== undefined) req.resume = resume;
@@ -1272,7 +1348,7 @@ window.Browser = function (hooks) {
         return Promise.all(['movies', 'series'].map(function (section) {
             if (state.adapter.sections.indexOf(section) === -1) return [];
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (list) {
-                return HiddenCategories.filterItems(sourceId(), section, list).map(function (item) {
+                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, list)).map(function (item) {
                     return { item: item, type: section === 'movies' ? 'movie' : 'tv' };
                 });
             }).catch(function () { return []; });
@@ -1281,9 +1357,10 @@ window.Browser = function (hooks) {
 
     // OK on a channel, movie, show or saved episode of `section`.
     function openEntry(item, section) {
+        if (otherSource(item)) return libraryNavigation.open(item, function () { openEntry(item, section); });
         if (item.episode) return playSavedEpisode(item);
         if (section === 'live') {
-            return hooks.play(live.play(item, state.section === 'live' ? items.items() : null));
+            return hooks.play(live.play(item, state.section === 'live' ? items.items().filter(function (channel) { return !otherSource(channel); }) : null));
         }
         if (section === 'movies') return openMovie(item);
         openShow(item);
@@ -1293,8 +1370,9 @@ window.Browser = function (hooks) {
         var item = items.item();
         if (!item) return;
         if (state.section === 'sources') return sourceAction();
+        if (otherSource(item)) return openEntry(item, state.section);
         // OK on a channel previews it beside the list (see live-preview.js).
-        if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items())) return;
+        if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items().filter(function (channel) { return !otherSource(channel); }))) return;
         openEntry(item, state.section);
     }
 
@@ -1332,7 +1410,19 @@ window.Browser = function (hooks) {
 
     // Hold OK on a category: hide it, hide the rest, or manage them all.
     function openCategoryMenu(row) {
-        Menu.open(row.category_name, manage.menu(state.section, row, state.base));
+        var options = manage.menu(state.section, row, state.base);
+        if (HiddenCategories.isReal(row)) options.splice(options.length - 1, 0, ParentalMenu.category(sourceId(), state.section, row));
+        Menu.open(row.category_name, options);
+    }
+
+    function enterCategory() {
+        var row = categories.item();
+        if (row && ParentalLock.isLocked(sourceId(), state.section, row.category_id) && !ParentalLock.isUnlocked()) {
+            return PinPad.open('unlock', function () {
+                setZone('items');
+            });
+        }
+        if (items.items().length) setZone('items');
     }
 
     // After hiding or showing categories: redraw the list. A category that
@@ -1398,6 +1488,10 @@ window.Browser = function (hooks) {
         var loadKey = LoadScreen.key(code);
         if (loadKey === 'exit') hooks.exit();
         if (loadKey) return true;
+        if (libraryNavigation.busy()) {
+            if (Keys.isBack(code)) libraryNavigation.cancel();
+            return true;
+        }
         if (guide.isOpen()) return guide.key(code);
         if (code === 458 && openGuide()) return true;
         if (state.searching) return onSearchKey(code);
@@ -1430,12 +1524,12 @@ window.Browser = function (hooks) {
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
             else if (code === KEY.ENTER && row && state.base) {
                 Keys.press(function () {
-                    if (items.items().length) setZone('items');
+                    enterCategory();
                 }, function () {
                     openCategoryMenu(row);
                 });
             }
-            else if ((code === KEY.RIGHT || code === KEY.ENTER) && items.items().length) setZone('items');
+            else if (code === KEY.RIGHT || code === KEY.ENTER) enterCategory();
             else return code === KEY.RIGHT || code === KEY.ENTER;
         } else {
             var grid = items.cols() > 1;
@@ -1482,6 +1576,7 @@ window.Browser = function (hooks) {
 
     return {
         start: start,
+        toast: toast,
         onKey: onKey,
         // The player closed: new progress, recents and Resume labels.
         afterPlayback: function () {

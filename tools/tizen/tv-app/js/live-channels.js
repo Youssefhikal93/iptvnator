@@ -29,6 +29,7 @@ window.LiveChannels = function (hooks) {
     }
 
     function play(channel, channels) {
+        if (hooks.allows && !hooks.allows(channel)) return null;
         if (current && Library.keyOf('live', current) !== Library.keyOf('live', channel)) previous = current;
         current = channel;
         generation++;
@@ -61,6 +62,7 @@ window.LiveChannels = function (hooks) {
             zapList = [];
         },
         zap: function (delta) {
+            if (hooks.allows) zapList = zapList.filter(hooks.allows);
             var index = indexOf(zapList, current);
             if (index < 0 || index + delta < 0 || index + delta >= zapList.length) return null;
             return play(zapList[index + delta], zapList);
@@ -68,6 +70,7 @@ window.LiveChannels = function (hooks) {
         previous: function () {
             return previous ? play(previous) : null;
         },
+        allows: function (channel) { return !hooks.allows || hooks.allows(channel); },
         view: function () {
             return Promise.all([hooks.categories(), locate()]).then(function (parts) {
                 var categories = parts[0];

@@ -29,7 +29,7 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Settings: Home layout **Cinema** (tall hero) or **Showcase** (compact hero, more rows) | Done (not yet tested on the TV) | #10 | Yes |
 | Settings: programme guide on/off | Done (not yet tested on the TV) | #10 | Yes |
 | Subtitle style and picture aspect in Settings and the player menu | Done (not yet tested on the TV): AVPlay text and HTML/hls.js cues; live preview uses Fit | #26 | Yes |
-| Visual refinement: compact header, 2:3 posters, TV icon for missing logos, favorites split into Movies / Series / TV | Partial (Home has separate favorite rows; missing logos show initials) | #31 | Yes |
+| Visual refinement: compact header, 2:3 posters, TV icon for missing logos, favorites split into Movies / Series / TV | Partial (Home has separate favorite rows; optional favorites and recents across sources with source-name chips, not yet tested on the TV; missing logos show initials) | #31, #24 | Yes |
 | History kept apart when a source's account changes | Missing | #34 | Yes |
 | Phone QR setup for sources and settings | Not planned | #28 | No, needs the backend session |
 | Server source library and backend discovery | Not planned | #28 | No |

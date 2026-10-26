@@ -20,6 +20,7 @@
     }
 
     function play(request) {
+        if (!request) return;
         screen = 'player';
         playing = request;
         Player.play(request, null);
@@ -109,10 +110,34 @@
     }
 
     document.addEventListener('keydown', function (event) {
+        if (PinPad.isOpen()) {
+            PinPad.onKey(event.keyCode);
+            event.preventDefault();
+            return;
+        }
         if (TmdbSettings.isOpen()) return TmdbSettings.onKey(event);
         if (screen === 'form') return Form.onKey(event);
         var handled = screen === 'player' ? onPlayerKey(event.keyCode) : browser.onKey(event.keyCode);
         if (handled) event.preventDefault();
+    });
+
+    ParentalLock.onChange(function () {
+        channelList.close();
+        var current = browser.live.current();
+        if (current && !browser.live.allows(current)) {
+            preview.stop();
+            if (screen === 'player') closePlayer(true);
+        }
+    });
+
+    document.addEventListener('sleep-timer-stop', function () {
+        closePlayer(true);
+        try {
+            tizen.application.getCurrentApplication().exit();
+        } catch (e) {
+            // Browser preview, or firmware that cannot exit: playback is already released.
+            browser.toast('Sleep timer stopped playback');
+        }
     });
 
     // Leaving the app (Home, Source) must free the account's connection.
@@ -128,6 +153,7 @@
         // Some remotes do not expose a Guide key.
     }
     try {
+        MEDIA_KEYS = MEDIA_KEYS.concat(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
         tizen.tvinputdevice.registerKeyBatch(MEDIA_KEYS);
     } catch (e) {
         // Not on a TV.

@@ -12,6 +12,7 @@ window.Settings = function (hooks) {
         { label: 'Skip intro length', key: 'skipIntroSeconds', choices: [60, 75, 90, 120], labels: ['60 s', '75 s', '90 s', '120 s'] },
         { label: 'Programme guide (now and next)', key: 'programmeGuide', choices: [true, false], labels: ['On', 'Off'] },
         { label: 'Live preview', key: 'livePreview', choices: [true, false], labels: ['On', 'Off'] },
+    ].concat(PlayerPicture.rows, [
         { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
         { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default view for Series', key: 'view:series', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
@@ -24,7 +25,7 @@ window.Settings = function (hooks) {
         { label: 'Manage Series categories', action: 'series', text: hiddenText('series') },
         { group: 'About', label: 'App version', text: VERSION },
         { label: 'Install guide', text: 'tools/tizen/INSTALLATION-TO-TV.md' },
-    ];
+    ]);
 
     // Read when drawn, so the count follows what the viewer hides.
     function hiddenText(section) {

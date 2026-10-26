@@ -147,6 +147,12 @@ window.Browser = function (hooks) {
     });
     var guide = TvGuide({
         play: function (channel) { openEntry(channel, 'live'); },
+        catchUp: function (channel, programme) {
+            var req = catchUpRequest(channel, programme);
+            if (!req) return;
+            state.played = true;
+            hooks.play(req);
+        },
         indexOf: live.indexOf,
         close: function (channel) {
             var index = live.indexOf(items.items(), channel);
@@ -221,7 +227,10 @@ window.Browser = function (hooks) {
             star.textContent = '\u2605';
             el.appendChild(star);
         }
-        if (state.section === 'live') return showProgramme(el, item);
+        if (state.section === 'live') {
+            if (state.source.type === 'xtream') CatchUp.decorate(el, item);
+            return showProgramme(el, item);
+        }
         if (state.section === 'series' && NewEpisodes.isNew(sourceId(), item, seriesList())) el.appendChild(NewEpisodes.badge());
         if (watched.isWatched(item, state.section)) {
             var tick = document.createElement('span');
@@ -257,12 +266,27 @@ window.Browser = function (hooks) {
 
     function liveRequest(channel) {
         var req = state.adapter.liveRequest(channel);
+        if (state.source.type === 'xtream' && CatchUp.available(channel)) {
+            req.watchFromStart = function (programme) {
+                var archive = catchUpRequest(channel, programme);
+                if (!archive) return;
+                archive.returnTo = req;
+                hooks.play(archive);
+            };
+        }
         var epg = state.epg;
         if (epg) {
             req.programmes = function () {
                 return epg.load(channel);
             };
         }
+        return req;
+    }
+
+    function catchUpRequest(channel, programme) {
+        var login = Object.assign({}, state.source, { server_info: state.info && state.info.server_info });
+        var req = CatchUp.request(channel, programme, login);
+        if (req) req.backToLive = function () { openEntry(channel, 'live'); };
         return req;
     }
 

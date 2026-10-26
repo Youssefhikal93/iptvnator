@@ -86,6 +86,11 @@
     });
 
     try {
+        if (tizen.tvinputdevice.getKey('Guide')) MEDIA_KEYS.push('Guide');
+    } catch (e) {
+        // Some remotes do not expose a Guide key.
+    }
+    try {
         tizen.tvinputdevice.registerKeyBatch(MEDIA_KEYS);
     } catch (e) {
         // Not on a TV.

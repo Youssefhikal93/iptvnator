@@ -267,6 +267,15 @@ from step 8 must already be downloaded.
   the beginning.
 - **Live TV rows** (Xtream) show the programme on now and its progress,
   fetched for the channels on screen once scrolling stops.
+- **TV guide**: in Live TV, choose **TV guide** in the top toolbar or press
+  the remote's Guide key. It opens the current category, including Favorites.
+  UP/DOWN changes channel focus; LEFT/RIGHT browses programmes from two hours
+  ago to 24 hours ahead. CH+/CH- or Page Up/Down jumps a screen of channels.
+  OK on a programme on now watches that channel; Return from playback reopens
+  the Guide. OK on another programme shows its details; OK or Return closes
+  those details. Return from the Guide focuses its channel in the Live TV list.
+  The button is available when the programme guide setting is On and the
+  source has a guide. Rows without programmes say "No programme information".
 - **Channel list while watching**: with live player controls hidden, press
   LEFT to open a see-through channel list on the playing channel. UP/DOWN
   move focus without changing channel; OK watches the focused channel.

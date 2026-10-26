@@ -52,6 +52,15 @@ window.XtreamSource = function (source) {
         return Array.isArray(value) ? value[0] || '' : value || '';
     }
 
+    function programme(entry) {
+        return {
+            title: decode(entry.title),
+            desc: decode(entry.description),
+            start: Number(entry.start_timestamp) * 1000,
+            end: Number(entry.stop_timestamp) * 1000,
+        };
+    }
+
     // "01:52:10" or seconds -> seconds.
     function seconds(info) {
         if (Number(info.duration_secs) > 0) return Number(info.duration_secs);
@@ -87,17 +96,22 @@ window.XtreamSource = function (source) {
         nowNext: function (channel) {
             return call('get_short_epg', { stream_id: channel.stream_id, limit: 2 }).then(function (res) {
                 return ((res && res.epg_listings) || [])
-                    .map(function (p) {
-                        return {
-                            title: decode(p.title),
-                            desc: decode(p.description),
-                            start: Number(p.start_timestamp) * 1000,
-                            end: Number(p.stop_timestamp) * 1000,
-                        };
-                    })
+                    .map(programme)
                     .filter(function (p) {
                         return p.title && p.end > p.start;
                     });
+            });
+        },
+        schedule: function (channel) {
+            return call('get_simple_data_table', { stream_id: channel.stream_id }).then(function (res) {
+                var now = Date.now();
+                var listings = res && Array.isArray(res.epg_listings) ? res.epg_listings : [];
+                var programmes = listings.filter(function (p) { return p && typeof p.title === 'string'; })
+                    .map(programme).filter(function (p) {
+                        return p.title.trim() && isFinite(p.start) && isFinite(p.end) && p.end > p.start &&
+                            p.end > now - 3 * 3600000 && p.start < now + 26 * 3600000;
+                    }).sort(function (a, b) { return a.start - b.start; });
+                return programmes.length ? programmes : null;
             });
         },
         account: function () {

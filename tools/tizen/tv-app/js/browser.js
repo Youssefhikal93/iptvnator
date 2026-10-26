@@ -4,7 +4,7 @@ window.Browser = function (hooks) {
     'use strict';
 
     var KEY = Keys;
-    // Header toolbar, left to right: search bar, list view, grid view, sort.
+    // Header toolbar: search, list, grid, then Sort or the Live TV guide.
     var TOOLS = ['search', 'list', 'grid', 'sort'];
     var STEPS = {};
     STEPS[KEY.UP] = -1;
@@ -114,6 +114,37 @@ window.Browser = function (hooks) {
             return it.stream_icon || it.cover || it.logo || null;
         },
     });
+    var guide = TvGuide({
+        play: function (channel) { openEntry(channel, 'live'); },
+        indexOf: live.indexOf,
+        close: function (channel) {
+            var index = live.indexOf(items.items(), channel);
+            if (index >= 0) items.select(index);
+            setZone(items.items().length ? 'items' : 'categories');
+        },
+    });
+
+    function guideAvailable() {
+        return state.section === 'live' && state.guide && state.guide.available;
+    }
+
+    function openGuide() {
+        if (!guideAvailable()) return false;
+        if (state.searching) {
+            clearTimeout(state.searchTimer);
+            stopTyping();
+        }
+        var category = categories.item();
+        // Category focus moves before the list debounce; Favorites must never
+        // open the previous category's channels when Guide is pressed quickly.
+        if (category && category.virtual && !state.showingSearch) {
+            clearTimeout(state.timer);
+            showVirtual(category, items.index());
+        }
+        guide.open({ guide: state.guide, channels: items.items().slice(), index: items.index(),
+            title: state.showingSearch ? 'Search results' : category ? category.category_name : 'All channels' });
+        return true;
+    }
 
     function itemLabel(it) {
         if (it.label) return it.label;
@@ -420,7 +451,8 @@ window.Browser = function (hooks) {
     function toolbarTools() {
         var category = !state.showingSearch && categories.item();
         var canSort = sortableSection() && (!category || !category.virtual || category.virtual === 'favorites');
-        return canSort ? TOOLS : TOOLS.slice(0, 3);
+        var tools = canSort ? TOOLS : TOOLS.slice(0, 3);
+        return guideAvailable() ? tools.concat(['guide']) : tools;
     }
 
     function openSortMenu() {
@@ -524,6 +556,7 @@ window.Browser = function (hooks) {
         else if (code === KEY.DOWN || Keys.isBack(code)) leaveToolbar();
         else if (code === KEY.ENTER && tool === 'search') startTyping();
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
+        else if (code === KEY.ENTER && tool === 'guide') openGuide();
         else if (code === KEY.ENTER) setView(tool);
         else return code === KEY.UP || code === KEY.RIGHT;
         renderChrome();
@@ -614,6 +647,7 @@ window.Browser = function (hooks) {
         Array.prototype.forEach.call(document.querySelectorAll('.view-btn'), function (btn) {
             var mode = btn.getAttribute('data-mode');
             if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
+            if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
             btn.classList.toggle('active', on && viewMode() === mode);
             btn.classList.toggle('focused', focus === mode);
         });
@@ -1179,6 +1213,8 @@ window.Browser = function (hooks) {
         var loadKey = LoadScreen.key(code);
         if (loadKey === 'exit') hooks.exit();
         if (loadKey) return true;
+        if (guide.isOpen()) return guide.key(code);
+        if (code === 458 && openGuide()) return true;
         if (state.searching) return onSearchKey(code);
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
@@ -1255,6 +1291,7 @@ window.Browser = function (hooks) {
             var at = state.section === 'live' && !state.showingSearch ? live.indexOf(items.items(), live.current()) : -1;
             if (at >= 0) items.select(at);
             detail.refresh();
+            guide.resume(live.current());
         },
         live: live,
         epg: function () { return state.epg; },

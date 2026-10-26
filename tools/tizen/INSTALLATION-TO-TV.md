@@ -6,8 +6,12 @@ updates); other Tizen TVs from 2017 onwards follow the same flow.
 
 > Status: all steps are verified on a `TQ55Q60CAUXXC`: the TV logs in to an
 > Xtream provider directly and plays live TS through `mpegts.js` (the
-> library IPTVnator's web player uses). The app under `tools/tizen/probe` is
-> a connectivity test, not the full IPTVnator app yet.
+> library IPTVnator's web player uses).
+>
+> Two apps live here: `tools/tizen/tv-app` is the standalone **IPTVnator TV
+> app** (Xtream and M3U sources, live TV, movies, series, favorites, continue
+> watching), and `tools/tizen/probe` is a small connectivity test. Steps 8–9
+> install the TV app; step 10 covers the probe.
 
 ## What you need
 
@@ -127,14 +131,24 @@ certificate that lists the TV's DUID.
 
 ## 8. Package the app (PC)
 
+The `vendor/` scripts (`hls.js` 1.7.3, `mpegts.js` 1.8.2, same versions as
+`package.json`) are not committed; download them once:
+
+```powershell
+cd <repo>\tools\tizen\tv-app; mkdir vendor -Force
+curl.exe -sSfL -o vendor\hls.min.js https://cdn.jsdelivr.net/npm/hls.js@1.7.3/dist/hls.min.js
+curl.exe -sSfL -o vendor\mpegts.js https://cdn.jsdelivr.net/npm/mpegts.js@1.8.2/dist/mpegts.js
+```
+
 Package a copy so signature files and the `.wgt` stay out of the repo:
 
 ```powershell
-$build = "$env:TEMP\iptvnator-probe"
+$build = "$env:TEMP\iptvnator-tv"
 Remove-Item -Recurse -Force $build -ErrorAction SilentlyContinue
-Copy-Item -Recurse <repo>\tools\tizen\probe $build
+Copy-Item -Recurse <repo>\tools\tizen\tv-app $build
+Remove-Item "$build\*.wgt" -ErrorAction SilentlyContinue
 C:\tizen-studio\tools\ide\bin\tizen.bat package -t wgt -s iptvnator-tv -- $build
-Rename-Item "$build\IPTVnator Probe.wgt" probe.wgt
+Get-ChildItem $build -Filter *.wgt | Rename-Item -NewName iptvnator.wgt
 ```
 
 No password prompt: the profile stores it. The rename matters: `tizen install`
@@ -144,16 +158,63 @@ fails on file names with spaces.
 
 ```powershell
 cd $build
-C:\tizen-studio\tools\ide\bin\tizen.bat install -n probe.wgt -s <TV-IP>:26101 -- .
-C:\tizen-studio\tools\ide\bin\tizen.bat run -p IPTVnProbe.Probe -s <TV-IP>:26101
+C:\tizen-studio\tools\ide\bin\tizen.bat install -n iptvnator.wgt -s <TV-IP>:26101 -- .
+C:\tizen-studio\tools\ide\bin\tizen.bat run -p IPTVnTVApp.IPTVnator -s <TV-IP>:26101
 ```
 
 Expected output: `Tizen application is successfully installed.` and
 `Tizen application is successfully launched.`
 
-The app also appears under **Apps** on the TV and can be started from there.
+The app appears under **Apps** on the TV and starts from there; the PC can be
+off. To update it later, pull the branch and repeat steps 6, 8 and 9: saved
+sources, favorites and progress stay on the TV.
+
+### Using the TV app
+
+- **Sources** (left rail): add an Xtream account or an M3U link, switch
+  between them, or remove one (press OK twice).
+- **▲ at the top of a list** reaches the search bar and the list / grid
+  buttons. Results follow the typing; the SmartThings phone app keyboard is
+  easier than the remote.
+- **OK** opens or plays; **hold OK** opens the options menu (favorites,
+  remove from Continue watching or Recently watched).
+- **Series**: shows with several seasons have season pills above the
+  episodes (▲ then ◀ ▶).
+- **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,
+  subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
+  Episodes, Audio & subtitles). Episodes show an Up next card near the end
+  and the next one plays 8 s after the current one ends. Skip intro jumps
+  90 s: Xtream has no intro markers. Live TV: ▲▼ or CH change channel.
+- New channels, movies and episodes appear by themselves: the TV asks the
+  provider each time the app opens.
+
+### Installing on another TV
+
+Every TV needs its own setup, but the PC part is done once:
+
+1. On the new TV, do step 4 (Developer Mode with this PC's IP, then unplug
+   for 30 s) and find its IP (step 5).
+2. Connect it (step 6) and read its DUID with `getduid`.
+3. The distributor certificate must list **every** TV the app goes on. Open
+   the Certificate Manager (step 7), click **+**, choose **TV**, **Select an
+   existing certificate profile** → `iptvnator-tv`, keep the existing author
+   certificate, and **create a new distributor certificate** with the DUIDs
+   of all your TVs (the old one and the new one). Without the new DUID the
+   install fails with a certificate error; without the old one, later
+   updates to the first TV fail.
+4. Package and install with the new TV's IP (steps 8–9).
+
+Developer Mode allows only one host PC IP; if the PC's address changes, set it
+again on the TV (step 4). The remote log in `js/log.js` posts to the PC
+address it was written for; on another network it fails silently and the app
+works normally.
 
 ## 10. Use the probe app on the TV
+
+Package and install it like the TV app (steps 8–9) from `tools\tizen\probe`,
+with the file `probe.wgt` and the app id `IPTVnProbe.Probe`. It needs the same
+`vendor/` scripts in `tools\tizen\probe\vendor`.
+
 
 - **Arrow keys** move between fields and buttons, **OK** types or presses,
   **Return** stops the video or exits.
@@ -165,14 +226,6 @@ The app also appears under **Apps** on the TV and can be started from there.
 - Green lines mean the TV reached the provider directly and played the
   stream; red lines show what failed. Typed values are remembered on the TV
   only.
-- The `vendor/` scripts (`hls.js` 1.7.3, `mpegts.js` 1.8.2, same versions as
-  `package.json`) are not committed; download them before packaging:
-
-  ```powershell
-  cd <repo>\tools\tizen\probe; mkdir vendor -Force
-  curl.exe -sSfL -o vendor\hls.min.js https://cdn.jsdelivr.net/npm/hls.js@1.7.3/dist/hls.min.js
-  curl.exe -sSfL -o vendor\mpegts.js https://cdn.jsdelivr.net/npm/mpegts.js@1.8.2/dist/mpegts.js
-  ```
 
 ### Reading the probe log on the PC
 

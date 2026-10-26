@@ -319,6 +319,19 @@ from step 8 must already be downloaded.
   offers OK to play. Skip intro jumps 90 s by default, adjustable in
   Settings: Xtream has no intro markers. Live TV: ▲▼ or CH change channel,
   OK shows now and next with times, description and progress when enabled.
+- **Subtitle style and picture**: in **Settings**, the **Subtitles** group
+  offers Size (Small, Medium, Large, Extra large), Text colour (White, Yellow),
+  Background (Off, Shadow, Box) and Position (Bottom, Higher). **Picture**
+  offers Aspect (Auto, Fit, Fill, 16:9, 4:3). Defaults are Medium, White,
+  Shadow, Bottom and Auto. While watching, press **UP** (movies or episodes)
+  or **Yellow** (Live TV), then select a **Subtitle style** or **Picture**
+  item and press **OK** to cycle it. Changes apply immediately and are saved
+  across restarts; Settings and the player menu share the same choices.
+  Fit keeps the whole picture; Fill fills the screen; 16:9 and 4:3 stretch
+  into a centred box of that shape. Live preview always uses Fit, restoring
+  the saved aspect in full screen. Styles apply wherever subtitles appear.
+  Most movies currently use HTML video because of AVPlay issue #29, so
+  embedded MKV subtitles do not appear there.
 - **Resume**: saved progress is kept until playback confirms the jump, including
   when you seek with LEFT/RIGHT. If the jump cannot be confirmed within 30 seconds,
   playback pauses: LEFT/RIGHT chooses Retry or Start over, OK runs it, and Return

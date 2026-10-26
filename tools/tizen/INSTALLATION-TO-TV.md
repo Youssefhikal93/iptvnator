@@ -12,6 +12,9 @@ updates); other Tizen TVs from 2017 onwards follow the same flow.
 > app** (Xtream and M3U sources, live TV, movies, series, favorites, continue
 > watching), and `tools/tizen/probe` is a small connectivity test. Steps 8–9
 > install the TV app; step 10 covers the probe.
+>
+> For developers: the app's vocabulary, past decisions and the comparison
+> with upstream's LG TV app are in [docs/](./docs/CONTEXT.md).
 
 ## What you need
 

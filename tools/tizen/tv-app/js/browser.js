@@ -854,6 +854,11 @@ window.Browser = function (hooks) {
                 if (adapter !== state.adapter) return;
                 state.info = info;
                 SourceAccount.warn(source, info, toast);
+                // An M3U playlist learns its sections only once it is downloaded.
+                if (source.type !== 'xtream' && adapter.sections.length > 1) {
+                    renderChrome();
+                    if (state.section === 'home') showHome();
+                }
                 if (state.section === 'sources') showSourceDetails();
             });
         var checked = account;

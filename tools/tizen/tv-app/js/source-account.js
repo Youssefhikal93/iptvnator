@@ -205,7 +205,12 @@ window.SourceAccount = (function () {
         var known = health[source.id];
         var rows = [];
         if (source.type !== 'xtream') {
-            if (info && info.channels !== undefined) return [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
+            if (info && info.channels !== undefined) {
+                var rows = [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
+                if (info.movies) rows.push({ label: info.movies + ' movies' });
+                if (info.shows) rows.push({ label: info.shows + ' shows' });
+                return rows;
+            }
             return channelCount(source.id) ? [{ label: channelCount(source.id) + ' in the catalogue' }] : [];
         }
         info = info || (known && known.info);

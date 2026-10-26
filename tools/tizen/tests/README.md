@@ -43,6 +43,7 @@ Coverage is grouped by viewer journey:
 | `settings` | Current values, programme guide requests, Showcase hero size and persistence |
 | `sources` | Xtream form validation/add/switch, M3U groups, refresh, cancel and confirmed removal |
 | `account` | Expiry warning and badges, expired/inactive/wrong-login screens and Go to Sources, health badges, saved channel counts, Edit source |
+| `reconnect` | Live stall and error reconnect with Reconnecting status and kept frame, give-up Retry screen, Return and zapping cancel, one live connection at a time, movies unchanged |
 | `player` | Pause/play/seek/speed, track availability and stream info, intro skip, episode/season selection, next episode and autoplay/cancel |
 
 Each test gets an empty browser context, seeds its own source/library state,

@@ -214,6 +214,13 @@ from step 8 must already be downloaded.
   failures offer Retry playback and Back; LEFT/RIGHT chooses a button, OK
   presses it, and Return goes back. Unreadable saved sources stay untouched;
   Retry reads them again.
+- **Dropped live streams reconnect**: when a live channel stops (a network
+  blip or a provider hiccup) or freezes for about 10 seconds, the picture stays
+  and "Reconnecting…" shows over it. The app closes the old stream first, then
+  reopens the channel after 1, 2, 4, 8 and 15 seconds. When it plays again the
+  message goes away. After the fifth failed try the Retry playback / Back
+  screen appears. Return or changing channel while reconnecting cancels it.
+  Movies and episodes are unchanged.
 
 - **Home** (opens on start unless resuming a channel): a banner for up to 3 things you are watching
   (Continue watching, Details, ‹ › to switch), then rows: Continue
@@ -239,6 +246,15 @@ from step 8 must already be downloaded.
   name or guide link only saves; a new link or login is checked first, then
   the saved catalogue is dropped and the source in use reloads. An account
   that has lapsed can still be saved, because its login works.
+- **M3U movies and series**: a playlist that holds movies or episodes gets
+  Movies and Series in the rail after it has downloaded; a playlist with only
+  channels still shows Live TV alone. An entry counts as a movie or episode
+  when its link has /movie/ or /series/, ends in .mp4, .mkv, .avi or .mov, or
+  sits in a group named like VOD, Movies, Series or TV Shows. Episodes named
+  like "Show S01E02", "Show 1x02" or "Show - S01 E02" are grouped into a show
+  with seasons. A playlist has no plot or cast, so a movie's page shows its
+  name, logo and group. Favorites, Continue watching, resume and Next episode
+  work as with Xtream.
 - **Settings** (bottom of the rail, available without a source): UP/DOWN
   selects a row, RIGHT or OK picks the next choice, LEFT the previous one.
   LEFT at the first choice or Return goes back to the rail. Changes save

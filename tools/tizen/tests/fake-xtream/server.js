@@ -131,6 +131,26 @@ http.createServer((req, res) => {
         res.writeHead(206, { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Content-Range': 'bytes ' + start + '-' + end + '/' + buf.length, 'Content-Length': end - start + 1 });
         return res.end(buf.subarray(start, end + 1));
     }
+    if (url.pathname === '/playlist-vod.m3u') {
+        // Live channels, movies and two shows in the Xtream-style M3U export layout.
+        const logo = ' tvg-logo="' + origin + '/img/poster.jpg"';
+        const vod = (name, kind, id, group) => `#EXTINF:-1${logo} group-title="${group}",${name}\n${origin}/${kind}/user/pass/${id}.mp4`;
+        res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl', 'Access-Control-Allow-Origin': '*' });
+        return res.end(
+            [
+                '#EXTM3U',
+                ...range(3, (i) => `#EXTINF:-1 tvg-id="vod${i}.se" tvg-logo="" group-title="News",Vod Live ${i}\nhttp://example.test/${i}.m3u8`),
+                vod('Heist Night (2019)', 'movie', 101, 'Movies'),
+                vod('Quiet Harbor', 'movie', 102, 'Movies'),
+                vod('Show A S01E01 Pilot', 'series', 201, 'Series'),
+                vod('Show A S01E02 Second', 'series', 202, 'Series'),
+                vod('Show A S02E01 Return', 'series', 203, 'Series'),
+                vod('Show B - S01 E01', 'series', 301, 'Series'),
+                vod('Show B - S01 E02', 'series', 302, 'Series'),
+                vod('Show B - S02 E01', 'series', 303, 'Series'),
+            ].join('\n')
+        );
+    }
     if (url.pathname === '/playlist.m3u') {
         res.writeHead(200, { 'Content-Type': 'audio/x-mpegurl', 'Access-Control-Allow-Origin': '*' });
         return res.end(

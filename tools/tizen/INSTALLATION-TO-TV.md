@@ -256,6 +256,20 @@ from step 8 must already be downloaded.
   (thumbnail, length, plot, progress); ▲ from the first episode reaches the
   season pills (◀ ▶), which show how many episodes of the season are
   watched.
+- **New episodes**: a favorite or recently watched show that got episodes
+  since you last watched or opened it carries a **New episodes** badge in
+  lists and on Home, and Home gets a **New episodes** row while any exist.
+  Opening the show (or playing one of its episodes) clears the badge. It is
+  decided from the provider's date for the show, so it also appears after the
+  background refresh finds newer dates. Providers without dates show none.
+- **Hide categories**: hold OK on a category for **Hide category**, **Hide all
+  except this** or **Manage categories**. Manage categories (also under
+  **Settings > Categories**, one row per section) lists every category with
+  Shown / Hidden; OK toggles it, ▲ at the top reaches the search box (OK, type,
+  OK again) and **Show all**. Hidden categories leave the category list, search
+  results, All channels, Recently added, the Home rows (not Continue watching)
+  and the channel list while watching. Favorites, Recently watched and All
+  channels cannot be hidden. The choice is kept per source and section.
 - **Watched**: hold OK on a movie or show in a list or on Home to mark it
   watched or unwatched. A show applies the change to all its episodes.
   On a show's detail page, hold OK on an episode for episode and season

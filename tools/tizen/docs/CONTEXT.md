@@ -17,7 +17,7 @@ One saved provider login on the TV: an Xtream account or an M3U playlist link.
 _Avoid_: Playlist (for Xtream), provider, account
 
 **Section**:
-One kind of content a source offers: Live TV, Movies or Series. M3U sources only offer Live TV.
+One kind of content a source offers: Live TV, Movies or Series. An M3U source offers Live TV, plus Movies and Series when its playlist holds them.
 _Avoid_: Tab, type, mode
 
 **Category**:

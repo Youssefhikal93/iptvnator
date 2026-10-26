@@ -222,6 +222,15 @@ from step 8 must already be downloaded.
   a row, ▲ ▼ between rows, OK opens, hold OK for options.
 - **Sources** (left rail): add an Xtream account or an M3U link, switch
   between them, or remove one (press OK twice).
+- **M3U movies and series**: a playlist that holds movies or episodes gets
+  Movies and Series in the rail after it has downloaded; a playlist with only
+  channels still shows Live TV alone. An entry counts as a movie or episode
+  when its link has /movie/ or /series/, ends in .mp4, .mkv, .avi or .mov, or
+  sits in a group named like VOD, Movies, Series or TV Shows. Episodes named
+  like "Show S01E02", "Show 1x02" or "Show - S01 E02" are grouped into a show
+  with seasons. A playlist has no plot or cast, so a movie's page shows its
+  name, logo and group. Favorites, Continue watching, resume and Next episode
+  work as with Xtream.
 - **Settings** (bottom of the rail, available without a source): UP/DOWN
   selects a row, RIGHT or OK picks the next choice, LEFT the previous one.
   LEFT at the first choice or Return goes back to the rail. Changes save

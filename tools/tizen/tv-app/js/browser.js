@@ -709,7 +709,12 @@ window.Browser = function (hooks) {
     function infoRows() {
         var info = state.info;
         if (!info) return [];
-        if (info.channels !== undefined) return [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
+        if (info.channels !== undefined) {
+            var rows = [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
+            if (info.movies) rows.push({ label: info.movies + ' movies' });
+            if (info.shows) rows.push({ label: info.shows + ' shows' });
+            return rows;
+        }
         var expires = info.exp_date ? new Date(Number(info.exp_date) * 1000).toLocaleDateString() : 'unknown';
         return [
             { label: 'Status: ' + (info.status || 'unknown') },
@@ -830,6 +835,11 @@ window.Browser = function (hooks) {
             .then(function (info) {
                 if (adapter !== state.adapter) return;
                 state.info = info;
+                // An M3U playlist learns its sections only once it is downloaded.
+                if (source.type !== 'xtream' && adapter.sections.length > 1) {
+                    renderChrome();
+                    if (state.section === 'home') showHome();
+                }
                 if (state.section === 'sources') showSourceDetails();
             });
         var checked = account;

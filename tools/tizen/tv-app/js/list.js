@@ -3,7 +3,7 @@
 window.List = function (el, options) {
     'use strict';
 
-    var state = { items: [], index: 0, active: false, empty: '', grid: false };
+    var state = { items: [], index: 0, active: false, empty: '', grid: false, loading: false };
     var GRID = { cols: 5, rows: 2 };
 
     // Initials tile, like the desktop shows for channels without a logo.
@@ -57,10 +57,15 @@ window.List = function (el, options) {
         }
         el.appendChild(header);
 
+        if (state.loading) return renderSkeleton(rows);
         if (!count) {
             var empty = document.createElement('div');
             empty.className = 'list-empty';
-            empty.textContent = state.empty;
+            var lines = typeof state.empty === 'string' ? [state.empty, 'Choose another category or try again later.'] : state.empty;
+            empty.textContent = lines[0];
+            var hint = document.createElement('small');
+            hint.textContent = lines[1];
+            empty.appendChild(hint);
             el.appendChild(empty);
             return;
         }
@@ -94,6 +99,24 @@ window.List = function (el, options) {
         }
     }
 
+    function renderSkeleton(rows) {
+        var strip = document.createElement('div');
+        strip.className = state.grid ? 'grid' : '';
+        strip.setAttribute('aria-label', 'Loading');
+        for (var i = 0; i < (state.grid ? GRID.cols * GRID.rows : rows); i++) {
+            var tile = document.createElement('div');
+            tile.className = state.grid ? 'card skeleton' : 'row skeleton';
+            tile.setAttribute('aria-hidden', 'true');
+            if (state.grid) {
+                var poster = document.createElement('div');
+                poster.className = 'poster';
+                tile.appendChild(poster);
+            }
+            strip.appendChild(tile);
+        }
+        el.appendChild(strip);
+    }
+
     // Poster cards, GRID.cols per row; only the visible rows exist in the DOM.
     function renderGrid(start, count) {
         var grid = document.createElement('div');
@@ -120,9 +143,15 @@ window.List = function (el, options) {
 
     return {
         set: function (items, index, emptyText) {
+            state.loading = false;
             state.items = items || [];
             state.index = Math.max(0, Math.min(index || 0, state.items.length - 1));
             state.empty = emptyText || 'Nothing here';
+            render();
+        },
+        loading: function () {
+            state.loading = true;
+            state.items = [];
             render();
         },
         // Returns whether the focus moved.

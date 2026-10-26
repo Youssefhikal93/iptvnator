@@ -89,6 +89,10 @@
 #pl-status.error .pl-spinner {
     display: none;
 }
+#pl-error-actions {
+    display: flex;
+    gap: 28px;
+}
 @keyframes pl-spin {
     to {
         transform: rotate(360deg);

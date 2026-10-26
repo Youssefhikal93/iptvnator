@@ -42,6 +42,7 @@
         screen = 'player';
         playing = request;
         Player.play(request);
+        LoadScreen.pause(true);
         channelList.sync();
     }
 
@@ -50,6 +51,7 @@
         Player.stop();
         playing = null;
         screen = 'browser';
+        LoadScreen.pause(document.hidden);
         browser.afterPlayback();
     }
 
@@ -76,7 +78,9 @@
         }
         // The player consumes its own keys (overlay, seeking, track menu,
         // resume prompt); Return/Stop and live zapping stay here.
-        if (Player.key(code, live)) return true;
+        var handled = Player.key(code, live);
+        if (handled === 'back') closePlayer();
+        if (handled) return true;
         if (code === KEY.RETURN || code === KEY.BACKSPACE || code === KEY.ESCAPE || code === KEY.STOP) closePlayer();
         else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) {
             var previous = browser.live.previous();
@@ -97,6 +101,7 @@
     // Leaving the app (Home, Source) must free the account's connection.
     document.addEventListener('visibilitychange', function () {
         if (document.hidden && screen === 'player') closePlayer();
+        LoadScreen.pause(document.hidden || screen === 'player');
     });
 
     try {
@@ -105,6 +110,7 @@
         // Not on a TV.
     }
 
+    LoadScreen.pause(document.hidden);
     browser.start();
     Log.info('IPTVnator TV started');
 })();

@@ -123,6 +123,10 @@ _Avoid_: EPG (for this), guide
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
 _Avoid_: EPG grid (use TV guide only for the button label)
 
+**Guide link**:
+An optional XMLTV file link saved per source, supplying programmes with a viewer-set time offset.
+_Avoid_: Custom EPG, external playlist
+
 **Up next**:
 The card near the end of an episode that offers, and then plays, the next episode.
 _Avoid_: Autoplay card, next-episode popup

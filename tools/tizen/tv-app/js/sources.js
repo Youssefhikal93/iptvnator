@@ -63,6 +63,7 @@ window.Sources = (function () {
     }
 
     function remove(id) {
+        if (window.XmltvGuide) XmltvGuide.remove(id);
         write(
             LIST_KEY,
             all().filter(function (s) {
@@ -84,6 +85,9 @@ window.Sources = (function () {
     return {
         all: all,
         add: add,
+        update: function (source) {
+            write(LIST_KEY, all().map(function (saved) { return saved.id === source.id ? source : saved; }));
+        },
         remove: remove,
         current: current,
         setCurrent: function (id) {

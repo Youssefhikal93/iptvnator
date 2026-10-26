@@ -53,15 +53,29 @@
 
         <div id="form" class="hidden">
             <h1 id="form-title">Add source</h1>
-            <label for="form-name">Name (optional)</label>
-            <input id="form-name" />
-            <label for="form-url" id="form-url-label">Server URL</label>
-            <input id="form-url" />
-            <div id="form-login">
-                <label for="form-user">Username</label>
-                <input id="form-user" />
-                <label for="form-pass">Password</label>
-                <input id="form-pass" type="password" />
+            <div class="form-columns">
+                <div id="form-source">
+                    <label for="form-name">Name (optional)</label>
+                    <input id="form-name" />
+                    <label for="form-url" id="form-url-label">Server URL</label>
+                    <input id="form-url" />
+                    <div id="form-login">
+                        <label for="form-user">Username</label>
+                        <input id="form-user" />
+                        <label for="form-pass">Password</label>
+                        <input id="form-pass" type="password" />
+                    </div>
+                </div>
+                <div id="form-guide">
+                    <label for="form-epg-url">Guide link (XMLTV) (optional)</label>
+                    <input id="form-epg-url" placeholder="https://example.com/guide.xml.gz" />
+                    <label for="form-epg-offset">Guide time offset (hours, -12 to +12)</label>
+                    <input id="form-epg-offset" type="number" min="-12" max="12" step="1" value="0" />
+                    <div id="form-epg-preference">
+                        <label for="form-epg-prefer">Prefer my guide</label>
+                        <select id="form-epg-prefer"><option value="yes">On</option><option value="no">Off</option></select>
+                    </div>
+                </div>
             </div>
             <div class="form-buttons">
                 <button id="form-save">Save</button>
@@ -145,6 +159,8 @@
         <script src="js/catalogue.js"></script>
         <script src="js/catalogue-loader.js"></script>
         <script src="js/epg.js"></script>
+        <script src="js/xmltv-parser.js"></script>
+        <script src="js/xmltv-store.js"></script>
         <script src="js/xmltv.js"></script>
         <script src="js/guide-data.js"></script>
         <script src="js/list.js"></script>
@@ -154,6 +170,7 @@
         <script src="js/player.js"></script>
         <script src="js/form.js"></script>
         <script src="js/menu.js"></script>
+        <script src="js/source-guide.js"></script>
         <script src="js/watched.js"></script>
         <script src="js/detail.js"></script>
         <script src="js/detail-episodes.js"></script>

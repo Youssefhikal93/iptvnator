@@ -42,6 +42,14 @@ window.Browser = function (hooks) {
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
     });
+    XmltvGuide.onChange(function (id) {
+        if (state.section === 'sources') categories.set(sourceRows(), categories.index(), '');
+        if (!state.source || state.source.id !== id) return;
+        if (state.guide) state.guide.stop();
+        state.guide = Prefs.get('programmeGuide') ? GuideData(state.source, state.adapter) : null;
+        if (state.section === 'live') items.select(items.index());
+        else if (state.section === 'home') home.render();
+    });
     var visible = { list: [], empty: '' };
 
     var categories = List($('categories'), {
@@ -53,7 +61,14 @@ window.Browser = function (hooks) {
             return row.category_name;
         },
         badge: function (row) {
-            return row.count;
+            return row.guide ? '' : row.count;
+        },
+        decorate: function (el, row) {
+            if (!row.guide) return;
+            var subtitle = document.createElement('div');
+            subtitle.className = 'source-guide-status';
+            subtitle.textContent = row.count + ' · ' + row.guide;
+            el.querySelector('.label').appendChild(subtitle);
         },
     });
     var detail = Detail();
@@ -93,7 +108,7 @@ window.Browser = function (hooks) {
             return watched.isWatched(entry.item, entry.section);
         },
         programme: function (item) {
-            if (!state.epg || item.stream_id === undefined) return null;
+            if (!state.epg) return null;
             var programmes = state.epg.peek(item);
             if (programmes === undefined) return wantProgramme(item), null;
             return programmes.now;
@@ -211,7 +226,7 @@ window.Browser = function (hooks) {
         clearTimeout(state.redrawTimer);
         state.epgWanted = [];
         if (state.epg) state.epg.stop();
-        state.epg = state.adapter && state.adapter.nowNext && Prefs.get('programmeGuide') ? Epg(state.adapter) : null;
+        state.epg = state.adapter && (state.adapter.nowNext || state.source.epgUrl) && Prefs.get('programmeGuide') ? Epg(state.adapter, state.source) : null;
         if (state.guide) state.guide.stop();
         // The full schedule (TV guide grid) from the guide sources in GuideData.chain.
         state.guide = state.adapter && Prefs.get('programmeGuide') ? GuideData(state.source, state.adapter) : null;
@@ -220,7 +235,7 @@ window.Browser = function (hooks) {
     function liveRequest(channel) {
         var req = state.adapter.liveRequest(channel);
         var epg = state.epg;
-        if (epg && channel.stream_id !== undefined) {
+        if (epg) {
             req.programmes = function () {
                 return epg.load(channel);
             };
@@ -230,7 +245,7 @@ window.Browser = function (hooks) {
 
     // The current programme under a channel's name, and how far it is.
     function showProgramme(el, item) {
-        if (!state.epg || item.stream_id === undefined) return;
+        if (!state.epg) return;
         var programmes = state.epg.peek(item);
         if (programmes === undefined) return wantProgramme(item);
         var now = programmes.now;
@@ -681,7 +696,9 @@ window.Browser = function (hooks) {
         var current = state.source && state.source.id;
         return Sources.all()
             .map(function (s) {
-                return { category_name: s.name, count: s.id === current ? 'Active' : s.type === 'xtream' ? 'Xtream' : 'M3U', source: s };
+                var label = s.id === current ? 'Active' : s.type === 'xtream' ? 'Xtream' : 'M3U';
+                var guide = XmltvGuide.subtitle(s);
+                return { category_name: s.name, count: label, guide: guide, source: s };
             })
             .concat([
                 { category_name: '+  Add Xtream account', action: 'xtream' },
@@ -722,6 +739,21 @@ window.Browser = function (hooks) {
     function showSources(index) {
         categories.set(sourceRows(), index || 0, '');
         showSourceDetails();
+    }
+
+    function sourceGuideOptions(source) {
+        return SourceGuide(source, { openForm: hooks.openForm, changed: function (updated) {
+            if (state.source && state.source.id === updated.id) {
+                state.source = updated;
+                updateEpg();
+            }
+            showSources(categories.index());
+        } });
+    }
+
+    function openSourceMenu() {
+        var row = categories.item();
+        if (row && row.source) Menu.open(row.source.name, sourceGuideOptions(row.source));
     }
 
     function sourceAction() {
@@ -787,6 +819,7 @@ window.Browser = function (hooks) {
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
+        XmltvGuide.ensure(source);
         updateEpg();
         var adapter = state.adapter;
         account = LoadScreen.run(source.id + ':account', function () {
@@ -1233,6 +1266,7 @@ window.Browser = function (hooks) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
                 else if (code === KEY.UP) enterToolbar('categories');
             } else if (code === KEY.LEFT || Keys.isBack(code)) setZone('rail');
+            else if (code === KEY.ENTER && row && row.source) Keys.press(function () { setZone('items'); }, openSourceMenu);
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
             else if ((code === KEY.RIGHT || code === KEY.ENTER) && items.items().length) setZone('items');
             else return code === KEY.RIGHT || code === KEY.ENTER;
@@ -1244,7 +1278,7 @@ window.Browser = function (hooks) {
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {
                 // Holding OK opens the options menu; a short press opens on release.
-                if (state.section === 'sources') activateItem();
+                if (state.section === 'sources') Keys.press(activateItem, openSourceMenu);
                 else {
                     Keys.press(activateItem, function () {
                         openItemMenu(items.item(), state.section);

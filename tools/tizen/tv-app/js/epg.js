@@ -2,7 +2,7 @@
 // channels on screen, a few at a time, and kept until the current programme
 // ends. The adapter supplies nowNext(channel) -> [{ title, desc, start, end }]
 // with times in ms; channels without a guide resolve to [].
-window.Epg = function (adapter) {
+window.Epg = function (adapter, source) {
     'use strict';
 
     var PARALLEL = 3;
@@ -12,9 +12,28 @@ window.Epg = function (adapter) {
     var queue = [];
     var active = 0;
     var stopped = false;
+    var chain = [];
+    var own = source && source.epgUrl ? XmltvGuide(source) : null;
+    if (own && source.epgPrefer !== false) chain.push(own.programmes);
+    if (adapter.nowNext) chain.push(function (channel) { return adapter.nowNext(channel); });
+    if (own && source.epgPrefer === false) chain.push(own.programmes);
+
+    function revision() {
+        return source && window.XmltvGuide ? XmltvGuide.revision(source.id) : 0;
+    }
+
+    function ask(channel, at) {
+        if (at >= chain.length) return Promise.resolve([]);
+        return Promise.resolve().then(function () { return chain[at](channel); }).catch(function () {
+            Log.error('EPG source failed');
+            return null;
+        }).then(function (list) {
+            return list && list.length ? list : ask(channel, at + 1);
+        });
+    }
 
     function idOf(channel) {
-        return String(channel.stream_id);
+        return channel.stream_id !== undefined ? 'id:' + channel.stream_id : 'url:' + channel.url;
     }
 
     function pick(list, now) {
@@ -33,7 +52,7 @@ window.Epg = function (adapter) {
     // or undefined when they still have to be fetched.
     function peek(channel) {
         var entry = store[idOf(channel)];
-        if (!entry || Date.now() >= entry.until) return undefined;
+        if (!entry || entry.revision !== revision() || Date.now() >= entry.until) return undefined;
         return pick(entry.list, Date.now());
     }
 
@@ -41,15 +60,14 @@ window.Epg = function (adapter) {
         if (stopped || !Prefs.get('programmeGuide')) return Promise.resolve({ now: null, next: null });
         var id = idOf(channel);
         if (!loading[id]) {
-            loading[id] = adapter
-                .nowNext(channel)
+            loading[id] = ask(channel, 0)
                 .catch(function (err) {
                     Log.error('EPG FAIL ' + err.message);
                     return [];
                 })
                 .then(function (list) {
                     var current = pick(list, Date.now()).now;
-                    store[id] = { list: list, until: current ? current.end : Date.now() + NO_GUIDE_RETRY_MS };
+                    store[id] = { list: list, revision: revision(), until: current ? current.end : Date.now() + NO_GUIDE_RETRY_MS };
                     delete loading[id];
                     return peek(channel) || { now: null, next: null };
                 });

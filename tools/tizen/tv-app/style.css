@@ -417,6 +417,7 @@ svg {
     color: var(--muted);
 }
 #form input,
+#form select,
 #form button {
     box-sizing: border-box;
     width: 900px;
@@ -444,12 +445,32 @@ svg {
     font-weight: 600 !important;
 }
 #form input:focus,
+#form select:focus,
 #form button:focus {
     border-color: var(--selection-border);
     box-shadow: 0 0 16px var(--selection-glow);
     outline: none;
 }
 #form-msg {
+    color: var(--muted);
+}
+.form-columns {
+    display: flex;
+    gap: 24px;
+    width: 900px;
+}
+.form-columns > div {
+    flex: 1;
+    min-width: 0;
+}
+#form .form-columns input,
+#form .form-columns select,
+#form .form-columns label {
+    width: 100%;
+}
+.source-guide-status {
+    font-size: 20px;
+    font-weight: 400;
     color: var(--muted);
 }
 

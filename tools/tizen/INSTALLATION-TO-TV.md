@@ -192,6 +192,10 @@ from step 8 must already be downloaded.
   easier than the remote.
 - **OK** opens or plays; **hold OK** opens the options menu (favorites,
   remove from Continue watching or Recently watched).
+- **Movies**: OK opens a detail page (artwork, year, rating, genre, length,
+  plot, cast) with Play or Resume from X / Start over, Favorites, Trailer
+  (when the provider has one; it plays from YouTube) and More for a long
+  plot. Return goes back to the list. Hold OK → Play skips the page.
 - **Series**: shows with several seasons have season pills above the
   episodes (▲ then ◀ ▶).
 - **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,

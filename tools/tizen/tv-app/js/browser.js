@@ -31,6 +31,7 @@ window.Browser = function (hooks) {
             return row.count;
         },
     });
+    var detail = Detail();
     var items = List($('items'), {
         rows: 9,
         title: function () {
@@ -226,8 +227,7 @@ window.Browser = function (hooks) {
         }, 1800);
     }
 
-    function toggleFavorite() {
-        var item = items.item();
+    function toggleFavorite(item) {
         if (!item || state.section === 'sources' || state.episodesOf) return;
         var target = favoriteTarget(item);
         var added = Library.toggleFavorite(sourceId(), state.section, target);
@@ -252,9 +252,22 @@ window.Browser = function (hooks) {
         if (!item) return;
         var section = state.section;
         var isShow = section === 'series' && !item.episode && !state.episodesOf;
-        var options = [{ label: section === 'live' ? 'Watch' : isShow ? 'Open episodes' : 'Play', run: activateItem }];
+        var options = [{ label: section === 'live' ? 'Watch' : isShow ? 'Open episodes' : section === 'movies' && !item.episode ? 'Details' : 'Play', run: activateItem }];
+        if (section === 'movies' && !item.episode) {
+            options.push({
+                label: 'Play',
+                run: function () {
+                    playMovie(item);
+                },
+            });
+        }
         if (!state.episodesOf) {
-            options.push({ label: isFavorite(item) ? 'Remove from Favorites' : 'Add to Favorites', run: toggleFavorite });
+            options.push({
+                label: isFavorite(item) ? 'Remove from Favorites' : 'Add to Favorites',
+                run: function () {
+                    toggleFavorite(item);
+                },
+            });
         }
         var progressId = progressIdOf(item);
         var progress = section === 'live' ? null : Library.progress(progressId);
@@ -779,6 +792,58 @@ window.Browser = function (hooks) {
         items.set(previous.list, previous.index);
     }
 
+    // ---- Detail pages ----
+
+    function clock(secs) {
+        var h = Math.floor(secs / 3600);
+        var m = Math.floor((secs % 3600) / 60);
+        var sec = Math.floor(secs % 60);
+        return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + sec).slice(-2);
+    }
+
+    // Details are kept for the session only; they are cheap to fetch again.
+    function remembered(key, load) {
+        if (!state.cache[key]) state.cache[key] = load();
+        return state.cache[key];
+    }
+
+    // resume: true / false skips the player's Resume prompt.
+    function playMovie(movie, resume) {
+        record(movie);
+        var req = state.adapter.movieRequest(movie);
+        if (resume !== undefined) req.resume = resume;
+        hooks.play(req);
+    }
+
+    function openMovie(movie) {
+        detail.open({
+            item: movie,
+            load: function () {
+                if (!state.adapter.movieInfo) return Promise.resolve(null);
+                return remembered('vod:' + movie.stream_id, function () {
+                    return state.adapter.movieInfo(movie);
+                });
+            },
+            actions: function () {
+                var p = Library.unfinished('movies', movie);
+                var list = p
+                    ? [
+                          { label: '▶  Resume from ' + clock(p.position), progress: p.ratio, run: playMovie.bind(null, movie, true) },
+                          { label: 'Start over', run: playMovie.bind(null, movie, false) },
+                      ]
+                    : [{ label: '▶  Play', run: playMovie.bind(null, movie, undefined) }];
+                list.push({
+                    label: isFavorite(movie) ? 'Remove from Favorites' : 'Add to Favorites',
+                    run: function () {
+                        toggleFavorite(movie);
+                        detail.refresh();
+                    },
+                });
+                return list;
+            },
+        });
+    }
+
     function activateItem() {
         var item = items.item();
         if (!item) return;
@@ -788,10 +853,7 @@ window.Browser = function (hooks) {
             record(item);
             return hooks.play(liveRequest(item));
         }
-        if (state.section === 'movies') {
-            record(item);
-            return hooks.play(state.adapter.movieRequest(item));
-        }
+        if (state.section === 'movies') return openMovie(item);
         if (state.episodesOf) {
             var show = state.episodesOf;
             record(item, show.show, item);
@@ -867,10 +929,7 @@ window.Browser = function (hooks) {
         if (state.press && code === KEY.ENTER) return true;
         if (Menu.isOpen()) return Menu.onKey(code);
         if (state.searching) return onSearchKey(code);
-        if (state.played) {
-            state.played = false;
-            refreshLibrary();
-        }
+        if (detail.isOpen()) return detail.onKey(code);
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'pills') return onPillsKey(code);
         if (state.zone === 'rail') {
@@ -939,6 +998,13 @@ window.Browser = function (hooks) {
     return {
         start: start,
         onKey: onKey,
+        // The player closed: new progress, recents and Resume labels.
+        afterPlayback: function () {
+            if (!state.played) return;
+            state.played = false;
+            refreshLibrary();
+            detail.refresh();
+        },
         zap: zap,
         isLive: function () {
             return state.section === 'live';

@@ -14,6 +14,7 @@
     --pc-focus: #e7ecf3;
     position: fixed;
     inset: 0;
+    z-index: 30; /* above the detail page, menu and toast */
     background: #000;
     color: var(--pc-text);
     font-family: 'DM Sans', sans-serif;

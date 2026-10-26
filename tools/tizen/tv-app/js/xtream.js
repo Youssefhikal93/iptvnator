@@ -51,8 +51,42 @@ window.XtreamSource = function (source) {
         }
     }
 
+    function first(value) {
+        return Array.isArray(value) ? value[0] || '' : value || '';
+    }
+
+    // "01:52:10" or seconds -> seconds.
+    function seconds(info) {
+        if (Number(info.duration_secs) > 0) return Number(info.duration_secs);
+        var parts = String(info.duration || '').split(':').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) return 0;
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+
+    // Shared shape of get_vod_info / get_series_info `info` for the detail page.
+    function details(info, item) {
+        return {
+            title: info.name || item.name,
+            poster: info.movie_image || info.cover_big || info.cover || item.stream_icon || item.cover || '',
+            backdrop: first(info.backdrop_path),
+            year: String(info.releasedate || info.releaseDate || info.release_date || item.year || '').slice(0, 4),
+            rating: Number(info.rating) > 0 ? Number(info.rating) : 0,
+            genre: info.genre || '',
+            seconds: seconds(info),
+            plot: info.plot || info.description || '',
+            cast: info.cast || info.actors || '',
+            director: info.director || '',
+            trailer: info.youtube_trailer || '',
+        };
+    }
+
     return {
         sections: ['live', 'movies', 'series'],
+        movieInfo: function (movie) {
+            return call('get_vod_info', { vod_id: movie.stream_id }).then(function (res) {
+                return details((res && res.info) || {}, movie);
+            });
+        },
         nowNext: function (channel) {
             return call('get_short_epg', { stream_id: channel.stream_id, limit: 2 }).then(function (res) {
                 return ((res && res.epg_listings) || [])

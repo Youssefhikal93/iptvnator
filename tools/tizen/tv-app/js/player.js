@@ -7,6 +7,8 @@
 //
 // Request fields: live, title, subtitle, id (stable key for saved progress),
 // sources, and for episodes an optional episodes list (see player-series.js).
+// Live: optional programmes() (see player-epg.js). Movies and episodes:
+// optional resume (true / false) skips the Resume prompt.
 window.Player = (function () {
     'use strict';
 
@@ -700,6 +702,11 @@ window.Player = (function () {
         if (!saved || saved.position < RESUME_MIN_S || (dur > 0 && saved.position > dur - FINISHED_MARGIN_S)) {
             started = true;
             return;
+        }
+        // The detail page already asked: `resume` true resumes, false starts over.
+        if (current.resume !== undefined) {
+            resume.position = saved.position;
+            return settleResume(current.resume);
         }
         pause();
         resume.open = true;

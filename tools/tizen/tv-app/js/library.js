@@ -62,7 +62,7 @@ window.Library = (function () {
         if (id === undefined || id === null) return null;
         var entry = read(PROGRESS_KEY, {})[String(id)];
         if (!entry || !(entry.duration > 0) || !(entry.position > 0)) return null;
-        return { ratio: Math.min(1, entry.position / entry.duration), updatedAt: entry.updatedAt || 0 };
+        return { ratio: Math.min(1, entry.position / entry.duration), position: entry.position, updatedAt: entry.updatedAt || 0 };
     }
 
     // Progress ids as the player stores them: movie:<stream_id>, episode:<episode id>.

@@ -42,6 +42,7 @@
     function closePlayer() {
         Player.stop();
         screen = 'browser';
+        browser.afterPlayback();
     }
 
     var browser = Browser({

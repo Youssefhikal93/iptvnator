@@ -208,8 +208,12 @@ from step 8 must already be downloaded.
   last episode watched, or plays the next one. ▼ goes to the episodes
   (thumbnail, length, plot, progress); ▲ from the first episode reaches the
   season pills (◀ ▶), which show how many episodes of the season are
-  watched. Finished episodes count as watched; hold OK → Mark as not
-  watched resets one.
+  watched.
+- **Watched**: hold OK on a movie or show in a list or on Home to mark it
+  watched or unwatched. A show applies the change to all its episodes.
+  On a show's detail page, hold OK on an episode for episode and season
+  actions. A tick marks watched items; season counts and the next episode
+  button update immediately. Watched items leave Continue watching.
 - **Player**: OK pauses, ◀ ▶ seek (faster when repeated), ▲ audio,
   subtitles and speed, ▼ the buttons row (Skip intro, Next episode,
   Episodes, Audio & subtitles). Episodes show an Up next card near the end

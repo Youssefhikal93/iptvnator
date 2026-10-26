@@ -77,6 +77,55 @@ window.Library = (function () {
         return p && p.ratio < 0.95 ? p : null;
     }
 
+    function isWatched(id) {
+        var p = progress(id);
+        return !!p && p.ratio >= 0.95;
+    }
+
+    function allWatched(episodes) {
+        return !!episodes && episodes.length > 0 && episodes.every(function (ep) {
+            return ep.id !== undefined && ep.id !== null && isWatched('episode:' + ep.id);
+        });
+    }
+
+    function saveWatched(all, id, duration) {
+        if (id === undefined || id === null) return;
+        var saved = all[String(id)];
+        var secs = Number(saved && saved.duration);
+        if (!(secs > 0) || !isFinite(secs)) secs = Number(duration);
+        // Unknown lengths still need valid full progress, as in the player.
+        if (!(secs > 0) || !isFinite(secs)) secs = 1;
+        all[String(id)] = { position: secs, duration: secs, updatedAt: Date.now() };
+    }
+
+    function markWatched(id, duration) {
+        var all = read(PROGRESS_KEY, {});
+        saveWatched(all, id, duration);
+        write(PROGRESS_KEY, all);
+    }
+
+    function markUnwatched(id) {
+        var all = read(PROGRESS_KEY, {});
+        delete all[String(id)];
+        write(PROGRESS_KEY, all);
+    }
+
+    function markEpisodesWatched(episodes) {
+        var all = read(PROGRESS_KEY, {});
+        episodes.forEach(function (ep) {
+            if (ep.id !== undefined && ep.id !== null) saveWatched(all, 'episode:' + ep.id, ep.seconds);
+        });
+        write(PROGRESS_KEY, all);
+    }
+
+    function markEpisodesUnwatched(episodes) {
+        var all = read(PROGRESS_KEY, {});
+        episodes.forEach(function (ep) {
+            if (ep.id !== undefined && ep.id !== null) delete all['episode:' + ep.id];
+        });
+        write(PROGRESS_KEY, all);
+    }
+
     return {
         // Startup restore is on by default; false survives JSON storage.
         setting: function (name, enabled) {
@@ -96,6 +145,12 @@ window.Library = (function () {
         keyOf: keyOf,
         progress: progress,
         progressId: progressId,
+        isWatched: isWatched,
+        allWatched: allWatched,
+        markWatched: markWatched,
+        markUnwatched: markUnwatched,
+        markEpisodesWatched: markEpisodesWatched,
+        markEpisodesUnwatched: markEpisodesUnwatched,
         favorites: function (sourceId, section) {
             return listOf('favorites', sourceId, section);
         },
@@ -137,11 +192,7 @@ window.Library = (function () {
             save('recent', sourceId, section, without(listOf('recent', sourceId, section), section, item));
         },
         // Forgets the saved position, which also drops the item from Continue watching.
-        clearProgress: function (id) {
-            var all = read(PROGRESS_KEY, {});
-            delete all[String(id)];
-            write(PROGRESS_KEY, all);
-        },
+        clearProgress: markUnwatched,
         continueWatching: function (sourceId, section) {
             return listOf('recent', sourceId, section).filter(function (entry) {
                 return unfinished(section, entry);

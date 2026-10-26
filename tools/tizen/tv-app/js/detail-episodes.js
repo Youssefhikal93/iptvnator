@@ -52,8 +52,16 @@ window.DetailEpisodes = function (opts) {
         });
     }
 
-    // Main button: continue the last episode watched, else the one after it,
-    // else the first.
+    function nextUnwatched(latest) {
+        if (latest >= 0 && !watched(s.list[latest])) return latest;
+        for (var step = 1; step <= s.list.length; step++) {
+            var index = (latest + step) % s.list.length;
+            if (!watched(s.list[index])) return index;
+        }
+        return -1;
+    }
+
+    // Skip watched episodes even when a later season was marked manually.
     function nextUp() {
         var latest = -1;
         var latestAt = -1;
@@ -64,11 +72,12 @@ window.DetailEpisodes = function (opts) {
                 latestAt = p.updatedAt;
             }
         });
-        if (latest < 0) return s.list.length ? { index: 0, label: 'Play ' + code(s.list[0]) } : null;
-        var p = opts.progressOf(s.list[latest]);
-        if (p.ratio < 0.95) return { index: latest, resume: true, progress: p.ratio, label: 'Continue ' + code(s.list[latest]) };
-        if (latest + 1 < s.list.length) return { index: latest + 1, label: 'Play ' + code(s.list[latest + 1]) };
-        return { index: 0, label: 'Watch again ' + code(s.list[0]) };
+        var index = nextUnwatched(latest);
+        if (index < 0) return s.list.length ? { index: 0, label: 'Watch again ' + code(s.list[0]) } : null;
+        var p = opts.progressOf(s.list[index]);
+        return p
+            ? { index: index, resume: true, progress: p.ratio, label: 'Continue ' + code(s.list[index]) }
+            : { index: index, label: 'Play ' + code(s.list[index]) };
     }
 
     // Puts the focus on the episode the main button would play.
@@ -97,6 +106,11 @@ window.DetailEpisodes = function (opts) {
             thumb.appendChild(image);
         }
         thumb.appendChild(el('span', 'dt-ep-num', ep.num));
+        if (watched(ep)) {
+            var tick = el('span', 'watched-tick', '\u2713');
+            tick.setAttribute('aria-label', 'Watched');
+            thumb.appendChild(tick);
+        }
         if (p) {
             var bar = el('div', 'dt-ep-bar');
             var fill = el('div', 'dt-ep-fill');
@@ -157,6 +171,7 @@ window.DetailEpisodes = function (opts) {
         else if (code === KEY.DOWN && s.focus < shown.length - 1) s.focus++;
         else if (code === KEY.ENTER) {
             var index = shown[s.focus];
+            if (index === undefined) return undefined;
             var p = opts.progressOf(s.list[index]);
             opts.play(s.list, index, p && p.ratio < 0.95 ? true : undefined);
         }
@@ -177,6 +192,10 @@ window.DetailEpisodes = function (opts) {
             return s.list.length > 0;
         },
         nextUp: nextUp,
+        selection: function () {
+            var ep = s.list[inSeason()[s.focus]];
+            return s.zone === 'rows' && ep ? { episode: ep, list: s.list } : null;
+        },
         // Entering from the buttons lands on the focused episode; ▲ from
         // the first row reaches the season pills.
         enter: function () {

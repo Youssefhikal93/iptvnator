@@ -1,0 +1,5 @@
+node_modules/
+media/
+test-results/
+playwright-report/
+!fake-xtream/server.js

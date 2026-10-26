@@ -1,0 +1,12 @@
+{
+  "name": "iptvnator-tv-tests",
+  "private": true,
+  "description": "Browser regression tests for the Samsung TV app against a fake Xtream server",
+  "scripts": {
+    "media": "node fake-xtream/make-media.js",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

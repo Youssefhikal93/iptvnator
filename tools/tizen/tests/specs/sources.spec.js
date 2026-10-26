@@ -1,0 +1,77 @@
+const { test, expect, boot, section, moveTo, press, back, enterItems, category } = require('./helpers');
+
+test('add form validates Xtream fields, saves an account, and restores it after reload', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Sources');
+    await moveTo(page, '#categories .focused .label', '+  Add Xtream account');
+    await press(page, 'Enter');
+    await expect(page.locator('#form-title')).toHaveText('Add Xtream account');
+    await page.locator('#form-save').click();
+    await expect(page.locator('#form-msg')).toHaveText('The link must start with http:// or https://');
+    await page.locator('#form-url').fill('http://localhost:8767');
+    await page.locator('#form-save').click();
+    await expect(page.locator('#form-msg')).toHaveText('Enter the username and password.');
+    await page.locator('#form-name').fill('Second account');
+    await page.locator('#form-user').fill('other');
+    await page.locator('#form-pass').fill('password');
+    await page.locator('#form-save').click();
+    await expect(page.locator('#form')).toBeHidden();
+    await expect(page.locator('#source-name')).toHaveText('Second account');
+    await page.reload();
+    await expect(page.locator('#source-name')).toHaveText('Second account');
+    await section(page, 'Sources');
+    await expect(page.locator('#items')).toContainText('Switch to this source');
+    await enterItems(page);
+    await press(page, 'Enter');
+    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+});
+
+test('M3U import preserves comma-containing group names and exposes only Live TV; removal needs two OKs', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Sources');
+    await moveTo(page, '#categories .focused .label', '+  Add M3U playlist');
+    await press(page, 'Enter');
+    await expect(page.locator('#form-login')).toBeHidden();
+    await page.locator('#form-name').fill('Test playlist');
+    await page.locator('#form-url').fill('http://localhost:8767/playlist.m3u');
+    await page.locator('#form-save').click();
+    await expect(page.locator('#form')).toBeHidden();
+    await section(page, 'Live TV');
+    await expect(page.locator('#items .count')).toHaveText('1 / 12');
+    await expect(page.locator('#rail .rail-item').filter({ hasText: 'Movies' })).toHaveClass(/disabled/);
+    await expect(page.locator('#rail .rail-item').filter({ hasText: 'Series' })).toHaveClass(/disabled/);
+    await category(page, 'Sports, HD');
+    await expect(page.locator('#items .count')).toHaveText('1 / 6');
+    await expect(page.locator('#items .row').first()).toContainText('M3U Channel 2');
+    await section(page, 'Sources');
+    await moveTo(page, '#categories .focused .label', 'Test playlist');
+    await expect(page.locator('#items')).toContainText('12 channels in 2 groups');
+    await enterItems(page);
+    await moveTo(page, '#items .focused .label', 'Remove');
+    await press(page, 'Enter');
+    await expect(page.locator('#items .focused')).toHaveText('Press OK again to remove');
+    await expect(page.locator('#source-name')).toHaveText('Test playlist');
+    await press(page, 'Enter');
+    await expect(page.locator('#source-name')).toHaveText('No source yet');
+    await expect(page.locator('#categories')).not.toContainText('Test playlist');
+});
+
+test('refresh source refetches catalogues and Return cancels an add form', async ({ page }) => {
+    let loads = 0;
+    page.on('request', req => { if (new URL(req.url()).searchParams.get('action') === 'get_vod_streams') loads++; });
+    await boot(page);
+    await section(page, 'Movies');
+    const before = loads;
+    await section(page, 'Sources');
+    await enterItems(page);
+    await moveTo(page, '#items .focused .label', 'Refresh source');
+    await press(page, 'Enter');
+    await expect(page.locator('#rail .active')).toHaveText('Home');
+    await expect.poll(() => loads).toBeGreaterThan(before);
+    await section(page, 'Sources');
+    await moveTo(page, '#categories .focused .label', '+  Add Xtream account');
+    await press(page, 'Enter');
+    await back(page);
+    await expect(page.locator('#form')).toBeHidden();
+    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+});

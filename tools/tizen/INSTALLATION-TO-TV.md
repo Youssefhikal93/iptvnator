@@ -16,6 +16,12 @@ updates); other Tizen TVs from 2017 onwards follow the same flow.
 > For developers: the app's vocabulary, past decisions and the comparison
 > with upstream's LG TV app are in [docs/](./docs/CONTEXT.md).
 
+## Testing in a browser
+
+The [browser regression suite](./tests/README.md) runs the TV app against a
+local fake provider in system Chrome. From `tools/tizen/tests`, run
+`npm run media` once (ffmpeg must be on PATH), then `npm test`.
+
 ## What you need
 
 - A Windows PC on the **same Wi-Fi/network** as the TV. It is only needed to

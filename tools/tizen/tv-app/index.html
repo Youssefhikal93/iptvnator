@@ -6,6 +6,7 @@
         <title>IPTVnator</title>
         <link rel="stylesheet" href="style.css" />
         <link rel="stylesheet" href="player.css" />
+        <link rel="stylesheet" href="live-preview.css" />
     </head>
     <body>
         <aside id="rail"></aside>
@@ -34,6 +35,7 @@
         <main id="content">
             <section id="categories" class="pane side"></section>
             <section id="items" class="pane main"></section>
+            <section id="live-preview" aria-label="Live preview"></section>
             <section id="home"></section>
             <section id="settings"></section>
         </main>
@@ -88,6 +90,7 @@
         <div id="player" class="hidden">
             <video id="video"></video>
             <object id="avplayer" type="application/avplayer"></object>
+            <canvas id="pl-freeze" class="hidden" width="1920" height="1080"></canvas>
             <div id="pl-subs"></div>
             <div id="pl-status" class="hidden">
                 <div class="pl-spinner"></div>
@@ -154,6 +157,7 @@
         <script src="js/retry.js"></script>
         <script src="js/load-screen.js"></script>
         <script src="js/xtream.js"></script>
+        <script src="js/m3u-vod.js"></script>
         <script src="js/m3u.js"></script>
         <script src="js/sort.js"></script>
         <script src="js/library.js"></script>
@@ -170,6 +174,8 @@
         <script src="js/player-series.js"></script>
         <script src="js/player-epg.js"></script>
         <script src="js/player-resume.js"></script>
+        <script src="js/player-reconnect.js"></script>
+        <script src="js/player-freeze.js"></script>
         <script src="js/player.js"></script>
         <script src="js/form.js"></script>
         <script src="js/menu.js"></script>
@@ -186,6 +192,7 @@
         <script src="js/guide.js"></script>
         <script src="js/browser.js"></script>
         <script src="js/channel-list.js"></script>
+        <script src="js/live-preview.js"></script>
         <script src="js/app.js"></script>
     </body>
 </html>

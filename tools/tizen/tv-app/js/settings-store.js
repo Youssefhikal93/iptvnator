@@ -8,6 +8,7 @@ window.Prefs = (function () {
         autoplayMs: 8000,
         skipIntroSeconds: 90,
         programmeGuide: true,
+        livePreview: true,
         homeLayout: 'cinema',
         'view:movies': 'grid',
         'view:series': 'grid',

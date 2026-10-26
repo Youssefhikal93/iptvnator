@@ -17,7 +17,7 @@ One saved provider login on the TV: an Xtream account or an M3U playlist link.
 _Avoid_: Playlist (for Xtream), provider, account
 
 **Section**:
-One kind of content a source offers: Live TV, Movies or Series. M3U sources only offer Live TV.
+One kind of content a source offers: Live TV, Movies or Series. An M3U source offers Live TV, plus Movies and Series when its playlist holds them.
 _Avoid_: Tab, type, mode
 
 **Category**:
@@ -118,6 +118,10 @@ _Avoid_: Context menu, long-press menu
 
 **Player**:
 The full-screen playback screen for a channel, movie or episode.
+
+**Live preview**:
+The playing channel shown in a box beside the Live TV list, with its now and next, before OK on it goes full screen.
+_Avoid_: Mini player, picture-in-picture
 
 **Channel list**:
 The see-through list over live playback: browse channels and categories, then press OK to watch.

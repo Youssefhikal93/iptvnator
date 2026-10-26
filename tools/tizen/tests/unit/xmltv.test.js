@@ -91,7 +91,7 @@ test('matching prefers case-insensitive ids, then normalises names and quality t
 });
 
 test('M3U tvg-id survives import without changing channel names or groups', async function () {
-    var source = load(['m3u.js'], {}, { SourceRequest: function () {
+    var source = load(['m3u-vod.js', 'm3u.js'], {}, { SourceRequest: function () {
         return Promise.resolve('#EXTM3U\n#EXTINF:-1 tvg-id="m3u1.se" group-title="Sports, HD",My channel\nhttp://tv/live.ts');
     } }).globals.M3uSource({ url: 'http://tv/playlist.m3u' });
     var channels = await source.items('live', '');

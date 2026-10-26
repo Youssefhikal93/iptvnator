@@ -11,6 +11,7 @@ window.Settings = function (hooks) {
         { group: 'Playback', label: 'Autoplay next episode', key: 'autoplayMs', choices: [0, 5000, 8000, 15000], labels: ['Off', '5 s', '8 s', '15 s'] },
         { label: 'Skip intro length', key: 'skipIntroSeconds', choices: [60, 75, 90, 120], labels: ['60 s', '75 s', '90 s', '120 s'] },
         { label: 'Programme guide (now and next)', key: 'programmeGuide', choices: [true, false], labels: ['On', 'Off'] },
+        { label: 'Live preview', key: 'livePreview', choices: [true, false], labels: ['On', 'Off'] },
         { group: 'Display', label: 'Home layout', key: 'homeLayout', choices: ['cinema', 'showcase'], labels: ['Cinema', 'Showcase'] },
         { label: 'Default view for Movies', key: 'view:movies', choices: ['list', 'grid'], labels: ['List', 'Grid'] },
         { label: 'Default view for Series', key: 'view:series', choices: ['list', 'grid'], labels: ['List', 'Grid'] },

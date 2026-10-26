@@ -23,6 +23,7 @@
     display: none !important;
 }
 #player video,
+#player canvas,
 #player object {
     position: absolute;
     left: 0;

@@ -60,6 +60,7 @@ window.Player = (function () {
     var current = null;
     var ready = false; // a stream is playing
     var channelListOpen = false;
+    var box = null; // preview rectangle in screen pixels; null is full screen
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
     var playbackError = false;
@@ -84,6 +85,26 @@ window.Player = (function () {
         timeout: resumeFailed,
     });
     var epg = PlayerEpg();
+    var freeze = PlayerFreeze(video, $('pl-freeze'));
+    // A live stream that drops reopens itself with backoff (player-reconnect.js).
+    var reconnect = PlayerReconnect({
+        position: position,
+        paused: isPaused,
+        begin: function () {
+            freeze.capture();
+            release();
+            showStatus(heading(current) + '\nReconnecting…', false);
+        },
+        open: function (done) {
+            start(current, done);
+        },
+        giveUp: function (reason) {
+            Log.error('RECONNECT GAVE UP ' + current.title + ' (' + reason + ')');
+            release();
+            freeze.clear();
+            showStatus(heading(current) + '\nThe stream stopped and could not reconnect.', true);
+        },
+    });
     var series = PlayerSeries({
         current: function () {
             return current;
@@ -101,6 +122,29 @@ window.Player = (function () {
 
     function avplay() {
         return window.webapis && window.webapis.avplay;
+    }
+
+    function displayRect() {
+        return box || { x: 0, y: 0, w: 1920, h: 1080 };
+    }
+
+    // Draws the stream in the live preview box (see live-preview.js) or full
+    // screen. The same stream keeps playing, so switching never reopens it.
+    function setBox(rect) {
+        box = rect || null;
+        playerEl.classList.toggle('preview', !!box);
+        var at = displayRect();
+        playerEl.style.left = box ? at.x + 'px' : '';
+        playerEl.style.top = box ? at.y + 'px' : '';
+        playerEl.style.width = box ? at.w + 'px' : '';
+        playerEl.style.height = box ? at.h + 'px' : '';
+        if (usingAv && avplay()) {
+            try {
+                avplay().setDisplayRect(at.x, at.y, at.w, at.h);
+            } catch (e) {
+                // Not prepared yet; viaAvPlay sets the rectangle itself.
+            }
+        }
     }
 
     function wait(ms) {
@@ -805,6 +849,7 @@ window.Player = (function () {
         ready = false;
         ended = false;
         clearInterval(tickTimer);
+        reconnect.unwatch();
         clearTimeout(seek.timer);
         seek.timer = null;
         seek.target = null;
@@ -873,9 +918,11 @@ window.Player = (function () {
     function viaMpegts(url) {
         return function (finish) {
             if (!window.mpegts || !mpegts.isSupported()) return finish('mpegts.js unsupported');
-            lib = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: url }, { enableStashBuffer: false });
-            lib.on(mpegts.Events.ERROR, function (type, detail, info) {
-                finish(type + ' ' + detail + ' ' + ((info && info.code) || ''));
+            var player = (lib = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: url }, { enableStashBuffer: false }));
+            player.on(mpegts.Events.ERROR, function (type, detail, info) {
+                var reason = type + ' ' + detail + ' ' + ((info && info.code) || '');
+                if (ready && lib === player) streamLost(reason, 'Playback stopped.');
+                finish(reason);
             });
             video.onplaying = function () {
                 finish(null);
@@ -890,11 +937,13 @@ window.Player = (function () {
     function viaHls(url) {
         return function (finish) {
             if (!window.Hls || !Hls.isSupported()) return finish('hls.js unsupported');
-            lib = new Hls();
-            lib.on(Hls.Events.ERROR, function (event, data) {
+            var player = (lib = new Hls());
+            player.on(Hls.Events.ERROR, function (event, data) {
                 if (!data.fatal) return;
                 var status = data.response && data.response.code;
-                finish(data.details + (status ? ' HTTP ' + status : ''));
+                var reason = data.details + (status ? ' HTTP ' + status : '');
+                if (ready && lib === player) streamLost(reason, 'Playback stopped.');
+                finish(reason);
             });
             video.onplaying = function () {
                 finish(null);
@@ -917,14 +966,15 @@ window.Player = (function () {
                 },
                 onbufferingcomplete: hideStatus,
                 onerror: function (type) {
-                    if (ready) showStatus('Playback stopped (' + type + ').', true);
+                    if (ready) streamLost(String(type), 'Playback stopped (' + type + ').');
                     finish(String(type));
                 },
                 onstreamcompleted: onCompleted,
                 oncurrentplaytime: restoration.onTime,
                 onsubtitlechange: showSub,
             });
-            av.setDisplayRect(0, 0, 1920, 1080);
+            var at = displayRect();
+            av.setDisplayRect(at.x, at.y, at.w, at.h);
             av.prepareAsync(
                 function () {
                     try {
@@ -957,7 +1007,7 @@ window.Player = (function () {
 
     function onCompleted() {
         if (!current) return;
-        if (current.live) return showStatus('Playback stopped.', true);
+        if (current.live) return streamLost('stream ended', 'Playback stopped.');
         if (!started || progressBlocked()) return;
         ended = true;
         if (current.id) Progress.finish(current.id, duration() / 1000);
@@ -965,9 +1015,18 @@ window.Player = (function () {
         showControls();
     }
 
+    // Live reconnects on its own; a movie or episode shows the error screen.
+    function streamLost(reason, message) {
+        if (current && current.live) {
+            Log.error('STREAM LOST ' + current.title + ' (' + reason + ')');
+            reconnect.lost(reason);
+        } else showStatus(message, true);
+    }
+
     function onReady() {
         ready = true;
         playerEl.classList.toggle('av', usingAv);
+        freeze.clear();
         hideStatus();
         video.onwaiting = function () {
             showStatus('', false);
@@ -975,7 +1034,7 @@ window.Player = (function () {
         video.onplaying = hideStatus;
         video.onended = onCompleted;
         video.onerror = function () {
-            showStatus('Playback stopped.', true);
+            streamLost('media error ' + (video.error ? video.error.code : '?'), 'Playback stopped.');
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
         renderHint();
@@ -984,28 +1043,41 @@ window.Player = (function () {
         lastSave = Date.now();
         clearInterval(tickTimer);
         tickTimer = setInterval(tick, TICK_MS);
+        if (current.live) reconnect.watch();
         showControls();
     }
 
     var STARTERS = { mpegts: viaMpegts, hls: viaHls, avplay: viaAvPlay, video: viaVideo };
 
-    function play(req) {
+    // `rect` plays in the live preview box, null full screen; leaving it out
+    // (a retry, the next episode, a reconnect) keeps the current mode.
+    function play(req, rect) {
+        reconnect.cancel();
+        freeze.clear();
+        return start(req, undefined, rect);
+    }
+
+    // One playback attempt chain. `onAttempt` is set by a reconnect try: it
+    // keeps the Reconnecting status and hears null (playing) or the failure.
+    function start(req, onAttempt, rect) {
         playbackError = false;
         release();
         var mine = ++session;
         current = req;
+        if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
         hideControls();
         ui.title.textContent = req.title;
         ui.subtitle.textContent = req.subtitle || '';
         epg.load(req);
-        showStatus(heading(req) + '\nLoading…', false);
+        if (!onAttempt) showStatus(heading(req) + '\nLoading…', false);
 
         var attempts = req.sources.map(function (source) {
             return [source.via, STARTERS[source.via](source.url)];
         });
 
         function fail(message) {
+            if (onAttempt) return onAttempt(message);
             showStatus(heading(req) + '\n' + message, true);
         }
 
@@ -1021,6 +1093,7 @@ window.Player = (function () {
                 if (!error) {
                     Log.info('PLAY OK ' + name + ' ' + req.title);
                     onReady();
+                    if (onAttempt) onAttempt(null);
                     return;
                 }
                 Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ')');
@@ -1045,12 +1118,31 @@ window.Player = (function () {
 
     function stop() {
         playbackError = false;
+        reconnect.cancel();
+        freeze.clear();
         session++;
         release();
         current = null;
         hideStatus();
         hideControls();
+        setBox(null);
         playerEl.classList.add('hidden');
+    }
+
+    // Moves the playing stream into the preview box; false when nothing is
+    // playing to show (stopped or failed).
+    function preview(rect) {
+        if (!current || playbackError) return false;
+        setBox(rect);
+        closeMenu();
+        hideControls();
+        return true;
+    }
+
+    // Takes the playing stream full screen, as if it had just started.
+    function fullscreen() {
+        setBox(null);
+        showControls();
     }
 
     function togglePause(force) {
@@ -1092,6 +1184,8 @@ window.Player = (function () {
     return {
         play: play,
         stop: stop,
+        preview: preview,
+        fullscreen: fullscreen,
         key: key,
         canOpenChannelList: function () {
             return ready && current.live && !menu.open && !resume.open && ui.controls.classList.contains('hidden') && ui.status.classList.contains('hidden');

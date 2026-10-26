@@ -1,0 +1,111 @@
+/* Live preview: the Live TV list narrows and the playing channel shows in a
+   box on the right (the Player draws into it, see live-preview.js). */
+#live-preview {
+    display: none;
+}
+#content.previewing .pane.side {
+    width: 360px;
+}
+#content.previewing #live-preview {
+    display: block;
+    flex: none;
+    width: 720px;
+    box-sizing: border-box;
+    padding: 24px;
+    background: var(--content-bg);
+    border-left: 2px solid var(--line);
+}
+.lp-screen {
+    width: 672px;
+    height: 378px; /* 16:9 */
+    border-radius: 12px;
+    background: #000;
+}
+.lp-title {
+    margin: 20px 0 14px;
+    font-size: 34px;
+    font-weight: 600;
+    color: var(--heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-top: 12px;
+    font-size: 26px;
+    color: var(--on-surface);
+}
+.lp-tag {
+    flex: none;
+    padding: 2px 12px;
+    border-radius: 8px;
+    background: var(--widget-bg);
+    color: var(--eyebrow);
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.lp-time {
+    flex: none;
+    color: var(--eyebrow);
+    font-variant-numeric: tabular-nums;
+}
+.lp-programme {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lp-bar {
+    height: 6px;
+    margin-top: 12px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.22);
+    overflow: hidden;
+}
+.lp-fill {
+    height: 100%;
+    background: var(--selection);
+}
+
+/* The Player element becomes the box. Below the load screen (7), guide (6)
+   and detail page (8) layers, so they still cover it. */
+#player.preview {
+    inset: auto;
+    z-index: 4;
+    border-radius: 12px;
+    overflow: hidden;
+}
+#player.preview video,
+#player.preview object {
+    width: 100%;
+    height: 100%;
+}
+#player.preview #pl-controls,
+#player.preview #pl-skip,
+#player.preview #pl-next,
+#player.preview #pl-episodes,
+#player.preview #pl-menu,
+#player.preview #pl-resume,
+#player.preview #pl-subs,
+#player.preview #pl-channels,
+#player.preview #pl-error-actions {
+    display: none !important;
+}
+#player.preview #pl-status {
+    gap: 14px;
+}
+#player.preview #pl-status-text {
+    max-width: 600px;
+    font-size: 24px;
+}
+#player.preview .pl-spinner {
+    width: 48px;
+    height: 48px;
+    border-width: 5px;
+}

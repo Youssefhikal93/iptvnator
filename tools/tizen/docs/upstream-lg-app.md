@@ -18,12 +18,12 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | TMDB artwork and description (optional key, 8 s limit, session cache) | Missing | #20 | Yes, the TV calls TMDB |
 | Catalogue sort: Recently added (default), Title A–Z, Provider order | Done (not yet tested on the TV): six orders and a Recently added category | #9 | Yes |
 | Live category browser with restored focus per category | Partial | #8 | Yes |
-| Live preview: OK previews beside the list, OK again fullscreen | Missing | #32 | Yes, one stream at a time |
+| Live preview: OK previews beside the list, OK again fullscreen | Done (not yet tested on the TV): list view only, Settings On/Off | #32 | Yes, one stream at a time |
 | Channel drawer over fullscreen live (◀), Channels / Programme / TV Guide buttons | Drawer done (not yet tested on the TV); buttons missing | #8 | Yes |
 | Single-channel programme list (dates, Now, descriptions) | Missing (now and next only) | #1, #6 | Yes |
 | Multi-channel guide grid (2-hour window, Watch live button) | Missing | #6 | Yes |
 | Resume confirmed by retrying the seek; progress protected on failure | Done (not yet tested on the TV) | #33 | Yes |
-| Automatic retry (2, 5, 10, 30 s), Retry buttons, recovery screens | Done (not yet tested on the TV); coming back online is #14 | #17, #14 | Yes |
+| Automatic retry (2, 5, 10, 30 s), Retry buttons, recovery screens | Done (not yet tested on the TV); live streams reconnect after 1, 2, 4, 8, 15 s (#14) | #17, #14 | Yes |
 | Remote Stop returns to where playback started | Done | — | Yes |
 | Long lists with focus restored after details | Done | — | Yes |
 | Settings: Home layout **Cinema** (tall hero) or **Showcase** (compact hero, more rows) | Done (not yet tested on the TV) | #10 | Yes |

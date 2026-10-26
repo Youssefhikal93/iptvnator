@@ -214,6 +214,13 @@ from step 8 must already be downloaded.
   failures offer Retry playback and Back; LEFT/RIGHT chooses a button, OK
   presses it, and Return goes back. Unreadable saved sources stay untouched;
   Retry reads them again.
+- **Dropped live streams reconnect**: when a live channel stops (a network
+  blip or a provider hiccup) or freezes for about 10 seconds, the picture stays
+  and "Reconnecting…" shows over it. The app closes the old stream first, then
+  reopens the channel after 1, 2, 4, 8 and 15 seconds. When it plays again the
+  message goes away. After the fifth failed try the Retry playback / Back
+  screen appears. Return or changing channel while reconnecting cancels it.
+  Movies and episodes are unchanged.
 
 - **Home** (opens on start unless resuming a channel): a banner for up to 3 things you are watching
   (Continue watching, Details, ‹ › to switch), then rows: Continue
@@ -222,13 +229,22 @@ from step 8 must already be downloaded.
   a row, ▲ ▼ between rows, OK opens, hold OK for options.
 - **Sources** (left rail): add an Xtream account or an M3U link, switch
   between them, or remove one (press OK twice).
+- **M3U movies and series**: a playlist that holds movies or episodes gets
+  Movies and Series in the rail after it has downloaded; a playlist with only
+  channels still shows Live TV alone. An entry counts as a movie or episode
+  when its link has /movie/ or /series/, ends in .mp4, .mkv, .avi or .mov, or
+  sits in a group named like VOD, Movies, Series or TV Shows. Episodes named
+  like "Show S01E02", "Show 1x02" or "Show - S01 E02" are grouped into a show
+  with seasons. A playlist has no plot or cast, so a movie's page shows its
+  name, logo and group. Favorites, Continue watching, resume and Next episode
+  work as with Xtream.
 - **Settings** (bottom of the rail, available without a source): UP/DOWN
   selects a row, RIGHT or OK picks the next choice, LEFT the previous one.
   LEFT at the first choice or Return goes back to the rail. Changes save
   immediately for all sources: autoplay (Off, 5, 8 or 15 s), Skip intro
   length (60, 75, 90 or 120 s), now and next On/Off, Cinema or compact
   Showcase Home layout, List/Grid for each section, default Movies/Series
-  sort, and Last channel/Home on start. Turning now and next off stops
+  sort, Live preview On/Off and Last channel/Home on start. Turning now and next off stops
   programme fetching and hides programme lines everywhere. Default sort
   applies only where no sort has been chosen for that source and section.
   About shows the app version and the install guide name.
@@ -302,6 +318,15 @@ from step 8 must already be downloaded.
   those details. Return from the Guide focuses its channel in the Live TV list.
   The button is available when the programme guide setting is On and the
   source has a guide. Rows without programmes say "No programme information".
+- **Live preview**: in Live TV (list view), OK on a channel plays it in a
+  box beside the list, with its now and next under it. Moving through the
+  list does not change the stream; OK on another channel switches the box
+  to it. OK on the playing channel goes full screen on the same stream, and
+  Return from full screen comes back to the box. Return in the list stops
+  the preview first; a second Return does what it always did. The preview
+  also stops when you leave Live TV, open the TV guide, change source or
+  leave the app. Turn it off in **Settings → Live preview** and OK opens
+  full screen directly, as does the grid view.
 - **Channel list while watching**: with live player controls hidden, press
   LEFT to open a see-through channel list on the playing channel. UP/DOWN
   move focus without changing channel; OK watches the focused channel.

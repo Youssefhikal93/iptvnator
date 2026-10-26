@@ -158,6 +158,7 @@ window.Browser = function (hooks) {
 
     function openGuide() {
         if (!guideAvailable()) return false;
+        hooks.preview.stop();
         if (state.searching) {
             clearTimeout(state.searchTimer);
             stopTyping();
@@ -621,7 +622,7 @@ window.Browser = function (hooks) {
 
     function loadCatalogue(what, onFresh) {
         return state.catalogue.load(what, {
-            screen: !Player.isOpen(),
+            screen: !Player.isOpen() || hooks.preview.active(),
             active: function () { return catalogueActive(what); },
             onFresh: onFresh,
         });
@@ -741,7 +742,12 @@ window.Browser = function (hooks) {
     function infoRows() {
         var info = state.info;
         if (!info) return [];
-        if (info.channels !== undefined) return [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
+        if (info.channels !== undefined) {
+            var rows = [{ label: info.channels + ' channels in ' + info.groups + ' groups' }];
+            if (info.movies) rows.push({ label: info.movies + ' movies' });
+            if (info.shows) rows.push({ label: info.shows + ' shows' });
+            return rows;
+        }
         var expires = info.exp_date ? new Date(Number(info.exp_date) * 1000).toLocaleDateString() : 'unknown';
         return [
             { label: 'Status: ' + (info.status || 'unknown') },
@@ -831,6 +837,7 @@ window.Browser = function (hooks) {
     // ---- Content sections ----
 
     function setSource(source) {
+        hooks.preview.stop();
         if (state.catalogue) state.catalogue.dispose();
         state.catalogue = null;
         LoadScreen.reset();
@@ -862,6 +869,11 @@ window.Browser = function (hooks) {
             .then(function (info) {
                 if (adapter !== state.adapter) return;
                 state.info = info;
+                // An M3U playlist learns its sections only once it is downloaded.
+                if (source.type !== 'xtream' && adapter.sections.length > 1) {
+                    renderChrome();
+                    if (state.section === 'home') showHome();
+                }
                 if (state.section === 'sources') showSourceDetails();
             });
         var checked = account;
@@ -882,6 +894,7 @@ window.Browser = function (hooks) {
 
     function openSection(id) {
         if (!available(id)) return;
+        if (id !== 'live') hooks.preview.stop();
         state.section = id;
         clearTimeout(state.timer);
         clearTimeout(state.searchTimer);
@@ -1221,6 +1234,8 @@ window.Browser = function (hooks) {
         var item = items.item();
         if (!item) return;
         if (state.section === 'sources') return sourceAction();
+        // OK on a channel previews it beside the list (see live-preview.js).
+        if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items())) return;
         openEntry(item, state.section);
     }
 
@@ -1325,6 +1340,10 @@ window.Browser = function (hooks) {
         if (guide.isOpen()) return guide.key(code);
         if (code === 458 && openGuide()) return true;
         if (state.searching) return onSearchKey(code);
+        if (Keys.isBack(code) && hooks.preview.active()) {
+            hooks.preview.stop();
+            return true;
+        }
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
         if (state.zone === 'settings') {

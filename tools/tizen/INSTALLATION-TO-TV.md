@@ -279,6 +279,9 @@ from step 8 must already be downloaded.
   channels, movies and episodes then appear by themselves. **Sources →
   Refresh source** throws the saved lists away and reloads them.
 
+- **Switching sources**: each source keeps its own saved catalogue; a refresh
+  finishing for the previous source does not replace the source now on screen.
+
 ### Installing on another TV
 
 Every TV needs its own setup, but the PC part is done once:

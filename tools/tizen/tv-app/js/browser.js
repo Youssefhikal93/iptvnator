@@ -22,18 +22,16 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, cache: {}, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
+    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
     var live = LiveChannels({
         categories: function () {
-            var adapter = state.adapter;
-            return cached('live:categories', function () { return adapter.categories('live'); });
+            return loadCatalogue({ section: 'live', kind: 'categories' });
         },
         channels: function (categoryId) {
-            var adapter = state.adapter;
-            return cached('live:items:' + categoryId, function () { return adapter.items('live', categoryId); });
+            return loadCatalogue({ section: 'live', kind: 'items', id: categoryId });
         },
         request: liveRequest,
         record: function (channel) {
@@ -62,7 +60,7 @@ window.Browser = function (hooks) {
     var settings = Settings({ toast: toast });
     var watched = Watched({
         knownShow: function (show) {
-            return state.cache['series:' + show.series_id];
+            return state.catalogue.peek({ kind: 'show', id: show.series_id });
         },
         loadShow: loadShow,
         changed: function () {
@@ -262,7 +260,7 @@ window.Browser = function (hooks) {
     function virtualList(kind) {
         var id = sourceId();
         if (kind === 'added') return state.added[state.section] || [];
-        if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.cache[state.section + ':items:'] || []) : Library.favorites(id, state.section);
+        if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []) : Library.favorites(id, state.section);
         if (kind === 'recent') return Library.recent(id, state.section);
         return Library.continueWatching(id, state.section);
     }
@@ -470,7 +468,6 @@ window.Browser = function (hooks) {
         clearTimeout(state.searchTimer);
         var query = $('search-input').value.trim();
         var section = state.section;
-        var adapter = state.adapter;
         if (!query) {
             if (state.showingSearch) loadItems();
             return Promise.resolve(0);
@@ -481,9 +478,7 @@ window.Browser = function (hooks) {
         state.showingSearch = true;
         applyView();
         items.loading();
-        return cached(section + ':items:', function () {
-            return adapter.items(section, '');
-        })
+        return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
                 if (token !== state.token) return 0;
                 state.search.results = all.filter(function (it) {
@@ -543,69 +538,25 @@ window.Browser = function (hooks) {
         return id === 'sources' || id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
     }
 
-    // Memory, then the saved catalogue, then the provider. A saved list is
-    // returned at once and refreshed in the background (once per session);
-    // onFresh(list) swaps in the new list when it changed.
-    function cached(key, load, onFresh) {
-        if (state.cache[key]) return Promise.resolve(state.cache[key]);
-        var id = sourceId();
-        return Catalogue.get(id, key).then(function (saved) {
-            if (saved === undefined || id !== sourceId()) return loadFresh(id, key, load);
-            state.cache[key] = saved;
-            refreshSaved(id, key, load, saved, onFresh);
-            return saved;
+    function loadCatalogue(what, onFresh) {
+        return state.catalogue.load(what, {
+            screen: !Player.isOpen(),
+            active: function () { return catalogueActive(what); },
+            onFresh: onFresh,
         });
     }
 
-    function loadFresh(id, key, load) {
-        return fetchCatalogue(id, key, load).then(function (value) {
-            if (state.source && id === sourceId()) state.cache[key] = value;
-            Catalogue.put(id, key, value);
-            return value;
-        });
-    }
-
-    function fetchCatalogue(id, key, load) {
-        // Detail pages and the player's channel list keep their own failures.
-        var kind = key.split(':')[1];
-        if (Player.isOpen() || (kind !== 'categories' && kind !== 'items')) return load();
-        var checked = account;
-        return LoadScreen.run(id + ':' + key, function () {
-            return checked.then(load);
-        }, function () {
-            return !!state.source && id === sourceId() && catalogueActive(key);
-        });
-    }
-
-    function catalogueActive(key) {
-        var section = key.split(':')[0];
-        if (state.section === 'home') return !!homeLoading[section] && key === section + ':items:';
+    function catalogueActive(what) {
+        var section = what.section;
+        var wholeSection = what.kind === 'items' && (what.id === undefined || what.id === '');
+        if (state.section === 'home') return !!homeLoading[section] && wholeSection;
         if (state.section !== section) return false;
-        if (key === section + ':categories') return !state.base;
-        if (state.showingSearch) return key === section + ':items:';
+        if (what.kind === 'categories') return !state.base;
+        if (state.showingSearch) return wholeSection;
         var category = categories.item();
         if (!category) return false;
-        if (category.virtual) return key === section + ':items:' && (category.virtual === 'added' || category.virtual === 'favorites');
-        return key === section + ':items:' + category.category_id;
-    }
-
-    function refreshSaved(id, key, load, saved, onFresh) {
-        state.updating++;
-        renderChrome();
-        fetchCatalogue(id, key, load)
-            .then(function (value) {
-                Catalogue.put(id, key, value);
-                if (!state.source || id !== sourceId()) return;
-                state.cache[key] = value;
-                if (onFresh && !Catalogue.same(value, saved)) onFresh(value);
-            })
-            .catch(function (err) {
-                Log.error('REFRESH FAIL ' + key + ' ' + err.message);
-            })
-            .then(function () {
-                state.updating--;
-                renderChrome();
-            });
+        if (category.virtual) return wholeSection && (category.virtual === 'added' || category.virtual === 'favorites');
+        return what.kind === 'items' && String(what.id === undefined ? '' : what.id) === String(category.category_id);
     }
 
     // Position of `item` in a refreshed list, matched by provider id.
@@ -745,7 +696,8 @@ window.Browser = function (hooks) {
             setZone(contentZone());
         } else if (action === 'refresh') {
             // Forget the saved lists; the next section opened reloads them.
-            Catalogue.drop(row.source.id).then(function () {
+            var dropping = state.source && row.source.id === sourceId() ? state.catalogue.drop() : Catalogue.drop(row.source.id);
+            dropping.then(function () {
                 toast('Reloading ' + row.source.name + '…');
                 setSource(row.source);
                 openSection('home');
@@ -778,6 +730,8 @@ window.Browser = function (hooks) {
     // ---- Content sections ----
 
     function setSource(source) {
+        if (state.catalogue) state.catalogue.dispose();
+        state.catalogue = null;
         LoadScreen.reset();
         state.token++;
         live.reset();
@@ -786,7 +740,6 @@ window.Browser = function (hooks) {
         state.adapter = null;
         updateEpg();
         state.info = null;
-        state.cache = {};
         state.base = null;
         state.search = null;
         state.showingSearch = false;
@@ -809,12 +762,24 @@ window.Browser = function (hooks) {
                 state.info = info;
                 if (state.section === 'sources') showSourceDetails();
             });
+        var checked = account;
+        state.catalogue = CatalogueLoader({
+            adapter: adapter,
+            sourceId: source.id,
+            store: Catalogue,
+            screen: function (key, load, active) {
+                return LoadScreen.run(key, function () { return checked.then(load); }, active);
+            },
+            onUpdating: function (count) {
+                state.updating = count;
+                renderChrome();
+            },
+        });
         renderChrome();
     }
 
     function openSection(id) {
         if (!available(id)) return;
-        var adapter = state.adapter;
         state.section = id;
         clearTimeout(state.timer);
         clearTimeout(state.searchTimer);
@@ -835,11 +800,8 @@ window.Browser = function (hooks) {
         categories.loading();
         items.loading();
         renderChrome();
-        cached(
-            id + ':categories',
-            function () {
-                return adapter.categories(id);
-            },
+        loadCatalogue(
+            { section: id, kind: 'categories' },
             function (list) {
                 if (state.section !== id || !state.base) return;
                 state.base = list;
@@ -863,17 +825,13 @@ window.Browser = function (hooks) {
         if (!category || state.section === 'sources') return;
         if (category.virtual) return showVirtual(category);
         var section = state.section;
-        var adapter = state.adapter;
         var token = ++state.token;
         state.showingSearch = false;
         applyView();
         items.loading();
         renderChrome();
-        cached(
-            section + ':items:' + category.category_id,
-            function () {
-                return adapter.items(section, category.category_id);
-            },
+        loadCatalogue(
+            { section: section, kind: 'items', id: category.category_id },
             function (list) {
                 if (token !== state.token) return;
                 var item = items.item();
@@ -926,6 +884,7 @@ window.Browser = function (hooks) {
                 play(index >= 0 ? episodeRequest(show, list, index) : state.adapter.episodeRequest(show, entry.episode));
             })
             .catch(function (err) {
+                if (err.code === 'cancelled') return;
                 Log.error('EPISODES FAIL ' + err.message);
                 play(state.adapter.episodeRequest(show, entry.episode));
             });
@@ -985,9 +944,7 @@ window.Browser = function (hooks) {
             });
         }
         if (!state.adapter.movieInfo) return Promise.resolve({});
-        return remembered('vod:' + entry.item.stream_id, function () {
-            return state.adapter.movieInfo(entry.item);
-        });
+        return state.catalogue.load({ kind: 'movie', id: entry.item.stream_id, item: entry.item });
     }
 
     // Home takes 20 from the same dated items used by the section's category.
@@ -1002,9 +959,7 @@ window.Browser = function (hooks) {
                 homeLoading[section] = false;
                 updateRecentlyAdded(section, list);
             };
-            cached(section + ':items:', function () {
-                return adapter.items(section, '');
-            }, update)
+            loadCatalogue({ section: section, kind: 'items' }, update)
                 .then(update)
                 .catch(function (err) {
                     if (adapter === state.adapter) delete state.added[section];
@@ -1041,19 +996,6 @@ window.Browser = function (hooks) {
         return (h ? h + ':' + ('0' + m).slice(-2) : m) + ':' + ('0' + sec).slice(-2);
     }
 
-    // Details are kept for the session only; they are cheap to fetch again.
-    function remembered(key, load) {
-        var cache = state.cache;
-        if (!cache[key]) {
-            var pending = load().catch(function (error) {
-                if (cache[key] === pending) delete cache[key];
-                throw error;
-            });
-            cache[key] = pending;
-        }
-        return cache[key];
-    }
-
     // resume: true / false skips the player's Resume prompt.
     function playMovie(movie, resume) {
         record(movie, null, null, 'movies');
@@ -1067,9 +1009,7 @@ window.Browser = function (hooks) {
             item: movie,
             load: function () {
                 if (!state.adapter.movieInfo) return Promise.resolve(null);
-                return remembered('vod:' + movie.stream_id, function () {
-                    return state.adapter.movieInfo(movie);
-                });
+                return state.catalogue.load({ kind: 'movie', id: movie.stream_id, item: movie });
             },
             actions: function () {
                 var p = Progress.unfinished('movies', movie);
@@ -1094,13 +1034,7 @@ window.Browser = function (hooks) {
     // A show's details and episodes in one request, saved like the lists so
     // new episodes show up after the background refresh.
     function loadShow(show, onFresh) {
-        return cached(
-            'series:' + show.series_id,
-            function () {
-                return state.adapter.seriesInfo(show);
-            },
-            onFresh
-        );
+        return state.catalogue.load({ kind: 'show', id: show.series_id, item: show }, { onFresh: onFresh });
     }
 
     function playEpisode(show, list, index, resume) {

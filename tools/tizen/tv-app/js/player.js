@@ -88,9 +88,18 @@ window.Player = (function () {
     var lastSave = 0;
     var avAudio = -1;
     var avText = -1;
+    var avSeekPending = false;
+    var avSeekSerial = 0;
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
     var menu = { open: false, focus: 0, actions: [] };
-    var resume = { open: false, focus: 0, position: 0 };
+    var resume = { open: false, focus: 0, position: 0, failed: false };
+    var restoration = PlayerResume({
+        position: position,
+        seekTo: engineSeekTo,
+        pending: seekPending,
+        ready: canSeek,
+        timeout: resumeFailed,
+    });
     var epg = PlayerEpg();
     var series = PlayerSeries({
         current: function () {
@@ -185,11 +194,44 @@ window.Player = (function () {
     }
 
     function seekTo(ms) {
+        if (!current || current.live) return;
+        if (ms > 0) restoration.start(ms);
+        else {
+            restoration.cancel();
+            engineSeekTo(0);
+        }
+    }
+
+    function seekPending() {
+        return usingAv ? avSeekPending : video.seeking;
+    }
+
+    function canSeek(ms) {
+        if (!ready) return false;
+        if (usingAv) {
+            var state = avplay().getState();
+            return state === 'PLAYING' || state === 'PAUSED';
+        }
+        if (video.readyState < 3) return false;
+        if (duration() > 0) return true;
+        for (var i = 0; i < video.seekable.length; i++) {
+            if (video.seekable.start(i) * 1000 <= ms && video.seekable.end(i) * 1000 >= ms) return true;
+        }
+        return false;
+    }
+
+    function engineSeekTo(ms) {
+        var serial = ++avSeekSerial;
+        function settled() {
+            if (serial === avSeekSerial) avSeekPending = false;
+        }
         try {
-            if (usingAv) avplay().seekTo(Math.floor(ms), function () {}, function () {});
-            else video.currentTime = ms / 1000;
+            if (usingAv) {
+                avSeekPending = true;
+                avplay().seekTo(Math.floor(ms), settled, settled);
+            } else video.currentTime = ms / 1000;
         } catch (e) {
-            // Not seekable.
+            settled(); // The confirmation loop retries when the engine is seekable.
         }
     }
 
@@ -231,7 +273,7 @@ window.Player = (function () {
     }
 
     function saveProgress() {
-        if (!started || !current || current.live || !current.id) return;
+        if (!started || !current || current.live || !current.id || progressBlocked()) return;
         var pos = position() / 1000;
         var dur = duration() / 1000;
         if (!(dur > 0)) return;
@@ -241,6 +283,10 @@ window.Player = (function () {
         else return;
         storeProgress(map);
         lastSave = Date.now();
+    }
+
+    function progressBlocked() {
+        return resume.open || seek.target !== null || restoration.blocked() || seekPending();
     }
 
     // ---- Overlay ----------------------------------------------------------
@@ -355,6 +401,7 @@ window.Player = (function () {
     }
 
     function nudge(dir) {
+        restoration.cancel();
         var now = Date.now();
         var dur = duration();
         if (seek.target === null) {
@@ -691,12 +738,32 @@ window.Player = (function () {
     }
 
     function settleResume(fromSaved) {
+        if (fromSaved && resume.failed) {
+            var saved = loadProgress()[current.id];
+            if (!saved || !(saved.position > 0) || !isFinite(saved.position)) return;
+            resume.position = Number(saved.position);
+        }
         resume.open = false;
+        resume.failed = false;
         ui.resume.classList.add('hidden');
-        if (fromSaved) seekTo(resume.position * 1000);
+        seekTo(fromSaved ? resume.position * 1000 : 0);
         started = true;
+        ended = false;
         unpause();
         showControls();
+    }
+
+    function resumeFailed() {
+        pause();
+        closeMenu();
+        hideControls();
+        resume.open = true;
+        resume.failed = true;
+        resume.focus = 0;
+        ui.resumeTitle.textContent = 'Could not restore saved progress.';
+        ui.resumeYes.textContent = 'Retry';
+        ui.resume.classList.remove('hidden');
+        renderResume();
     }
 
     function maybePrompt() {
@@ -707,7 +774,8 @@ window.Player = (function () {
         }
         var saved = loadProgress()[current.id];
         var dur = duration() / 1000;
-        if (!saved || saved.position < RESUME_MIN_S || (dur > 0 && saved.position > dur - FINISHED_MARGIN_S)) {
+        if (!saved || !(saved.position > 0) || !isFinite(saved.position) ||
+            (current.resume !== true && (saved.position < RESUME_MIN_S || (dur > 0 && saved.position > dur - FINISHED_MARGIN_S)))) {
             started = true;
             return;
         }
@@ -753,6 +821,9 @@ window.Player = (function () {
     // Closes whatever is playing; keeps the player screen.
     function release() {
         saveProgress();
+        restoration.cancel();
+        avSeekSerial++;
+        avSeekPending = false;
         started = false;
         ready = false;
         ended = false;
@@ -763,6 +834,7 @@ window.Player = (function () {
         seek.holdUntil = 0;
         menu.open = false;
         resume.open = false;
+        resume.failed = false;
         ui.menu.classList.add('hidden');
         ui.resume.classList.add('hidden');
         clearSubs();
@@ -780,6 +852,7 @@ window.Player = (function () {
             lib = null;
         }
         video.onplaying = video.onerror = video.onwaiting = video.onended = null;
+        video.ontimeupdate = null;
         video.pause();
         video.removeAttribute('src');
         video.load();
@@ -871,6 +944,7 @@ window.Player = (function () {
                     finish(String(type));
                 },
                 onstreamcompleted: onCompleted,
+                oncurrentplaytime: restoration.onTime,
                 onsubtitlechange: showSub,
             });
             av.setDisplayRect(0, 0, 1920, 1080);
@@ -906,6 +980,7 @@ window.Player = (function () {
 
     function onCompleted() {
         if (!current || current.live) return;
+        if (!started || progressBlocked()) return;
         ended = true;
         if (started && current.id) {
             var map = loadProgress();
@@ -930,6 +1005,7 @@ window.Player = (function () {
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
         renderHint();
+        video.ontimeupdate = restoration.onTime;
         maybePrompt();
         lastSave = Date.now();
         clearInterval(tickTimer);

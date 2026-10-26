@@ -229,6 +229,11 @@ from step 8 must already be downloaded.
   and the next one plays 8 s after the current one ends. Skip intro jumps
   90 s: Xtream has no intro markers. Live TV: ▲▼ or CH change channel, OK
   shows Now and Next with times, description and progress.
+- **Resume**: saved progress is kept until playback confirms the jump, including
+  when you seek with LEFT/RIGHT. If the jump cannot be confirmed within 30 seconds,
+  playback pauses: LEFT/RIGHT chooses Retry or Start over, OK runs it, and Return
+  leaves the player. Retry reads the saved progress again; Start over plays from
+  the beginning.
 - **Live TV rows** (Xtream) show the programme on now and its progress,
   fetched for the channels on screen once scrolling stops.
 - **Channel list while watching**: with live player controls hidden, press

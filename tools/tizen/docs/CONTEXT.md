@@ -120,8 +120,8 @@ The programme on a channel now and the one after it.
 _Avoid_: EPG (for this), guide
 
 **Guide**:
-Programmes over time for many channels (not built yet).
-_Avoid_: EPG grid, TV guide
+Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
+_Avoid_: EPG grid (use TV guide only for the button label)
 
 **Up next**:
 The card near the end of an episode that offers, and then plays, the next episode.

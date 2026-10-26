@@ -27,6 +27,7 @@
                 <span class="view-btn" data-mode="list" title="List view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z"/></svg></span>
                 <span class="view-btn" data-mode="grid" title="Grid view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h5V5H4zm0 7h5v-6H4zm6 0h5v-6h-5zm6 0h5v-6h-5zm-6-7h5V5h-5zm6-6v6h5V5z"/></svg></span>
                 <span class="view-btn hidden" data-mode="sort" title="Sort"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h12v2H3zm0 5h6v2H3z"/></svg></span>
+                <span id="guide-button" class="view-btn hidden" data-mode="guide">TV guide</span>
             </div>
         </header>
 
@@ -38,6 +39,7 @@
         </main>
 
         <div id="detail" class="hidden"></div>
+        <section id="guide" class="hidden" aria-label="TV guide"></section>
         <div id="menu" class="hidden"></div>
         <div id="toast" class="hidden"></div>
         <div id="load-error" class="hidden" role="alertdialog" aria-labelledby="load-message">
@@ -158,6 +160,8 @@
         <script src="js/home.js"></script>
         <script src="js/live-channels.js"></script>
         <script src="js/settings.js"></script>
+        <script src="js/guide-time.js"></script>
+        <script src="js/guide-view.js"></script>
         <script src="js/guide.js"></script>
         <script src="js/browser.js"></script>
         <script src="js/channel-list.js"></script>

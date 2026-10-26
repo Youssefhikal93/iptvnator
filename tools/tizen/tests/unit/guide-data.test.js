@@ -51,6 +51,17 @@ test('without a guide link only the provider schedule is asked', function () {
     assert.equal(GuideData({}, {}).available, false);
 });
 
+test('provider-first preference uses XMLTV only for channels the provider lacks', async function () {
+    var GuideData = sandbox(function () {
+        return { programmes: function () { return Promise.resolve([p('Own', 0, 10)]); } };
+    });
+    var guide = GuideData({ epgUrl: 'http://x/epg.xml', epgPrefer: false }, {
+        schedule: function (channel) { return Promise.resolve(channel.stream_id === 1 ? [p('Provider', 0, 10)] : null); },
+    });
+    assert.equal((await guide.programmes({ stream_id: 1 }, 0, 10))[0].title, 'Provider');
+    assert.equal((await guide.programmes({ stream_id: 3 }, 0, 10))[0].title, 'Own');
+});
+
 test('filters to the time range, keeps results and peeks synchronously', async function () {
     var calls = 0;
     var GuideData = sandbox();

@@ -25,6 +25,7 @@ window.M3uSource = function (source) {
                 pending = {
                     name: comma >= 0 ? tail.slice(comma + 1).trim() : '',
                     logo: attr(line, 'tvg-logo'),
+                    tvg_id: attr(line, 'tvg-id'),
                     group: attr(line, 'group-title'),
                 };
             } else if (line.indexOf('#EXTGRP:') === 0) {

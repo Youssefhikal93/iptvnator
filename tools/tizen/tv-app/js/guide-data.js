@@ -79,8 +79,8 @@ window.GuideData.chain = function (source, adapter) {
     'use strict';
 
     var chain = [];
-    // The viewer's own guide link (XMLTV, #7) wins when it has the channel.
-    if (window.XmltvGuide && source && source.epgUrl) chain.push(XmltvGuide(source));
+    var own = window.XmltvGuide && source && source.epgUrl ? XmltvGuide(source) : null;
+    if (own && source.epgPrefer !== false) chain.push(own);
     // The provider's full schedule (#6).
     if (adapter && adapter.schedule) {
         chain.push({
@@ -90,5 +90,6 @@ window.GuideData.chain = function (source, adapter) {
             },
         });
     }
+    if (own && source.epgPrefer === false) chain.push(own);
     return chain;
 };

@@ -194,6 +194,18 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Guide link**: when adding an Xtream or M3U source, optionally enter a
+  **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
+  +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on
+  its row in **Sources**, then choose **Guide link…** to edit or clear it;
+  **Return** or **Cancel** leaves it unchanged. **Prefer my guide** is on
+  by default for Xtream; turn it off to ask the provider first and fill
+  missing channels from your link. M3U sources use the link for now and
+  next. The source subtitle shows guide freshness, updating or failure.
+  Guides older than 12 hours download in the background when that source
+  becomes current; **Refresh guide** downloads again, keeping the saved
+  guide if it fails. **Remove guide link** deletes its saved guide.
+
 - **Loading and failures**: grey rows and cards pulse while a list loads.
   Empty lists explain how to add or find items. If a source cannot load,
   Retry takes the focus; press OK to try the same load again. The app also

@@ -10,10 +10,12 @@ window.LoadScreen = (function () {
     var priorFocus = null;
     var root = document.getElementById('load-error');
     var button = document.getElementById('load-retry');
+    var sourcesButton = document.getElementById('load-sources');
+    var openSources = null;
 
     function message(err) {
         if (err.code === 'saved') return ['Could not read saved data', 'Try again, or press Return to close the app.'];
-        if (err.code === 'account') return ['Account problem', 'Check this source\'s login and subscription in Sources.'];
+        if (err.code === 'account') return SourceAccount.screen(err);
         if (navigator.onLine === false || err.name === 'TypeError' || /network|failed to fetch|load failed/i.test(err.message)) {
             return ['No network connection', 'Check the TV\'s network connection and try again.'];
         }
@@ -45,7 +47,9 @@ window.LoadScreen = (function () {
         document.getElementById('load-countdown').textContent = job.status.running ? 'Trying again\u2026' :
             job.status.seconds !== null ? 'Retrying in ' + job.status.seconds + ' s\u2026' : '';
         button.setAttribute('aria-disabled', job.status.running ? 'true' : 'false');
-        if (!paused) button.focus();
+        // An account problem is fixed in Sources, so offer the way there.
+        sourcesButton.classList.toggle('hidden', job.status.error.code !== 'account' || !openSources);
+        if (!paused && document.activeElement !== sourcesButton) button.focus();
     }
 
     function run(key, load, active) {
@@ -72,6 +76,7 @@ window.LoadScreen = (function () {
     }
 
     button.onclick = function () { if (shown) shown.retry.now(); };
+    sourcesButton.onclick = function () { if (shown && openSources) openSources(); };
 
     return {
         run: run,
@@ -90,9 +95,14 @@ window.LoadScreen = (function () {
             Object.keys(jobs).forEach(function (key) { jobs[key].retry[pause ? 'pause' : 'resume'](); });
             render();
         },
+        onSources: function (open) { openSources = open; },
         key: function (code) {
             if (!shown) return false;
-            if (code === KEY.ENTER) shown.retry.now();
+            var offered = !sourcesButton.classList.contains('hidden');
+            var onSources = document.activeElement === sourcesButton;
+            if (offered && code === KEY.RIGHT) sourcesButton.focus();
+            else if (offered && code === KEY.LEFT && onSources) button.focus();
+            else if (code === KEY.ENTER) onSources ? sourcesButton.onclick() : shown.retry.now();
             else if (Keys.isBack(code) || code === KEY.LEFT) {
                 if (shown.status.error.code === 'saved') return code === KEY.LEFT ? true : 'exit';
                 shown.dismissed = true;

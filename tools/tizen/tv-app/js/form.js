@@ -10,10 +10,12 @@ window.Form = (function () {
     var type = 'xtream';
     var onDone = null;
     var editing = null;
+    // True when editing the whole source, not only its guide link.
+    var whole = false;
 
     function fields() {
         var inputs = type === 'xtream' ? ['form-name', 'form-url', 'form-user', 'form-pass'] : ['form-name', 'form-url'];
-        if (editing) inputs = [];
+        if (editing && !whole) inputs = [];
         inputs = inputs.concat(['form-epg-url', 'form-epg-offset']);
         if (type === 'xtream') inputs.push('form-epg-prefer');
         return inputs.concat(['form-save', 'form-cancel']);
@@ -23,8 +25,9 @@ window.Form = (function () {
         $('form-msg').textContent = text;
     }
 
-    function open(kind, done) {
+    function open(kind, done, mode) {
         editing = typeof kind === 'object' ? kind : null;
+        whole = !!editing && mode === 'source';
         kind = editing ? editing.type : kind;
         var xtream = kind === 'xtream';
         type = kind;
@@ -36,15 +39,21 @@ window.Form = (function () {
         $('form-url-label').textContent = xtream ? 'Server URL' : 'Playlist link';
         $('form-url').placeholder = xtream ? 'http://example.com:8080' : 'https://example.com/playlist.m3u';
         $('form-login').classList.toggle('hidden', !xtream);
-        $('form-source').classList.toggle('hidden', !!editing);
+        $('form-source').classList.toggle('hidden', !!editing && !whole);
         $('form-epg-preference').classList.toggle('hidden', !xtream);
         $('form-epg-url').value = editing && editing.epgUrl || '';
         $('form-epg-offset').value = editing && editing.epgOffset || 0;
         $('form-epg-prefer').value = editing && editing.epgPrefer === false ? 'no' : 'yes';
-        if (editing) $('form-title').textContent = 'Guide link';
+        if (editing) $('form-title').textContent = whole ? 'Edit source' : 'Guide link';
+        if (whole) {
+            $('form-name').value = editing.name || '';
+            $('form-url').value = editing.url || '';
+            $('form-user').value = editing.user || '';
+            $('form-pass').value = editing.pass || '';
+        }
         message('');
         $('form').classList.remove('hidden');
-        $(editing ? 'form-epg-url' : 'form-url').focus();
+        $(editing && !whole ? 'form-epg-url' : whole ? 'form-name' : 'form-url').focus();
     }
 
     function close(source) {
@@ -61,16 +70,23 @@ window.Form = (function () {
         if (!isFinite(offset) || offset < -12 || offset > 12) return message('The guide time offset must be from -12 to +12.');
         var source = { type: type, name: $('form-name').value, url: $('form-url').value.trim() };
         if (editing) source = Object.assign({}, editing);
+        var before = editing || {};
         source.epgUrl = guideUrl;
         source.epgOffset = offset;
         source.epgPrefer = $('form-epg-prefer').value !== 'no';
-        if (editing) return close(source);
+        if (editing && !whole) return close(source);
+        if (whole) {
+            source.name = $('form-name').value.trim();
+            source.url = $('form-url').value.trim();
+        }
         if (type === 'xtream') {
             source.user = $('form-user').value.trim();
             source.pass = $('form-pass').value.trim();
         }
         if (!/^https?:\/\//i.test(source.url)) return message('The link must start with http:// or https://');
         if (type === 'xtream' && (!source.user || !source.pass)) return message('Enter the username and password.');
+        // Only a new login or server needs the provider's answer.
+        if (whole && source.url === before.url && source.user === before.user && source.pass === before.pass) return close(source);
         message('Checking…');
         var adapter = type === 'xtream' ? XtreamSource(source) : M3uSource(source);
         adapter
@@ -79,6 +95,8 @@ window.Form = (function () {
                 close(source);
             })
             .catch(function (err) {
+                // A lapsed account still has a valid login; the account screen explains it.
+                if (whole && err.code === 'account' && err.reason !== 'login') return close(source);
                 Log.error('ADD SOURCE FAIL ' + err.message);
                 message('Could not connect: ' + err.message);
             });

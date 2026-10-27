@@ -15,9 +15,10 @@ window.Kit = (() => {
 
     // A titled strip of tiles; focus is the focused tile's index or -1. `cls`
     // names the family ('tm' gives tm-row, tm-cards, tm-card); a tile may
-    // bring its own cls and a key that keeps it across renders.
-    const Row = ({ cls = 'tm', kind, label, tiles, focus = -1 }) => html`<section class=${cls + '-row' + (kind ? ' ' + kind : '')}>
-        <h2>${label}</h2>
+    // bring its own cls and a key that keeps it across renders. `aside` is
+    // a line beside the title, such as a count.
+    const Row = ({ cls = 'tm', kind, label, aside, tiles, focus = -1 }) => html`<section class=${cls + '-row' + (kind ? ' ' + kind : '')}>
+        <h2>${label}</h2>${aside ? html`<span class=${cls + '-aside'}>${aside}</span>` : null}
         <div class=${cls + '-cards'}>${tiles.map((tile, i) => html`<${Tile} key=${tile.key === undefined ? i : tile.key} cls=${cls + '-card'} ...${tile} focused=${i === focus} />`)}</div>
     </section>`;
 

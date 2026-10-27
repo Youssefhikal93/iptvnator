@@ -103,7 +103,7 @@ test('provider page renders first, then TMDB fills plot and cast; OK opens actor
     await expect(page.locator('#detail .tm-card').first()).toContainText('Alex Example');
     await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /\/w500\/poster.jpg$/);
     await expect(page.locator('#detail .dt-backdrop')).toHaveAttribute('src', /\/w1280\/backdrop.jpg$/);
-    await expect(page.locator('#detail .dt-btn', { hasText: 'Trailer' })).toHaveCount(0);
+    await expect(page.locator('#detail .dt-btn', { hasText: 'Trailer' })).toHaveCount(1);
     await press(page, 'ArrowDown');
     await expect(page.locator('#detail .tm-card.focus')).toContainText('Alex Example');
     await page.screenshot({ path: testInfo.outputPath('cast.png') });
@@ -209,7 +209,7 @@ test('removing a key stops enrichment and removes Discover, including after relo
     await expect(page.locator('#categories')).not.toContainText('Discover');
 });
 
-test('YouTube trailers use a matching installed app control and never an iframe', async ({ page }) => {
+test('YouTube trailers launch an implicit view control and never an iframe', async ({ page }) => {
     await page.addInitScript(() => {
         window.tizen = {
             ApplicationControl: function (operation, uri) { this.operation = operation; this.uri = uri; },
@@ -225,7 +225,20 @@ test('YouTube trailers use a matching installed app control and never an iframe'
     await expect(page.locator('#detail .dt-btn', { hasText: 'Trailer' })).toHaveCount(1);
     await moveTo(page, '#detail .dt-btn.focus', 'Trailer', 'ArrowRight');
     await press(page, 'Enter');
-    await expect.poll(() => page.evaluate(() => window.launchedTrailer)).toEqual({ uri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', id: 'youtube.tv' });
+    await expect.poll(() => page.evaluate(() => window.launchedTrailer)).toEqual({ uri: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', id: null });
+    await expect(page.locator('#detail iframe')).toHaveCount(0);
+    await page.evaluate(() => {
+        Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+        document.dispatchEvent(new Event('visibilitychange'));
+        delete window.tizen;
+    });
+    await expect(page.locator('#detail .dt-btn.focus')).toHaveText('Trailer');
+    await press(page, 'Enter');
+    await expect(page.locator('#toast')).toHaveText('YouTube is not available on this TV');
+    await expect(page.locator('#detail')).toBeVisible();
+    await expect(page.locator('#detail .dt-btn.focus')).toHaveText('Trailer');
     await expect(page.locator('#detail iframe')).toHaveCount(0);
 });
 

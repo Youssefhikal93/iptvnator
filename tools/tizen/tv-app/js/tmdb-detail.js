@@ -12,19 +12,13 @@ window.TmdbDetail = function (page, changed) {
     function current() { return active && secret && secret === Prefs.get('tmdbApiKey'); }
 
     function findTrailer(videos) {
-        var video = (videos || []).filter(function (entry) { return entry.site === 'YouTube' && entry.type === 'Trailer' && /^[\w-]{11}$/.test(entry.key); })[0];
-        if (!video || !window.tizen || !tizen.application || !tizen.ApplicationControl) return;
-        try {
-            var control = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', 'https://www.youtube.com/watch?v=' + video.key);
-            tizen.application.findAppControl(control, function (apps) {
-                if (!current()) return;
-                var youtube = apps.filter(function (app) { return /youtube/i.test(app.name || '') || /youtube/i.test(app.id); })[0];
-                if (youtube) {
-                    trailer = { control: control, id: youtube.id };
-                    changed();
-                }
-            }, function () {});
-        } catch (e) { /* No YouTube application control on this TV. */ }
+        var video = (videos || []).filter(function (entry) { return entry.site === 'YouTube' && entry.type === 'Trailer' && YouTube.videoId(entry.key); })[0];
+        if (!video) return;
+        YouTube.available(function (available) {
+            if (!current() || !available) return;
+            trailer = YouTube.videoId(video.key);
+            changed();
+        });
     }
 
     function rows() {
@@ -88,9 +82,7 @@ window.TmdbDetail = function (page, changed) {
         trailer: function () { return current() && !!trailer; },
         openTrailer: function () {
             if (!current() || !trailer) return;
-            try {
-                tizen.application.launchAppControl(trailer.control, trailer.id, function () {}, function () { trailer = null; changed(); });
-            } catch (e) { trailer = null; changed(); }
+            YouTube.open(trailer);
         },
     };
 };

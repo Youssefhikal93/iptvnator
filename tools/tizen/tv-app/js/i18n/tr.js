@@ -120,6 +120,7 @@ I18n.tables.tr = {
     'tmdb.cast': 'Oyuncular',
     'tmdb.checking': 'Kontrol ediliyor…',
     'tmdb.inLibrary': 'Kitaplığınızda mevcut',
+    'trailer.unavailable': 'YouTube bu televizyonda kullanılamıyor',
     'unit.hoursMinutes': '{h} sa {m} dk',
     'unit.minutes': '{n} dk',
     'unit.minutesOnly': '{m} dk',

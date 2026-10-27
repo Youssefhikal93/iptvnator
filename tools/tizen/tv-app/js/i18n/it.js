@@ -120,6 +120,7 @@ I18n.tables.it = {
     'tmdb.cast': 'Interpreti',
     'tmdb.checking': 'Verifica in corso…',
     'tmdb.inLibrary': 'Nella tua libreria',
+    'trailer.unavailable': 'YouTube non è disponibile su questo televisore',
     'unit.hoursMinutes': '{h} h {m} min',
     'unit.minutes': '{n} min',
     'unit.minutesOnly': '{m} min',

@@ -211,8 +211,7 @@ from step 8 must already be downloaded.
   artwork, facts and missing plots. Press **DOWN** from the buttons to **Cast**;
   **LEFT/RIGHT** selects a person and **OK** opens their biography and **In your
   library** titles. Press **DOWN** again for **Similar in your library**, then
-  again for a show's episodes. TMDB's **Trailer** appears only when the TV can open
-  YouTube; it opens that app. **Discover**, at the top of Movies and Series
+  again for a show's episodes. **Discover**, at the top of Movies and Series
   categories, offers genre chips: choose with **LEFT/RIGHT**, press **OK**,
   then **DOWN** to matched titles. **CH ▲▼** checks another page of 12 catalogue
   titles, with at most three TMDB requests at once. **Return** goes back.
@@ -342,9 +341,14 @@ from step 8 must already be downloaded.
   when dated items exist: up to 50, always newest first by catalogue date,
   regardless of release year. Sort is hidden there, in Recently watched and
   Continue watching, merged All sources Favorites, and for Live TV and M3U sources.
+- **Trailer**: on a movie or show detail page, select **Trailer** with
+  **LEFT/RIGHT** and press **OK** to open that video in the TV's YouTube app.
+  Playback in IPTVnator stops first. **Return/Back** in YouTube returns to the
+  same detail page. The button appears only for a trailer with YouTube available
+  on the TV. In a browser, OK shows **YouTube is not available on this TV**.
 - **Movies**: OK opens a detail page (artwork, year, rating, genre, length,
   plot, cast) with Play or Resume from X / Start over, Favorites, Trailer
-  (when the provider has one; it plays from YouTube) and More for a long
+  (when available) and More for a long
   plot. Return goes back to the list. Hold OK → Play skips the page.
 - **Series**: OK opens the show's page. The main button continues the
   last episode watched, or plays the next one. ▼ goes to the episodes

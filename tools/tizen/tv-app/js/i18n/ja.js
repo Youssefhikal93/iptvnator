@@ -120,6 +120,7 @@ I18n.tables.ja = {
     'tmdb.cast': '出演者',
     'tmdb.checking': '確認中…',
     'tmdb.inLibrary': 'ライブラリにあり',
+    'trailer.unavailable': 'このテレビでは YouTube を利用できません',
     'unit.hoursMinutes': '{h}時間{m}分',
     'unit.minutes': '{n}分',
     'unit.minutesOnly': '{m}分',

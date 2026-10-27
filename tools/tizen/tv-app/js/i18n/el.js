@@ -120,6 +120,7 @@ I18n.tables.el = {
     'tmdb.cast': 'Ηθοποιοί',
     'tmdb.checking': 'Έλεγχος…',
     'tmdb.inLibrary': 'Στη βιβλιοθήκη σας',
+    'trailer.unavailable': 'Το YouTube δεν είναι διαθέσιμο σε αυτή την τηλεόραση',
     'unit.hoursMinutes': '{h} ώ {m} λ',
     'unit.minutes': '{n} λεπ.',
     'unit.minutesOnly': '{m} λεπ.',

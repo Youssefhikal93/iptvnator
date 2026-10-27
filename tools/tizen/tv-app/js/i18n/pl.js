@@ -120,6 +120,7 @@ I18n.tables.pl = {
     'tmdb.cast': 'Obsada',
     'tmdb.checking': 'Sprawdzanie…',
     'tmdb.inLibrary': 'W twojej bibliotece',
+    'trailer.unavailable': 'YouTube nie jest dostępny na tym telewizorze',
     'unit.hoursMinutes': '{h} godz. {m} min',
     'unit.minutes': '{n} min',
     'unit.minutesOnly': '{m} min',

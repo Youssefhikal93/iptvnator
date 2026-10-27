@@ -120,6 +120,7 @@ I18n.tables.ary = {
     'tmdb.cast': 'طاقم التمثيل',
     'tmdb.checking': 'جاري التحقق…',
     'tmdb.inLibrary': 'كاين فالمكتبة ديالك',
+    'trailer.unavailable': 'YouTube ما متوفرش فهاد التلفاز',
     'unit.hoursMinutes': '{h} س {m} د',
     'unit.minutes': '{n} د',
     'unit.minutesOnly': '{m} د',

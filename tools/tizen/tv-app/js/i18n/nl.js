@@ -120,6 +120,7 @@ I18n.tables.nl = {
     'tmdb.cast': 'Rolverdeling',
     'tmdb.checking': 'Wordt gecontroleerd…',
     'tmdb.inLibrary': 'In je bibliotheek',
+    'trailer.unavailable': 'YouTube is niet beschikbaar op deze tv',
     'unit.hoursMinutes': '{h} u {m} min',
     'unit.minutes': '{n} min',
     'unit.minutesOnly': '{m} min',

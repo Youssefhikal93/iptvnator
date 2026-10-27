@@ -120,6 +120,7 @@ I18n.tables.uk = {
     'tmdb.cast': 'Актори',
     'tmdb.checking': 'Перевірка…',
     'tmdb.inLibrary': 'У вашій бібліотеці',
+    'trailer.unavailable': 'YouTube недоступний на цьому телевізорі',
     'unit.hoursMinutes': '{h} г. {m} хв.',
     'unit.minutes': '{n} хв.',
     'unit.minutesOnly': '{m} хв.',

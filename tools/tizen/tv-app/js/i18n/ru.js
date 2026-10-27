@@ -120,6 +120,7 @@ I18n.tables.ru = {
     'tmdb.cast': 'Актёры',
     'tmdb.checking': 'Проверяется…',
     'tmdb.inLibrary': 'Есть в вашей библиотеке',
+    'trailer.unavailable': 'YouTube недоступен на этом телевизоре',
     'unit.hoursMinutes': '{h} ч {m} мин',
     'unit.minutes': '{n} мин',
     'unit.minutesOnly': '{m} мин',

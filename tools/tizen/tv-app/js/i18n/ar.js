@@ -120,6 +120,7 @@ I18n.tables.ar = {
     'tmdb.cast': 'طاقم التمثيل',
     'tmdb.checking': 'جارٍ التحقق…',
     'tmdb.inLibrary': 'متوفر في مكتبتك',
+    'trailer.unavailable': 'YouTube غير متاح على هذا التلفزيون',
     'unit.hoursMinutes': '{h} س {m} د',
     'unit.minutes': '{n} د',
     'unit.minutesOnly': '{m} د',

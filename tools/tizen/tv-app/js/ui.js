@@ -32,5 +32,11 @@ window.UI = (function () {
         clear: function (root) {
             preact.render(null, root);
         },
+        // For screens not yet in Preact: the view as a detached node.
+        node: function (view) {
+            var box = document.createElement('div');
+            preact.render(view, box);
+            return box.firstChild;
+        },
     };
 })();

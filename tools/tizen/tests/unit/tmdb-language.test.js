@@ -11,7 +11,7 @@ var languages = fs.readdirSync(path.join(__dirname, '../../tv-app/js/i18n')).fil
 function client(fetch, overrides) {
     var api = load(languages.map(function (name) { return 'i18n/' + name; }).concat([
         'settings-store.js', 'appearance.js', 'tmdb-store.js', 'tmdb-language.js', 'tmdb.js',
-        'keys.js', 'youtube.js', 'tmdb-view.js', 'tmdb-detail.js', 'actor.js',
+        'keys.js', 'focus.js', 'kit.js', 'youtube.js', 'tmdb-view.js', 'tmdb-detail.js', 'actor.js',
     ]), {}, Object.assign({
         AbortController: AbortController,
         Log: { error: function () {} },

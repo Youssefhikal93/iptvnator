@@ -116,8 +116,7 @@ window.DetailEpisodes = function (opts) {
         return html`<div class=${cls}>
             <div class="dt-ep-pills">
                 ${s.seasons.map(function (season, i) {
-                    var pill = 'dt-ep-pill' + (i === s.season ? ' active' : '') + (active && s.zone === 'pills' && i === s.season ? ' focus' : '');
-                    return html`<span class=${pill}>${I18n.t('episodes.season', { n: season })}</span>`;
+                    return html`<${Kit.Pill} cls="dt-ep-pill" label=${I18n.t('episodes.season', { n: season })} active=${i === s.season} focused=${active && s.zone === 'pills' && i === s.season} />`;
                 })}
                 <span class="dt-ep-count">${I18n.t('episodes.doneOf', { done: done, total: shown.length })}</span>
             </div>
@@ -131,25 +130,26 @@ window.DetailEpisodes = function (opts) {
     function key(code) {
         var shown = inSeason();
         if (s.zone === 'pills') {
-            if (code === KEY.LEFT && s.season > 0) {
-                s.season--;
-                s.focus = 0;
-            } else if (code === KEY.RIGHT && s.season < s.seasons.length - 1) {
-                s.season++;
-                s.focus = 0;
+            if (code === KEY.LEFT || code === KEY.RIGHT) {
+                var season = Focus.step(s.season, s.seasons.length, code, 'row');
+                if (season.index !== undefined && season.index !== s.season) {
+                    s.season = season.index;
+                    s.focus = 0;
+                }
             } else if ((code === KEY.DOWN || code === KEY.ENTER) && shown.length) s.zone = 'rows';
             else if (code === KEY.UP) return 'up';
             return undefined;
         }
-        if (code === KEY.UP && s.focus === 0) s.zone = 'pills';
-        else if (code === KEY.UP) s.focus--;
-        else if (code === KEY.DOWN && s.focus < shown.length - 1) s.focus++;
-        else if (code === KEY.ENTER) {
+        if (code === KEY.ENTER) {
             var index = shown[s.focus];
             if (index === undefined) return undefined;
             var p = opts.progressOf(s.list[index]);
             opts.play(s.list, index, p && p.status === 'continue' ? true : undefined);
+            return undefined;
         }
+        var moved = Focus.step(s.focus, shown.length, code, 'column');
+        if (moved.exit === 'up' && code === KEY.UP) s.zone = 'pills';
+        else if (moved.index !== undefined) s.focus = moved.index;
         return undefined;
     }
 

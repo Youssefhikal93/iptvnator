@@ -26,6 +26,7 @@ window.Browser = function (hooks) {
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
+    var visibility = Visibility(sourceId);
     var libraryNavigation = LibraryNavigation({
         current: sourceId,
         capture: function () { return { section: state.section, category: categories.item() }; },
@@ -37,15 +38,16 @@ window.Browser = function (hooks) {
     var live = LiveChannels({
         categories: function () {
             return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
-                return HiddenCategories.visible(sourceId(), 'live', list);
+                return visibility.categories('live', list);
             });
         },
+        // Zapping and last-channel lists apply the lock only, not hidden categories.
         channels: function (categoryId) {
             return loadCatalogue({ section: 'live', kind: 'items', id: categoryId }).then(function (list) {
-                return ParentalLock.filterItems(sourceId(), 'live', list);
+                return visibility.items('live', list, { withHidden: true });
             });
         },
-        allows: function (channel) { return ParentalLock.allows(sourceId(), 'live', channel); },
+        allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },
         request: liveRequest,
         record: function (channel) {
             record(channel, null, null, 'live');
@@ -135,7 +137,7 @@ window.Browser = function (hooks) {
         },
         items: function (section) {
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
-                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all));
+                return visibility.items(section, all);
             });
         },
     });
@@ -437,7 +439,7 @@ window.Browser = function (hooks) {
 
     // The catalogue's categories minus the hidden ones, after the virtual rows.
     function categoryRows(list) {
-        return virtualRows().concat(HiddenCategories.visible(sourceId(), state.section, list || state.base || []));
+        return virtualRows().concat(visibility.categories(state.section, list || state.base || []));
     }
 
     function showCategories(index) {
@@ -446,7 +448,7 @@ window.Browser = function (hooks) {
 
     // Recently added, without items of hidden categories.
     function addedOf(section) {
-        return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, state.added[section] || []));
+        return visibility.items(section, state.added[section] || []);
     }
 
     function virtualList(kind) {
@@ -469,8 +471,9 @@ window.Browser = function (hooks) {
         state.token++;
         state.showingSearch = false;
         applyView();
+        // Library lists keep items of hidden categories; only the lock applies.
         setItems(virtualList(category.virtual).filter(function (item) {
-            return ParentalLock.allows(item.sourceId || sourceId(), state.section, item);
+            return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
         }), index || 0, EMPTY[category.virtual]);
         renderChrome();
     }
@@ -730,7 +733,7 @@ window.Browser = function (hooks) {
         var adapter = state.adapter;
         state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
             if (adapter !== state.adapter) return;
-            state.genres[section] = offer(ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)), section, 20);
+            state.genres[section] = offer(visibility.items(section, all), section, 20);
         }).catch(function () {});
     }
 
@@ -822,7 +825,7 @@ window.Browser = function (hooks) {
             .then(function (all) {
                 if (token !== state.token) return 0;
                 // A title matches by name, or by a genre the query names.
-                state.search.results = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)).filter(function (it) {
+                state.search.results = visibility.items(section, all).filter(function (it) {
                     return String(it.name).toLowerCase().indexOf(needle) !== -1 || Genres.matches(it, section, query);
                 });
                 setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('empty.search.hint')]);
@@ -1218,8 +1221,7 @@ window.Browser = function (hooks) {
 
     // "All channels" spans categories; any other list is just its own category.
     function shownItems(category, list) {
-        list = String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
-        return ParentalLock.filterItems(sourceId(), state.section, list);
+        return visibility.items(state.section, list, { withHidden: String(category.category_id) !== '' });
     }
 
     function loadItems() {
@@ -1329,7 +1331,7 @@ window.Browser = function (hooks) {
             });
         }
         return list.filter(function (entry) {
-            return ParentalLock.allows(id, entry.section, entry.item);
+            return visibility.allows(entry.section, entry.item, { withHidden: true });
         }).sort(function (a, b) {
             return progressOf(b).updatedAt - progressOf(a).updatedAt;
         });
@@ -1338,8 +1340,7 @@ window.Browser = function (hooks) {
     // Home rows leave out items of hidden categories (Continue watching stays).
     function shownEntries(section, list) {
         return entriesOf(section, list.filter(function (item) {
-            var id = item.sourceId || sourceId();
-            return HiddenCategories.allows(id, section, item) && ParentalLock.allows(id, section, item);
+            return visibility.allows(section, item, { sourceId: item.sourceId });
         }));
     }
 
@@ -1441,7 +1442,7 @@ window.Browser = function (hooks) {
         return Promise.all([load('categories'), load('items')]).then(function (lists) {
             var category = lists[0].filter(function (row) { return String(row.category_id) === String(id); })[0];
             if (!category) return null;
-            var shown = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, lists[1]));
+            var shown = visibility.items(section, lists[1]);
             var others = shown.filter(function (entry) { return String(entry.category_id) === String(id) && key(entry) !== key(item); });
             return { label: I18n.t('detail.moreIn', { category: I18n.categoryName(category) }), items: others.slice(0, 20) };
         }).catch(function () { return null; });
@@ -1548,7 +1549,7 @@ window.Browser = function (hooks) {
         return Promise.all(['movies', 'series'].map(function (section) {
             if (state.adapter.sections.indexOf(section) === -1) return [];
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (list) {
-                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, list)).map(function (item) {
+                return visibility.items(section, list).map(function (item) {
                     return { item: item, type: section === 'movies' ? 'movie' : 'tv' };
                 });
             }).catch(function () { return []; });

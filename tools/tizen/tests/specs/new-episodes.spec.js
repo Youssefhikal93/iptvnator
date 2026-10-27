@@ -97,8 +97,9 @@ test('a catalogue refresh that adds episodes brings the badge back on Home and i
         for (const item of list) if (item.series_id === 3004) item.last_modified = String(Math.floor(Date.now() / 1000) + 100000);
         await route.fulfill({ response, json: list });
     });
-    // A day later: the saved lists are due for their refresh.
-    await page.evaluate(() => Object.keys(localStorage).filter((key) => key.indexOf('iptvnator-tv:fetched:') === 0).forEach((key) => localStorage.removeItem(key)));
+    // Saved lists do not refresh by themselves: the viewer refreshes them,
+    // which forgets the saved lists; the restart then fetches them again.
+    await page.evaluate(() => Catalogue.drop(Sources.current().id));
     await page.reload();
     await requested;
     await page.waitForTimeout(300);

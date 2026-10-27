@@ -182,10 +182,13 @@ window.XtreamSource = function (source, options) {
             return {
                 live: true,
                 title: (channel.num ? channel.num + '. ' : '') + channel.name,
+                // HLS starts in about 1.5 s on this TV and is the one route some
+                // providers' redirects do not break; Samsung's player is about
+                // as fast elsewhere. mpegts.js often waits for the 20 s timeout.
                 sources: [
-                    { via: 'mpegts', url: streamUrl('live', channel.stream_id, 'ts') },
                     { via: 'hls', url: streamUrl('live', channel.stream_id, 'm3u8') },
-                    { via: 'avplay', url: streamUrl('live', channel.stream_id, 'ts') },
+                    { via: 'avplay', url: streamUrl('live', channel.stream_id, 'ts'), resolve: true },
+                    { via: 'mpegts', url: streamUrl('live', channel.stream_id, 'ts') },
                 ],
             };
         },

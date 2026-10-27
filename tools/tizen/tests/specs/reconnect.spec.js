@@ -28,7 +28,8 @@ async function shorten(page, delays = [200, 200, 200], stallMs = 1500) {
 // Counts live requests, and how many were open at the same moment.
 function trackLive(page) {
     const log = { urls: [], open: 0, max: 0 };
-    const isLive = (request) => request.url().includes('/live/');
+    // The transport stream only: the HLS address the player asks for first is 404 here.
+    const isLive = (request) => request.url().includes('/live/') && new URL(request.url()).pathname.endsWith('.ts');
     page.on('request', (request) => {
         if (!isLive(request)) return;
         log.urls.push(request.url());
@@ -45,7 +46,7 @@ function trackLive(page) {
 // Request 1 is cut short; later ones follow `then` ('pass' or 'abort').
 async function dropAfterFirst(page, then) {
     const state = { served: 0, failing: then === 'abort' };
-    await page.route('**/live/**', async (route) => {
+    await page.route('**/live/**/*.ts', async (route) => {
         state.served++;
         if (state.served === 1) return route.fulfill({ status: 200, headers: TS_HEADERS, body: SHORT_STREAM });
         if (state.failing) return route.abort('failed');

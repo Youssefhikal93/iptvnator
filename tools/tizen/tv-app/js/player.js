@@ -981,17 +981,19 @@ window.Player = (function () {
         };
     }
 
-    function viaAvPlay(url) {
+    function viaAvPlay(url, source) {
         return function (finish) {
             var av = avplay();
             if (!av) return finish('AVPlay unavailable');
             usingAv = true;
             var mine = session;
-            var target = current.live ? Promise.resolve(url) : AvResolve.final(url);
+            var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
             target.then(function (address) {
                 if (mine !== session) return;
+                // A busy or offline answer goes to the chain's 503 handling.
+                if (address.error) return finish(address.error);
                 try {
-                    open(av, address, finish);
+                    open(av, address.url || address, finish);
                 } catch (e) {
                     finish(e.name || String(e));
                 }
@@ -1116,7 +1118,7 @@ window.Player = (function () {
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
 
         var attempts = req.sources.map(function (source) {
-            return [source.via, STARTERS[source.via](source.url)];
+            return [source.via, STARTERS[source.via](source.url, source)];
         });
 
         function fail(message) {
@@ -1131,16 +1133,19 @@ window.Player = (function () {
                 return Promise.resolve();
             }
             var name = attempts[index][0];
+            var began = Date.now();
             return attempt(attempts[index][1]).then(function (error) {
                 if (mine !== session) return;
                 if (!error) {
-                    Log.info('PLAY OK ' + name + ' ' + req.title);
+                    Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + (Date.now() - began) + 'ms');
                     onReady();
                     if (onAttempt) onAttempt(null);
                     return;
                 }
-                Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ')');
+                Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + (Date.now() - began) + 'ms');
                 release();
+                // release() also clears the now/next guide; the next player needs it again.
+                epg.load(req);
                 // 503 means the previous stream is still counted (retry once
                 // after a pause) or the channel is offline (other players
                 // would get the same answer, so stop).

@@ -14,23 +14,24 @@ window.AvResolve = (function () {
         }
     }
 
-    // Resolves to the final address, or the original one when the lookup
-    // fails: AVPlay then fails as before and the next player takes over.
+    // Resolves to { url } (the final address, or the original one when the
+    // lookup fails or is slow) or { error: 'HTTP 503' } when the server refuses.
     function final(url) {
         var timer;
         var lookup = fetch(url, { headers: { Range: 'bytes=0-1' } }).then(function (res) {
             // Only two bytes were asked for; free the connection at once (ADR 0006).
             if (res.body && res.body.cancel) res.body.cancel().catch(function () {});
-            if (!res.redirected || !res.url || res.url === url) return url;
+            if (res.status >= 400) return { error: 'HTTP ' + res.status };
+            if (!res.redirected || !res.url || res.url === url) return { url: url };
             Log.info('AVPlay redirect ' + host(url) + ' -> ' + host(res.url));
-            return res.url;
+            return { url: res.url };
         });
         var limit = new Promise(function (resolve) {
-            timer = setTimeout(function () { resolve(url); }, TIMEOUT_MS);
+            timer = setTimeout(function () { resolve({ url: url }); }, TIMEOUT_MS);
         });
         return Promise.race([lookup, limit]).catch(function (e) {
             Log.error('AVPlay redirect lookup failed ' + host(url) + ' (' + e.name + ')');
-            return url;
+            return { url: url };
         }).then(function (result) {
             clearTimeout(timer);
             return result;

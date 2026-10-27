@@ -89,10 +89,11 @@ window.M3uSource = function (source) {
 
     function playbackChain(url) {
         if (/\.m3u8(\?|$)/i.test(url)) return [{ via: 'hls', url: url }, { via: 'avplay', url: url }];
+        // AVPlay first, as for Xtream live: mpegts.js is the slowest here.
         return [
-            { via: 'mpegts', url: url },
+            { via: 'avplay', url: url, resolve: true },
             { via: 'hls', url: url },
-            { via: 'avplay', url: url },
+            { via: 'mpegts', url: url },
         ];
     }
 

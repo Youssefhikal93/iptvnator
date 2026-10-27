@@ -8,7 +8,9 @@ function trackStreams(page) {
     const streams = { started: 0, open: new Set(), most: 0 };
     const closed = request => streams.open.delete(request);
     page.on('request', request => {
-        if (!new URL(request.url()).pathname.startsWith('/live/')) return;
+        // The transport stream only: the HLS address the player asks for first is 404 here.
+        const pathname = new URL(request.url()).pathname;
+        if (!pathname.startsWith('/live/') || !pathname.endsWith('.ts')) return;
         streams.started++;
         streams.open.add(request);
         streams.most = Math.max(streams.most, streams.open.size);

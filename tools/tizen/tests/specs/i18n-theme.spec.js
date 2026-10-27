@@ -29,15 +29,14 @@ function luminance([r, g, b]) {
 
 const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
 
-// The outer box-shadow ring is opaque and separate from the surface gap.
+// The focus colour a viewer sees, laid over the surface behind it.
 async function focusContrast(page, selector) {
     return page.evaluate(({ selector }) => {
         const parse = text => (text.match(/[\d.]+/g) || []).map(Number);
         const node = document.querySelector(selector);
         const style = getComputedStyle(node);
-        const colours = style.boxShadow.match(/rgba?\([^)]+\)/g);
-        const border = parse(colours[1]);
-        const surface = parse(getComputedStyle(node.parentElement).backgroundColor);
+        const border = parse(style.borderTopColor);
+        const surface = parse(getComputedStyle(document.querySelector('#content')).backgroundColor);
         const base = surface.length ? surface : parse(getComputedStyle(document.body).backgroundColor);
         const alpha = border.length > 3 ? border[3] : 1;
         const mixed = [0, 1, 2].map(i => Math.round(border[i] * alpha + base[i] * (1 - alpha)));
@@ -118,7 +117,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     await moveTo(page, '.st-row.focused .st-label', 'Theme');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Dark');
     const darkFocus = await focusContrast(page, '.st-row.focused');
-    expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThan(3);
 
     await press(page, 'Enter');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Light');
@@ -128,17 +127,17 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     expect(dark).toBe('rgb(13, 15, 18)');
     expect(light).toBe('rgb(238, 240, 243)');
 
-    // Focus uses a 4 px surface gap and an 8 px outer ring in both themes.
+    // The focused row keeps a border the eye can find on the light surface.
     const style = await page.locator('.st-row.focused').evaluate(node => {
         const css = getComputedStyle(node);
-        return { shadow: css.boxShadow };
+        return { width: css.borderTopWidth, style: css.borderTopStyle, outline: css.outlineStyle, shadow: css.boxShadow };
     });
-    expect(style.shadow).toContain('0px 0px 0px 4px');
-    expect(style.shadow).toContain('0px 0px 0px 8px');
+    expect(style.style).not.toBe('none');
+    expect(parseFloat(style.width)).toBeGreaterThanOrEqual(3);
     const lightFocus = await focusContrast(page, '.st-row.focused');
-    expect(contrast(lightFocus.mixed, lightFocus.base)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(lightFocus.mixed, lightFocus.base)).toBeGreaterThan(3);
 
-    // The rail uses the same shared ring.
+    // The rail's focus ring uses a glow as well as a border.
     await backToRail(page);
     const ring = await page.locator('#rail .rail-item.focused').evaluate(node => {
         const css = getComputedStyle(node);

@@ -337,17 +337,7 @@ from step 8 must already be downloaded.
   desktop translation lacks stays English; provider names, channel names and
   descriptions are never translated. Times and dates follow the language.
   The translation tables are `tv-app/js/i18n/<code>.js`; rebuild them from the
-    desktop files with `node tests/i18n/build-tables.js` (TV appearance terms
-    are kept in `tests/i18n/appearance-translations.json`).
-- **Accent colour and density** (Settings, group **Appearance**): use UP/DOWN
-    to reach either row, then OK or RIGHT to cycle its choices. **Accent colour**
-    offers **Blue** (default), **Saffron**, **Asphalt**, **Violet** and **Pink**
-    with either Dark or Light theme. **Density** offers **Comfortable** (default,
-    larger rows and text, four posters across in grids and five on Home) and
-    **Compact** (the original item sizes). Both apply immediately, survive a
-    restart and belong to the current profile. Focused artwork grows slightly
-    with a clear ring; selected categories keep accent text when focus leaves.
-    The main screen keeps controls and key hints inside the TV's 5% safe area.
+  desktop files with `node tests/i18n/build-tables.js`.
 - **▲ at the top of a list** reaches the search bar and the list / grid
   buttons. Results follow the typing; the SmartThings phone app keyboard is
   easier than the remote.

@@ -15,8 +15,8 @@
     --card-hover-bg: #252b3a;
     --on-surface: #e6e1e5;
     --heading: #d8dce8;
-    --eyebrow: #a2acc5;
-    --muted: #a2acc5;
+    --eyebrow: #6b7494;
+    --muted: #9aa3bd;
     --line: rgba(255, 255, 255, 0.1);
     --search-bg: rgba(255, 255, 255, 0.05);
     --search-border: rgba(255, 255, 255, 0.09);
@@ -54,12 +54,12 @@
     --card-hover-bg: #f0f2f5;
     --on-surface: #1d1b1e;
     --heading: #1a1d23;
-    --eyebrow: #505a6c;
+    --eyebrow: #6b7385;
     --muted: #4a5060;
     --line: rgba(0, 0, 0, 0.14);
     --search-bg: rgba(255, 255, 255, 0.7);
     --search-border: rgba(0, 0, 0, 0.1);
-    /* Blue keeps the desktop accent; other accents override only derived tokens. */
+    /* Focus colours are the desktop's #1d63e0 ring, 3.6:1 or better on every light surface. */
     --selection: #1d63e0;
     --selection-on: #eef4ff;
     --selection-surface: rgba(47, 123, 255, 0.14);
@@ -69,10 +69,10 @@
     --focus-ring: #1d63e0;
     --overlay: rgba(0, 0, 0, 0.06);
     --overlay-2: rgba(0, 0, 0, 0.08);
-    --skeleton: #eef0f3;
+    --skeleton: #dfe3ea;
     --warn-bg: rgba(244, 67, 54, 0.14);
     --warn-fg: #b3261e;
-    --poster-bg: linear-gradient(135deg, #eef0f3, #f5f6f8);
+    --poster-bg: linear-gradient(135deg, #dbe3f5, #eef0f3);
     --star: #b45309;
     --track: rgba(0, 0, 0, 0.16);
     --primary-bg: #1a1d23;

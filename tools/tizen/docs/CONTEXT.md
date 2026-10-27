@@ -122,14 +122,6 @@ _Avoid_: Sidebar, nav
 App-wide playback, display and start-up choices, available from the bottom of the rail even without a source.
 _Avoid_: Preferences, configuration
 
-**Accent colour**:
-The colour used for focus rings and highlights, chosen in Appearance for each profile: Blue, Saffron, Asphalt, Violet or Pink.
-_Avoid_: Theme colour, highlight theme
-
-**Density**:
-The spacing and sizes of browsing items: Comfortable for sofa reading, or Compact for more items, chosen per profile in Appearance.
-_Avoid_: Zoom, resolution, text size
-
 **Detail page**:
 The full-screen page for one movie or show: artwork, facts, plot and its buttons; a show's page also lists its episodes.
 _Avoid_: Info page, details screen

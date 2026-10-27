@@ -22,7 +22,7 @@ function episodeEntry(id, episode) {
 function app(stored) {
     var start = {};
     Object.keys(stored || {}).forEach(function (key) {
-        start['iptvnator-tv:' + key] = JSON.stringify(stored[key]);
+        start['iptvnator-tv:' + (key === 'progress' ? 'progress:s1' : key)] = JSON.stringify(stored[key]);
     });
     return load(['progress.js', 'library.js', 'new-episodes.js'], start);
 }

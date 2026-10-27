@@ -193,7 +193,7 @@ test('deleting a profile removes only its keys; the last profile cannot be delet
 });
 
 test('profiles keep favorites, recents, progress, settings, hidden and locked categories apart', function () {
-    var run = load(VIEWER_FILES, oldData());
+    var run = load(VIEWER_FILES.concat(['progress-migration.js']), oldData());
     var g = run.globals;
     var movie = { name: 'A', stream_id: 1 };
     assert.equal(g.Library.isFavorite('s1', 'movies', movie), true);

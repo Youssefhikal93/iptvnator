@@ -3,12 +3,14 @@
 var test = require('node:test');
 var assert = require('node:assert/strict');
 var load = require('./sandbox');
-var KEY = 'iptvnator-tv:progress';
+var KEY = 'iptvnator-tv:progress:s1';
 
 function progressAt(position, duration) {
     var stored = {};
     stored[KEY] = JSON.stringify({ test: { position: position, duration: duration, updatedAt: 123 } });
-    return load(['progress.js'], stored);
+    stored['iptvnator-tv:sources'] = '[{"id":"s1"}]';
+    stored['iptvnator-tv:current'] = '"s1"';
+    return load(['sources.js', 'progress.js'], stored);
 }
 
 test('old short and long videos use the same finish rule without rewriting storage', function () {

@@ -61,7 +61,7 @@ window.NewEpisodes = (function () {
         });
         if (!mine.length && !Library.isFavorite(sourceId, 'series', show)) return false;
         mine.forEach(function (entry) {
-            var progress = entry.episode && Progress.of(Progress.episodeId(entry.episode));
+            var progress = entry.episode && Progress.of(Progress.episodeId(entry.episode), sourceId);
             if (progress && progress.updatedAt > at) at = progress.updatedAt;
         });
         // Never watched or opened: there is nothing to be new since.

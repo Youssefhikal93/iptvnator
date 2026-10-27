@@ -1,22 +1,31 @@
-// The existing progress store is shared by playback and the library.
+// Playback and the library share one progress store per profile and source.
 window.Progress = (function () {
     'use strict';
 
-    var KEY = 'progress';
     var RESUME_MIN_S = 30;
     var FINISHED_MARGIN_S = 30;
 
-    function read() {
+    function storageKey(sourceId) {
+        if (sourceId === undefined) {
+            var source = Sources.current();
+            sourceId = source && source.id;
+        }
+        return sourceId ? ProfileStore.key('progress:' + sourceId) : null;
+    }
+
+    function read(sourceId) {
         try {
-            return JSON.parse(localStorage.getItem(ProfileStore.key(KEY))) || {};
+            var key = storageKey(sourceId);
+            return key ? JSON.parse(localStorage.getItem(key)) || {} : {};
         } catch (e) {
             return {};
         }
     }
 
-    function write(records) {
+    function write(records, sourceId) {
         try {
-            localStorage.setItem(ProfileStore.key(KEY), JSON.stringify(records));
+            var key = storageKey(sourceId);
+            if (key) localStorage.setItem(key, JSON.stringify(records));
         } catch (e) {
             // Storage full or unavailable; playback can still continue.
         }
@@ -37,9 +46,9 @@ window.Progress = (function () {
         return duration > 0 && position > 0 && (position >= duration * 0.95 || duration - position < FINISHED_MARGIN_S);
     }
 
-    function of(id) {
+    function of(id, sourceId) {
         if (id === undefined || id === null) return null;
-        var saved = read()[String(id)];
+        var saved = read(sourceId)[String(id)];
         if (!saved || !(saved.position > 0) || !(saved.duration > 0) || !isFinite(saved.position) || !isFinite(saved.duration)) return null;
         return {
             position: saved.position,
@@ -56,7 +65,7 @@ window.Progress = (function () {
     }
 
     // Playback advances its save timer only when the position qualifies.
-    function save(id, position, duration) {
+    function save(id, position, duration, sourceId) {
         if (id === undefined || id === null || !(duration > 0) || !isFinite(duration) || !isFinite(position)) return;
         var done = finished(position, duration);
         position = Math.floor(position);
@@ -64,21 +73,21 @@ window.Progress = (function () {
         // Whole-second storage must not turn an unfinished write into a watched read.
         done = done || finished(position, duration);
         if (!done && position < 5) return;
-        var records = read();
+        var records = read(sourceId);
         records[String(id)] = done ? fullRecord(duration) : { position: position, duration: duration, updatedAt: Date.now() };
-        write(records);
+        write(records, sourceId);
         return true;
     }
 
-    function finish(id, duration) {
+    function finish(id, duration, sourceId) {
         if (id === undefined || id === null) return;
-        var records = read();
+        var records = read(sourceId);
         records[String(id)] = fullRecord(Math.max(1, Math.floor(duration || 0)));
-        write(records);
+        write(records, sourceId);
     }
 
-    function mark(ids, watched, durations) {
-        var records = read();
+    function mark(ids, watched, durations, sourceId) {
+        var records = read(sourceId);
         ids.forEach(function (id, index) {
             if (id === undefined || id === null) return;
             var saved = records[String(id)];
@@ -87,26 +96,27 @@ window.Progress = (function () {
             if (watched) records[String(id)] = fullRecord(duration);
             else delete records[String(id)];
         });
-        write(records);
+        write(records, sourceId);
     }
 
-    function isWatched(id) {
-        var saved = of(id);
+    function isWatched(id, sourceId) {
+        var saved = of(id, sourceId);
         return !!saved && saved.status === 'watched';
     }
 
-    function unfinished(section, item) {
-        var saved = of(id(section, item));
+    function unfinished(section, item, sourceId) {
+        var saved = of(id(section, item), sourceId === undefined ? item.sourceId : sourceId);
         return saved && saved.status === 'continue' ? saved : null;
     }
 
-    function resumeFrom(id, duration) {
-        var saved = of(id);
+    function resumeFrom(id, duration, sourceId) {
+        var saved = of(id, sourceId);
         if (!saved || saved.status === 'watched' || saved.position < RESUME_MIN_S) return 0;
         return finished(saved.position, duration) ? 0 : saved.position;
     }
 
     return {
+        storageKey: storageKey,
         id: id,
         finished: finished,
         episodeId: episodeId,
@@ -114,13 +124,13 @@ window.Progress = (function () {
         save: save,
         finish: finish,
         mark: mark,
-        clear: function (id) { mark([id], false); },
+        clear: function (id, sourceId) { mark([id], false, null, sourceId); },
         resumeFrom: resumeFrom,
         isWatched: isWatched,
         unfinished: unfinished,
-        allWatched: function (episodes) {
+        allWatched: function (episodes, sourceId) {
             return !!episodes && episodes.length > 0 && episodes.every(function (episode) {
-                return isWatched(episodeId(episode));
+                return isWatched(episodeId(episode), sourceId);
             });
         },
         bar: function (ratio) { return Math.max(3, Math.round(ratio * 100)) + '%'; },

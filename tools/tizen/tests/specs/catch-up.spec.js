@@ -65,7 +65,7 @@ test('guide past programme plays a timeshift request, seeks, and returns without
     await back(page);
     await expect(page.locator('#guide')).toBeVisible();
     await expect(page.locator('.gd-programme.focused')).toHaveAttribute('data-start', String(start));
-    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:progress'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem(ProfileStore.key('progress:' + Sources.current().id)))).toBeNull();
     expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:recent:s1'))).toBeNull();
 });
 
@@ -182,5 +182,5 @@ test('seeking clamps at the programme end and finishing never marks catch-up wat
     await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#guide')).toBeVisible();
-    expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:progress'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem(ProfileStore.key('progress:' + Sources.current().id)))).toBeNull();
 });

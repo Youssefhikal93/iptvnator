@@ -281,9 +281,13 @@ from step 8 must already be downloaded.
   username, or M3U playlist link keeps the source's name, guide settings and
   list position, with separate favorites, recently watched lists and catalogue.
   Editing back to the previous source account restores those lists, including
-  in **All sources**. Progress still uses the profile's shared store.
+  in **All sources**.
   A rename, Xtream password change or guide edit keeps the same library;
   Xtream server host case, trailing slashes and server paths do too.
+- **Resume points and watched marks** also follow the source account, separately
+  for each profile. Another source or a changed source account starts empty;
+  editing back restores its progress. The first update copies older shared
+  progress to every existing source to keep the viewer's resume points.
 - **M3U movies and series**: a playlist that holds movies or episodes gets
   Movies and Series in the rail after it has downloaded; a playlist with only
   channels still shows Live TV alone. An entry counts as a movie or episode

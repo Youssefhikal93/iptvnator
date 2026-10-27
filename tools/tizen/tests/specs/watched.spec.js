@@ -7,7 +7,7 @@ test('Mark as watched ticks a movie and removes it from Continue watching', asyn
     await holdOK(page);
     await menuChoice(page, 'Mark as watched');
     await expect(page.locator('#items .focused .watched-tick')).toBeVisible();
-    await back(page);
+    await press(page, 'ArrowLeft'); // ◀ from the list to the categories (Back goes to the menu, #50)
     await category(page, 'Continue watching');
     await expect(page.locator('#items .list-empty')).toContainText('Nothing to continue');
 });
@@ -39,7 +39,7 @@ test('favorites can be added and removed from the remote options menu', async ({
     await holdOK(page);
     await menuChoice(page, 'Add to Favorites');
     await expect(page.locator('#items .focused .star')).toBeVisible();
-    await back(page);
+    await press(page, 'ArrowLeft'); // ◀ from the list to the categories (Back goes to the menu, #50)
     await category(page, 'Favorites');
     await expect(page.locator('#items .count')).toHaveText('1 / 1');
     await expect(page.locator('#items .card-title')).toHaveText('Movie 25');

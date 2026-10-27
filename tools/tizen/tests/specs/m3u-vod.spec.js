@@ -54,7 +54,7 @@ test('a movie opens its detail from the playlist data, plays, seeks and saves pr
     // The unfinished movie is under Continue watching and offers Resume.
     await expect(page.locator('#detail .dt-btn.primary')).toContainText('Resume from');
     await back(page);
-    await back(page);
+    await press(page, 'ArrowLeft'); // ◀ from the list to the categories (Back goes to the menu, #50)
     await category(page, 'Continue watching');
     await expect(page.locator('#items .card-title')).toHaveText('Heist Night (2019)');
     await section(page, 'Home');
@@ -88,7 +88,7 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await expect.poll(() => savedIds(page, 'episode:m3u:')).toHaveLength(2);
     await expect(page.locator('#detail .dt-btn.primary')).toContainText('Continue S1 E2');
     await back(page);
-    await back(page);
+    await press(page, 'ArrowLeft'); // ◀ from the list to the categories (Back goes to the menu, #50)
     await category(page, 'Continue watching');
     await expect(page.locator('#items .card-title').first()).toHaveText('Show A · S1 E2 Second');
     await section(page, 'Home');
@@ -103,7 +103,7 @@ test('favorites work for playlist movies and shows', async ({ page }) => {
         await press(page, 'Enter');
         await expect(page.locator('#detail .dt-buttons')).toContainText('Remove from Favorites');
         await back(page);
-        await back(page);
+        await press(page, 'ArrowLeft'); // ◀ from the list to the categories (Back goes to the menu, #50)
         await category(page, 'Favorites');
         await expect(page.locator('#items .card-title')).toHaveCount(1);
     }

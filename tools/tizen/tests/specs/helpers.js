@@ -115,15 +115,34 @@ async function openFirst(page, name) {
     await expect(page.locator('#detail .dt-meta')).not.toContainText('Loading');
 }
 
-// Settings > Sources (#51): opens Settings on the row named `name`, or on
-// the first source.
+// Opens Settings on the row labelled `label` (#49): picks its group on the
+// left, then moves to the row on the right.
+async function setting(page, label, settings = 'Settings') {
+    await section(page, settings);
+    const want = label.replace(/\s+/g, ' ').trim();
+    const where = await page.locator('#settings .st-section').evaluateAll((sections, want) => {
+        const text = (node) => node.textContent.replace(/\s+/g, ' ').trim();
+        for (let group = 0; group < sections.length; group++) {
+            const labels = [...sections[group].querySelectorAll('.st-label')].map(text);
+            if (labels.includes(want)) return group;
+        }
+        return -1;
+    }, want);
+    if (where < 0) throw new Error('No Settings row ' + JSON.stringify(label));
+    const now = await page.locator('#settings .st-group-item').evaluateAll((items) => items.findIndex((item) => item.classList.contains('selected')));
+    for (let i = now; i !== where; i += where > now ? 1 : -1) await press(page, where > now ? 'ArrowDown' : 'ArrowUp');
+    await expect(page.locator('#settings .st-group-item').nth(where)).toHaveClass(/focused/);
+    await press(page, 'ArrowRight');
+    await moveTo(page, '#settings .st-row.focused .st-label', want);
+}
+
+// Settings > Sources (#51): the row named `name`, or the first source.
 async function sources(page, name) {
-    await section(page, 'Settings');
-    const labels = (await page.locator('#settings .st-row .st-label').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim());
-    const now = await page.locator('#settings .st-row').evaluateAll(rows => rows.findIndex(r => r.classList.contains('focused')));
-    const want = name === undefined ? 0 : labels.indexOf(name.replace(/\s+/g, ' ').trim());
-    if (want < 0) throw new Error('No Settings row ' + JSON.stringify(name));
-    await moveTo(page, '#settings .st-row.focused .st-label', labels[want], want < now ? 'ArrowUp' : 'ArrowDown');
+    if (name === undefined) {
+        await section(page, 'Settings');
+        name = await page.locator('#settings .st-source .st-label').first().innerText();
+    }
+    await setting(page, name);
 }
 
 // A source's options, opened with OK on its row in Settings.
@@ -168,4 +187,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };

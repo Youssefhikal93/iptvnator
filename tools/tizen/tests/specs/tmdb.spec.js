@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { test, expect, boot, section, press, back, moveTo, openFirst, sendKeyCode } = require('./helpers');
+const { test, expect, boot, section, press, back, moveTo, openFirst, sendKeyCode, setting } = require('./helpers');
 const catalogue = require('../fixtures/tmdb/catalogue.json');
 const configuration = require('../fixtures/tmdb/configuration.json');
 const genres = require('../fixtures/tmdb/genres.json');
@@ -57,8 +57,7 @@ test('without a viewer key movie and show browsing sends no TMDB requests', asyn
     await openFirst(page, 'Series');
     await expect(page.locator('#detail .dt-plot')).toContainText('small town');
     await back(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Test key');
+    await setting(page, 'Test key');
     await press(page, 'Enter');
     await expect(page.locator('#toast')).toHaveText('Set a TMDB API key first');
     await page.waitForTimeout(600);
@@ -71,8 +70,7 @@ for (const status of [200, 401]) {
     test('entering a viewer key and testing it shows ' + (status === 200 ? 'Key works' : 'Key refused'), async ({ page }) => {
         const seen = await routes(page, status === 401 ? { status } : {});
         await boot(page);
-        await section(page, 'Settings');
-        await moveTo(page, '.st-row.focused .st-label', 'TMDB API key');
+        await setting(page, 'TMDB API key');
         await expect(page.locator('.st-row.focused .st-value')).toHaveText('Not set');
         await press(page, 'Enter');
         await page.locator('#tmdb-key-entry input').fill('own-free-key-1234');
@@ -86,8 +84,7 @@ for (const status of [200, 401]) {
         await expect(page.locator('.st-row.focused .st-value')).toHaveText(status === 200 ? 'Key works' : 'Key refused');
         expect(seen).toEqual(['/3/configuration']);
         await page.reload();
-        await section(page, 'Settings');
-        await moveTo(page, '.st-row.focused .st-label', 'TMDB API key');
+        await setting(page, 'TMDB API key');
         await expect(page.locator('.st-row.focused .st-value')).toHaveText('Set ••••1234');
     });
 }
@@ -195,8 +192,7 @@ test('removing a key stops enrichment and removes Discover, including after relo
     await openFirst(page, 'Movies');
     await expect(page.locator('#detail .tm-card').first()).toBeVisible();
     await back(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Remove key');
+    await setting(page, 'Remove key');
     await press(page, 'Enter');
     const count = seen.length;
     await page.reload();
@@ -258,8 +254,7 @@ test('responses persist in the separate TMDB database and are reused after reloa
 test('key editor supports deleting characters and Return cancels without opting in', async ({ page }) => {
     const seen = await routes(page);
     await boot(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'TMDB API key');
+    await setting(page, 'TMDB API key');
     await press(page, 'Enter');
     await page.locator('#tmdb-key-entry input').fill('unfinished');
     await press(page, 'Backspace');

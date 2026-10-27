@@ -1,4 +1,4 @@
-const { test, expect, boot, resumeSeed, movie, show, channel, press, playing, section, moveTo, enterItems, toolbar } = require('./helpers');
+const { test, expect, boot, resumeSeed, movie, show, channel, press, playing, section, moveTo, enterItems, toolbar, setting } = require('./helpers');
 
 test('home hero resumes progress and rows show continue, favorites and recently added', async ({ page }) => {
     const seed = resumeSeed();
@@ -33,7 +33,7 @@ test('the top bar shows only where it works, and Top bar Off brings it up from t
     await expect(page.locator('#header')).toBeVisible();
     await section(page, 'Settings');
     await expect(page.locator('#header')).toBeHidden();
-    await moveTo(page, '.st-row.focused .st-label', 'Top bar');
+    await setting(page, 'Top bar');
     await press(page, 'ArrowRight');
     await expect(page.locator('.st-row.focused')).toContainText('Off');
     await section(page, 'Movies');

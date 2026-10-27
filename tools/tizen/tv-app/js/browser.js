@@ -784,7 +784,7 @@ window.Browser = function (hooks) {
         renderToolbar();
         $('hints').textContent =
             state.section === 'settings'
-                ? I18n.t('hints.settings')
+                ? settings.hints()
                 : state.zone === 'home'
                 ? I18n.t('hints.home')
                 : state.zone === 'items'

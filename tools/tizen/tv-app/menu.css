@@ -78,3 +78,7 @@ body.menu-top #home:not(.showcase) .hm-hero-text {
 body.menu-top #home:not(.showcase) .hm-hero-plot {
     -webkit-line-clamp: 1;
 }
+
+/* Settings groups fit under the bar (#49). */
+body.menu-top .st-groups .st-title { margin-bottom: 14px; }
+body.menu-top .st-group-item { height: 52px; margin-bottom: 4px; }

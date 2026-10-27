@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting } = require('./helpers');
 
 const setting = (page, label) => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.st-value');
 const menuLabel = '#pl-menu .pl-menu-item.focus span:last-child';
@@ -6,7 +6,7 @@ const menuLabel = '#pl-menu .pl-menu-item.focus span:last-child';
 test('Settings subtitle and picture rows cycle choices and survive a reload', async ({ page }) => {
     await boot(page);
     await section(page, 'Settings');
-    expect((await page.locator('.st-group').allTextContents()).slice(0, 5)).toEqual(['Profiles', 'Playback', 'Subtitles', 'Picture', 'Display']);
+    expect((await page.locator('.st-group').allTextContents()).slice(0, 5)).toEqual(['Sources', 'Profiles', 'Playback', 'Subtitles', 'Picture']);
     const scenarios = [
         ['Size', 'Medium', ['Large', 'Extra large', 'Small', 'Medium', 'Large']],
         ['Text colour', 'White', ['Yellow']],
@@ -16,7 +16,7 @@ test('Settings subtitle and picture rows cycle choices and survive a reload', as
     ];
     for (const [label, initial, choices] of scenarios) {
         await expect(setting(page, label)).toHaveText(initial);
-        await moveTo(page, '.st-row.focused .st-label', label);
+        await openSetting(page, label);
         for (const value of choices) {
             await press(page, 'Enter');
             await expect(setting(page, label)).toHaveText(value);

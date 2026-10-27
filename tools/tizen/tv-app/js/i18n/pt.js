@@ -124,7 +124,6 @@ I18n.tables.pt = {
     'player.upNext': 'A seguir',
     'player.watchFromStart': 'Assistir desde o início',
     'rail.home': 'Início',
-    'rail.search': 'Pesquisar',
     'rail.live': 'TV ao vivo',
     'rail.movies': 'Filmes',
     'rail.series': 'Séries',

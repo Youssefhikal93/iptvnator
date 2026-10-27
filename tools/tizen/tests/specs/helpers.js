@@ -38,7 +38,7 @@ async function boot(page, seed = {}) {
         localStorage.setItem('tv-tests:seeded', '1');
     }, seed);
     await page.goto('/');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     // Seeded with no source, the app opens Settings > Sources instead (#51).
     if (seed.storage.sources && !seed.storage.sources.length) return;
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
@@ -177,6 +177,8 @@ async function menuChoice(page, label) {
 async function toolbar(page, name) {
     // Call from the first item (or the top category).
     await press(page, 'ArrowUp');
+    // Movies and Series have genre pills between the list and the bar.
+    if (await page.locator('#genre-pills .tm-chip.focus').count()) await press(page, 'ArrowUp');
     await expect(page.locator('#searchbar')).toHaveClass(/focused/);
     if (name !== 'search') {
         for (let i = 0; i < 4; i++) {

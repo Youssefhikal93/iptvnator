@@ -1,67 +1,71 @@
-const { test, expect, boot, section, press } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, enterItems } = require('./helpers');
 
-// Search everything (#31): one box over Live TV, Movies and Series.
-test('Search finds channels, movies and series in rows and opens a result', async ({ page }) => {
+// Search everything (#31): the icon at the top right of Home opens a bar;
+// the results take the place of the rows, movies first.
+test('Home search shows movies, series and Live TV results and Return closes it', async ({ page }) => {
     await boot(page);
-    await section(page, 'Search');
-    await expect(page.locator('.fd-box')).toHaveClass(/focused/);
-    await expect(page.locator('.fd-status')).toHaveText('Type a channel, movie or series name.');
+    await expect(page.locator('.hm-search-icon')).toBeVisible();
+    await press(page, 'ArrowUp');
+    await expect(page.locator('.hm-search-icon')).toHaveClass(/focus/);
+    await expect(page.locator('#hints')).toContainText('OK: search');
     await press(page, 'Enter');
-    await expect(page.locator('.fd-box')).toHaveClass(/typing/);
+    await expect(page.locator('.hm-search-bar')).toHaveClass(/typing/);
+    await expect(page.locator('.hm-search-note')).toHaveText('Type a movie, series or channel name.');
     await page.keyboard.type('1');
     await press(page, 'Enter');
-    const rows = page.locator('#find .hm-row');
-    await expect(rows.locator('h2')).toHaveText(['Live TV', 'Movies', 'Series']);
-    // Titles that start with the query come first.
-    await expect(rows.nth(1).locator('.hm-card > span').first()).toHaveText('Movie 1');
-    await expect(rows.first().locator('.hm-card.focus')).toHaveCount(1);
-    await press(page, 'ArrowDown');
-    // The focused row moves to the top, as on Home.
-    await expect(page.locator('#find .hm-card.focus > span')).toHaveText('Movie 1');
+    const rows = page.locator('#home .hm-row');
+    await expect(rows.locator('h2')).toHaveText(['Movies', 'Series', 'Live TV']);
+    // Titles that start with the query come first; the focus is on them.
+    await expect(page.locator('#home .hm-card.focus > span')).toHaveText('Movie 1');
     await press(page, 'Enter');
     await expect(page.locator('#detail')).toContainText('Movie 1');
+    await press(page, 'Escape');
+    await expect(page.locator('.hm-search-bar')).toBeVisible();
+    await press(page, 'Escape');
+    await expect(page.locator('.hm-search')).toHaveCount(0);
+    await expect(page.locator('.hm-search-icon')).toBeVisible();
 });
 
-test('genre pills list a genre on their own and narrow a search; Arabic and English names are one genre', async ({ page }) => {
+test('genre pills under the Series search bar narrow the list; Arabic and English names are one genre', async ({ page }) => {
     await boot(page);
-    await section(page, 'Search');
-    const pills = page.locator('.fd-pills .tm-chip');
+    await section(page, 'Series');
+    // Recently added holds every show.
+    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
+    await enterItems(page);
+    const pills = page.locator('#genre-pills .tm-chip');
     await expect(pills.first()).toHaveText('All');
-    await expect(pills.filter({ hasText: /^Drama$/ })).toHaveCount(1);
-    await expect(pills.filter({ hasText: 'دراما' })).toHaveCount(0);
-    await press(page, 'ArrowDown');
-    await expect(pills.first()).toHaveClass(/focus/);
     // Drama is the most common genre, so it comes right after All.
     await expect(pills.nth(1)).toHaveText('Drama');
+    await expect(pills.filter({ hasText: 'دراما' })).toHaveCount(0);
+    await press(page, 'ArrowUp');
+    await expect(pills.first()).toHaveClass(/focus/);
     await press(page, 'ArrowRight');
     await press(page, 'Enter');
     await expect(pills.nth(1)).toHaveClass(/selected/);
-    const rows = page.locator('#find .hm-row');
-    await expect(rows.locator('h2')).toHaveText(['Series']);
-    await expect(rows.locator('.hm-aside')).toHaveText('10');
-    // With a query too, only Drama shows that match it.
+    // Show 2 is a Comedy; Show 1 is Drama in Arabic.
+    const names = await page.locator('#items .card .card-title, #items .row .label').allTextContents();
+    expect(names.length).toBe(10);
+    expect(names).toContain('Show 1');
+    expect(names).not.toContain('Show 2');
+    // ▲ from the pills reaches the bar.
     await press(page, 'ArrowUp');
-    await press(page, 'Enter');
-    await page.keyboard.type('Show 1');
-    await press(page, 'Enter');
-    await expect(rows.locator('.hm-card > span')).toHaveText(['Show 1', 'Show 10', 'Show 12', 'Show 13', 'Show 15']);
+    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
 });
 
-test('genres TMDB has matched join the provider genres for movies and series', async ({ page }) => {
+test('genres TMDB has matched join the provider genres for movies', async ({ page }) => {
     await boot(page);
-    // TMDB matched Movie 2 as a Thriller and Show 2 (a provider Comedy) as a Thriller too.
     await page.evaluate(() => {
         Tmdb.enabled = () => true;
-        Tmdb.cached = (item) => (item.name === 'Movie 2' || item.name === 'Show 2' ? { genres: [{ id: 53, name: 'Thriller' }] } : null);
+        Tmdb.cached = (item) => (item.name === 'Movie 2' ? { genres: [{ id: 53, name: 'Thriller' }] } : null);
     });
-    await section(page, 'Search');
-    const pills = page.locator('.fd-pills .tm-chip');
-    await expect(pills.filter({ hasText: /^Thriller$/ })).toHaveCount(1);
-    await press(page, 'ArrowDown');
-    const at = (await pills.allTextContents()).indexOf('Thriller');
-    for (let i = 0; i < at; i++) await press(page, 'ArrowRight');
+    await section(page, 'Movies');
+    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
+    await enterItems(page);
+    const pills = page.locator('#genre-pills .tm-chip');
+    await expect(pills).toHaveText(['All', 'Thriller']);
+    await press(page, 'ArrowUp');
+    await press(page, 'ArrowRight');
     await press(page, 'Enter');
-    const rows = page.locator('#find .hm-row');
-    await expect(rows.locator('h2')).toHaveText(['Movies', 'Series']);
-    await expect(rows.locator('.hm-card > span')).toHaveText(['Movie 2', 'Show 2']);
+    await expect(page.locator('#items .card, #items .row')).toHaveCount(1);
+    await expect(page.locator('#items')).toContainText('Movie 2');
 });

@@ -186,6 +186,36 @@ body.no-bar #content,
 body.bar-off #content {
     top: var(--menu-h);
 }
+/* Genre pills under the search bar in Movies and Series (#31). */
+#genre-pills {
+    position: absolute;
+    left: 36px;
+    right: 40px;
+    top: 100px;
+    display: flex;
+    gap: 14px;
+    padding: 6px;
+    overflow: hidden;
+    font-size: 26px;
+}
+#genre-pills:empty {
+    display: none;
+}
+#genre-pills .tm-chip {
+    flex: none;
+}
+#genre-pills .tm-chip.selected {
+    border-color: var(--selection);
+    color: var(--selection);
+}
+body.has-pills #header {
+    height: 180px;
+    align-items: flex-start;
+    padding-top: 22px;
+}
+body.has-pills:not(.no-bar):not(.bar-off) #content {
+    top: calc(var(--menu-h) + 180px);
+}
 /* Top bar Off: the bar comes up over the list while the remote is on it. */
 body.bar-off #header {
     z-index: 5;

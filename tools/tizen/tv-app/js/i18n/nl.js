@@ -124,7 +124,6 @@ I18n.tables.nl = {
     'player.upNext': 'Hierna',
     'player.watchFromStart': 'Vanaf begin bekijken',
     'rail.home': 'Home',
-    'rail.search': 'Zoeken',
     'rail.live': 'Live-tv',
     'rail.movies': 'Films',
     'rail.series': 'Reeksen',

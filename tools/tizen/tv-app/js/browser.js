@@ -13,7 +13,6 @@ window.Browser = function (hooks) {
     STEPS[KEY.CH_DOWN] = 10;
     var SECTIONS = [
         { id: 'home', get label() { return I18n.t('rail.home'); }, icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' },
-        { id: 'search', get label() { return I18n.t('rail.search'); }, icon: 'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' },
         { id: 'live', get label() { return I18n.t('rail.live'); }, icon: 'M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zM9 10v8l7-4z' },
         { id: 'movies', get label() { return I18n.t('rail.movies'); }, icon: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z' },
         { id: 'series', get label() { return I18n.t('rail.series'); }, icon: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z' },
@@ -22,7 +21,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, genres: {}, genre: {}, pill: 0, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -125,7 +124,22 @@ window.Browser = function (hooks) {
         },
         toast: toast,
     });
-    var homeApi = {
+    // Search everything from Home: movies, series, then channels.
+    var find = Find({
+        sections: function () {
+            return ['movies', 'series', 'live'].filter(available);
+        },
+        title: function (section) {
+            return sectionOf(section).label;
+        },
+        items: function (section) {
+            return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
+                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all));
+            });
+        },
+    });
+    var home = Home({
+        search: find.search,
         hero: function () {
             return state.adapter ? continueEntries().slice(0, 3) : [];
         },
@@ -156,25 +170,6 @@ window.Browser = function (hooks) {
             var programmes = state.epg.peek(item);
             if (programmes === undefined) return wantProgramme(item), null;
             return programmes.now;
-        },
-    };
-    var home = Home(homeApi);
-    // Search everything: the source's channels, movies and series at once.
-    var find = Find({
-        sections: function () {
-            return ['live', 'movies', 'series'].filter(available);
-        },
-        title: function (section) {
-            return sectionOf(section).label;
-        },
-        items: function (section) {
-            return loadCatalogue({ section: section, kind: 'items' }).then(function (all) {
-                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all));
-            });
-        },
-        home: homeApi,
-        changed: function () {
-            if (state.zone === 'find') renderChrome();
         },
     });
     var items = List($('items'), {
@@ -618,7 +613,70 @@ window.Browser = function (hooks) {
     function setItems(list, index, empty) {
         visible = { list: list, empty: empty };
         var mode = sortMode();
-        items.set(mode ? Sort.order(list, state.section, mode) : list.slice(), index, empty);
+        var genre = genreFilter();
+        var section = state.section;
+        var shown = genre ? list.filter(function (item) { return Genres.has(item, section, genre); }) : list;
+        if (genre && !shown.length && list.length) empty = [I18n.t('find.noGenre', { genre: genre }), I18n.t('find.noGenreHint')];
+        items.set(mode ? Sort.order(shown, section, mode) : shown.slice(), index, empty);
+    }
+
+    // ---- Genre pills (#31) ----
+
+    // 'All' and the section's most common genres, under the search bar in
+    // Movies and Series. A genre narrows whatever list is showing.
+    function pillNames() {
+        var names = (state.section === 'movies' || state.section === 'series') && hasTools() && state.genres[state.section];
+        return names && names.length ? [null].concat(names) : [];
+    }
+
+    function genreFilter() {
+        return pillNames().length ? state.genre[state.section] || null : null;
+    }
+
+    function loadGenres(section) {
+        if (state.genres[section]) return;
+        state.genres[section] = [];
+        var adapter = state.adapter;
+        state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
+            if (adapter !== state.adapter) return;
+            state.genres[section] = Genres.common(ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)), section, 16);
+            if (state.section === section) renderChrome();
+        }).catch(function () {
+            if (adapter === state.adapter) delete state.genres[section];
+        });
+    }
+
+    function renderPills() {
+        var names = pillNames();
+        var chosen = genreFilter();
+        document.body.classList.toggle('has-pills', names.length > 0);
+        state.pill = Math.min(state.pill, Math.max(0, names.length - 1));
+        UI.render(UI.html`${names.map(function (name, i) {
+            return UI.html`<${Kit.Pill} key=${name || ''} cls="tm-chip" label=${name || I18n.t('find.all')} selected=${name === chosen}
+                focused=${state.zone === 'pills' && i === state.pill} />`;
+        })}`, $('genre-pills'));
+        var row = $('genre-pills');
+        var pill = row.children[state.pill];
+        if (state.zone === 'pills' && pill) {
+            if (pill.offsetLeft + pill.offsetWidth > row.scrollLeft + row.clientWidth) row.scrollLeft = pill.offsetLeft + pill.offsetWidth - row.clientWidth;
+            if (pill.offsetLeft < row.scrollLeft) row.scrollLeft = pill.offsetLeft;
+        }
+    }
+
+    function onPillsKey(code) {
+        var names = pillNames();
+        if (code === KEY.LEFT && state.pill > 0) state.pill--;
+        else if (code === KEY.RIGHT && state.pill < names.length - 1) state.pill++;
+        else if (code === KEY.UP) return setZone('toolbar'), true;
+        else if (code === KEY.DOWN) return leaveToolbar(), true;
+        else if (Keys.isBack(code) || towardMenu(code)) return setZone('rail'), true;
+        else if (code === KEY.ENTER) {
+            var name = names[state.pill];
+            state.genre[state.section] = name === genreFilter() ? null : name;
+            if (visible) setItems(visible.list, 0, visible.empty);
+        }
+        renderChrome();
+        return true;
     }
 
     function toolbarTools() {
@@ -650,7 +708,11 @@ window.Browser = function (hooks) {
         if (!hasTools()) return false;
         state.toolFrom = from;
         state.tool = 0;
-        setZone('toolbar');
+        // ▲ from the list reaches the genre pills first, then the bar.
+        if (pillNames().length) {
+            state.pill = Math.max(0, pillNames().indexOf(genreFilter()));
+            setZone('pills');
+        } else setZone('toolbar');
         return true;
     }
 
@@ -726,6 +788,7 @@ window.Browser = function (hooks) {
         if (code === KEY.LEFT && state.tool > 0) state.tool--;
         else if (code === KEY.RIGHT && state.tool < tools.length - 1) state.tool++;
         else if (Keys.isBack(code) || towardMenu(code)) setZone('rail');
+        else if (code === KEY.DOWN && pillNames().length) setZone('pills');
         else if (code === KEY.DOWN) leaveToolbar();
         else if (code === KEY.ENTER && tool === 'search') startTyping();
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
@@ -753,7 +816,7 @@ window.Browser = function (hooks) {
     }
 
     function available(id) {
-        if (id === 'home' || id === 'search') return !!state.adapter;
+        if (id === 'home') return !!state.adapter;
         return id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
     }
 
@@ -769,7 +832,6 @@ window.Browser = function (hooks) {
         var section = what.section;
         var wholeSection = what.kind === 'items' && (what.id === undefined || what.id === '');
         if (state.section === 'home') return !!homeLoading[section] && wholeSection;
-        if (state.section === 'search') return wholeSection;
         if (state.section !== section) return false;
         if (what.kind === 'categories') return !state.base;
         if (state.showingSearch) return wholeSection;
@@ -811,13 +873,12 @@ window.Browser = function (hooks) {
         // its name for diagnostics and tests.
         document.body.setAttribute('data-source', state.source ? state.source.name : '');
         renderToolbar();
+        renderPills();
         $('hints').textContent =
             state.section === 'settings'
                 ? settings.hints()
                 : state.zone === 'home'
-                ? I18n.t('hints.home')
-                : state.zone === 'find'
-                ? I18n.t(find.focused() ? 'hints.home' : 'hints.find')
+                ? I18n.t(home.onSearch() ? 'hints.find' : 'hints.home')
                 : state.zone === 'items'
                 ? I18n.t('hints.items')
                 : state.zone === 'categories'
@@ -853,7 +914,7 @@ window.Browser = function (hooks) {
 
     // The rail opens the content area belonging to the selected screen.
     function contentZone() {
-        return state.section === 'settings' ? 'settings' : state.section === 'home' ? 'home' : state.section === 'search' ? 'find' : 'categories';
+        return state.section === 'settings' ? 'settings' : state.section === 'home' ? 'home' : 'categories';
     }
 
     function setZone(zone) {
@@ -863,7 +924,6 @@ window.Browser = function (hooks) {
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
         home.setActive(zone === 'home');
-        find.setActive(zone === 'find');
         settings.setActive(zone === 'settings');
         renderChrome();
     }
@@ -968,9 +1028,10 @@ window.Browser = function (hooks) {
         state.showingSearch = false;
         state.favKeys = null;
         state.added = {};
+        state.genres = {};
+        state.genre = {};
         homeLoading = {};
         home.reset(!!screenReady);
-        find.reset();
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
@@ -1017,7 +1078,6 @@ window.Browser = function (hooks) {
         clearTimeout(state.timer);
         clearTimeout(state.searchTimer);
         $('content').classList.toggle('home', id === 'home');
-        $('content').classList.toggle('find', id === 'search');
         $('content').classList.toggle('settings', id === 'settings');
         state.showingSearch = false;
         state.base = null;
@@ -1026,10 +1086,6 @@ window.Browser = function (hooks) {
         applyView();
         items.set([], 0, '');
         if (id === 'home') return showHome();
-        if (id === 'search') {
-            find.open();
-            return renderChrome();
-        }
         if (id === 'settings') {
             settings.render();
             // The Sources group shows each source's state once it is checked.
@@ -1055,6 +1111,7 @@ window.Browser = function (hooks) {
                 showCategories(virtualRows().length);
                 loadItems();
                 if (sortableSection()) loadRecentlyAdded(id);
+                if (id === 'movies' || id === 'series') loadGenres(id);
             })
             .catch(function (err) {
                 if (token === state.token) fail(categories, 'CATEGORIES')(err);
@@ -1508,6 +1565,8 @@ window.Browser = function (hooks) {
     }
 
     function onHomeKey(code) {
+        if (home.typing()) return home.key(code);
+        if (Keys.isBack(code) && home.back()) return renderHints();
         var entry = home.focused();
         if (code === KEY.ENTER && entry) {
             Keys.press(
@@ -1519,30 +1578,11 @@ window.Browser = function (hooks) {
                 }
             );
         } else if (Keys.isBack(code) || leavesFor(home.key(code))) setZone('rail');
-        return true;
+        return renderHints();
     }
 
-    function onFindKey(code) {
-        var entry = find.focused();
-        if (code === KEY.ENTER && entry && !find.typing()) {
-            Keys.press(
-                function () {
-                    openEntry(entry.item, entry.section);
-                },
-                function () {
-                    openItemMenu(entry.item, entry.section);
-                }
-            );
-            return true;
-        }
-        if (Keys.isBack(code) && !find.typing()) {
-            setZone('rail');
-            return true;
-        }
-        var used = find.key(code);
-        if (used === false) return false;
-        if (used !== true && leavesFor(used)) setZone('rail');
-        else renderChrome();
+    function renderHints() {
+        if (state.zone === 'home') $('hints').textContent = I18n.t(home.onSearch() ? 'hints.find' : 'hints.home');
         return true;
     }
 
@@ -1584,8 +1624,8 @@ window.Browser = function (hooks) {
             return true;
         }
         if (state.zone === 'toolbar') return onToolbarKey(code);
+        if (state.zone === 'pills') return onPillsKey(code);
         if (state.zone === 'home') return onHomeKey(code);
-        if (state.zone === 'find') return onFindKey(code);
         if (state.zone === 'settings') {
             var edge = settings.key(code);
             if (edge === 'back' || leavesFor(edge)) setZone('rail');

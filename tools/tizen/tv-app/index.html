@@ -17,7 +17,6 @@
         <link rel="stylesheet" href="tmdb.css" />
         <link rel="stylesheet" href="profiles.css" />
         <link rel="stylesheet" href="home.css" />
-        <link rel="stylesheet" href="find.css" />
         <link rel="stylesheet" href="detail.css" />
         <link rel="stylesheet" href="appearance.css" />
         <link rel="stylesheet" href="channels.css" />
@@ -38,6 +37,7 @@
                 <span class="view-btn hidden" data-mode="sort" title="Sort" data-i18n-title="browser.sort"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h12v2H3zm0 5h6v2H3z"/></svg></span>
                 <span id="guide-button" class="view-btn hidden" data-mode="guide" data-i18n="header.guide">TV guide</span>
             </div>
+            <div id="genre-pills"></div>
         </header>
 
         <main id="content">
@@ -45,7 +45,6 @@
             <section id="items" class="pane main"></section>
             <section id="live-preview" aria-label="Live preview" data-i18n-label="settings.livePreview"></section>
             <section id="home"></section>
-            <section id="find"></section>
             <section id="settings"></section>
         </main>
 
@@ -280,8 +279,9 @@
         <script src="js/detail-rows.js"></script>
         <script src="js/detail.js"></script>
         <script src="js/detail-episodes.js"></script>
-        <script src="js/home.js"></script>
+        <script src="js/genres.js"></script>
         <script src="js/find.js"></script>
+        <script src="js/home.js"></script>
         <script src="js/live-channels.js"></script>
         <script src="js/settings.js"></script>
         <script src="js/backup-store.js"></script>

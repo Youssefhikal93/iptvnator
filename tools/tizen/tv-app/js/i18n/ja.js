@@ -124,7 +124,6 @@ I18n.tables.ja = {
     'player.upNext': '次のエピソード',
     'player.watchFromStart': '最初から視聴',
     'rail.home': 'ホーム',
-    'rail.search': '検索',
     'rail.live': 'ライブ TV',
     'rail.movies': '映画',
     'rail.series': 'シリーズ',

@@ -124,7 +124,6 @@ I18n.tables.ar = {
     'player.upNext': 'التالي',
     'player.watchFromStart': 'المشاهدة من البداية',
     'rail.home': 'الرئيسية',
-    'rail.search': 'بحث',
     'rail.live': 'تلفزيون مباشر',
     'rail.movies': 'الأفلام',
     'rail.series': 'مسلسلات',

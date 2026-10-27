@@ -77,8 +77,11 @@ async function section(page, name) {
     await expect(page.locator('#rail .focused')).toHaveCount(1);
     const labels = await page.locator('#rail .rail-item').allTextContents();
     const current = (await page.locator('#rail .focused').innerText()).trim();
-    await moveTo(page, '#rail .focused', name, labels.findIndex(t => t.trim() === name) < labels.findIndex(t => t.trim() === current) ? 'ArrowUp' : 'ArrowDown');
-    await press(page, 'ArrowRight');
+    // The menu runs down the side or along the top (#50).
+    const top = await page.locator('body.menu-top').count();
+    const earlier = labels.findIndex(t => t.trim() === name) < labels.findIndex(t => t.trim() === current);
+    await moveTo(page, '#rail .focused', name, top ? (earlier ? 'ArrowLeft' : 'ArrowRight') : (earlier ? 'ArrowUp' : 'ArrowDown'));
+    await press(page, top ? 'ArrowDown' : 'ArrowRight');
     if (['Live TV', 'Movies', 'Series'].includes(name)) {
         await expect(page.locator('#categories .row.focused')).toHaveCount(1);
         await expect(page.locator('#items .row, #items .card').first()).toBeVisible();

@@ -78,7 +78,7 @@ test('Appearance rows expose translated choices in every language table', functi
     var files = fs.readdirSync(path.join(__dirname, '../../tv-app/js/i18n')).filter(function (file) { return /\.js$/.test(file) && file !== 'en.js'; });
     var app = load(['settings-store.js'].concat(files.map(function (file) { return 'i18n/' + file; }), ['appearance-settings.js']));
     var rows = app.globals.AppearanceSettings.rows;
-    assert.equal(rows.map(function (row) { return row.key || 'language'; }).join(','), 'language,theme,accent,density,motion,topBar');
+    assert.equal(rows.map(function (row) { return row.key || 'language'; }).join(','), 'language,theme,accent,density,motion,topBar,menuPosition');
     Object.keys(app.globals.I18n.tables).forEach(function (code) {
         app.globals.I18n.setLanguage(code);
         rows.slice(2).forEach(function (row) {

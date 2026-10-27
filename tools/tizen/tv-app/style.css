@@ -107,13 +107,22 @@ svg {
     display: none !important;
 }
 
+/* The main menu takes --menu-w on the side or --menu-h on top (#50, menu.css);
+   the header, content and hints start after it. The hints sit in a 54 px
+   bottom margin, inside the TV's safe area. */
+:root {
+    --menu-w: 208px;
+    --menu-h: 0px;
+    --hint-h: 54px;
+}
+
 /* Rail: icon column like the desktop, with labels for sofa reading */
 #rail {
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 168px;
+    width: var(--menu-w);
     padding-top: 150px;
     background: var(--rail-bg);
     box-sizing: border-box;
@@ -123,7 +132,7 @@ svg {
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    margin: 0 20px 18px;
+    margin: 0 28px 18px;
     padding: 16px 0 12px;
     border-radius: 18px;
     border: 3px solid transparent;
@@ -158,9 +167,9 @@ svg {
 /* Header: search bar and view toggle (the source is switched in Settings) */
 #header {
     position: absolute;
-    left: 168px;
+    left: var(--menu-w);
     right: 0;
-    top: 0;
+    top: var(--menu-h);
     height: 112px;
     display: flex;
     align-items: center;
@@ -175,7 +184,7 @@ body.no-bar #header {
 }
 body.no-bar #content,
 body.bar-off #content {
-    top: 0;
+    top: var(--menu-h);
 }
 /* Top bar Off: the bar comes up over the list while the remote is on it. */
 body.bar-off #header {
@@ -261,10 +270,10 @@ body.bar-off #header {
 /* Content */
 #content {
     position: absolute;
-    left: 168px;
+    left: var(--menu-w);
     right: 0;
-    top: 112px;
-    bottom: 56px;
+    top: calc(var(--menu-h) + 112px);
+    bottom: var(--hint-h);
     display: flex;
 }
 .pane {
@@ -331,7 +340,7 @@ body.bar-off #header {
 }
 #load-error {
     position: fixed;
-    inset: 112px 0 56px 168px;
+    inset: calc(var(--menu-h) + 112px) 0 var(--hint-h) var(--menu-w);
     z-index: 7;
     background: var(--content-bg);
     display: flex;
@@ -432,8 +441,8 @@ body.bar-off #header {
 
 #hints {
     position: absolute;
-    left: 208px;
-    bottom: 10px;
+    left: calc(var(--menu-w) + 40px);
+    bottom: 12px;
     color: var(--eyebrow);
     font-size: 24px;
 }

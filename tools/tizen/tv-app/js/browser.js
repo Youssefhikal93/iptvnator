@@ -54,7 +54,7 @@ window.Browser = function (hooks) {
     });
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
-        if (name === 'topBar') renderChrome();
+        if (name === 'topBar' || name === 'menuPosition') renderChrome();
         // The rail, header and hints show the new language at once.
         if (name === 'language') {
             renderChrome();
@@ -116,7 +116,7 @@ window.Browser = function (hooks) {
         changed: categoriesChanged,
         toast: toast,
     });
-    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged });
+    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged, chrome: renderChrome });
     var watched = Watched({
         knownShow: function (show) {
             if (otherSource(show)) return null;
@@ -704,8 +704,8 @@ window.Browser = function (hooks) {
         var tool = tools[state.tool];
         if (code === KEY.LEFT && state.tool > 0) state.tool--;
         else if (code === KEY.RIGHT && state.tool < tools.length - 1) state.tool++;
-        else if (code === KEY.LEFT) setZone('rail');
-        else if (code === KEY.DOWN || Keys.isBack(code)) leaveToolbar();
+        else if (Keys.isBack(code) || towardMenu(code)) setZone('rail');
+        else if (code === KEY.DOWN) leaveToolbar();
         else if (code === KEY.ENTER && tool === 'search') startTyping();
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER && tool === 'guide') openGuide();
@@ -713,6 +713,16 @@ window.Browser = function (hooks) {
         else return code === KEY.UP || code === KEY.RIGHT;
         renderChrome();
         return true;
+    }
+
+    // The main menu is a rail on the left or a bar along the top (#50).
+    function menuOnTop() {
+        return Prefs.get('menuPosition') === 'top';
+    }
+
+    // The key that steps from the edge of a screen onto the menu.
+    function towardMenu(code) {
+        return code === (menuOnTop() ? KEY.UP : KEY.LEFT);
     }
 
     function sectionOf(id) {
@@ -759,6 +769,7 @@ window.Browser = function (hooks) {
 
     function renderChrome() {
         LoadScreen.render();
+        document.body.classList.toggle('menu-top', menuOnTop());
         $('rail').innerHTML = '';
         SECTIONS.forEach(function (section) {
             var el = document.createElement('div');
@@ -1504,8 +1515,14 @@ window.Browser = function (hooks) {
                     openItemMenu(entry.item, entry.section);
                 }
             );
-        } else if (Keys.isBack(code) || home.key(code) === 'left') setZone('rail');
+        } else if (Keys.isBack(code) || leavesFor(home.key(code))) setZone('rail');
         return true;
+    }
+
+    // A screen reports the edge the focus left by: 'left' or 'up'. Only the
+    // edge that faces the menu leads to it.
+    function leavesFor(edge) {
+        return edge === (menuOnTop() ? 'up' : 'left');
     }
 
     function onKey(code) {
@@ -1542,11 +1559,16 @@ window.Browser = function (hooks) {
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
         if (state.zone === 'settings') {
-            if (settings.key(code) === 'left') setZone('rail');
+            var edge = settings.key(code);
+            if (edge === 'back' || leavesFor(edge)) setZone('rail');
             return true;
         }
+        // Along the menu: ▲/▼ on the side, ◀/▶ on top; the profile is first.
+        var prev = menuOnTop() ? KEY.LEFT : KEY.UP;
+        var next = menuOnTop() ? KEY.RIGHT : KEY.DOWN;
+        var enter = menuOnTop() ? KEY.DOWN : KEY.RIGHT;
         if (state.zone === 'rail' && state.profileFocus) {
-            if (code === KEY.DOWN || code === KEY.RIGHT) {
+            if (code === next || code === enter) {
                 state.profileFocus = false;
                 renderChrome();
             } else if (code === KEY.ENTER) {
@@ -1556,17 +1578,17 @@ window.Browser = function (hooks) {
                     setZone('settings');
                 });
             } else if (Keys.isBack(code)) hooks.exit();
-            else return code === KEY.UP || code === KEY.LEFT;
+            else return code === prev;
         } else if (state.zone === 'rail') {
             var from = state.section;
-            if (code === KEY.UP || code === KEY.DOWN) {
-                moveSection(code === KEY.UP ? -1 : 1);
-                // UP past the first section reaches the profile avatar.
-                if (code === KEY.UP && state.section === from) {
+            if (code === prev || code === next) {
+                moveSection(code === prev ? -1 : 1);
+                // Back past the first section reaches the profile avatar.
+                if (code === prev && state.section === from) {
                     state.profileFocus = true;
                     renderChrome();
                 }
-            } else if (code === KEY.RIGHT || code === KEY.ENTER) setZone(contentZone());
+            } else if (code === enter || code === KEY.ENTER) setZone(contentZone());
             else if (Keys.isBack(code)) hooks.exit();
             else return false;
         } else if (state.zone === 'categories') {
@@ -1577,8 +1599,8 @@ window.Browser = function (hooks) {
             }
             if (STEPS[code]) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
-                else if (code === KEY.UP) enterToolbar('categories');
-            } else if (code === KEY.LEFT || Keys.isBack(code)) setZone('rail');
+                else if (code === KEY.UP && !enterToolbar('categories') && menuOnTop()) setZone('rail');
+            } else if (towardMenu(code) || Keys.isBack(code)) setZone('rail');
             else if (code === KEY.ENTER && row && row.source) Keys.press(function () { setZone('items'); }, openSourceMenu);
             else if (code === KEY.ENTER && row && row.action) addSource(row.action);
             else if (code === KEY.ENTER && row && state.base) {
@@ -1593,7 +1615,7 @@ window.Browser = function (hooks) {
         } else {
             var grid = items.cols() > 1;
             if (STEPS[code]) {
-                if (!moveItems(code) && code === KEY.UP) enterToolbar('items');
+                if (!moveItems(code) && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {
@@ -1604,7 +1626,8 @@ window.Browser = function (hooks) {
                         openItemMenu(items.item(), state.section);
                     });
                 }
-            } else if (code === KEY.LEFT || Keys.isBack(code)) setZone('categories');
+            } else if (Keys.isBack(code)) setZone('rail');
+            else if (code === KEY.LEFT) setZone('categories');
             else return false;
         }
         return true;

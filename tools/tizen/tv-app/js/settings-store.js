@@ -32,6 +32,7 @@ window.Prefs = (function () {
         density: 'comfortable',
         motion: 'on',
         topBar: 'on',
+        menuPosition: 'side',
     };
 
     function read(key, fallback) {

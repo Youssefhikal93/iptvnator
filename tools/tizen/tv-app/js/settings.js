@@ -115,10 +115,12 @@ window.Settings = function (hooks) {
             render();
         },
         key: function (code) {
-            if (Keys.isBack(code)) return 'left';
+            if (Keys.isBack(code)) return 'back';
             if (code === KEY.LEFT) return change(-1);
             if (code === KEY.RIGHT) return change(1, false);
             if (code === KEY.ENTER) return change(1, true);
+            // ▲ on the first row leaves for a menu along the top (#50).
+            if (code === KEY.UP && focus === 0) return 'up';
             if (code === KEY.UP || code === KEY.DOWN) {
                 focus = Math.max(0, Math.min(rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
                 render();

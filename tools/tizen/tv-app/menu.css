@@ -1,0 +1,80 @@
+/* Settings > Appearance > Menu position: Top (#50). The rail becomes a bar
+   along the top: the profile first, the sections after it, Settings at the
+   far end. The content takes the full width below it. */
+body.menu-top {
+    --menu-w: 0px;
+    --menu-h: 96px;
+}
+body.menu-top #rail {
+    right: 0;
+    bottom: auto;
+    width: auto;
+    height: var(--menu-h);
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--line);
+}
+body.menu-top .rail-item {
+    flex-direction: row;
+    gap: 12px;
+    margin: 0;
+    padding: 10px 24px;
+    font-size: 26px;
+}
+body.menu-top .rail-item .glyph {
+    width: 36px;
+    height: 36px;
+}
+body.menu-top .rail-item.rail-bottom {
+    position: static;
+    margin-left: auto;
+}
+body.menu-top .rail-profile {
+    position: static;
+    flex-direction: row;
+    gap: 14px;
+    margin-right: 22px;
+    padding: 4px 18px 4px 4px;
+    font-size: 24px;
+}
+body.menu-top .rail-profile > span {
+    max-width: 220px;
+}
+body.menu-top .rail-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 28px;
+}
+body.menu-top #menu.profile-menu {
+    top: calc(var(--menu-h) + 16px);
+    left: 48px;
+}
+/* The hints line up with the content's own margin. */
+body.menu-top #hints {
+    left: 48px;
+}
+
+/* The content is one menu height shorter: lists show a row less. */
+body.menu-top {
+    --category-rows: 10;
+    --list-rows: 8;
+}
+body.menu-top #items.channels {
+    --visible-rows: 6;
+}
+[data-density="compact"] body.menu-top #items.channels {
+    --visible-rows: 8;
+}
+
+/* Home keeps its first row in view: the hero gives up the menu's height. */
+body.menu-top #home:not(.showcase) .hm-hero {
+    height: 484px;
+}
+body.menu-top #home:not(.showcase) .hm-hero-text {
+    top: 28px;
+}
+body.menu-top #home:not(.showcase) .hm-hero-plot {
+    -webkit-line-clamp: 1;
+}

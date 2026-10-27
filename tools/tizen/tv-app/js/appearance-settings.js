@@ -30,6 +30,8 @@ window.AppearanceSettings = (function () {
             { get label() { return I18n.t('settings.motion'); }, key: 'motion', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
             // Search and the view buttons; Off hides them until ▲ at the top of a list (#45).
             { get label() { return I18n.t('settings.topBar'); }, key: 'topBar', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
+            // The main menu as a rail on the left or a bar along the top (#50).
+            { get label() { return I18n.t('settings.menuPosition'); }, key: 'menuPosition', pills: true, choices: ['side', 'top'], get labels() { return [I18n.t('settings.side'), I18n.t('settings.top')]; } },
         ],
     };
 })();

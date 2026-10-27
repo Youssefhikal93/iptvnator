@@ -8,7 +8,10 @@
         "settings.pink": "وردي",
         "settings.density": "الكثافة",
         "settings.comfortable": "مريح",
-        "settings.compact": "مضغوط"
+        "settings.compact": "مضغوط",
+        "settings.motion": "الرسوم المتحركة",
+        "settings.on": "تشغيل",
+        "settings.off": "إيقاف"
     },
     "ary": {
         "settings.accent": "لون التمييز",
@@ -19,7 +22,10 @@
         "settings.pink": "وردي",
         "settings.density": "الكثافة",
         "settings.comfortable": "مريح",
-        "settings.compact": "مضغوط"
+        "settings.compact": "مضغوط",
+        "settings.motion": "الحركات",
+        "settings.on": "مفعلة",
+        "settings.off": "معطلة"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",
@@ -30,7 +36,10 @@
         "settings.pink": "Ружовы",
         "settings.density": "Шчыльнасць",
         "settings.comfortable": "Зручная",
-        "settings.compact": "Кампактная"
+        "settings.compact": "Кампактная",
+        "settings.motion": "Анімацыі",
+        "settings.on": "Укл.",
+        "settings.off": "Выкл."
     },
     "de": {
         "settings.accent": "Akzentfarbe",
@@ -41,7 +50,10 @@
         "settings.pink": "Rosa",
         "settings.density": "Dichte",
         "settings.comfortable": "Komfortabel",
-        "settings.compact": "Kompakt"
+        "settings.compact": "Kompakt",
+        "settings.motion": "Animationen",
+        "settings.on": "An",
+        "settings.off": "Aus"
     },
     "el": {
         "settings.accent": "Χρώμα έμφασης",
@@ -52,7 +64,10 @@
         "settings.pink": "Ροζ",
         "settings.density": "Πυκνότητα",
         "settings.comfortable": "Άνετη",
-        "settings.compact": "Συμπαγής"
+        "settings.compact": "Συμπαγής",
+        "settings.motion": "Κινούμενα εφέ",
+        "settings.on": "Ενεργά",
+        "settings.off": "Ανενεργά"
     },
     "es": {
         "settings.accent": "Color de acento",
@@ -63,7 +78,10 @@
         "settings.pink": "Rosa",
         "settings.density": "Densidad",
         "settings.comfortable": "Cómoda",
-        "settings.compact": "Compacta"
+        "settings.compact": "Compacta",
+        "settings.motion": "Animaciones",
+        "settings.on": "Activadas",
+        "settings.off": "Desactivadas"
     },
     "fr": {
         "settings.accent": "Couleur d’accentuation",
@@ -74,7 +92,10 @@
         "settings.pink": "Rose",
         "settings.density": "Densité",
         "settings.comfortable": "Confortable",
-        "settings.compact": "Compacte"
+        "settings.compact": "Compacte",
+        "settings.motion": "Animations",
+        "settings.on": "Activées",
+        "settings.off": "Désactivées"
     },
     "hu": {
         "settings.accent": "Kiemelőszín",
@@ -85,7 +106,10 @@
         "settings.pink": "Rózsaszín",
         "settings.density": "Sűrűség",
         "settings.comfortable": "Kényelmes",
-        "settings.compact": "Kompakt"
+        "settings.compact": "Kompakt",
+        "settings.motion": "Animációk",
+        "settings.on": "Bekapcsolva",
+        "settings.off": "Kikapcsolva"
     },
     "it": {
         "settings.accent": "Colore di accento",
@@ -96,7 +120,10 @@
         "settings.pink": "Rosa",
         "settings.density": "Densità",
         "settings.comfortable": "Comoda",
-        "settings.compact": "Compatta"
+        "settings.compact": "Compatta",
+        "settings.motion": "Animazioni",
+        "settings.on": "Attivate",
+        "settings.off": "Disattivate"
     },
     "ja": {
         "settings.accent": "アクセントカラー",
@@ -107,7 +134,10 @@
         "settings.pink": "ピンク",
         "settings.density": "表示密度",
         "settings.comfortable": "ゆったり",
-        "settings.compact": "コンパクト"
+        "settings.compact": "コンパクト",
+        "settings.motion": "アニメーション",
+        "settings.on": "オン",
+        "settings.off": "オフ"
     },
     "ko": {
         "settings.accent": "강조 색상",
@@ -118,7 +148,10 @@
         "settings.pink": "분홍",
         "settings.density": "표시 밀도",
         "settings.comfortable": "편안하게",
-        "settings.compact": "촘촘하게"
+        "settings.compact": "촘촘하게",
+        "settings.motion": "애니메이션",
+        "settings.on": "켜기",
+        "settings.off": "끄기"
     },
     "nl": {
         "settings.accent": "Accentkleur",
@@ -129,7 +162,10 @@
         "settings.pink": "Roze",
         "settings.density": "Dichtheid",
         "settings.comfortable": "Comfortabel",
-        "settings.compact": "Compact"
+        "settings.compact": "Compact",
+        "settings.motion": "Animaties",
+        "settings.on": "Aan",
+        "settings.off": "Uit"
     },
     "pl": {
         "settings.accent": "Kolor akcentu",
@@ -140,7 +176,10 @@
         "settings.pink": "Różowy",
         "settings.density": "Gęstość",
         "settings.comfortable": "Wygodna",
-        "settings.compact": "Kompaktowa"
+        "settings.compact": "Kompaktowa",
+        "settings.motion": "Animacje",
+        "settings.on": "Włączone",
+        "settings.off": "Wyłączone"
     },
     "pt": {
         "settings.accent": "Cor de destaque",
@@ -151,7 +190,10 @@
         "settings.pink": "Rosa",
         "settings.density": "Densidade",
         "settings.comfortable": "Confortável",
-        "settings.compact": "Compacta"
+        "settings.compact": "Compacta",
+        "settings.motion": "Animações",
+        "settings.on": "Ativadas",
+        "settings.off": "Desativadas"
     },
     "ru": {
         "settings.accent": "Цвет акцента",
@@ -162,7 +204,10 @@
         "settings.pink": "Розовый",
         "settings.density": "Плотность",
         "settings.comfortable": "Комфортная",
-        "settings.compact": "Компактная"
+        "settings.compact": "Компактная",
+        "settings.motion": "Анимация",
+        "settings.on": "Вкл.",
+        "settings.off": "Выкл."
     },
     "tr": {
         "settings.accent": "Vurgu rengi",
@@ -173,7 +218,10 @@
         "settings.pink": "Pembe",
         "settings.density": "Yoğunluk",
         "settings.comfortable": "Rahat",
-        "settings.compact": "Kompakt"
+        "settings.compact": "Kompakt",
+        "settings.motion": "Animasyonlar",
+        "settings.on": "Açık",
+        "settings.off": "Kapalı"
     },
     "uk": {
         "settings.accent": "Акцентний колір",
@@ -184,7 +232,10 @@
         "settings.pink": "Рожевий",
         "settings.density": "Щільність",
         "settings.comfortable": "Комфортна",
-        "settings.compact": "Компактна"
+        "settings.compact": "Компактна",
+        "settings.motion": "Анімації",
+        "settings.on": "Увімк.",
+        "settings.off": "Вимк."
     },
     "zh": {
         "settings.accent": "强调色",
@@ -195,7 +246,10 @@
         "settings.pink": "粉色",
         "settings.density": "显示密度",
         "settings.comfortable": "舒适",
-        "settings.compact": "紧凑"
+        "settings.compact": "紧凑",
+        "settings.motion": "动画",
+        "settings.on": "开启",
+        "settings.off": "关闭"
     },
     "zhtw": {
         "settings.accent": "強調色",
@@ -206,6 +260,9 @@
         "settings.pink": "粉紅色",
         "settings.density": "顯示密度",
         "settings.comfortable": "舒適",
-        "settings.compact": "緊湊"
+        "settings.compact": "緊湊",
+        "settings.motion": "動畫",
+        "settings.on": "開啟",
+        "settings.off": "關閉"
     }
 }

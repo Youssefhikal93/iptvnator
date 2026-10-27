@@ -30,6 +30,7 @@ window.Prefs = (function () {
         theme: 'dark',
         accent: 'blue',
         density: 'comfortable',
+        motion: 'on',
     };
 
     function read(key, fallback) {

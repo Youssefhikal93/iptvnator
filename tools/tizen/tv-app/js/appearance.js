@@ -13,10 +13,11 @@ window.Appearance = (function () {
         document.documentElement.setAttribute('data-theme', Prefs.get('theme') === 'light' ? 'light' : 'dark');
         document.documentElement.setAttribute('data-accent', choice('accent', ['blue', 'saffron', 'asphalt', 'violet', 'pink']));
         document.documentElement.setAttribute('data-density', choice('density', ['comfortable', 'compact']));
+        document.documentElement.setAttribute('data-motion', choice('motion', ['on', 'off']));
     }
 
     Prefs.onChange(function (name) {
-        if (name === 'language' || name === 'theme' || name === 'accent' || name === 'density') apply();
+        if (name === 'language' || name === 'theme' || name === 'accent' || name === 'density' || name === 'motion') apply();
     });
     ProfileStore.onSwitch(apply);
     apply();

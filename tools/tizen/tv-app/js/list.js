@@ -32,7 +32,7 @@ window.List = function (el, options) {
         img.onerror = function () {
             if (img.parentNode) img.parentNode.replaceChild(placeholder(item), img);
         };
-        img.src = src;
+        Art.prepare(img, src).src = src;
         return img;
     }
 
@@ -79,6 +79,12 @@ window.List = function (el, options) {
             empty.appendChild(hint);
             el.appendChild(empty);
             return;
+        }
+
+        // The next page's artwork loads while this one is on screen.
+        if (options.icon) {
+            var shown = state.grid ? grid.cols * grid.rows : rows;
+            Art.preload(state.items.slice(start + shown, start + 2 * shown).map(options.icon));
         }
 
         if (state.grid) return renderGrid(start, count, grid);

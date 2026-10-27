@@ -30,7 +30,7 @@ window.Home = function (api) {
         node.onerror = function () {
             node.style.visibility = 'hidden';
         };
-        if (src) node.src = src;
+        if (src) Art.prepare(node, src).src = src;
         else node.style.visibility = 'hidden';
         return node;
     }
@@ -210,6 +210,8 @@ window.Home = function (api) {
         row.entries.slice(r.offset, r.offset + visible).forEach(function (entry, i) {
             strip.appendChild(renderCard(entry, focused && r.offset + i === r.focus));
         });
+        // The tiles RIGHT scrolls to next load while this row is on screen.
+        Art.preload(row.entries.slice(r.offset + visible, r.offset + 2 * visible).map(function (entry) { return art(entry.item); }));
         box.appendChild(strip);
         return box;
     }
@@ -236,6 +238,9 @@ window.Home = function (api) {
             var focused = s.active && i === s.block;
             root.appendChild(list[i].hero ? renderHero(list[i].hero, focused) : renderRow(list[i].row, focused));
         }
+        // And the row DOWN brings up.
+        var next = list[first + 3];
+        if (next && next.row && next.row.entries) Art.preload(next.row.entries.slice(0, AppearanceLayout.count('--home-cols')).map(function (entry) { return art(entry.item); }));
     }
 
     // ---- Keys -------------------------------------------------------------

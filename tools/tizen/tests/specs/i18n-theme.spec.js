@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, back, moveTo } = require('./helpers');
+const { test, expect, boot, section, press, back, moveTo, openFirst } = require('./helpers');
 
 const RAIL_GERMAN = ['Startseite', 'Quellen', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
 const RAIL_ENGLISH = ['Home', 'Sources', 'Live TV', 'Movies', 'Series', 'Settings'];
@@ -168,4 +168,20 @@ test('the player keeps its dark palette in the Light theme', async ({ page }) =>
     }));
     expect(colours.player).toBe('#0d0f12');
     expect(colours.page).toBe('#eef0f3');
+});
+
+test('Animations Off stops artwork fades and focus growth, and survives a reload', async ({ page }) => {
+    await boot(page);
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'on');
+    await openFirst(page, 'Movies');
+    await expect(page.locator('#detail .dt-poster')).toHaveClass(/art-in/);
+    await back(page);
+    await section(page, 'Settings');
+    await moveTo(page, '.st-row.focused .st-label', 'Animations');
+    await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('On');
+    await press(page, 'Enter');
+    await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Off');
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
 });

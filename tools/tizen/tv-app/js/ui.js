@@ -14,7 +14,9 @@ window.UI = (function () {
             if (props.fallback && node.getAttribute('src') !== props.fallback) return void (node.src = props.fallback);
             node.style.visibility = 'hidden';
         }
-        return html`<img class=${props.cls} src=${props.src || undefined} onError=${failed} style=${props.src ? undefined : 'visibility: hidden'} />`;
+        // Fades in over its placeholder unless it loaded before (art.js).
+        var cls = [props.cls, 'art', Art.seen(props.src) ? 'art-in' : ''].filter(Boolean).join(' ');
+        return html`<img class=${cls} src=${props.src || undefined} onError=${failed} style=${props.src ? undefined : 'visibility: hidden'} />`;
     }
 
     // Keyed by address: a new address gets a fresh element, so a fallback or

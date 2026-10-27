@@ -16,6 +16,10 @@ window.Home = (api) => {
     const KEY = Keys;
     const { html } = UI;
     const root = document.getElementById('home');
+    // Cinema opens on a banner for what you were watching; Big first row
+    // and Backdrop have none (Settings › Display › Home layout).
+    const LAYOUTS = ['cinema', 'bigrow', 'backdrop'];
+    const layout = () => (LAYOUTS.indexOf(Prefs.get('homeLayout')) > 0 ? Prefs.get('homeLayout') : 'cinema');
     Prefs.onChange((name) => {
         if (name === 'homeLayout' || name === 'programmeGuide' || name === 'density') render();
     });
@@ -56,21 +60,23 @@ window.Home = (api) => {
     // Blocks top to bottom: the hero (when there is history), then rows.
     const blocks = () => {
         const list = [];
-        const hero = api.hero();
+        const hero = layout() === 'cinema' ? api.hero() : [];
         if (hero.length) list.push({ hero });
         api.rows().forEach((row) => {
             const shown = withoutHero(row, hero);
             if (shown.entries.length || shown.loading) list.push({ row: shown });
         });
+        // Big first row: the top row has a few wide tiles.
+        if (layout() === 'bigrow' && list.length) list[0] = { row: Object.assign({}, list[0].row, { big: true }) };
         return list;
     };
 
-    const visibleCount = () => AppearanceLayout.count('--home-cols');
+    const visibleCount = (row) => (row && row.big ? AppearanceLayout.count('--home-big-cols', root) : AppearanceLayout.count('--home-cols'));
 
     const rowState = (row) => {
         if (!s.rows[row.id]) s.rows[row.id] = { focus: 0, offset: 0 };
         const r = s.rows[row.id];
-        const visible = visibleCount();
+        const visible = visibleCount(row);
         r.focus = Math.max(0, Math.min(r.focus, row.entries.length - 1));
         if (r.focus < r.offset) r.offset = r.focus;
         if (r.focus >= r.offset + visible) r.offset = r.focus - visible + 1;
@@ -118,20 +124,26 @@ window.Home = (api) => {
         return minutes >= 60 ? Math.floor(minutes / 60) + ' h ' + String(minutes % 60).padStart(2, '0') + ' min' : minutes + ' min';
     };
 
+    const chipsOf = (entry, d) => [episodeOf(entry), d.year, d.genre, d.seconds > 0 ? runtime(d.seconds) : '', d.rating > 0 ? '★ ' + Number(d.rating).toFixed(1) : '']
+        .filter(Boolean);
+    const Chips = ({ chips }) => (chips.length
+        ? html`<div class="hm-hero-chips">${chips.map((chip, i) => html`<span class=${'hm-chip' + (chip.charAt(0) === '★' ? ' rating' : '')} key=${i}>${chip}</span>`)}</div>`
+        : null);
+    const minutesLeft = (p) => (p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '');
+
     const Hero = ({ hero, focused }) => {
         const entry = hero[heroIndex(hero)];
         const d = heroDetails(entry);
         const p = api.progress(entry);
-        const chips = [episodeOf(entry), d.year, d.genre, d.seconds > 0 ? runtime(d.seconds) : '', d.rating > 0 ? '★ ' + Number(d.rating).toFixed(1) : '']
-            .filter(Boolean);
-        const left = p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '';
+        const chips = chipsOf(entry, d);
+        const left = minutesLeft(p);
         return html`<div class="hm-hero">
             ${UI.img('hm-hero-art', d.backdrop || d.poster || art(entry.item))}
             <div class="hm-hero-shade"></div>
             <div class="hm-hero-text">
                 <div class="hm-eyebrow">${I18n.t('browser.continueWatching') + (hero.length > 1 ? '  ·  ' + (s.hero + 1) + ' / ' + hero.length : '')}</div>
                 <div class="hm-hero-title">${titleOf(entry)}</div>
-                ${chips.length ? html`<div class="hm-hero-chips">${chips.map((chip, i) => html`<span class=${'hm-chip' + (chip.charAt(0) === '★' ? ' rating' : '')} key=${i}>${chip}</span>`)}</div>` : null}
+                <${Chips} chips=${chips} />
                 ${d.plot ? html`<div class="hm-hero-plot">${d.plot}</div>` : null}
                 ${p ? html`<div class="hm-hero-progress">
                     <div class="hm-hero-bar"><div class="hm-hero-fill" style=${{ width: Progress.bar(p.ratio) }}></div></div>
@@ -158,9 +170,11 @@ window.Home = (api) => {
 
     const bar = (cls, ratio) => html`<div class=${cls}><div class="hm-fill" style=${{ width: Math.round(Math.min(1, Math.max(0, ratio)) * 100) + '%' }}></div></div>`;
 
-    const tile = (entry) => {
+    // A big tile (Big first row) shows the title's backdrop and, on it, the
+    // time left.
+    const tile = (entry, big) => {
         const live = entry.section === 'live';
-        const src = art(entry.item);
+        const src = big && !live ? heroDetails(entry).backdrop || art(entry.item) : art(entry.item);
         const item = entry.item;
         const chip = item.sourceId && item.sourceId !== Sources.current().id ? html`<span class="source-chip">${item.sourceName}</span>` : null;
         let overlays;
@@ -177,36 +191,66 @@ window.Home = (api) => {
                 api.watched(entry) ? html`<span class="watched-tick" aria-label=${I18n.t('browser.watched')}>✓</span>` : null,
                 api.isNew(entry) ? html`<span class="new-badge">${I18n.t('home.newEpisodes')}</span>` : null,
                 p && p.status === 'continue' ? bar('hm-bar', p.ratio) : null,
+                big && p && p.status === 'continue' && minutesLeft(p) ? html`<span class="hm-label">${minutesLeft(p)}</span>` : null,
             ];
         }
         const name = titleOf(entry);
         const poster = live
             ? html`<${Kit.Plate} cls="hm-poster" name=${name} logo=${src} onFail=${failed}>${overlays}</${Kit.Plate}>`
             : html`<${Poster} src=${src} initials=${name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()}>${overlays}</${Poster}>`;
-        return { key: entryKey(entry), cls: 'hm-card' + (live ? ' live' : ''), poster, name, sub };
+        return { key: entryKey(entry), cls: 'hm-card' + (live ? ' live' : '') + (big ? ' big' : ''), poster, name, sub };
     };
 
-    const skeletons = () => Array.from({ length: visibleCount() }, (_, i) => ({ key: i, cls: 'hm-card skeleton', poster: html`<div class="hm-poster"></div>`, name: '' }));
+    const skeletons = (row) => Array.from({ length: visibleCount(row) }, (_, i) => ({ key: i, cls: 'hm-card skeleton', poster: html`<div class="hm-poster"></div>`, name: '' }));
 
     const HomeRow = ({ row, focused }) => {
-        if (row.loading) return html`<${Kit.Row} cls="hm" kind="loading" label=${row.title} tiles=${skeletons()} />`;
+        if (row.loading) return html`<${Kit.Row} cls="hm" kind=${'loading' + (row.big ? ' big' : '')} label=${row.title} tiles=${skeletons(row)} />`;
         const r = rowState(row);
-        const visible = visibleCount();
+        const visible = visibleCount(row);
         // The tiles RIGHT scrolls to next load while this row is on screen.
         Art.preload(row.entries.slice(r.offset + visible, r.offset + 2 * visible).map((entry) => art(entry.item)));
         // A row says when it goes on: its size (the place while focused),
         // ‹ › at its edges, and the last tile fades unless it has the focus.
         const total = row.entries.length;
         const right = r.offset + visible < total;
-        const kind = [row.id === 'live' ? 'live' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
+        const kind = [row.id === 'live' ? 'live' : '', row.big ? 'big' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
             right && !(focused && r.focus === r.offset + visible - 1) ? 'fade' : ''].filter(Boolean).join(' ');
         const aside = focused ? (r.focus + 1) + ' / ' + total : String(total);
         return html`<${Kit.Row} cls="hm" kind=${kind} label=${row.title} aside=${aside}
-            tiles=${row.entries.slice(r.offset, r.offset + visible).map(tile)} focus=${focused ? r.focus - r.offset : -1} />`;
+            tiles=${row.entries.slice(r.offset, r.offset + visible).map((entry) => tile(entry, row.big))} focus=${focused ? r.focus - r.offset : -1} />`;
+    };
+
+    // ---- Backdrop ---------------------------------------------------------
+
+    // The focused title fills the screen behind one row of tiles; the rows
+    // below it show only their names. A channel shows its logo on a colour.
+    const Stage = ({ list }) => {
+        const row = list[s.block].row;
+        const entry = row.loading ? null : row.entries[rowState(row).focus];
+        const live = !!entry && entry.section === 'live';
+        const d = entry && !live ? heroDetails(entry) : {};
+        const now = live && api.programme(entry.item);
+        const plot = live ? now && now.title : d.plot;
+        return html`<div class=${'hm-stage' + (live ? ' live' : '')}>
+            ${entry ? UI.img('hm-stage-art', live ? art(entry.item) : d.backdrop || d.poster || art(entry.item)) : null}
+            <div class="hm-stage-shade"></div>
+            ${entry ? html`<div class="hm-stage-text">
+                <div class="hm-eyebrow">${row.title}</div>
+                <div class="hm-hero-title">${titleOf(entry)}</div>
+                <${Chips} chips=${live ? [] : chipsOf(entry, d)} />
+                ${plot ? html`<div class="hm-hero-plot">${plot}</div>` : null}
+            </div>` : null}
+        </div>
+        <div class="hm-stage-rows">
+            <${HomeRow} key=${row.id} row=${row} focused=${s.active} />
+            ${list.slice(s.block + 1, s.block + 4).map((block) => html`<div class="hm-stage-next" key=${block.row.id}>${block.row.title}</div>`)}
+        </div>`;
     };
 
     function render() {
-        root.classList.toggle('showcase', Prefs.get('homeLayout') === 'showcase');
+        const mode = layout();
+        root.classList.toggle('bigrow', mode === 'bigrow');
+        root.classList.toggle('backdrop', mode === 'backdrop');
         const list = blocks();
         if (!list.length) {
             UI.render(html`<div class="hm-empty">${I18n.t('home.nothingHere')}<small>${I18n.t('home.nothingHint')}</small></div>`, root);
@@ -217,6 +261,10 @@ window.Home = (api) => {
         });
         s.block = Math.min(s.block, list.length - 1);
         s.blockKey = list[s.block].hero ? 'hero' : list[s.block].row.id;
+        if (mode === 'backdrop') {
+            UI.render(html`<${Stage} list=${list} />`, root);
+            return;
+        }
         // The hero shows while it has the focus; further down, the focused
         // row moves to the top.
         const first = list[0].hero && s.block === 0 ? 0 : s.block;
@@ -229,7 +277,7 @@ window.Home = (api) => {
         })}`, root);
         // And the row DOWN brings up.
         const next = list[first + 3];
-        if (next && next.row && next.row.entries) Art.preload(next.row.entries.slice(0, visibleCount()).map((entry) => art(entry.item)));
+        if (next && next.row && next.row.entries) Art.preload(next.row.entries.slice(0, visibleCount(next.row)).map((entry) => art(entry.item)));
     }
 
     // ---- Keys -------------------------------------------------------------

@@ -69,14 +69,21 @@ body.menu-top #items.channels {
 }
 
 /* Home keeps its first row in view: the hero gives up the menu's height. */
-body.menu-top #home:not(.showcase) .hm-hero {
+body.menu-top #home .hm-hero {
     height: 484px;
 }
-body.menu-top #home:not(.showcase) .hm-hero-text {
+body.menu-top #home .hm-hero-text {
     top: 28px;
 }
-body.menu-top #home:not(.showcase) .hm-hero-plot {
+body.menu-top #home .hm-hero-plot {
     -webkit-line-clamp: 1;
+}
+/* Backdrop keeps its text clear of the row under the menu's height. */
+body.menu-top .hm-stage-text {
+    top: 24px;
+}
+body.menu-top .hm-stage-text .hm-hero-title {
+    font-size: 64px;
 }
 
 /* Settings groups fit under the bar (#49). */

@@ -26,7 +26,7 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Automatic retry (2, 5, 10, 30 s), Retry buttons, recovery screens | Done (not yet tested on the TV); live streams reconnect after 1, 2, 4, 8, 15 s (#14) | #17, #14 | Yes |
 | Remote Stop returns to where playback started | Done; Return hides visible controls first for movies, episodes and Live TV (not yet tested on the TV) | #37 | Yes |
 | Long lists with focus restored after details | Done | — | Yes |
-| Settings: Home layout **Cinema** (tall hero) or **Showcase** (compact hero, more rows) | Done (not yet tested on the TV) | #10 | Yes |
+| Settings: Home layout **Cinema** (tall hero), **Big first row** (no hero, three wide tiles) or **Backdrop** (the focused title behind one row) | Done (not yet tested on the TV) | #10 | Yes |
 | Settings: programme guide on/off | Done (not yet tested on the TV) | #10 | Yes |
 | Subtitle style and picture aspect in Settings and the player menu | Done (not yet tested on the TV): AVPlay text and HTML/hls.js cues; live preview uses Fit; OpenSubtitles downloads with a viewer key, cached choices and per-title delay use the same style | #26, #30 | Yes |
 | Visual refinement: compact header, 2:3 posters, TV icon for missing logos, favorites split into Movies / Series / TV | Partial (shared foundation: five accent colours, Comfortable/Compact density, focus rings and main-screen safe area; Home has separate favorite rows and optional favorites and recents across sources with source-name chips; missing logos show initials; not yet tested on the TV) | #31, #24 | Yes |

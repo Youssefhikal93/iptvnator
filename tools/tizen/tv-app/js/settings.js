@@ -26,7 +26,7 @@ window.Settings = function (hooks) {
         { get label() { return I18n.t('settings.programmeGuide'); }, get hint() { return I18n.t('describe.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return onOff(); } },
         { get label() { return I18n.t('settings.livePreview'); }, get hint() { return I18n.t('describe.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return onOff(); } },
         ...PlayerPicture.rows,
-        { get group() { return I18n.t('settings.display'); }, get label() { return I18n.t('settings.homeLayout'); }, get hint() { return I18n.t('describe.homeLayout'); }, key: 'homeLayout', choices: ['cinema', 'showcase'], get labels() { return [I18n.t('settings.cinema'), I18n.t('settings.showcase')]; } },
+        { get group() { return I18n.t('settings.display'); }, get label() { return I18n.t('settings.homeLayout'); }, get hint() { return I18n.t('describe.homeLayout'); }, key: 'homeLayout', choices: ['cinema', 'bigrow', 'backdrop'], get labels() { return [I18n.t('settings.cinema'), I18n.t('settings.bigRow'), I18n.t('settings.backdrop')]; } },
         { get label() { return I18n.t('settings.libraryFrom'); }, get hint() { return I18n.t('describe.libraryFrom'); }, key: 'librarySources', choices: ['current', 'all'], get labels() { return [I18n.t('settings.thisSource'), I18n.t('settings.allSources')]; } },
         { get label() { return I18n.t('settings.viewMovies'); }, key: 'view:movies', choices: ['list', 'grid'], get labels() { return views(); } },
         { get label() { return I18n.t('settings.viewSeries'); }, key: 'view:series', choices: ['list', 'grid'], get labels() { return views(); } },

@@ -91,6 +91,18 @@ window.Browser = function (hooks) {
         else if (state.section === 'home') home.render();
     });
     var visible = { list: [], empty: '' };
+    var libraryRows = CategoryRows({
+        ready: function () { return !!state.source; },
+        section: function () { return state.section; },
+        sortable: sortableSection,
+        everySource: function () { return Prefs.get('librarySources') === 'all'; },
+        chosenSort: function () { return Library.sort(sourceId(), state.section); },
+        favorites: function () { return libraryList('favorites', state.section); },
+        favoriteItems: function () { return Library.favoriteItems(sourceId(), state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []); },
+        recent: function () { return libraryList('recent', state.section); },
+        continued: function () { return Library.continueWatching(sourceId(), state.section); },
+        added: function () { return addedOf(state.section); },
+    });
     var genres = GenreFilter({
         section: function () { return state.section; },
         ready: hasTools,
@@ -307,7 +319,12 @@ window.Browser = function (hooks) {
     // Star for favorites and a thin progress bar for unfinished movies and episodes.
     function decorate(el, item) {
         if (!state.source) return;
-        LibraryChip(el, item, sourceId());
+        if (otherSource(item)) {
+            var chip = document.createElement('span');
+            chip.className = 'source-chip';
+            chip.textContent = item.sourceName;
+            el.appendChild(chip);
+        }
         if (isFavorite(item)) {
             var star = document.createElement('span');
             star.className = 'star';
@@ -427,29 +444,9 @@ window.Browser = function (hooks) {
         }, 300);
     }
 
-    function virtualRows() {
-        if (!state.source) return [];
-        var id = sourceId();
-        var section = state.section;
-        var rows = [
-            { category_id: '__fav', category_name: I18n.t('browser.favorites'), virtual: 'favorites', count: libraryList('favorites', section).length },
-            { category_id: '__recent', category_name: I18n.t('browser.recentlyWatched'), virtual: 'recent', count: libraryList('recent', section).length },
-        ];
-        if (section !== 'live') {
-            rows.push({ category_id: '__continue', category_name: I18n.t('browser.continueWatching'), virtual: 'continue', count: Library.continueWatching(id, section).length });
-        }
-        if (sortableSection() && addedOf(section).length) {
-            rows.unshift({ category_id: '__added', category_name: I18n.t('browser.recentlyAdded'), virtual: 'added', count: addedOf(section).length });
-        }
-        // All movies / All series comes first: the whole section, without
-        // hidden categories (a category with no id loads all of it).
-        if (section === 'movies' || section === 'series') rows.unshift({ category_id: '', category_name: I18n.t(section === 'movies' ? 'browser.allMovies' : 'browser.allSeries'), all: section });
-        return rows;
-    }
-
     // The catalogue's categories minus the hidden ones, after the virtual rows.
     function categoryRows(list) {
-        return virtualRows().concat(visibility.categories(state.section, list || state.base || []));
+        return libraryRows.build().concat(visibility.categories(state.section, list || state.base || []));
     }
 
     function showCategories(index) {
@@ -461,30 +458,14 @@ window.Browser = function (hooks) {
         return visibility.items(section, state.added[section] || []);
     }
 
-    function virtualList(kind) {
-        var id = sourceId();
-        if (kind === 'added') return addedOf(state.section);
-        if (Prefs.get('librarySources') === 'all' && (kind === 'favorites' || kind === 'recent')) return libraryList(kind, state.section);
-        if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []) : Library.favorites(id, state.section);
-        if (kind === 'recent') return Library.recent(id, state.section);
-        return Library.continueWatching(id, state.section);
-    }
-
-    var EMPTY = {
-        get favorites() { return [I18n.t('empty.favorites.title'), I18n.t('empty.favorites.hint')]; },
-        get recent() { return [I18n.t('empty.recent.title'), I18n.t('empty.recent.hint')]; },
-        get continue() { return [I18n.t('empty.continue.title'), I18n.t('empty.continue.hint')]; },
-        get added() { return [I18n.t('empty.added.title'), I18n.t('empty.added.hint')]; },
-    };
-
     function showVirtual(category, index) {
         state.token++;
         state.showingSearch = false;
         applyView();
         // Library lists keep items of hidden categories; only the lock applies.
-        setItems(virtualList(category.virtual).filter(function (item) {
+        setItems(category.list().filter(function (item) {
             return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
-        }), index || 0, EMPTY[category.virtual]);
+        }), index || 0, category.empty);
         renderChrome();
     }
 
@@ -609,13 +590,13 @@ window.Browser = function (hooks) {
         return state.source && state.source.type === 'xtream' && (state.section === 'movies' || state.section === 'series');
     }
 
+    // The category under the cursor, unless search results are showing.
+    function shownCategory() {
+        return !state.showingSearch && categories.item();
+    }
+
     function sortMode() {
-        if (!sortableSection()) return null;
-        var category = !state.showingSearch && categories.item();
-        if (category && category.virtual === 'favorites' && Prefs.get('librarySources') === 'all') return null;
-        if (category && category.virtual === 'added') return 'newest';
-        if (category && category.virtual && category.virtual !== 'favorites') return null;
-        return Library.sort(sourceId(), state.section);
+        return libraryRows.sortMode(shownCategory());
     }
 
     function sortSubtitle() {
@@ -682,9 +663,7 @@ window.Browser = function (hooks) {
     }
 
     function toolbarTools() {
-        var category = !state.showingSearch && categories.item();
-        var canSort = sortableSection() && (!category || !category.virtual || (category.virtual === 'favorites' && Prefs.get('librarySources') !== 'all'));
-        var tools = canSort ? TOOLS : TOOLS.slice(0, 3);
+        var tools = libraryRows.canSort(shownCategory()) ? TOOLS : TOOLS.slice(0, 3);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
         return guideAvailable() ? tools.concat(['guide']) : tools;
     }
@@ -834,7 +813,7 @@ window.Browser = function (hooks) {
         if (state.showingSearch) return wholeSection;
         var category = categories.item();
         if (!category) return false;
-        if (category.virtual) return wholeSection && (category.virtual === 'added' || category.virtual === 'favorites');
+        if (category.virtual) return wholeSection && category.fromCatalogue;
         return what.kind === 'items' && String(what.id === undefined ? '' : what.id) === String(category.category_id);
     }
 
@@ -1131,7 +1110,7 @@ window.Browser = function (hooks) {
             .then(function (list) {
                 if (token !== state.token) return;
                 state.base = list;
-                showCategories(virtualRows().length);
+                showCategories(libraryRows.build().length);
                 loadItems();
                 if (sortableSection()) loadRecentlyAdded(id);
                 if (id === 'movies' || id === 'series') loadGenres(id);
@@ -1318,7 +1297,7 @@ window.Browser = function (hooks) {
         if (state.section !== section || !state.base) return;
         var category = categories.item();
         showCategories(indexIn(categoryRows(), category, categories.index()));
-        if (category && !state.showingSearch && (category.virtual === 'added' || category.virtual === 'favorites')) {
+        if (category && !state.showingSearch && category.fromCatalogue) {
             showVirtual(categories.item(), items.index());
         }
         // Badges follow the refreshed dates in every list of shows.

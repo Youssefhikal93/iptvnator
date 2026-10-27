@@ -79,10 +79,6 @@ test('Back from a list, the toolbar or Settings goes straight to the menu', asyn
 test('on top, ▲ at the top of a screen reaches the menu and ◀ at its left edge does not', async ({ page }) => {
     await boot(page, { storage: { settings: { menuPosition: 'top', topBar: 'on' } } });
     await expect(page.locator('body')).toHaveClass(/menu-top/);
-    await section(page, 'Sources');
-    // Sources has no toolbar: ▲ on the first source goes up to the menu.
-    await press(page, 'ArrowUp');
-    await expect(focusedSection(page)).toHaveText('Sources');
     await section(page, 'Live TV');
     await press(page, 'ArrowLeft');
     await expect(page.locator('#categories .row.focused')).toHaveCount(1);

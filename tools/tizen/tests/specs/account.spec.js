@@ -1,4 +1,4 @@
-const { test, expect, boot, section, moveTo, press, enterItems, holdOK, menuChoice } = require('./helpers');
+const { test, expect, boot, section, press, sources, sourceMenu, menuChoice } = require('./helpers');
 
 const DAY = 86400000;
 const seconds = days => String(Math.floor((Date.now() + days * DAY) / 1000));
@@ -20,8 +20,8 @@ async function answerAccounts(page, answer) {
 const info = extra => ({ auth: 1, status: 'Active', exp_date: seconds(90), active_cons: '0', max_connections: '1', ...extra });
 
 async function openSources(page) {
-    await section(page, 'Sources');
-    await expect(page.locator('#categories .row').first()).toBeVisible();
+    await sources(page);
+    await expect(page.locator('#settings .st-source').first()).toBeVisible();
 }
 
 test('an account that ends within seven days warns on start and shows its details', async ({ page }) => {
@@ -30,23 +30,24 @@ test('an account that ends within seven days warns on start and shows its detail
     await expect(page.locator('#toast')).toContainText('Account expires in 3 days');
     await section(page, 'Live TV');
     await openSources(page);
-    const row = page.locator('#categories .row').first();
+    const row = page.locator('#settings .st-source').first();
     await expect(row).toContainText('Active');
     await expect(row).toContainText('Expires in 3 days');
     // Channels come from the saved catalogue of the Live TV visit above.
     await expect(row).toContainText('500 channels');
-    await expect(row.locator('.badge')).toHaveText('Xtream');
-    await expect(page.locator('#items')).toContainText('Status: Active');
-    await expect(page.locator('#items')).toContainText('Connections: 1 / 2');
-    await expect(page.locator('#items')).toContainText('Formats: m3u8, ts');
+    await expect(row.locator('.st-chip')).toHaveText('Xtream');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu')).toContainText('Status: Active');
+    await expect(page.locator('#menu')).toContainText('Connections: 1 / 2');
+    await expect(page.locator('#menu')).toContainText('Formats: m3u8, ts');
 });
 
 test('a far-off expiry shows no warning', async ({ page }) => {
     await boot(page);
     await openSources(page);
     await expect(page.locator('#toast')).toBeHidden();
-    await expect(page.locator('#categories .row').first()).toContainText('Expires ');
-    await expect(page.locator('#categories .row').first()).not.toContainText('Expires in');
+    await expect(page.locator('#settings .st-source').first()).toContainText('Expires ');
+    await expect(page.locator('#settings .st-source').first()).not.toContainText('Expires in');
 });
 
 const failures = [
@@ -78,10 +79,11 @@ for (const failure of failures) {
         await press(page, 'ArrowRight');
         await press(page, 'Enter');
         await expect(page.locator('#load-error')).toBeHidden();
-        await expect(page.locator('#rail .active')).toHaveText('Sources');
-        await expect(page.locator('#categories .row').first()).toContainText('Regression TV');
-        await expect(page.locator('#categories .row').first().locator('.badge')).toHaveText(failure.chip);
-        await expect(page.locator('#categories .row').first().locator('.badge')).toHaveClass(/warn/);
+        // Settings > Sources, on the source with the problem (#51).
+        await expect(page.locator('#rail .active')).toHaveText('Settings');
+        await expect(page.locator('#settings .st-row.focused')).toContainText('Regression TV');
+        await expect(page.locator('#settings .st-row.focused .st-chip')).toHaveText(failure.chip);
+        await expect(page.locator('#settings .st-row.focused .st-chip')).toHaveClass(/warn/);
     });
 }
 
@@ -122,18 +124,19 @@ test('rows show a failed check as Not responding and M3U sources only their type
     await saveCatalogue(page, 's3|live:categories', [{ category_id: '', category_name: 'All channels', count: 12 }]);
     await openSources(page);
     requests.length = 0;
-    const rows = page.locator('#categories .row');
+    const rows = page.locator('#settings .st-source');
     await expect(rows.nth(1)).toContainText('Gone TV');
-    await expect(rows.nth(1).locator('.badge')).toHaveText('Not responding');
+    await expect(rows.nth(1).locator('.st-chip')).toHaveText('Not responding');
     await expect(rows.nth(1)).toContainText('3 channels');
     await expect(rows.nth(2)).toContainText('12 channels');
-    await expect(rows.nth(2).locator('.badge')).toHaveText('M3U');
+    await expect(rows.nth(2).locator('.st-chip')).toHaveText('M3U');
     await expect(rows.nth(2)).not.toContainText('Expires');
-    await moveTo(page, '#categories .focused .label', 'Gone TV');
-    await expect(page.locator('#items')).toContainText('Status: Not responding');
-    await moveTo(page, '#categories .focused .label', 'Playlist');
-    await expect(page.locator('#items')).toContainText('12 channels in the catalogue');
-    await expect(page.locator('#items')).not.toContainText('Status:');
+    await sourceMenu(page, 'Gone TV');
+    await expect(page.locator('#menu')).toContainText('Status: Not responding');
+    await menuChoice(page, 'Switch to this source');
+    await sourceMenu(page, 'Playlist');
+    await expect(page.locator('#menu')).toContainText('12 channels in the catalogue');
+    await expect(page.locator('#menu')).not.toContainText('Status:');
     // Showing the rows must not download the playlist or another source's lists.
     expect(requests.filter(url => /playlist\.m3u|username=gone.*action=get_/.test(url))).toHaveLength(0);
 });
@@ -145,10 +148,8 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     });
     await answerAccounts(page, user => user === 'bad' ? { auth: 0 } : null);
     await boot(page, { storage: { 'recent:s1': { movies: [{ name: 'Movie 25', stream_id: 2025 }] } } });
-    await openSources(page);
-    await enterItems(page);
-    await moveTo(page, '#items .focused .label', 'Edit source…');
-    await press(page, 'Enter');
+    await sourceMenu(page);
+    await menuChoice(page, 'Edit source…');
     await expect(page.locator('#form-title')).toHaveText('Edit source');
     await expect(page.locator('#form-name')).toHaveValue('Regression TV');
     await expect(page.locator('#form-user')).toHaveValue('tester');
@@ -162,7 +163,7 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Living room');
-    await expect(page.locator('#categories .row').first()).toContainText('Living room');
+    await expect(page.locator('#settings .st-source').first()).toContainText('Living room');
     await page.waitForTimeout(500);
     expect(calls.length).toBe(before);
     const saved = () => page.evaluate(() => ({
@@ -177,8 +178,8 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     expect(now.recent).not.toBeNull();
 
     // A login the provider refuses is not saved.
-    await moveTo(page, '#items .focused .label', 'Edit source…');
-    await press(page, 'Enter');
+    await sourceMenu(page);
+    await menuChoice(page, 'Edit source…');
     await page.locator('#form-user').fill('bad');
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toContainText('Could not connect');
@@ -211,10 +212,8 @@ test('editing another source drops its saved catalogue only when the login chang
         { id: 's2', type: 'xtream', name: 'Second', url: base, user: 'other', pass: 'x' },
     ] } });
     await saveCatalogue(page, 's2|live:items:', [{}, {}, {}, {}]);
-    await openSources(page);
-    await moveTo(page, '#categories .focused .label', 'Second');
-    await expect(page.locator('#categories .row.selected, #categories .row.focused')).toContainText('4 channels');
-    await holdOK(page);
+    await sourceMenu(page, 'Second');
+    await expect(page.locator('#settings .st-row.focused')).toContainText('4 channels');
     await expect(page.locator('#menu')).toContainText('Guide link…');
     await menuChoice(page, 'Edit source…');
     await expect(page.locator('#form-title')).toHaveText('Edit source');
@@ -222,23 +221,21 @@ test('editing another source drops its saved catalogue only when the login chang
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
-    await expect(page.locator('#categories .row').nth(1)).toContainText('Bedroom');
-    await expect(page.locator('#categories .row').nth(1)).toContainText('4 channels');
-    await enterItems(page);
-    await moveTo(page, '#items .focused .label', 'Edit source…');
-    await press(page, 'Enter');
+    await expect(page.locator('#settings .st-source').nth(1)).toContainText('Bedroom');
+    await expect(page.locator('#settings .st-source').nth(1)).toContainText('4 channels');
+    await sourceMenu(page, 'Bedroom');
+    await menuChoice(page, 'Edit source…');
     await page.locator('#form-pass').fill('changed');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#categories .row').nth(1)).toContainText('Bedroom');
-    await expect(page.locator('#categories .row').nth(1)).not.toContainText('4 channels');
+    await expect(page.locator('#settings .st-source').nth(1)).toContainText('Bedroom');
+    await expect(page.locator('#settings .st-source').nth(1)).not.toContainText('4 channels');
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });
 
 test('Return cancels Edit source and keeps the saved source', async ({ page }) => {
     await boot(page);
-    await openSources(page);
-    await holdOK(page);
+    await sourceMenu(page);
     await menuChoice(page, 'Edit source…');
     await page.locator('#form-name').fill('Nope');
     await page.locator('#form-cancel').click();

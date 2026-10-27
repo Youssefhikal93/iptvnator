@@ -22,7 +22,6 @@ I18n.tables.by = {
     'browser.recentlyWatched': 'Нядаўна прагледжаныя',
     'browser.search': 'Пошук',
     'browser.searchResults': 'Вынікі пошуку',
-    'browser.source': 'Крыніца',
     'browser.watched': 'Прагледжана',
     'common.back': 'Назад',
     'common.cancel': 'Адмена',

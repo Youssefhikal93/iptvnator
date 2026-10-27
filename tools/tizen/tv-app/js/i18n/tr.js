@@ -22,7 +22,6 @@ I18n.tables.tr = {
     'browser.recentlyWatched': 'Son İzlenenler',
     'browser.search': 'Ara',
     'browser.searchResults': 'Arama sonuçları',
-    'browser.source': 'Kaynak',
     'browser.watched': 'İzlendi',
     'common.back': 'Geri',
     'common.cancel': 'İptal',

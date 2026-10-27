@@ -35,12 +35,13 @@ window.Kit = (() => {
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;
 
     // A titled list of options with one focused row. An option may carry an
-    // icon before its label and a check mark after it.
+    // icon before its label and a check mark after it; a note is a line of
+    // information the focus passes over.
     const MenuRow = ({ option, focused }) => (option.icon
         ? html`<div class=${classes('menu-row with-icon', { focused })}>
             ${option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
         </div>`
-        : html`<div class=${classes('menu-row', { focused })}>${option.label}</div>`);
+        : html`<div class=${classes('menu-row', { focused, note: option.note })}>${option.label}</div>`);
 
     const SideMenu = ({ title, options, index }) => html`<div class="menu-title">${title}</div>
         ${options.map((option, i) => html`<${MenuRow} option=${option} focused=${i === index} />`)}`;

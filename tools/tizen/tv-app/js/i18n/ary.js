@@ -22,7 +22,6 @@ I18n.tables.ary = {
     'browser.recentlyWatched': 'متشافين مؤخراً',
     'browser.search': 'بحث',
     'browser.searchResults': 'نتائج البحث',
-    'browser.source': 'المصدر',
     'browser.watched': 'متشاف',
     'common.back': 'رجع',
     'common.cancel': 'إلغاء',

@@ -35,6 +35,11 @@ window.Settings = function (hooks) {
 
     rows.unshift.apply(rows, ProfileSettings.rows(hooks, render));
 
+    // Sources come first (#51); they are read on every draw, as the list changes.
+    function list() {
+        return SourceSettings.rows(hooks.sources).concat(rows);
+    }
+
     // Read when drawn, so the count follows what the viewer hides.
     function hiddenText(section) {
         return function () {
@@ -69,12 +74,24 @@ window.Settings = function (hooks) {
         return box;
     }
 
+    // A source shows its state under its name and a chip on the right.
+    function sourceRow(node, row) {
+        var text = el('span', 'st-text');
+        text.appendChild(el('span', 'st-label', row.label));
+        if (row.sub) text.appendChild(el('span', 'st-sub', row.sub));
+        node.appendChild(text);
+        node.appendChild(el('span', 'st-chip' + (row.warn ? ' warn' : ''), row.chip));
+    }
+
     function renderRow(row, index) {
         if (row.group) root.appendChild(el('h2', 'st-group', row.group));
-        var node = el('div', 'st-row' + (active && focus === index ? ' focused' : ''));
-        node.appendChild(el('span', 'st-label', row.label));
-        if (row.pills) node.appendChild(pills(row));
-        else node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text));
+        var node = el('div', 'st-row' + (row.source ? ' st-source' : '') + (active && focus === index ? ' focused' : ''));
+        if (row.source) sourceRow(node, row);
+        else {
+            node.appendChild(el('span', 'st-label', row.label));
+            if (row.pills) node.appendChild(pills(row));
+            else node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text));
+        }
         root.appendChild(node);
     }
 
@@ -82,14 +99,16 @@ window.Settings = function (hooks) {
         var scroll = root.scrollTop;
         root.textContent = '';
         root.appendChild(el('h1', 'st-title', I18n.t('rail.settings')));
-        rows.forEach(renderRow);
+        var all = list();
+        focus = Math.min(focus, all.length - 1);
+        all.forEach(renderRow);
         root.scrollTop = scroll;
         var selected = root.querySelector('.focused');
         if (selected) selected.scrollIntoView({ block: 'nearest' });
     }
 
     function change(step, cycle) {
-        var row = rows[focus];
+        var row = list()[focus];
         var index = row.key ? choice(row) : 0;
         // LEFT at the first choice leaves the screen; RIGHT cycles forward.
         if (step < 0 && index === 0) return 'left';
@@ -110,6 +129,13 @@ window.Settings = function (hooks) {
 
     return {
         render: render,
+        // Puts the focus on the first row that `match` accepts (a source, Add).
+        select: function (match) {
+            var at = list().findIndex(match);
+            focus = Math.max(0, at);
+            root.scrollTop = 0;
+            render();
+        },
         setActive: function (enabled) {
             active = enabled;
             render();
@@ -122,7 +148,7 @@ window.Settings = function (hooks) {
             // ▲ on the first row leaves for a menu along the top (#50).
             if (code === KEY.UP && focus === 0) return 'up';
             if (code === KEY.UP || code === KEY.DOWN) {
-                focus = Math.max(0, Math.min(rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
+                focus = Math.max(0, Math.min(list().length - 1, focus + (code === KEY.UP ? -1 : 1)));
                 render();
             }
         },

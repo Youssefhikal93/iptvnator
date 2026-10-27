@@ -22,7 +22,6 @@ I18n.tables.nl = {
     'browser.recentlyWatched': 'Recent bekeken',
     'browser.search': 'Zoeken',
     'browser.searchResults': 'Zoekresultaten',
-    'browser.source': 'Bron',
     'browser.watched': 'Bekeken',
     'common.back': 'Terug',
     'common.cancel': 'Annuleren',

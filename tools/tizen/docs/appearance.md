@@ -122,7 +122,7 @@ leaves out the title the hero is showing. Live tiles use the channel plate.
 The source pill is gone; sources are switched in Settings > Sources and the
 page keeps the current name in `body[data-source]` (tests read it). A
 catalogue refresh shows "Updating…" in the hint bar. The top bar (search and
-view buttons) is hidden on screens without tools (Home, Settings, Sources),
+view buttons) is hidden on screens without tools (Home, Settings),
 which then start at the top edge. Settings > Appearance > Top bar (`topBar`,
 On by default) Off hides it everywhere; ▲ at the top of a list still brings it
 up over the list while the remote is on it (`body.no-bar`, `body.bar-off`).
@@ -163,3 +163,16 @@ progress on the picture and the title and plot under it. An episode without
 a picture shows the show's artwork, dimmed. ◀/▶ move along the strip, ▲ goes
 to the season pills and then the buttons, ▼ goes on to the TMDB rows, which
 take the screen while they have the focus.
+
+## Sources in Settings (#51)
+
+Sources are set up once, so they have no item in the menu any more (Home,
+Live TV, Movies, Series, Settings). They are the first group of Settings
+(`js/source-settings.js`): one row per source with its state under the name
+(active, guide, saved channel count, expiry) and a chip on the right (type,
+or a red problem chip), then "+ Add Xtream account" and "+ Add M3U playlist".
+OK on a source opens its options in the menu dialog: Watch or Switch,
+Refresh, Edit, the guide actions and Remove (Remove asks once more), then
+the account details as lines the focus passes over (`note` options).
+With no source the app opens Settings on Add Xtream account; Go to Sources
+on the account screen opens Settings on the source with the problem.

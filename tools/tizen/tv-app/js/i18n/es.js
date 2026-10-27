@@ -22,7 +22,6 @@ I18n.tables.es = {
     'browser.recentlyWatched': 'Vistos recientemente',
     'browser.search': 'Buscar',
     'browser.searchResults': 'Resultados de búsqueda',
-    'browser.source': 'Origen',
     'browser.watched': 'Visto',
     'common.back': 'Atrás',
     'common.cancel': 'Cancelar',

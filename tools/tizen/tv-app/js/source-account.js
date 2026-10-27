@@ -172,21 +172,6 @@ window.SourceAccount = (function () {
 
     // Colours the chip and adds the subtitle line under a source's name. The
     // name stays alone in .label so the row's name can still be read.
-    function decorate(el, entry) {
-        var chip = el.querySelector('.badge');
-        if (chip && entry.warn) chip.classList.add('warn');
-        if (!entry.detail) return;
-        var subtitle = document.createElement('div');
-        subtitle.className = 'source-guide-status';
-        subtitle.textContent = entry.detail;
-        var label = el.querySelector('.label');
-        var box = document.createElement('div');
-        box.className = 'source-text';
-        el.replaceChild(box, label);
-        box.appendChild(label);
-        box.appendChild(subtitle);
-    }
-
     function formats(info) {
         var list = info && info.allowed_output_formats;
         if (typeof list === 'string') list = list.split(',');
@@ -260,7 +245,6 @@ window.SourceAccount = (function () {
         refresh: refresh,
         forget: forget,
         row: row,
-        decorate: decorate,
         detailRows: detailRows,
         warn: warn,
         screen: screen,

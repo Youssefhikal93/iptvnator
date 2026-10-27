@@ -22,7 +22,6 @@ I18n.tables.ar = {
     'browser.recentlyWatched': 'ما تمت مشاهدته مؤخرًا',
     'browser.search': 'بحث',
     'browser.searchResults': 'نتائج البحث',
-    'browser.source': 'المصدر',
     'browser.watched': 'تمت المشاهدة',
     'common.back': 'رجوع',
     'common.cancel': 'إلغاء',

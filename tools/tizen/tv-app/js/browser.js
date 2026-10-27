@@ -13,7 +13,6 @@ window.Browser = function (hooks) {
     STEPS[KEY.CH_DOWN] = 10;
     var SECTIONS = [
         { id: 'home', get label() { return I18n.t('rail.home'); }, icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' },
-        { id: 'sources', get label() { return I18n.t('rail.sources'); }, icon: 'M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13-1v8l6-4z' },
         { id: 'live', get label() { return I18n.t('rail.live'); }, icon: 'M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zM9 10v8l7-4z' },
         { id: 'movies', get label() { return I18n.t('rail.movies'); }, icon: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z' },
         { id: 'series', get label() { return I18n.t('rail.series'); }, icon: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z' },
@@ -22,7 +21,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'sources', zone: 'categories', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, armed: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -73,16 +72,15 @@ window.Browser = function (hooks) {
         else if (state.section === 'settings') settings.render();
         else categoriesChanged(state.section);
     });
-    // "Go to Sources" on the account screen lands on the source with the problem.
+    // "Go to Sources" on the account screen lands on the source with the
+    // problem, in Settings > Sources (#51).
     LoadScreen.onSources(function () {
         libraryNavigation.cancel();
-        var at = Sources.all().map(function (s) { return s.id; }).indexOf(state.source && state.source.id);
-        openSection('sources');
-        showSources(Math.max(0, at));
-        setZone('categories');
+        var id = state.source && state.source.id;
+        openSources(function (row) { return row.source && row.source.id === id; });
     });
     XmltvGuide.onChange(function (id) {
-        if (state.section === 'sources') categories.set(sourceRows(), categories.index(), '');
+        if (state.section === 'settings') settings.render();
         if (!state.source || state.source.id !== id) return;
         if (state.guide) state.guide.stop();
         state.guide = Prefs.get('programmeGuide') ? GuideData(state.source, state.adapter) : null;
@@ -94,17 +92,14 @@ window.Browser = function (hooks) {
     var categories = List($('categories'), {
         rows: 11,
         title: function () {
-            return state.section === 'sources' ? I18n.t('browser.yourSources') : I18n.t('browser.categoriesOf', { section: sectionOf(state.section).label });
+            return I18n.t('browser.categoriesOf', { section: sectionOf(state.section).label });
         },
         label: function (row) {
             return I18n.categoryName(row);
         },
         badge: function (row) {
             if (HiddenCategories.isReal(row) && ParentalLock.isLocked(sourceId(), state.section, row.category_id)) return '\ud83d\udd12';
-            return row.source ? row.chip : row.count;
-        },
-        decorate: function (el, row) {
-            if (row.source) SourceAccount.decorate(el, row);
+            return row.count;
         },
     });
     var detail = Detail();
@@ -116,7 +111,7 @@ window.Browser = function (hooks) {
         changed: categoriesChanged,
         toast: toast,
     });
-    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged, chrome: renderChrome });
+    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged, chrome: renderChrome, sources: sourceHooks() });
     var watched = Watched({
         knownShow: function (show) {
             if (otherSource(show)) return null;
@@ -165,7 +160,6 @@ window.Browser = function (hooks) {
     var items = List($('items'), {
         rows: 9,
         title: function () {
-            if (state.section === 'sources') return I18n.t('browser.source');
             if (state.showingSearch) return I18n.t('browser.searchTitle', { query: state.search.query });
             var category = categories.item();
             return category ? I18n.categoryName(category) : '';
@@ -284,7 +278,7 @@ window.Browser = function (hooks) {
 
     // Star for favorites and a thin progress bar for unfinished movies and episodes.
     function decorate(el, item) {
-        if (state.section === 'sources' || !state.source) return;
+        if (!state.source) return;
         LibraryChip(el, item, sourceId());
         if (isFavorite(item)) {
             var star = document.createElement('span');
@@ -406,7 +400,7 @@ window.Browser = function (hooks) {
     }
 
     function virtualRows() {
-        if (state.section === 'sources' || !state.source) return [];
+        if (!state.source) return [];
         var id = sourceId();
         var section = state.section;
         var rows = [
@@ -475,7 +469,7 @@ window.Browser = function (hooks) {
             state.favKeys = null;
             return home.render();
         }
-        if (state.section === 'sources' || !state.adapter || !state.base) return;
+        if (!state.adapter || !state.base) return;
         state.favKeys = null;
         showCategories(categories.index());
         var category = categories.item();
@@ -496,7 +490,7 @@ window.Browser = function (hooks) {
 
     function toggleFavorite(item, section) {
         section = section || state.section;
-        if (!item || section === 'sources') return;
+        if (!item) return;
         var target = favoriteTarget(item);
         var added = Library.toggleFavorite(item.sourceId || sourceId(), section, target);
         toast(I18n.t(added ? 'toast.favoriteAdded' : 'toast.favoriteRemoved', { name: target.name }));
@@ -561,11 +555,10 @@ window.Browser = function (hooks) {
     }
 
     function applyView() {
-        items.setGrid(state.section !== 'sources' && viewMode() === 'grid');
+        items.setGrid(viewMode() === 'grid');
     }
 
     function setView(mode) {
-        if (state.section === 'sources') return;
         Library.setView(state.section, mode);
         applyView();
         renderChrome();
@@ -622,7 +615,7 @@ window.Browser = function (hooks) {
     }
 
     function hasTools() {
-        return state.section !== 'sources' && !!state.base;
+        return !!state.base;
     }
 
     function enterToolbar(from) {
@@ -733,7 +726,7 @@ window.Browser = function (hooks) {
 
     function available(id) {
         if (id === 'home') return !!state.adapter;
-        return id === 'sources' || id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
+        return id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
     }
 
     function loadCatalogue(what, onFresh) {
@@ -794,9 +787,9 @@ window.Browser = function (hooks) {
                 ? I18n.t('hints.settings')
                 : state.zone === 'home'
                 ? I18n.t('hints.home')
-                : state.zone === 'items' && state.section !== 'sources'
+                : state.zone === 'items'
                 ? I18n.t('hints.items')
-                : state.zone === 'categories' && state.section !== 'sources'
+                : state.zone === 'categories'
                 ? I18n.t('hints.categories')
                 : I18n.t('hints.default');
         // With the source pill gone (#45), a catalogue refresh shows here.
@@ -850,51 +843,20 @@ window.Browser = function (hooks) {
         };
     }
 
-    // ---- Sources section ----
+    // ---- Sources, in Settings (#51) ----
 
-    function sourceRows() {
-        var current = state.source && state.source.id;
-        return Sources.all()
-            .map(function (s) {
-                return Object.assign({ category_name: s.name, source: s }, SourceAccount.row(s, s.id === current, XmltvGuide.subtitle(s)));
-            })
-            .concat([
-                { category_name: I18n.t('sources.addXtream'), action: 'xtream' },
-                { category_name: I18n.t('sources.addM3u'), action: 'm3u' },
-            ]);
+    // Opens Settings with the focus on the first row `match` accepts.
+    function openSources(match) {
+        openSection('settings');
+        settings.select(match);
+        setZone('settings');
     }
 
-    function showSourceDetails() {
-        var row = categories.item();
-        state.armed = null;
-        if (!row || !row.source) {
-            items.set([], 0, row ? I18n.t('sources.pressToAdd') : '');
-        } else {
-            var isCurrent = state.source && row.source.id === state.source.id;
-            var rows = [
-                { label: I18n.t(isCurrent ? 'sources.watch' : 'sources.switch'), action: 'open' },
-                { label: I18n.t('sources.refresh'), action: 'refresh' },
-                { label: I18n.t('sources.edit'), action: 'edit' },
-                { label: I18n.t('common.remove'), action: 'remove' },
-                { label: Sources.typeLabel(row.source) + ' · ' + row.source.url },
-            ];
-            items.set(rows.concat(SourceAccount.detailRows(row.source, isCurrent ? state.info : null)), 0);
-        }
-        renderChrome();
-    }
-
-    function showSources(index) {
-        categories.set(sourceRows(), index || 0, '');
-        showSourceDetails();
-        SourceAccount.refresh(Sources.all(), sourcesChecked);
-    }
-
-    // A background check finished: redraw the rows, and the details unless the
-    // viewer is inside them.
-    function sourcesChecked() {
-        if (state.section !== 'sources') return;
-        categories.set(sourceRows(), categories.index(), '');
-        if (state.zone !== 'items') showSourceDetails();
+    // The source becomes the current one and its Home opens.
+    function watch(source) {
+        setSource(source);
+        openSection('home');
+        setZone(contentZone());
     }
 
     function sourceEdited(updated, reconnect, previousId) {
@@ -902,7 +864,7 @@ window.Browser = function (hooks) {
         if (reconnect && current) {
             (previousId === updated.id ? state.catalogue.drop() : Promise.resolve()).then(function () {
                 setSource(updated);
-                sourcesChecked();
+                settings.render();
             });
         } else if (reconnect) {
             Catalogue.drop(updated.id);
@@ -910,70 +872,49 @@ window.Browser = function (hooks) {
             state.source = updated;
             updateEpg();
         }
-        showSources(categories.index());
+        settings.render();
+        renderChrome();
     }
 
-    function editSource(source) {
-        SourceEdit(source, { openForm: hooks.openForm, saved: sourceEdited })();
-    }
-
-    function sourceGuideOptions(source) {
-        return SourceGuide(source, { openForm: hooks.openForm, changed: function (updated) {
-            if (state.source && state.source.id === updated.id) {
-                state.source = updated;
-                updateEpg();
-            }
-            showSources(categories.index());
-        } });
-    }
-
-    function openSourceMenu() {
-        var row = categories.item();
-        if (!row || !row.source) return;
-        var edit = { label: I18n.t('sources.edit'), run: function () { editSource(row.source); } };
-        Menu.open(row.source.name, [edit].concat(sourceGuideOptions(row.source)));
-    }
-
-    function sourceAction() {
-        var row = categories.item();
-        var action = items.item() && items.item().action;
-        if (action === 'open') {
-            setSource(row.source);
-            openSection('home');
-            setZone(contentZone());
-        } else if (action === 'refresh') {
-            // Forget the saved lists; the next section opened reloads them.
-            var dropping = state.source && row.source.id === sourceId() ? state.catalogue.drop() : Catalogue.drop(row.source.id);
-            dropping.then(function () {
-                toast(I18n.t('toast.reloading', { name: row.source.name }));
-                setSource(row.source);
-                openSection('home');
-                setZone(contentZone());
-            });
-        } else if (action === 'edit') {
-            editSource(row.source);
-        } else if (action === 'remove') {
-            if (state.armed !== row.source.id) {
-                state.armed = row.source.id;
-                items.items()[items.index()].label = I18n.t('sources.pressAgain');
-                items.select(items.index());
-                return;
-            }
-            Sources.remove(row.source.id);
-            Catalogue.drop(row.source.id);
-            if (state.source && state.source.id === row.source.id) setSource(Sources.current());
-            showSources(0);
-            setZone('categories');
-        }
-    }
-
-    function addSource(kind) {
-        hooks.openForm(kind, function (source) {
-            if (!source) return setZone('categories');
-            setSource(Sources.add(source));
-            openSection('home');
-            setZone(contentZone());
-        });
+    function sourceHooks() {
+        return {
+            current: function () { return state.source; },
+            info: function () { return state.info; },
+            use: watch,
+            refresh: function (source) {
+                // Forget the saved lists; the next section opened reloads them.
+                var dropping = state.source && source.id === sourceId() ? state.catalogue.drop() : Catalogue.drop(source.id);
+                dropping.then(function () {
+                    toast(I18n.t('toast.reloading', { name: source.name }));
+                    watch(source);
+                });
+            },
+            edit: function (source) {
+                SourceEdit(source, { openForm: hooks.openForm, saved: sourceEdited })();
+            },
+            guide: function (source) {
+                return SourceGuide(source, { openForm: hooks.openForm, changed: function (updated) {
+                    if (state.source && state.source.id === updated.id) {
+                        state.source = updated;
+                        updateEpg();
+                    }
+                    settings.render();
+                } });
+            },
+            remove: function (source) {
+                Sources.remove(source.id);
+                Catalogue.drop(source.id);
+                if (state.source && state.source.id === source.id) setSource(Sources.current());
+                settings.render();
+                renderChrome();
+            },
+            add: function (kind) {
+                hooks.openForm(kind, function (source) {
+                    if (source) watch(Sources.add(source));
+                    else setZone('settings');
+                });
+            },
+        };
     }
 
     // ---- Content sections ----
@@ -1006,7 +947,7 @@ window.Browser = function (hooks) {
         account = LoadScreen.run(source.id + ':account', function () {
             return SourceAccount.track(source, adapter.account());
         }, function () {
-            return adapter === state.adapter && state.section !== 'sources' && state.section !== 'settings' && (!screenReady || screenReady());
+            return adapter === state.adapter && state.section !== 'settings' && (!screenReady || screenReady());
         })
             .then(function (info) {
                 if (adapter !== state.adapter) return;
@@ -1017,7 +958,7 @@ window.Browser = function (hooks) {
                     renderChrome();
                     if (state.section === 'home') showHome();
                 }
-                if (state.section === 'sources') showSourceDetails();
+                if (state.section === 'settings') settings.render();
             });
         var checked = account;
         state.catalogue = CatalogueLoader({
@@ -1050,10 +991,13 @@ window.Browser = function (hooks) {
         var token = ++state.token;
         applyView();
         items.set([], 0, '');
-        if (id === 'sources') return showSources(0);
         if (id === 'home') return showHome();
         if (id === 'settings') {
             settings.render();
+            // The Sources group shows each source's state once it is checked.
+            SourceAccount.refresh(Sources.all(), function () {
+                if (state.section === 'settings') settings.render();
+            });
             return renderChrome();
         }
         categories.loading();
@@ -1087,7 +1031,7 @@ window.Browser = function (hooks) {
 
     function loadItems() {
         var category = categories.item();
-        if (!category || state.section === 'sources') return;
+        if (!category) return;
         if (category.virtual) return showVirtual(category);
         if (ParentalLock.isLocked(sourceId(), state.section, category.category_id) && !ParentalLock.isUnlocked()) {
             state.token++;
@@ -1412,7 +1356,6 @@ window.Browser = function (hooks) {
     function activateItem() {
         var item = items.item();
         if (!item) return;
-        if (state.section === 'sources') return sourceAction();
         if (otherSource(item)) return openEntry(item, state.section);
         // OK on a channel previews it beside the list (see live-preview.js).
         if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items().filter(function (channel) { return !otherSource(channel); }))) return;
@@ -1432,7 +1375,6 @@ window.Browser = function (hooks) {
     }
 
     function onCategoryMoved() {
-        if (state.section === 'sources') return showSourceDetails();
         clearTimeout(state.timer);
         state.timer = setTimeout(loadItems, 350);
         renderChrome();
@@ -1444,9 +1386,9 @@ window.Browser = function (hooks) {
     // current source from that profile's library.
     function profileChanged() {
         var source = Sources.current();
-        setSource(source);
-        openSection(source ? 'home' : 'sources');
-        setZone(contentZone());
+        if (source) return watch(source);
+        setSource(null);
+        openSources(addRow);
     }
 
     // ---- Hidden categories ----
@@ -1604,8 +1546,6 @@ window.Browser = function (hooks) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
                 else if (code === KEY.UP && !enterToolbar('categories') && menuOnTop()) setZone('rail');
             } else if (towardMenu(code) || Keys.isBack(code)) setZone('rail');
-            else if (code === KEY.ENTER && row && row.source) Keys.press(function () { setZone('items'); }, openSourceMenu);
-            else if (code === KEY.ENTER && row && row.action) addSource(row.action);
             else if (code === KEY.ENTER && row && state.base) {
                 Keys.press(function () {
                     enterCategory();
@@ -1623,17 +1563,18 @@ window.Browser = function (hooks) {
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {
                 // Holding OK opens the options menu; a short press opens on release.
-                if (state.section === 'sources') Keys.press(activateItem, openSourceMenu);
-                else {
-                    Keys.press(activateItem, function () {
-                        openItemMenu(items.item(), state.section);
-                    });
-                }
+                Keys.press(activateItem, function () {
+                    openItemMenu(items.item(), state.section);
+                });
             } else if (Keys.isBack(code)) setZone('rail');
             else if (code === KEY.LEFT) setZone('categories');
             else return false;
         }
         return true;
+    }
+
+    function addRow(row) {
+        return row.add === 'xtream';
     }
 
     function start() {
@@ -1644,19 +1585,18 @@ window.Browser = function (hooks) {
 
     function startSource(source) {
         setSource(source);
-        if (source) openSection('home');
-        else openSection('sources');
+        // With no source yet, Settings opens on Add source (#51).
+        if (!source) return openSources(addRow);
+        openSection('home');
         setZone(contentZone());
-        if (source) {
-            restoring = true;
-            live.last(source.id).then(function (channel) {
-                if (restoring && channel) hooks.play(live.play(channel));
-                restoring = false;
-            }).catch(function () {
-                restoring = false;
-                Log.error('LAST CHANNEL FAIL');
-            });
-        }
+        restoring = true;
+        live.last(source.id).then(function (channel) {
+            if (restoring && channel) hooks.play(live.play(channel));
+            restoring = false;
+        }).catch(function () {
+            restoring = false;
+            Log.error('LAST CHANNEL FAIL');
+        });
     }
 
     return {

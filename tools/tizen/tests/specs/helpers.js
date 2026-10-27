@@ -38,7 +38,9 @@ async function boot(page, seed = {}) {
         localStorage.setItem('tv-tests:seeded', '1');
     }, seed);
     await page.goto('/');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    // Seeded with no source, the app opens Settings > Sources instead (#51).
+    if (seed.storage.sources && !seed.storage.sources.length) return;
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 }
 
@@ -113,6 +115,24 @@ async function openFirst(page, name) {
     await expect(page.locator('#detail .dt-meta')).not.toContainText('Loading');
 }
 
+// Settings > Sources (#51): opens Settings on the row named `name`, or on
+// the first source.
+async function sources(page, name) {
+    await section(page, 'Settings');
+    const labels = (await page.locator('#settings .st-row .st-label').allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim());
+    const now = await page.locator('#settings .st-row').evaluateAll(rows => rows.findIndex(r => r.classList.contains('focused')));
+    const want = name === undefined ? 0 : labels.indexOf(name.replace(/\s+/g, ' ').trim());
+    if (want < 0) throw new Error('No Settings row ' + JSON.stringify(name));
+    await moveTo(page, '#settings .st-row.focused .st-label', labels[want], want < now ? 'ArrowUp' : 'ArrowDown');
+}
+
+// A source's options, opened with OK on its row in Settings.
+async function sourceMenu(page, name) {
+    await sources(page, name);
+    await press(page, 'Enter');
+    await expect(page.locator('#menu')).toBeVisible();
+}
+
 async function menuChoice(page, label) {
     await moveTo(page, '#menu .focused', label);
     await press(page, 'Enter');
@@ -148,4 +168,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };

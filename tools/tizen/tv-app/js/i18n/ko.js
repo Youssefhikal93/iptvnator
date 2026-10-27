@@ -22,7 +22,6 @@ I18n.tables.ko = {
     'browser.recentlyWatched': '최근에 시청한 항목',
     'browser.search': '검색',
     'browser.searchResults': '검색 결과',
-    'browser.source': '소스',
     'browser.watched': '시청 완료',
     'common.back': '뒤로',
     'common.cancel': '취소',

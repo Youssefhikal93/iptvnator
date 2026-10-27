@@ -22,7 +22,6 @@ I18n.tables.ja = {
     'browser.recentlyWatched': '最近視聴した項目',
     'browser.search': '検索',
     'browser.searchResults': '検索結果',
-    'browser.source': 'ソース',
     'browser.watched': '視聴済み',
     'common.back': '戻る',
     'common.cancel': 'キャンセル',

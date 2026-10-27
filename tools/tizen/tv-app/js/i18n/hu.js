@@ -22,7 +22,6 @@ I18n.tables.hu = {
     'browser.recentlyWatched': 'Legutóbb megtekintett tartalmak',
     'browser.search': 'Keresés',
     'browser.searchResults': 'Keresési találatok',
-    'browser.source': 'Forrás',
     'browser.watched': 'Megtekintve',
     'common.back': 'Vissza',
     'common.cancel': 'Mégse',

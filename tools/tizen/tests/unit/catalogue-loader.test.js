@@ -176,7 +176,7 @@ test('drop waits for deletion, forgets memory and blocks old refreshes from repo
     assert.deepEqual(f.updates, [1, 0]);
 });
 
-test('legacy saved keys and full item metadata are preserved; movie details stay session-only', async function () {
+test('legacy saved keys and full item metadata are preserved; movie details are saved too', async function () {
     var store = memoryStore({ 'A|live:categories': ['categories'], 'A|series:items:': ['shows'], 'A|series:4': { episodes: [] } });
     var f = fixture({ store: store });
     assert.equal((await f.loader.load({ section: 'live', kind: 'categories' }))[0], 'categories');
@@ -187,7 +187,7 @@ test('legacy saved keys and full item metadata are preserved; movie details stay
     await settle();
     var request = f.calls.filter(function (call) { return call[0] === 'movieInfo'; })[0];
     assert.equal(request[1], movie);
-    assert.equal(store.records.has('A|vod:4'), false);
+    assert.equal(store.records.has('A|vod:4'), true);
 });
 
 test('LoadScreen runs only when requested and uses the caller visibility predicate', async function () {
@@ -231,26 +231,34 @@ test('updating counts overlapping refreshes until both have finished', async fun
     assert.deepEqual(f.updates, [1, 2, 1, 0]);
 });
 
-test('a saved list fetched less than a day ago is not refreshed again on the next start', async function () {
+test('saved lists never refresh by themselves; only the viewer refreshes them', async function () {
     var saved = [{ stream_id: 1, name: 'Saved' }];
+    var times = { 'movies:items:': Date.now() - 30 * 24 * 3600000 };
+    var stamps = { get: function (key) { return times[key] || 0; }, set: function (key) { times[key] = Date.now(); } };
+    var month = fixture({ saved: { 'A|movies:items:': saved, 'A|movies:categories': saved }, stamps: stamps });
+    assert.equal(await month.loader.load({ section: 'movies', kind: 'items' }, {}), saved);
+    assert.equal(await month.loader.load({ section: 'movies', kind: 'categories' }, {}), saved);
+    await settle();
+    assert.equal(month.calls.length, 0, 'month-old saved lists are still used as they are');
+    assert.deepEqual(month.updates, []);
+});
+
+test('a movie page fetched less than a day ago is not refreshed again; an older one is', async function () {
+    var saved = { plot: 'Saved' };
     var times = {};
     var stamps = { get: function (key) { return times[key] || 0; }, set: function (key) { times[key] = Date.now(); } };
-    var what = { section: 'movies', kind: 'items' };
-    var first = fixture({ saved: { 'A|movies:items:': saved }, stamps: stamps, fetch: function () { return Promise.resolve(saved); } });
+    var what = { kind: 'movie', id: 7, item: { stream_id: 7 } };
+    var first = fixture({ store: memoryStore({}), stamps: stamps, fetch: function () { return Promise.resolve(saved); } });
     await first.loader.load(what, {});
     await settle();
-    // Never stamped: the saved list refreshes once and is stamped.
-    assert.equal(first.calls.length, 1);
-    assert.ok(times['movies:items:'] > 0);
-    // The next start within a day keeps the saved list.
-    var next = fixture({ saved: { 'A|movies:items:': saved }, stamps: stamps });
-    assert.equal(await next.loader.load(what, {}), saved);
+    var key = Object.keys(times)[0];
+    assert.ok(key, 'the page is stamped when saved');
+    var next = fixture({ store: first.store, stamps: stamps });
+    await next.loader.load(what, {});
     await settle();
     assert.equal(next.calls.length, 0);
-    assert.deepEqual(next.updates, []);
-    // Older than a day: refreshed again.
-    times['movies:items:'] = Date.now() - 25 * 3600000;
-    var later = fixture({ saved: { 'A|movies:items:': saved }, stamps: stamps });
+    times[key] = Date.now() - 25 * 3600000;
+    var later = fixture({ store: first.store, stamps: stamps, fetch: function () { return Promise.resolve(saved); } });
     await later.loader.load(what, {});
     await settle();
     assert.equal(later.calls.length, 1);

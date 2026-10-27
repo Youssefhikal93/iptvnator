@@ -512,10 +512,12 @@ from step 8 must already be downloaded.
   plays on the next start if it is still in the catalogue. This is on by
   default; choose **Settings → On start open → Home** to disable it.
   Return stops playback and opens Home.
-- **Start-up**: the app opens on the lists saved on the TV and refreshes
-  them in the background ("Updating…" next to the source name); new
-  channels, movies and episodes then appear by themselves. **Sources →
-  Refresh source** throws the saved lists away and reloads them.
+- **Start-up**: the app opens on the lists saved on the TV and does not
+  fetch them again by itself, so a restart sends the provider almost no
+  requests. **Settings → Sources → Refresh content now** (or a source's
+  **Refresh source**) throws the saved lists away and reloads them; new
+  channels, movies and episodes appear then. A movie or show page is
+  refreshed when opened, at most once a day.
 
 - **Switching sources**: each source keeps its own saved catalogue; a refresh
   finishing for the previous source does not replace the source now on screen.

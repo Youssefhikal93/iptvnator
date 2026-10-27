@@ -87,12 +87,17 @@ window.CatalogueLoader = function (deps) {
 
     // A saved list refreshes in the background once a session, and with
     // deps.stamps no sooner than REFRESH_AGE_MS after its last refresh:
-    // whole catalogues are large and providers limit requests.
+    // whole catalogues are large and providers limit requests. With
+    // deps.stamps, category and item lists never refresh by themselves, like
+    // the desktop app: the viewer refreshes them (Settings > Sources > Refresh
+    // content now). A movie or show page still refreshes once a day when
+    // opened, so new episodes show up; that is one request on a key press.
     var REFRESH_AGE_MS = 24 * 3600000;
     function refreshSaved(what, options, saved, mine) {
         var key = keyOf(what);
         if (refreshed[key]) return;
         refreshed[key] = true;
+        if (deps.stamps && (what.kind === 'categories' || what.kind === 'items')) return;
         if (deps.stamps && Date.now() - deps.stamps.get(key) < REFRESH_AGE_MS) return;
         changedUpdating(updating + 1);
         fetch(what, options, mine).then(function (catalogue) {
@@ -108,12 +113,8 @@ window.CatalogueLoader = function (deps) {
 
     function read(what, options, mine) {
         var key = keyOf(what);
-        // Movie details have always been session-only; show episodes are saved.
-        if (what.kind === 'movie') return fetch(what, options, mine).then(function (catalogue) {
-            check(mine);
-            memory[key] = catalogue;
-            return catalogue;
-        });
+        // Movie details and show episodes are saved too, so a restart does not
+        // ask the provider again for the titles Home shows.
         return deps.store.get(deps.sourceId, key).then(function (saved) {
             check(mine);
             if (saved === undefined) return fetch(what, options, mine).then(function (catalogue) {

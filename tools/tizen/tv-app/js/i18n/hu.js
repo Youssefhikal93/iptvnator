@@ -124,6 +124,7 @@ I18n.tables.hu = {
     'player.upNext': 'Következik',
     'player.watchFromStart': 'Lejátszás az elejétől',
     'rail.home': 'Kezdőlap',
+    'rail.search': 'Keresés',
     'rail.live': 'Élő TV',
     'rail.movies': 'Filmek',
     'rail.series': 'Sorozatok',

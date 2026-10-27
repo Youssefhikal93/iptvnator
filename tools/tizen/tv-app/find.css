@@ -1,0 +1,82 @@
+/* Search everything (#31): a box, a status line and rows of results drawn
+   like Home's. */
+#find {
+    display: none;
+}
+#content.find .pane {
+    display: none;
+}
+#content.find #find {
+    display: block;
+    flex: 1;
+    overflow: hidden;
+    padding-top: 40px;
+    background: var(--content-bg);
+}
+.fd-box {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-sizing: border-box;
+    height: 84px;
+    margin: 0 56px;
+    padding: 0 28px;
+    border: 3px solid var(--line);
+    border-radius: 18px;
+    background: var(--widget-bg);
+    font-size: 34px;
+}
+.fd-box svg {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    fill: currentColor;
+    color: var(--muted);
+}
+.fd-box input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--on-surface);
+    font: inherit;
+}
+.fd-box input::placeholder {
+    color: var(--muted);
+}
+.fd-box.focused {
+    border-color: var(--selection-border);
+    box-shadow: 0 0 18px var(--selection-glow);
+}
+.fd-box.typing {
+    border-color: var(--selection);
+}
+.fd-status {
+    margin: 18px 56px 0;
+    font-size: 28px;
+    color: var(--muted);
+}
+.fd-status:empty {
+    display: none;
+}
+/* Genre pills: 'All' and the most common genres; the row scrolls. */
+.fd-pills {
+    display: flex;
+    gap: 16px;
+    margin: 22px 56px 0;
+    padding: 6px;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 26px;
+}
+.fd-pills:empty {
+    display: none;
+}
+.fd-pills .tm-chip {
+    flex: none;
+}
+.fd-pills .tm-chip.selected {
+    border-color: var(--selection);
+    color: var(--selection);
+}

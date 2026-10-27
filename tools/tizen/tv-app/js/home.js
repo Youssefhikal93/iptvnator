@@ -10,16 +10,19 @@
 //      progress(entry) -> Progress.of shape or null, watched(entry) -> boolean,
 //      isNew(entry) -> whether a show has new episodes since it was watched,
 //      programme(item) -> the programme on now for a channel, or null
-window.Home = (api) => {
+// opts (optional): root element, a fixed layout, and empty: null to draw
+// nothing when there are no rows (search results use this).
+window.Home = (api, options) => {
     'use strict';
+    const opts = options || {};
 
     const KEY = Keys;
     const { html } = UI;
-    const root = document.getElementById('home');
+    const root = opts.root || document.getElementById('home');
     // Cinema opens on a banner for what you were watching; Big first row
     // and Backdrop have none (Settings › Display › Home layout).
     const LAYOUTS = ['cinema', 'bigrow', 'backdrop'];
-    const layout = () => (LAYOUTS.indexOf(Prefs.get('homeLayout')) > 0 ? Prefs.get('homeLayout') : 'cinema');
+    const layout = () => opts.layout || (LAYOUTS.indexOf(Prefs.get('homeLayout')) > 0 ? Prefs.get('homeLayout') : 'cinema');
     Prefs.onChange((name) => {
         if (name === 'homeLayout' || name === 'programmeGuide' || name === 'density') render();
     });
@@ -213,7 +216,7 @@ window.Home = (api) => {
         // ‹ › at its edges, and the last tile fades unless it has the focus.
         const total = row.entries.length;
         const right = r.offset + visible < total;
-        const kind = [row.id === 'live' ? 'live' : '', row.big ? 'big' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
+        const kind = [row.id === 'live' || row.live ? 'live' : '', row.big ? 'big' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
             right && !(focused && r.focus === r.offset + visible - 1) ? 'fade' : ''].filter(Boolean).join(' ');
         const aside = focused ? (r.focus + 1) + ' / ' + total : String(total);
         return html`<${Kit.Row} cls="hm" kind=${kind} label=${row.title} aside=${aside}
@@ -257,6 +260,7 @@ window.Home = (api) => {
         root.classList.toggle('backdrop', mode === 'backdrop');
         const list = blocks();
         if (!list.length) {
+            if (opts.empty === null) return UI.render(null, root);
             UI.render(html`<div class="hm-empty">${I18n.t('home.nothingHere')}<small>${I18n.t('home.nothingHint')}</small></div>`, root);
             return;
         }

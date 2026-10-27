@@ -124,6 +124,7 @@ I18n.tables.el = {
     'player.upNext': 'Επόμενο',
     'player.watchFromStart': 'Παρακολούθηση από την αρχή',
     'rail.home': 'Αρχικό',
+    'rail.search': 'Αναζήτηση',
     'rail.live': 'Ζωντανή TV',
     'rail.movies': 'Ταινίες',
     'rail.series': 'Σειρές',

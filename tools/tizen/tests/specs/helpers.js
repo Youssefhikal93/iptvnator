@@ -38,7 +38,7 @@ async function boot(page, seed = {}) {
         localStorage.setItem('tv-tests:seeded', '1');
     }, seed);
     await page.goto('/');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
     // Seeded with no source, the app opens Settings > Sources instead (#51).
     if (seed.storage.sources && !seed.storage.sources.length) return;
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');

@@ -124,6 +124,7 @@ I18n.tables.ru = {
     'player.upNext': 'Далее',
     'player.watchFromStart': 'Смотреть с начала',
     'rail.home': 'На главную',
+    'rail.search': 'Поиск',
     'rail.live': 'Прямой эфир',
     'rail.movies': 'Фильмы',
     'rail.series': 'Сериалы',

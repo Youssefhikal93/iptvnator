@@ -13,6 +13,7 @@ window.Browser = function (hooks) {
     STEPS[KEY.CH_DOWN] = 10;
     var SECTIONS = [
         { id: 'home', get label() { return I18n.t('rail.home'); }, icon: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z' },
+        { id: 'search', get label() { return I18n.t('rail.search'); }, icon: 'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' },
         { id: 'live', get label() { return I18n.t('rail.live'); }, icon: 'M21 6h-7.59l3.29-3.29L16 2l-4 4-4-4-.71.71L10.59 6H3c-1.1 0-2 .89-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.11-.9-2-2-2zm0 14H3V8h18v12zM9 10v8l7-4z' },
         { id: 'movies', get label() { return I18n.t('rail.movies'); }, icon: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z' },
         { id: 'series', get label() { return I18n.t('rail.series'); }, icon: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z' },
@@ -124,7 +125,7 @@ window.Browser = function (hooks) {
         },
         toast: toast,
     });
-    var home = Home({
+    var homeApi = {
         hero: function () {
             return state.adapter ? continueEntries().slice(0, 3) : [];
         },
@@ -155,6 +156,25 @@ window.Browser = function (hooks) {
             var programmes = state.epg.peek(item);
             if (programmes === undefined) return wantProgramme(item), null;
             return programmes.now;
+        },
+    };
+    var home = Home(homeApi);
+    // Search everything: the source's channels, movies and series at once.
+    var find = Find({
+        sections: function () {
+            return ['live', 'movies', 'series'].filter(available);
+        },
+        title: function (section) {
+            return sectionOf(section).label;
+        },
+        items: function (section) {
+            return loadCatalogue({ section: section, kind: 'items' }).then(function (all) {
+                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all));
+            });
+        },
+        home: homeApi,
+        changed: function () {
+            if (state.zone === 'find') renderChrome();
         },
     });
     var items = List($('items'), {
@@ -733,7 +753,7 @@ window.Browser = function (hooks) {
     }
 
     function available(id) {
-        if (id === 'home') return !!state.adapter;
+        if (id === 'home' || id === 'search') return !!state.adapter;
         return id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
     }
 
@@ -749,6 +769,7 @@ window.Browser = function (hooks) {
         var section = what.section;
         var wholeSection = what.kind === 'items' && (what.id === undefined || what.id === '');
         if (state.section === 'home') return !!homeLoading[section] && wholeSection;
+        if (state.section === 'search') return wholeSection;
         if (state.section !== section) return false;
         if (what.kind === 'categories') return !state.base;
         if (state.showingSearch) return wholeSection;
@@ -795,6 +816,8 @@ window.Browser = function (hooks) {
                 ? settings.hints()
                 : state.zone === 'home'
                 ? I18n.t('hints.home')
+                : state.zone === 'find'
+                ? I18n.t(find.focused() ? 'hints.home' : 'hints.find')
                 : state.zone === 'items'
                 ? I18n.t('hints.items')
                 : state.zone === 'categories'
@@ -830,7 +853,7 @@ window.Browser = function (hooks) {
 
     // The rail opens the content area belonging to the selected screen.
     function contentZone() {
-        return state.section === 'settings' ? 'settings' : state.section === 'home' ? 'home' : 'categories';
+        return state.section === 'settings' ? 'settings' : state.section === 'home' ? 'home' : state.section === 'search' ? 'find' : 'categories';
     }
 
     function setZone(zone) {
@@ -840,6 +863,7 @@ window.Browser = function (hooks) {
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
         home.setActive(zone === 'home');
+        find.setActive(zone === 'find');
         settings.setActive(zone === 'settings');
         renderChrome();
     }
@@ -946,6 +970,7 @@ window.Browser = function (hooks) {
         state.added = {};
         homeLoading = {};
         home.reset(!!screenReady);
+        find.reset();
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
@@ -992,6 +1017,7 @@ window.Browser = function (hooks) {
         clearTimeout(state.timer);
         clearTimeout(state.searchTimer);
         $('content').classList.toggle('home', id === 'home');
+        $('content').classList.toggle('find', id === 'search');
         $('content').classList.toggle('settings', id === 'settings');
         state.showingSearch = false;
         state.base = null;
@@ -1000,6 +1026,10 @@ window.Browser = function (hooks) {
         applyView();
         items.set([], 0, '');
         if (id === 'home') return showHome();
+        if (id === 'search') {
+            find.open();
+            return renderChrome();
+        }
         if (id === 'settings') {
             settings.render();
             // The Sources group shows each source's state once it is checked.
@@ -1492,6 +1522,30 @@ window.Browser = function (hooks) {
         return true;
     }
 
+    function onFindKey(code) {
+        var entry = find.focused();
+        if (code === KEY.ENTER && entry && !find.typing()) {
+            Keys.press(
+                function () {
+                    openEntry(entry.item, entry.section);
+                },
+                function () {
+                    openItemMenu(entry.item, entry.section);
+                }
+            );
+            return true;
+        }
+        if (Keys.isBack(code) && !find.typing()) {
+            setZone('rail');
+            return true;
+        }
+        var used = find.key(code);
+        if (used === false) return false;
+        if (used !== true && leavesFor(used)) setZone('rail');
+        else renderChrome();
+        return true;
+    }
+
     // A screen reports the edge the focus left by: 'left' or 'up'. Only the
     // edge that faces the menu leads to it.
     function leavesFor(edge) {
@@ -1531,6 +1585,7 @@ window.Browser = function (hooks) {
         }
         if (state.zone === 'toolbar') return onToolbarKey(code);
         if (state.zone === 'home') return onHomeKey(code);
+        if (state.zone === 'find') return onFindKey(code);
         if (state.zone === 'settings') {
             var edge = settings.key(code);
             if (edge === 'back' || leavesFor(edge)) setZone('rail');

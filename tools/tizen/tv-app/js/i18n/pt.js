@@ -41,7 +41,6 @@ I18n.tables.pt = {
     'empty.recent.title': 'Nada assistido ainda',
     'epg.now': 'Agora',
     'episodes.loading': 'Carregando episódios…',
-    'episodes.percentWatched': '{percent}% assistido',
     'episodes.season': 'Temporada {n}',
     'form.addM3u': 'Adicionar playlist M3U',
     'form.password': 'Senha',

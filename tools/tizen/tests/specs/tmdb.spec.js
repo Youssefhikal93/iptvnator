@@ -128,13 +128,12 @@ test('series enrichment preserves provider plot and episodes, with cast and libr
     await expect(page.locator('#detail .tm-row').first()).toContainText('Alex Example');
     await expect(page.locator('#detail .dt-plot')).toHaveText('A small town hides a big secret.');
     await expect(page.locator('#detail .tm-row').nth(1)).toContainText('Similar in your library');
+    // A show's episodes come first, then the TMDB rows (#46).
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#detail .dt-ep.focus')).toBeVisible();
     await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await expect(page.locator('#detail .tm-card.focus')).toHaveText('Show 3');
-    await press(page, 'ArrowDown');
-    await expect(page.locator('#detail .dt-ep.focus')).toBeVisible();
-    await back(page);
-    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#detail .dt-title')).toHaveText('Show 3');
 });
@@ -184,7 +183,7 @@ test('TMDB 500 leaves provider artwork, facts, plot and actions intact', async (
     await expect.poll(() => seen.length).toBe(1);
     await expect(page.locator('#detail .dt-title')).toContainText('Movie 25');
     await expect(page.locator('#detail .dt-plot')).toContainText('retired detective');
-    await expect(page.locator('#detail .dt-meta')).toContainText('Crime, Drama');
+    await expect(page.locator('#detail .dt-chip')).toContainText(['Crime', 'Drama']);
     await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /\/img\/poster.jpg$/);
     await expect(page.locator('#detail .dt-btn').first()).toContainText('Play');
     await expect(page.locator('#detail .tm-card')).toHaveCount(0);
@@ -321,6 +320,6 @@ test('expired IndexedDB responses refetch and a failed detail request keeps prov
     await failed;
     await expect.poll(() => seen.length).toBeGreaterThan(count);
     await expect(page.locator('#detail .dt-plot')).toContainText('retired detective');
-    await expect(page.locator('#detail .dt-meta')).toContainText('Crime, Drama');
+    await expect(page.locator('#detail .dt-chip')).toContainText(['Crime', 'Drama']);
     await expect(page.locator('#detail .tm-card')).toHaveCount(0);
 });

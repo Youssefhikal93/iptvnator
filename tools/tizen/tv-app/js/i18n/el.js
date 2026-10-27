@@ -41,7 +41,6 @@ I18n.tables.el = {
     'empty.recent.title': 'Δεν έχει παρακολουθηθεί τίποτα ακόμη',
     'epg.now': 'Τώρα',
     'episodes.loading': 'Φόρτωση επεισοδίων…',
-    'episodes.percentWatched': 'Προβλήθηκε {percent}%',
     'episodes.season': 'Σεζόν {n}',
     'form.addM3u': 'Προσθήκη λίστας M3U',
     'form.password': 'Κωδικός πρόσβασης',

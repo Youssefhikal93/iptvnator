@@ -41,7 +41,6 @@ I18n.tables.nl = {
     'empty.recent.title': 'Nog niets bekeken',
     'epg.now': 'Nu',
     'episodes.loading': 'Afleveringen laden…',
-    'episodes.percentWatched': '{percent}% bekeken',
     'episodes.season': 'Seizoen {n}',
     'form.addM3u': 'M3U-afspeellijst toevoegen',
     'form.password': 'Wachtwoord',

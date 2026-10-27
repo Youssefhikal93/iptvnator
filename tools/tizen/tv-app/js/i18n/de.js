@@ -41,7 +41,6 @@ I18n.tables.de = {
     'empty.recent.title': 'Noch nichts angesehen',
     'epg.now': 'Jetzt',
     'episodes.loading': 'Episoden werden geladen …',
-    'episodes.percentWatched': '{percent}% angesehen',
     'episodes.season': 'Staffel {n}',
     'form.addM3u': 'M3U-Wiedergabeliste hinzufügen',
     'form.password': 'Passwort',

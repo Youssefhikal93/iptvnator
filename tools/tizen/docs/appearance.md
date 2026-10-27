@@ -143,3 +143,23 @@ edge that faces the menu leads to it: ◀ on the side, ▲ on top (Home and
 Settings report the edge they left by, `'left'` or `'up'`). Back from a list, a
 category, the toolbar, Home or Settings goes straight to the menu; ◀ in a list
 still steps to the categories. Back on the menu exits as before.
+
+## Detail page (#46)
+
+The movie and show pages (`js/detail.js`, `js/detail-episodes.js`, styles in
+`detail.css`) put the artwork full-bleed under a scrim that is solid on the
+left and fades to the bottom. Over it: the poster (300 x 450, 240 x 360 for a
+show), an eyebrow (Movies or Series and the first genre), a 76px title, the
+facts as chips in `.dt-meta` (year, length, a coloured ★ rating chip, up to
+three genres, then the page's `badges`, such as New episodes for a show opened
+from its badge), the plot (3 lines, 2 for a show), cast and director on one
+line, and the buttons. Buttons are 88px pills; the first is filled with the
+accent and a resume line sits under it. The Home hero shares the pill style.
+
+A show's episodes are a strip under the buttons, on the first screen: season
+pills (56px, the shown season filled), "N of M watched", then 16:9 tiles
+(400 x 225, 352 x 198 in Compact) with the number, length, watched tick and
+progress on the picture and the title and plot under it. An episode without
+a picture shows the show's artwork, dimmed. ◀/▶ move along the strip, ▲ goes
+to the season pills and then the buttons, ▼ goes on to the TMDB rows, which
+take the screen while they have the focus.

@@ -77,7 +77,7 @@
 }
 :is(.rail-item.focused, #searchbar.focused, .view-btn.focused, .row.focused,
     .menu-row.focused, .st-row.focused, .dt-btn.focus, .dt-ep-pill.focus,
-    .dt-ep.focus, .mc-search.focused, .mc-btn.focused, .tm-chip.focus,
+    .mc-search.focused, .mc-btn.focused, .tm-chip.focus,
     .gd-programme.focused, .pf-tile.focused, .pin-key.focused,
     .pl-menu-item.focus, .pl-resume-buttons span.focus, .pl-btn.focus,
     .pl-ep-row.focus, .pl-channel.focused, #pl-sleep-buttons button.focus,
@@ -89,7 +89,7 @@
     color: var(--on-surface);
     box-shadow: var(--focus-shadow);
 }
-:is(.card.focused, .hm-card.focus, .tm-card.focus) {
+:is(.card.focused, .hm-card.focus, .tm-card.focus, .dt-ep.focus) {
     --focus-gap: #0d0f12;
     position: relative;
     z-index: 1;
@@ -101,7 +101,6 @@
 }
 /* TMDB rows scroll by card offsets, so padding does not change their stride. */
 .tm-cards { padding: 24px; }
-.dt-episodes { padding: 8px; }
 
 /* Appearance rows show every choice as a pill; colour dots preview each accent. */
 .st-pills { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }

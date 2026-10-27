@@ -1335,6 +1335,8 @@ window.Browser = function (hooks) {
     }
 
     function openShow(show) {
+        // The page still names new episodes it was opened for (#46).
+        var fresh = !otherSource(show) && NewEpisodes.isNew(sourceId(), show, seriesList());
         NewEpisodes.markSeen(sourceId(), show, seriesList());
         var episodes = DetailEpisodes({
             progressOf: function (ep) {
@@ -1349,6 +1351,7 @@ window.Browser = function (hooks) {
             catalogue: tmdbCatalogue,
             open: openEntry,
             episodes: episodes,
+            badges: fresh ? [I18n.t('home.newEpisodes')] : [],
             onClose: refreshLibrary,
             load: function () {
                 var fresh = function (info) {

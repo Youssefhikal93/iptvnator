@@ -41,7 +41,6 @@ I18n.tables.tr = {
     'empty.recent.title': 'Henüz hiçbir şey izlenmedi',
     'epg.now': 'Şimdi',
     'episodes.loading': 'Bölümler yükleniyor…',
-    'episodes.percentWatched': '{percent}% izlendi',
     'episodes.season': '{n}. Sezon',
     'form.addM3u': 'M3U oynatma listesi ekle',
     'form.password': 'Parola',

@@ -41,7 +41,6 @@ I18n.tables.by = {
     'empty.recent.title': 'Праглядаў пакуль няма',
     'epg.now': 'Цяпер',
     'episodes.loading': 'Загрузка серый…',
-    'episodes.percentWatched': 'Прагледжана {percent}%',
     'episodes.season': 'Сезон {n}',
     'form.addM3u': 'Дадаць плэйліст M3U',
     'form.password': 'Пароль',

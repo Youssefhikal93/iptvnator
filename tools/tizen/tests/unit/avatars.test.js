@@ -11,10 +11,10 @@ function avatars() {
     return load(['avatars.js'], {}, { UI: UI }).globals.Avatars;
 }
 
-test('picker offers 16 unique animals with shipped image files', function () {
+test('picker offers 24 unique animals with shipped image files', function () {
     var art = avatars();
-    assert.equal(art.ids.length, 16);
-    assert.equal(new Set(art.ids).size, 16);
+    assert.equal(art.ids.length, 24);
+    assert.equal(new Set(art.ids).size, 24);
     art.ids.forEach(function (id) {
         assert.equal(art.has(id), true);
         var node = art.art(id);
@@ -30,7 +30,7 @@ test('picker offers 16 unique animals with shipped image files', function () {
 
 test('retired saved choices resolve to animals without entering the picker', function () {
     var art = avatars();
-    [['princess', 'unicorn'], ['wizard', 'owl']].forEach(function (pair) {
+    [['princess', 'unicorn'], ['wizard', 'owl'], ['pig', 'monkey']].forEach(function (pair) {
         assert.equal(art.has(pair[0]), true);
         assert.equal(art.ids.includes(pair[0]), false);
         assert.equal(art.art(pair[0]).props.src, art.art(pair[1]).props.src);

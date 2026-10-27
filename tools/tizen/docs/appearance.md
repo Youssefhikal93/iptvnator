@@ -70,10 +70,13 @@ Home and the lists move to Preact (#44, #45).
 
 ## Profile avatars (#43)
 
-`js/avatars.js` exposes 16 animal IDs through `Avatars.ids`, `has(id)` and
-`art(id)`. Artwork ships in `tv-app/avatars/` as transparent 320 x 320 WebPs,
-each under 40 KB, mixing portraits and full-body 3D characters. Retired saved
-IDs remain supported: `princess` resolves to `unicorn` and `wizard` to `owl`,
+`js/avatars.js` exposes 24 animal IDs through `Avatars.ids`, `has(id)` and
+`art(id)`. Artwork ships in `tv-app/avatars/` as 320 x 320 WebPs, each under
+40 KB, all transparent: 15 3D characters (portraits and full bodies) and nine
+illustrated characters from the Klar website, whose pale backgrounds were cut
+out by flooding inward from the edges.
+Retired saved IDs remain supported: `princess` resolves to `unicorn`, `wizard`
+to `owl` and `pig` to `monkey`,
 without rewriting profile storage. `Kit.Avatar` draws a profile's
 `avatar` on its colour, or its initial when it has none. Settings > Profiles >
 Avatar and ▲ on Who's watching open `AvatarPicker`; `ProfileStore.setAvatar`

@@ -35,6 +35,7 @@ window.Menu = (function () {
         close: close,
         open: function (title, options, index) {
             state = { options: options, index: index || 0, title: title, open: true };
+            el.classList.remove('profile-menu');
             render();
             el.classList.remove('hidden');
             var current = state;

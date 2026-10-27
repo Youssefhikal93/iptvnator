@@ -319,7 +319,9 @@ from step 8 must already be downloaded.
   starts on **Who's watching?**: LEFT/RIGHT picks a tile, OK opens that profile,
   Return exits the app. Each profile has its own favorites, recently watched,
   Continue watching, watched marks, new-episode badges, hidden and locked
-  categories, PIN and settings; sources and the TMDB key are shared. In
+  categories, PIN and settings; sources and the TMDB key are shared. The
+  active profile's avatar sits above the rail: UP from Home reaches it and OK
+  opens a menu to switch profiles. In
   **Settings > Profiles** (the first group): **Current profile** (OK opens
   Who's watching? to switch), **Add profile…** (up to 6; the new profile starts
   empty and opens at once), **Rename profile…**, **Delete profile** (asks to
@@ -346,7 +348,17 @@ from step 8 must already be downloaded.
   desktop translation lacks stays English; provider names, channel names and
   descriptions are never translated. Times and dates follow the language.
   The translation tables are `tv-app/js/i18n/<code>.js`; rebuild them from the
-  desktop files with `node tests/i18n/build-tables.js`.
+    desktop files with `node tests/i18n/build-tables.js` (TV appearance terms
+    are kept in `tests/i18n/appearance-translations.json`).
+- **Accent colour and density** (Settings, group **Appearance**): use UP/DOWN
+    to reach either row, then OK or RIGHT to cycle its choices. **Accent colour**
+    offers **Blue** (default), **Saffron**, **Asphalt**, **Violet** and **Pink**
+    with either Dark or Light theme. **Density** offers **Comfortable** (default,
+    larger rows and text, four posters across in grids and five on Home) and
+    **Compact** (the original item sizes). Both apply immediately, survive a
+    restart and belong to the current profile. Focused artwork grows slightly
+    with a clear ring; selected categories keep accent text when focus leaves.
+    The main screen keeps controls and key hints inside the TV's 5% safe area.
 - **▲ at the top of a list** reaches the search bar and the list / grid
   buttons. Results follow the typing; the SmartThings phone app keyboard is
   easier than the remote.

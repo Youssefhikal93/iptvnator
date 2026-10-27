@@ -1,0 +1,211 @@
+{
+    "ar": {
+        "settings.accent": "لون التمييز",
+        "settings.blue": "أزرق",
+        "settings.saffron": "زعفراني",
+        "settings.asphalt": "أسفلتي",
+        "settings.violet": "بنفسجي",
+        "settings.pink": "وردي",
+        "settings.density": "الكثافة",
+        "settings.comfortable": "مريح",
+        "settings.compact": "مضغوط"
+    },
+    "ary": {
+        "settings.accent": "لون التمييز",
+        "settings.blue": "زرق",
+        "settings.saffron": "زعفراني",
+        "settings.asphalt": "لون الزفت",
+        "settings.violet": "بنفسجي",
+        "settings.pink": "وردي",
+        "settings.density": "الكثافة",
+        "settings.comfortable": "مريح",
+        "settings.compact": "مضغوط"
+    },
+    "by": {
+        "settings.accent": "Акцэнтны колер",
+        "settings.blue": "Сіні",
+        "settings.saffron": "Шафранавы",
+        "settings.asphalt": "Асфальтавы",
+        "settings.violet": "Фіялетавы",
+        "settings.pink": "Ружовы",
+        "settings.density": "Шчыльнасць",
+        "settings.comfortable": "Зручная",
+        "settings.compact": "Кампактная"
+    },
+    "de": {
+        "settings.accent": "Akzentfarbe",
+        "settings.blue": "Blau",
+        "settings.saffron": "Safran",
+        "settings.asphalt": "Asphalt",
+        "settings.violet": "Violett",
+        "settings.pink": "Rosa",
+        "settings.density": "Dichte",
+        "settings.comfortable": "Komfortabel",
+        "settings.compact": "Kompakt"
+    },
+    "el": {
+        "settings.accent": "Χρώμα έμφασης",
+        "settings.blue": "Μπλε",
+        "settings.saffron": "Σαφράν",
+        "settings.asphalt": "Άσφαλτος",
+        "settings.violet": "Βιολετί",
+        "settings.pink": "Ροζ",
+        "settings.density": "Πυκνότητα",
+        "settings.comfortable": "Άνετη",
+        "settings.compact": "Συμπαγής"
+    },
+    "es": {
+        "settings.accent": "Color de acento",
+        "settings.blue": "Azul",
+        "settings.saffron": "Azafrán",
+        "settings.asphalt": "Asfalto",
+        "settings.violet": "Violeta",
+        "settings.pink": "Rosa",
+        "settings.density": "Densidad",
+        "settings.comfortable": "Cómoda",
+        "settings.compact": "Compacta"
+    },
+    "fr": {
+        "settings.accent": "Couleur d’accentuation",
+        "settings.blue": "Bleu",
+        "settings.saffron": "Safran",
+        "settings.asphalt": "Asphalte",
+        "settings.violet": "Violet",
+        "settings.pink": "Rose",
+        "settings.density": "Densité",
+        "settings.comfortable": "Confortable",
+        "settings.compact": "Compacte"
+    },
+    "hu": {
+        "settings.accent": "Kiemelőszín",
+        "settings.blue": "Kék",
+        "settings.saffron": "Sáfrány",
+        "settings.asphalt": "Aszfalt",
+        "settings.violet": "Ibolya",
+        "settings.pink": "Rózsaszín",
+        "settings.density": "Sűrűség",
+        "settings.comfortable": "Kényelmes",
+        "settings.compact": "Kompakt"
+    },
+    "it": {
+        "settings.accent": "Colore di accento",
+        "settings.blue": "Blu",
+        "settings.saffron": "Zafferano",
+        "settings.asphalt": "Asfalto",
+        "settings.violet": "Viola",
+        "settings.pink": "Rosa",
+        "settings.density": "Densità",
+        "settings.comfortable": "Comoda",
+        "settings.compact": "Compatta"
+    },
+    "ja": {
+        "settings.accent": "アクセントカラー",
+        "settings.blue": "ブルー",
+        "settings.saffron": "サフラン",
+        "settings.asphalt": "アスファルト",
+        "settings.violet": "バイオレット",
+        "settings.pink": "ピンク",
+        "settings.density": "表示密度",
+        "settings.comfortable": "ゆったり",
+        "settings.compact": "コンパクト"
+    },
+    "ko": {
+        "settings.accent": "강조 색상",
+        "settings.blue": "파랑",
+        "settings.saffron": "사프란",
+        "settings.asphalt": "아스팔트",
+        "settings.violet": "보라",
+        "settings.pink": "분홍",
+        "settings.density": "표시 밀도",
+        "settings.comfortable": "편안하게",
+        "settings.compact": "촘촘하게"
+    },
+    "nl": {
+        "settings.accent": "Accentkleur",
+        "settings.blue": "Blauw",
+        "settings.saffron": "Saffraan",
+        "settings.asphalt": "Asfalt",
+        "settings.violet": "Violet",
+        "settings.pink": "Roze",
+        "settings.density": "Dichtheid",
+        "settings.comfortable": "Comfortabel",
+        "settings.compact": "Compact"
+    },
+    "pl": {
+        "settings.accent": "Kolor akcentu",
+        "settings.blue": "Niebieski",
+        "settings.saffron": "Szafranowy",
+        "settings.asphalt": "Asfaltowy",
+        "settings.violet": "Fioletowy",
+        "settings.pink": "Różowy",
+        "settings.density": "Gęstość",
+        "settings.comfortable": "Wygodna",
+        "settings.compact": "Kompaktowa"
+    },
+    "pt": {
+        "settings.accent": "Cor de destaque",
+        "settings.blue": "Azul",
+        "settings.saffron": "Açafrão",
+        "settings.asphalt": "Asfalto",
+        "settings.violet": "Violeta",
+        "settings.pink": "Rosa",
+        "settings.density": "Densidade",
+        "settings.comfortable": "Confortável",
+        "settings.compact": "Compacta"
+    },
+    "ru": {
+        "settings.accent": "Цвет акцента",
+        "settings.blue": "Синий",
+        "settings.saffron": "Шафрановый",
+        "settings.asphalt": "Асфальтовый",
+        "settings.violet": "Фиолетовый",
+        "settings.pink": "Розовый",
+        "settings.density": "Плотность",
+        "settings.comfortable": "Комфортная",
+        "settings.compact": "Компактная"
+    },
+    "tr": {
+        "settings.accent": "Vurgu rengi",
+        "settings.blue": "Mavi",
+        "settings.saffron": "Safran",
+        "settings.asphalt": "Asfalt",
+        "settings.violet": "Menekşe",
+        "settings.pink": "Pembe",
+        "settings.density": "Yoğunluk",
+        "settings.comfortable": "Rahat",
+        "settings.compact": "Kompakt"
+    },
+    "uk": {
+        "settings.accent": "Акцентний колір",
+        "settings.blue": "Синій",
+        "settings.saffron": "Шафрановий",
+        "settings.asphalt": "Асфальтовий",
+        "settings.violet": "Фіолетовий",
+        "settings.pink": "Рожевий",
+        "settings.density": "Щільність",
+        "settings.comfortable": "Комфортна",
+        "settings.compact": "Компактна"
+    },
+    "zh": {
+        "settings.accent": "强调色",
+        "settings.blue": "蓝色",
+        "settings.saffron": "藏红花色",
+        "settings.asphalt": "沥青色",
+        "settings.violet": "紫罗兰色",
+        "settings.pink": "粉色",
+        "settings.density": "显示密度",
+        "settings.comfortable": "舒适",
+        "settings.compact": "紧凑"
+    },
+    "zhtw": {
+        "settings.accent": "強調色",
+        "settings.blue": "藍色",
+        "settings.saffron": "藏紅花色",
+        "settings.asphalt": "瀝青色",
+        "settings.violet": "紫羅蘭色",
+        "settings.pink": "粉紅色",
+        "settings.density": "顯示密度",
+        "settings.comfortable": "舒適",
+        "settings.compact": "緊湊"
+    }
+}

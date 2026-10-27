@@ -12,10 +12,9 @@ window.Home = function (api) {
     'use strict';
 
     var KEY = Keys;
-    var VISIBLE = 7; // cards on screen per row
     var root = document.getElementById('home');
     Prefs.onChange(function (name) {
-        if (name === 'homeLayout' || name === 'programmeGuide') render();
+        if (name === 'homeLayout' || name === 'programmeGuide' || name === 'density') render();
     });
     var s = { block: 0, hero: 0, button: 0, rows: {}, details: {} };
 
@@ -74,9 +73,10 @@ window.Home = function (api) {
     function rowState(row) {
         if (!s.rows[row.id]) s.rows[row.id] = { focus: 0, offset: 0 };
         var r = s.rows[row.id];
+        var visible = AppearanceLayout.count('--home-cols');
         r.focus = Math.min(r.focus, row.entries.length - 1);
         if (r.focus < r.offset) r.offset = r.focus;
-        if (r.focus >= r.offset + VISIBLE) r.offset = r.focus - VISIBLE + 1;
+        if (r.focus >= r.offset + visible) r.offset = r.focus - visible + 1;
         return r;
     }
 
@@ -191,12 +191,13 @@ window.Home = function (api) {
     }
 
     function renderRow(row, focused) {
+        var visible = AppearanceLayout.count('--home-cols');
         var box = el('div', 'hm-row');
         box.appendChild(el('div', 'hm-row-title', row.title));
         var strip = el('div', 'hm-strip');
         if (row.loading) {
             strip.setAttribute('aria-label', I18n.t('common.loading'));
-            for (var i = 0; i < VISIBLE; i++) {
+            for (var i = 0; i < visible; i++) {
                 var card = el('div', 'hm-card skeleton');
                 card.setAttribute('aria-hidden', 'true');
                 card.appendChild(el('div', 'hm-poster'));
@@ -206,7 +207,7 @@ window.Home = function (api) {
             return box;
         }
         var r = rowState(row);
-        row.entries.slice(r.offset, r.offset + VISIBLE).forEach(function (entry, i) {
+        row.entries.slice(r.offset, r.offset + visible).forEach(function (entry, i) {
             strip.appendChild(renderCard(entry, focused && r.offset + i === r.focus));
         });
         box.appendChild(strip);

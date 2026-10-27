@@ -1,0 +1,93 @@
+/* Blue deliberately has no override. Over video, every accent uses its dark values. */
+:root[data-accent="saffron"],
+[data-accent="saffron"] #player {
+    --selection: #f1bc50;
+    --selection-on: #071225;
+    --selection-surface: rgba(241, 188, 80, 0.18);
+    --selection-surface-strong: rgba(241, 188, 80, 0.28);
+    --selection-border: rgba(241, 188, 80, 0.62);
+    --selection-glow: rgba(241, 188, 80, 0.44);
+    --focus-ring: #f1bc50;
+    --panel-outline: #f1bc50;
+}
+
+:root[data-theme="light"][data-accent="saffron"] {
+    --selection: #805600;
+    --selection-on: #ffffff;
+    --selection-surface: rgba(128, 86, 0, 0.14);
+    --selection-surface-strong: rgba(128, 86, 0, 0.22);
+    --selection-border: rgba(128, 86, 0, 0.9);
+    --selection-glow: rgba(128, 86, 0, 0.34);
+    --focus-ring: #805600;
+    --panel-outline: #805600;
+}
+
+:root[data-accent="asphalt"],
+[data-accent="asphalt"] #player {
+    --selection: #a8bbd6;
+    --selection-on: #071225;
+    --selection-surface: rgba(168, 187, 214, 0.18);
+    --selection-surface-strong: rgba(168, 187, 214, 0.28);
+    --selection-border: rgba(168, 187, 214, 0.62);
+    --selection-glow: rgba(168, 187, 214, 0.44);
+    --focus-ring: #a8bbd6;
+    --panel-outline: #a8bbd6;
+}
+
+:root[data-theme="light"][data-accent="asphalt"] {
+    --selection: #405873;
+    --selection-on: #ffffff;
+    --selection-surface: rgba(64, 88, 115, 0.14);
+    --selection-surface-strong: rgba(64, 88, 115, 0.22);
+    --selection-border: rgba(64, 88, 115, 0.9);
+    --selection-glow: rgba(64, 88, 115, 0.34);
+    --focus-ring: #405873;
+    --panel-outline: #405873;
+}
+
+:root[data-accent="violet"],
+[data-accent="violet"] #player {
+    --selection: #b8a2ff;
+    --selection-on: #071225;
+    --selection-surface: rgba(184, 162, 255, 0.18);
+    --selection-surface-strong: rgba(184, 162, 255, 0.28);
+    --selection-border: rgba(184, 162, 255, 0.62);
+    --selection-glow: rgba(184, 162, 255, 0.44);
+    --focus-ring: #b8a2ff;
+    --panel-outline: #b8a2ff;
+}
+
+:root[data-theme="light"][data-accent="violet"] {
+    --selection: #6941bb;
+    --selection-on: #ffffff;
+    --selection-surface: rgba(105, 65, 187, 0.14);
+    --selection-surface-strong: rgba(105, 65, 187, 0.22);
+    --selection-border: rgba(105, 65, 187, 0.9);
+    --selection-glow: rgba(105, 65, 187, 0.34);
+    --focus-ring: #6941bb;
+    --panel-outline: #6941bb;
+}
+
+:root[data-accent="pink"],
+[data-accent="pink"] #player {
+    --selection: #f39ac6;
+    --selection-on: #071225;
+    --selection-surface: rgba(243, 154, 198, 0.18);
+    --selection-surface-strong: rgba(243, 154, 198, 0.28);
+    --selection-border: rgba(243, 154, 198, 0.62);
+    --selection-glow: rgba(243, 154, 198, 0.44);
+    --focus-ring: #f39ac6;
+    --panel-outline: #f39ac6;
+}
+
+:root[data-theme="light"][data-accent="pink"] {
+    --selection: #a52c68;
+    --selection-on: #ffffff;
+    --selection-surface: rgba(165, 44, 104, 0.14);
+    --selection-surface-strong: rgba(165, 44, 104, 0.22);
+    --selection-border: rgba(165, 44, 104, 0.9);
+    --selection-glow: rgba(165, 44, 104, 0.34);
+    --focus-ring: #a52c68;
+    --panel-outline: #a52c68;
+}
+

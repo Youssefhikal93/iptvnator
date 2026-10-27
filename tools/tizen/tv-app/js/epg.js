@@ -7,6 +7,7 @@ window.Epg = function (adapter, source) {
 
     var PARALLEL = 3;
     var NO_GUIDE_RETRY_MS = 30 * 60 * 1000;
+    var FAILED_RETRY_MS = 2 * 60 * 1000;
     var store = {}; // stream id -> { list, until }
     var loading = {}; // stream id -> Promise
     var queue = [];
@@ -22,13 +23,18 @@ window.Epg = function (adapter, source) {
         return source && window.XmltvGuide ? XmltvGuide.revision(source.id) : 0;
     }
 
-    function ask(channel, at) {
-        if (at >= chain.length) return Promise.resolve([]);
-        return Promise.resolve().then(function () { return chain[at](channel); }).catch(function () {
+    // The first guide source with programmes wins. A source that failed
+    // (rather than answering "nothing") rejects at the end, so the channel is
+    // asked again soon instead of being marked as having no guide; a busy
+    // provider (429) stops the chain at once.
+    function ask(channel, at, failure) {
+        if (at >= chain.length) return failure ? Promise.reject(failure) : Promise.resolve([]);
+        return Promise.resolve().then(function () { return chain[at](channel); }).then(function (list) {
+            return list && list.length ? list : ask(channel, at + 1, failure);
+        }, function (err) {
+            if (err && err.code === 'busy') throw err;
             Log.error('EPG source failed');
-            return null;
-        }).then(function (list) {
-            return list && list.length ? list : ask(channel, at + 1);
+            return ask(channel, at + 1, err || new Error('EPG source failed'));
         });
     }
 
@@ -65,13 +71,17 @@ window.Epg = function (adapter, source) {
         var id = idOf(channel);
         if (!loading[id]) {
             loading[id] = ask(channel, 0)
-                .catch(function (err) {
-                    Log.error('EPG FAIL ' + err.message);
-                    return [];
-                })
                 .then(function (list) {
+                    return { list: list, retry: NO_GUIDE_RETRY_MS };
+                }, function (err) {
+                    Log.error('EPG FAIL ' + (err && err.code === 'busy' ? 'busy' : err && err.message));
+                    // Ask again after the provider's rest, or soon after a failure.
+                    return { list: [], retry: err && err.code === 'busy' ? Math.max(1000, err.wait || 0) : FAILED_RETRY_MS };
+                })
+                .then(function (got) {
+                    var list = got.list;
                     var current = pick(list, Date.now()).now;
-                    store[id] = { list: list, revision: revision(), until: current ? current.end : Date.now() + NO_GUIDE_RETRY_MS };
+                    store[id] = { list: list, revision: revision(), until: current ? current.end : Date.now() + got.retry };
                     delete loading[id];
                     return peek(channel) || { now: null, next: null };
                 });

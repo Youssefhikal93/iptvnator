@@ -36,11 +36,11 @@ window.SourceSettings = (function () {
             var entry = SourceAccount.row(source, !!current && source.id === current.id, XmltvGuide.subtitle(source));
             return { label: source.name, source: source, sub: entry.detail, chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
         });
-        // Lists refresh by themselves once a day; this fetches them now.
-        if (current) list.push({ label: I18n.t('sources.refreshNow'), text: '', run: function () { hooks.refresh(current); } });
         list = list.concat(['xtream', 'm3u'].map(function (kind) {
             return { label: I18n.t(kind === 'xtream' ? 'sources.addXtream' : 'sources.addM3u'), add: kind, text: '', run: function () { hooks.add(kind); } };
         }));
+        // Lists refresh by themselves once a day; this fetches them now.
+        if (current) list.push({ label: I18n.t('sources.refreshNow'), text: '', run: function () { hooks.refresh(current); } });
         list[0].group = I18n.t('rail.sources');
         return list;
     }

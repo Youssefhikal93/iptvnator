@@ -10,6 +10,7 @@ test('Sources is the first group of Settings and has no menu item (#51)', async 
     await expect(page.locator('#settings .st-row').nth(0).locator('.st-sub')).toContainText('Active');
     await expect(page.locator('#settings .st-row .st-label').nth(1)).toHaveText('+  Add Xtream account');
     await expect(page.locator('#settings .st-row .st-label').nth(2)).toHaveText('+  Add M3U playlist');
+    await expect(page.locator('#settings .st-row .st-label').nth(3)).toHaveText('Refresh content now');
     await expect(page.locator('#settings .st-group').nth(1)).toHaveText('Profiles');
     // OK opens the source's options; the account details are lines the focus skips.
     await press(page, 'Enter');

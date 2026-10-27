@@ -74,10 +74,13 @@ test('Merge keeps an existing source and library, adds missing sources, and reta
 
 test('invalid files show a clear error and leave sources, favorites and progress untouched', async ({ page }) => {
     await boot(page);
-    const before = await page.evaluate(() => JSON.stringify(Object.assign({}, localStorage)));
+    // Everything kept except the fetch stamps, which background loads write.
+    const kept = () => page.evaluate(() => JSON.stringify(Object.keys(localStorage).sort()
+        .filter((key) => key.indexOf('iptvnator-tv:fetched:') !== 0).map((key) => [key, localStorage.getItem(key)])));
+    const before = await kept();
     await importFixture(page, { kind: 'iptvnator-playlist-backup', version: 900, playlists: [] });
     await expect(page.locator('#backup-screen')).toContainText('Invalid or unsupported backup file');
-    expect(await page.evaluate(() => JSON.stringify(Object.assign({}, localStorage)))).toBe(before);
+    expect(await kept()).toBe(before);
     await back(page);
     await expect(page.locator('#backup-screen')).toHaveCount(0);
     await expect(page.locator('.st-row.focused .st-label')).toHaveText('Import from link…');

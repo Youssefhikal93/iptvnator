@@ -6,7 +6,7 @@ const P = 'iptvnator-tv:';
 function oldSeed() {
     const seed = resumeSeed();
     seed.storage['favorites:s1'] = { movies: [movie(7)], series: [show()], live: [channel()] };
-    seed.storage.settings = { homeLayout: 'showcase', tmdbApiKey: 'tmdb-secret' };
+    seed.storage.settings = { homeLayout: 'bigrow', tmdbApiKey: 'tmdb-secret' };
     seed.storage['hidden-categories:s1'] = { live: ['12'] };
     return seed;
 }
@@ -45,9 +45,9 @@ async function reloadAndPick(page, name) {
 
 test('old-format data moves under the profile Me and looks unchanged', async ({ page }) => {
     await boot(page, oldSeed());
-    await expect(page.locator('.hm-eyebrow')).toContainText('Continue watching');
-    await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
-    await expect(page.locator('#home')).toHaveClass(/showcase/);
+    await expect(page.locator('.hm-row.big h2')).toContainText('Continue watching');
+    await expect(page.locator('.hm-row.big .hm-card').first()).toContainText('Movie 25');
+    await expect(page.locator('#home')).toHaveClass(/bigrow/);
     expect(await profiles(page)).toEqual([expect.objectContaining({ id: 'default', name: 'Me' })]);
     expect(await stored(page, P + 'profile')).toBe('default');
     expect(await stored(page, P + 'profiles-version')).toBe('1');
@@ -73,7 +73,7 @@ test('a second profile starts empty with its own settings; Who is watching appea
     await boot(page, oldSeed());
     await addProfile(page, 'Anna');
     // Adding opens the new profile: its Home has none of the first profile's data.
-    await expect(page.locator('#home')).not.toHaveClass(/showcase/);
+    await expect(page.locator('#home')).not.toHaveClass(/bigrow/);
     await expect(page.locator('#home')).not.toContainText('Continue watching');
     await expect(page.locator('#home')).not.toContainText('Favorite movies');
     expect((await profiles(page)).map(p => p.name)).toEqual(['Me', 'Anna']);
@@ -92,8 +92,8 @@ test('a second profile starts empty with its own settings; Who is watching appea
     await press(page, 'ArrowLeft');
     await press(page, 'Enter');
     await expect(page.locator('#rail .rail-item')).toHaveCount(5);
-    await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
-    await expect(page.locator('#home')).toHaveClass(/showcase/);
+    await expect(page.locator('.hm-row.big .hm-card').first()).toContainText('Movie 25');
+    await expect(page.locator('#home')).toHaveClass(/bigrow/);
 });
 
 test('switching in Settings reloads Home with that profile data and back again', async ({ page }) => {
@@ -107,8 +107,8 @@ test('switching in Settings reloads Home with that profile data and back again',
     await press(page, 'ArrowLeft');
     await press(page, 'Enter');
     await expect(page.locator('#profiles')).toHaveCount(0);
-    await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
-    await expect(page.locator('#home')).toHaveClass(/showcase/);
+    await expect(page.locator('.hm-row.big .hm-card').first()).toContainText('Movie 25');
+    await expect(page.locator('#home')).toHaveClass(/bigrow/);
     expect(await stored(page, P + 'profile')).toBe('default');
     // Favorites follow the profile in the browser list too.
     await section(page, 'Movies');
@@ -190,7 +190,7 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     expect((await profiles(page)).map(p => p.name)).toEqual(['Me']);
     expect(await stored(page, P + 'profile')).toBe('default');
     expect(await page.evaluate(id => Object.keys(localStorage).filter(k => k.indexOf('iptvnator-tv:p:' + id + ':') === 0).length, anna)).toBe(0);
-    await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
+    await expect(page.locator('.hm-row.big .hm-card').first()).toContainText('Movie 25');
     // Back to one profile: the question is never asked.
     await page.reload();
     await expect(page.locator('#rail .rail-item')).toHaveCount(5);

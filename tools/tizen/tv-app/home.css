@@ -130,35 +130,92 @@
     background: var(--selection);
 }
 
-/* Showcase: a shorter hero, so two rows show below it. */
-#home.showcase .hm-hero {
-    height: 360px;
+/* Big first row: no banner; the top row has three wide tiles with the
+   title's backdrop and the time left on it. */
+#home {
+    --home-big-cols: 3;
 }
-#home.showcase .hm-hero-text {
-    top: 32px;
+#home .hm-row.big {
+    height: 610px;
+    padding-top: 36px;
 }
-#home.showcase .hm-hero-title {
-    margin-top: 6px;
-    font-size: 52px;
+#home .hm-row.big .hm-cards {
+    grid-template-columns: repeat(var(--home-big-cols), minmax(0, 1fr));
 }
-#home.showcase .hm-hero-chips,
-#home.showcase .hm-hero-plot,
-#home.showcase .hm-hero-progress {
-    margin-top: 10px;
+#home .hm-row.big .hm-poster {
+    height: 370px;
 }
-#home.showcase .hm-chip {
-    font-size: 22px;
+#home .hm-row.big .hm-card > span {
+    font-size: 30px;
 }
-#home.showcase .hm-hero-plot {
-    -webkit-line-clamp: 1;
+.hm-label {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    padding: 4px 14px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
     font-size: 24px;
+    font-weight: 700;
 }
-#home.showcase .hm-hero-buttons {
-    margin-top: 14px;
+
+/* Backdrop: the focused title fills the screen; one row of tiles sits at
+   the bottom with the names of the rows below it. */
+#home.backdrop {
+    position: relative;
 }
-#home.showcase .dt-btn {
-    padding: 12px 26px;
-    font-size: 26px;
+.hm-stage {
+    position: absolute;
+    inset: 0;
+}
+.hm-stage-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.hm-stage.live {
+    background: var(--widget-bg);
+}
+.hm-stage.live .hm-stage-art {
+    left: auto;
+    top: 90px;
+    right: 120px;
+    width: 560px;
+    height: 320px;
+    object-fit: contain;
+}
+/* A channel name stops short of its logo. */
+.hm-stage.live .hm-stage-text {
+    width: 980px;
+}
+.hm-stage-shade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, color-mix(in srgb, var(--content-bg) 95%, transparent) 0%, color-mix(in srgb, var(--content-bg) 60%, transparent) 45%, color-mix(in srgb, var(--content-bg) 0%, transparent) 75%),
+        linear-gradient(to top, var(--content-bg) 0%, color-mix(in srgb, var(--content-bg) 85%, transparent) 42%, color-mix(in srgb, var(--content-bg) 0%, transparent) 70%);
+}
+.hm-stage-text {
+    position: absolute;
+    left: 56px;
+    top: 56px;
+    width: 1120px;
+}
+.hm-stage-rows {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 16px;
+}
+.hm-stage-next {
+    padding-left: 56px;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 50px;
+    color: var(--muted);
 }
 
 .hm-row {

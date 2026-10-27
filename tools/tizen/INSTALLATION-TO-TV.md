@@ -341,8 +341,8 @@ from step 8 must already be downloaded.
   selects a row, RIGHT or OK picks the next choice, LEFT the previous one.
   LEFT at the first choice or Return goes back to the rail. Changes save
   immediately for all sources: autoplay (Off, 5, 8 or 15 s), Skip intro
-  length (60, 75, 90 or 120 s), now and next On/Off, Cinema or compact
-  Showcase Home layout, List/Grid for each section, default Movies/Series
+  length (60, 75, 90 or 120 s), now and next On/Off, Cinema, Big first row
+  or Backdrop Home layout, List/Grid for each section, default Movies/Series
   sort, Live preview On/Off and Last channel/Home on start. Turning now and next off stops
   programme fetching and hides programme lines everywhere. Default sort
   applies only where no sort has been chosen for that source and section.

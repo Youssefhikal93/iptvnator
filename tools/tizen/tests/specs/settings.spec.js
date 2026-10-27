@@ -31,19 +31,34 @@ test('settings show current values; guide Off stops requests and On resumes them
     await expect(page.locator('#items .epg-now').first()).toBeVisible();
 });
 
-test('Showcase home has a 360px hero and settings survive reload', async ({ page }) => {
+test('Big first row and Backdrop home layouts, and the choice survives reload', async ({ page }) => {
     await boot(page, resumeSeed());
     await setting(page, 'Home layout');
     await press(page, 'Enter');
-    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Showcase');
+    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Big first row');
     await section(page, 'Home');
-    await expect(page.locator('#home')).toHaveClass(/showcase/);
-    await expect(page.locator('.hm-hero')).toHaveCSS('height', '360px');
+    // No banner: the first row has wide tiles with the time left.
+    await expect(page.locator('#home')).toHaveClass(/bigrow/);
+    await expect(page.locator('.hm-hero')).toHaveCount(0);
+    await expect(page.locator('.hm-row').first()).toHaveClass(/big/);
+    await expect(page.locator('.hm-row.big .hm-card')).toHaveText(/Movie 25/);
+    await expect(page.locator('.hm-row.big .hm-label').first()).toContainText('min left');
     await page.reload();
-    await expect(page.locator('#home')).toHaveClass(/showcase/);
-    await expect(page.locator('.hm-hero')).toHaveCSS('height', '360px');
-    await section(page, 'Settings');
-    await expect(page.locator('.st-row').filter({ hasText: 'Home layout' }).locator('.st-value')).toHaveText('Showcase');
+    await expect(page.locator('#home')).toHaveClass(/bigrow/);
+    await setting(page, 'Home layout');
+    await press(page, 'Enter');
+    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Backdrop');
+    await section(page, 'Home');
+    // The focused title is drawn behind one row; the rows below show names only.
+    await expect(page.locator('#home')).toHaveClass(/backdrop/);
+    await expect(page.locator('.hm-stage-rows .hm-row')).toHaveCount(1);
+    const first = await page.locator('.hm-stage-rows .hm-card > span').first().textContent();
+    await expect(page.locator('.hm-stage-text .hm-hero-title')).toHaveText(first);
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowRight');
+    const second = await page.locator('.hm-stage-rows .hm-card.focus > span').textContent();
+    await expect(page.locator('.hm-stage-text .hm-hero-title')).toHaveText(second);
+    await expect(page.locator('.hm-stage-next').first()).toBeVisible();
 });
 
 test('Settings shows groups on the left and one group of rows on the right (#49)', async ({ page }) => {

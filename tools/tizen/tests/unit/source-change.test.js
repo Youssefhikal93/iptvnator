@@ -35,7 +35,7 @@ function edit(env, source, changes) {
             assert.equal(mode, 'source');
             done(Object.assign({}, initial, changes));
         },
-        saved: function () { saved = Array.prototype.slice.call(arguments); },
+        saved: function (change) { saved = change; },
     })();
     return saved;
 }
@@ -53,33 +53,37 @@ function guideEdit(env, source, changes) {
 test('an unrelated edit reconnects nothing and leaves the guide alone', function () {
     var env = app([XTREAM]);
     var saved = edit(env, XTREAM, { name: 'Bedroom' });
-    assert.equal(saved[0].id, 's1');
-    assert.equal(saved[1], false);
-    assert.equal(saved[2], 's1');
+    assert.equal(saved.source.id, 's1');
+    assert.equal(saved.reconnect, false);
+    assert.equal(saved.rekeyed, false);
+    assert.equal(saved.previousId, 's1');
     assert.deepEqual(env.calls, []);
     assert.equal(env.globals.Sources.all()[0].name, 'Bedroom');
 });
 
 test('a blank name falls back to the host name', function () {
     var env = app([XTREAM]);
-    assert.equal(edit(env, XTREAM, { name: '  ' })[0].name, 'example.test');
+    assert.equal(edit(env, XTREAM, { name: '  ' }).source.name, 'example.test');
 });
 
 test('a password-only change reconnects but keeps the source account', function () {
     var env = app([XTREAM]);
     var saved = edit(env, XTREAM, { pass: 'replacement' });
-    assert.equal(saved[0].id, 's1');
-    assert.equal(saved[1], true);
+    assert.equal(saved.source.id, 's1');
+    assert.equal(saved.reconnect, true);
+    assert.equal(saved.rekeyed, false);
     assert.deepEqual(env.calls, [['forget', 's1']]);
 });
 
 test('another username is another source account with a fresh id', function () {
     var env = app([XTREAM]);
     var saved = edit(env, XTREAM, { user: 'other' });
-    assert.equal(saved[0].id, 's100');
-    assert.equal(saved[1], true);
-    assert.equal(saved[2], 's1');
-    assert.deepEqual(env.calls, [['forget', 's100'], ['refresh', 's100']]);
+    assert.equal(saved.source.id, 's100');
+    assert.equal(saved.reconnect, true);
+    assert.equal(saved.rekeyed, true);
+    assert.equal(saved.previousId, 's1');
+    // The guide stored under the old id goes; the new id downloads its own.
+    assert.deepEqual(env.calls, [['forget', 's100'], ['remove', 's1'], ['refresh', 's100']]);
     assert.equal(env.globals.Sources.all()[0].id, 's100');
     assert.equal(env.globals.Sources.current().id, 's100');
 });
@@ -87,18 +91,18 @@ test('another username is another source account with a fresh id', function () {
 test('another server is another source account', function () {
     var env = app([XTREAM]);
     var saved = edit(env, XTREAM, { url: 'https://elsewhere.test' });
-    assert.equal(saved[0].id, 's100');
-    assert.equal(saved[1], true);
+    assert.equal(saved.source.id, 's100');
+    assert.equal(saved.reconnect, true);
 });
 
 test('another M3U link is another source account', function () {
     var env = app([M3U]);
     var saved = edit(env, M3U, { url: 'https://lists.test/b.m3u' });
-    assert.equal(saved[0].id, 's100');
-    assert.equal(saved[1], true);
-    assert.equal(saved[2], 'm1');
-    // The new link has no guide address, so nothing is downloaded.
-    assert.deepEqual(env.calls, [['forget', 's100'], ['remove', 's100']]);
+    assert.equal(saved.source.id, 's100');
+    assert.equal(saved.reconnect, true);
+    assert.equal(saved.previousId, 'm1');
+    // The new link has no guide address, so nothing is downloaded, and the old guide does not linger.
+    assert.deepEqual(env.calls, [['forget', 's100'], ['remove', 'm1'], ['remove', 's100']]);
 });
 
 test('a new guide address or offset refreshes the guide under the same id', function () {
@@ -111,25 +115,26 @@ test('a new guide address or offset refreshes the guide under the same id', func
 test('a cleared guide address removes the guide', function () {
     var env = app([XTREAM]);
     var saved = edit(env, XTREAM, { epgUrl: '' });
-    assert.equal(saved[1], false);
+    assert.equal(saved.reconnect, false);
     assert.deepEqual(env.calls, [['remove', 's1']]);
 });
 
 test('going back to an earlier account brings its id back', function () {
     var env = app([XTREAM]);
-    var away = edit(env, XTREAM, { user: 'other' })[0];
+    var away = edit(env, XTREAM, { user: 'other' }).source;
     env.calls.length = 0;
     var back = edit(env, away, { user: 'viewer' });
-    assert.equal(back[0].id, 's1');
-    assert.equal(back[2], 's100');
+    assert.equal(back.source.id, 's1');
+    assert.equal(back.previousId, 's100');
     assert.equal(env.globals.Sources.all()[0].id, 's1');
+    assert.deepEqual(env.calls, [['forget', 's1'], ['remove', 's100'], ['refresh', 's1']]);
 });
 
 test('an account saved as another source gets a fresh id', function () {
     var other = Object.assign({}, XTREAM, { id: 's2', user: 'other' });
     var env = app([XTREAM, other]);
     var saved = edit(env, XTREAM, { user: 'other' });
-    assert.equal(saved[0].id, 's100');
+    assert.equal(saved.source.id, 's100');
     assert.equal(env.globals.Sources.all()[1].id, 's2');
 });
 
@@ -148,6 +153,16 @@ test('the guide form saves in place and refreshes only when the guide changed', 
 test('the guide form removes the guide when its address is cleared', function () {
     var env = app([XTREAM]);
     guideEdit(env, XTREAM, { epgUrl: '' });
+    assert.deepEqual(env.calls, [['remove', 's1']]);
+    assert.equal(env.globals.Sources.all()[0].epgUrl, '');
+});
+
+test('the guide menu removes the guide and clears the address', function () {
+    var env = app([XTREAM]);
+    var changed;
+    var options = env.globals.SourceGuide(XTREAM, { openForm: function () {}, changed: function (updated) { changed = updated; } });
+    options[options.length - 1].run();
+    assert.equal(changed.epgUrl, '');
     assert.deepEqual(env.calls, [['remove', 's1']]);
     assert.equal(env.globals.Sources.all()[0].epgUrl, '');
 });

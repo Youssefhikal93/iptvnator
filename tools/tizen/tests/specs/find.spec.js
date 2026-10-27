@@ -91,3 +91,26 @@ test('Movies have the same pills as Series and a genre is looked up on the provi
     expect(pages).toBeGreaterThanOrEqual(24);
     await expect(page.locator('#hints')).not.toContainText('Looking up');
 });
+
+test('a provider that answers 429 stops the genre lookups at once', async ({ page }) => {
+    let pages = 0;
+    await page.route(/action=get_vod_info/, (route) => {
+        pages++;
+        return route.fulfill({ status: 429, body: 'Too Many Requests' });
+    });
+    await boot(page);
+    await section(page, 'Movies');
+    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
+    await enterItems(page);
+    await press(page, 'ArrowUp');
+    await moveTo(page, '#genre-pills .tm-chip.focus', 'Crime', 'ArrowRight');
+    await press(page, 'Enter');
+    await expect(page.locator('.list-empty')).toContainText('Nothing in Crime here');
+    await page.waitForTimeout(1500);
+    expect(pages).toBe(1);
+    // Picking again within the rest asks the provider nothing.
+    await press(page, 'Enter');
+    await press(page, 'Enter');
+    await page.waitForTimeout(1000);
+    expect(pages).toBe(1);
+});

@@ -637,43 +637,63 @@ window.Browser = function (hooks) {
     }
 
     // A picked genre matches what the provider or TMDB says (#31). Titles
-    // not matched yet are looked up: a movie's provider page (lists rarely
-    // carry movie genres) and, when TMDB is on, the TMDB match of movies
-    // and series alike; three at a time, matches join the list as they come.
-    var GENRE_LOOKUPS = 300;
+    // not matched yet are looked up, and matches join the list as they come.
+    // Providers limit requests (some answer 429 to a burst), so movie pages
+    // go one at a time with a pause, at most PAGE_LOOKUPS per pick, and any
+    // failure rests them for PAGE_REST_MS. TMDB matches movies and series
+    // alike, two at a time, when it is on.
+    var PAGE_LOOKUPS = 40;
+    var PAGE_GAP_MS = 400;
+    var PAGE_REST_MS = 600000;
+    var TMDB_LOOKUPS = 300;
     function lookUpGenre() {
         var mine = ++state.genreToken;
         var genre = genreFilter();
         var section = state.section;
         state.genreProgress = null;
         if (!genre) return;
-        var tmdb = Tmdb.enabled();
-        var info = section === 'movies' && !!state.adapter.movieInfo;
-        if (!tmdb && !info) return;
         var type = section === 'movies' ? 'movie' : 'tv';
-        var needsPage = function (item) { return info && item.stream_id !== undefined && !state.catalogue.peek({ kind: 'movie', id: item.stream_id }); };
+        var pages = section === 'movies' && !!state.adapter.movieInfo && Date.now() >= (state.pagesRestUntil || 0);
+        var tmdb = Tmdb.enabled();
+        var open = function (item) { return !Genres.has(item, section, genre); };
+        var needsPage = function (item) { return pages && item.stream_id !== undefined && !state.catalogue.peek({ kind: 'movie', id: item.stream_id }); };
         var needsTmdb = function (item) { return tmdb && !Tmdb.cached(item, type); };
-        var todo = visible.list.filter(function (item) {
-            return !Genres.has(item, section, genre) && (needsPage(item) || needsTmdb(item));
-        }).slice(0, GENRE_LOOKUPS);
-        if (!todo.length) return;
-        var progress = state.genreProgress = { done: 0, total: todo.length };
+        var pageList = visible.list.filter(function (item) { return open(item) && needsPage(item); }).slice(0, PAGE_LOOKUPS);
+        var tmdbList = visible.list.filter(function (item) { return open(item) && needsTmdb(item); }).slice(0, TMDB_LOOKUPS);
+        if (!pageList.length && !tmdbList.length) return;
+        var progress = state.genreProgress = { done: 0, total: pageList.length + tmdbList.length };
         var current = function () { return mine === state.genreToken; };
-        var step = function () {
-            if (!current() || !todo.length) return Promise.resolve();
-            var item = todo.shift();
-            var ask = needsPage(item) ? state.catalogue.load({ kind: 'movie', id: item.stream_id, item: item }, { screen: false }) : Promise.resolve();
-            return ask.catch(function () {}).then(function () {
-                if (current() && !Genres.has(item, section, genre) && needsTmdb(item)) return Tmdb.match(item, type, current);
-            }).catch(function () {}).then(function () {
-                if (!current()) return;
-                progress.done++;
-                if (Genres.has(item, section, genre)) drawItems(items.index(), true);
-                renderHints();
-                return step();
+        var found = function (item) {
+            if (!current()) return false;
+            progress.done++;
+            if (!open(item)) drawItems(items.index(), true);
+            renderHints();
+            return true;
+        };
+        var pageStep = function () {
+            if (!current() || !pages || !pageList.length) return Promise.resolve();
+            var item = pageList.shift();
+            return state.catalogue.load({ kind: 'movie', id: item.stream_id, item: item }, { screen: false }).then(function () {
+                if (!found(item)) return;
+                return new Promise(function (done) { setTimeout(done, PAGE_GAP_MS); }).then(pageStep);
+            }, function () {
+                // The provider refused or failed: leave it alone for a while.
+                state.pagesRestUntil = Date.now() + PAGE_REST_MS;
+                pages = false;
+                if (current()) progress.done += pageList.length + 1;
+                pageList = [];
+                Log.error('GENRE PAGES REST');
             });
         };
-        Promise.all([step(), step(), step()]).then(function () {
+        var tmdbStep = function () {
+            if (!current() || !tmdbList.length) return Promise.resolve();
+            var item = tmdbList.shift();
+            var ask = open(item) ? Tmdb.match(item, type, current) : Promise.resolve();
+            return ask.catch(function () {}).then(function () {
+                if (found(item)) return tmdbStep();
+            });
+        };
+        Promise.all([pageStep(), tmdbStep(), tmdbStep()]).then(function () {
             if (!current()) return;
             state.genreProgress = null;
             drawItems(items.index(), true);

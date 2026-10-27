@@ -4,7 +4,17 @@ window.List = function (el, options) {
     'use strict';
 
     var state = { items: [], index: 0, active: false, empty: '', grid: false, loading: false };
-    var GRID = { cols: 5, rows: 2 };
+    Prefs.onChange(function (name) {
+        if (name === 'density') render();
+    });
+
+    function gridSize() {
+        return { cols: AppearanceLayout.count('--grid-cols'), rows: AppearanceLayout.count('--grid-rows') };
+    }
+
+    function visibleRows() {
+        return Math.min(options.rows, AppearanceLayout.count('--visible-rows', el));
+    }
 
     // Initials tile, like the desktop shows for channels without a logo.
     function placeholder(item) {
@@ -27,13 +37,14 @@ window.List = function (el, options) {
     }
 
     function render() {
-        var rows = state.grid ? GRID.rows : options.rows;
+        var grid = gridSize();
+        var rows = state.grid ? grid.rows : visibleRows();
         var count = state.items.length;
         var start;
         if (state.grid) {
-            var lastRow = Math.floor((count - 1) / GRID.cols);
-            var firstRow = Math.max(0, Math.min(Math.floor(state.index / GRID.cols) - Math.floor(rows / 2), lastRow - rows + 1));
-            start = firstRow * GRID.cols;
+            var lastRow = Math.floor((count - 1) / grid.cols);
+            var firstRow = Math.max(0, Math.min(Math.floor(state.index / grid.cols) - Math.floor(rows / 2), lastRow - rows + 1));
+            start = firstRow * grid.cols;
         } else {
             start = Math.max(0, Math.min(state.index - Math.floor(rows / 2), count - rows));
         }
@@ -57,7 +68,7 @@ window.List = function (el, options) {
         }
         el.appendChild(header);
 
-        if (state.loading) return renderSkeleton(rows);
+        if (state.loading) return renderSkeleton(rows, grid);
         if (!count) {
             var empty = document.createElement('div');
             empty.className = 'list-empty';
@@ -70,7 +81,7 @@ window.List = function (el, options) {
             return;
         }
 
-        if (state.grid) return renderGrid(start, count);
+        if (state.grid) return renderGrid(start, count, grid);
 
         for (var i = start; i < Math.min(count, start + rows); i++) {
             var item = state.items[i];
@@ -97,13 +108,14 @@ window.List = function (el, options) {
             if (options.decorate) options.decorate(row, item);
             el.appendChild(row);
         }
+        AppearanceLayout.reveal(el);
     }
 
-    function renderSkeleton(rows) {
+    function renderSkeleton(rows, grid) {
         var strip = document.createElement('div');
         strip.className = state.grid ? 'grid' : '';
         strip.setAttribute('aria-label', I18n.t('common.loading'));
-        for (var i = 0; i < (state.grid ? GRID.cols * GRID.rows : rows); i++) {
+        for (var i = 0; i < (state.grid ? grid.cols * grid.rows : rows); i++) {
             var tile = document.createElement('div');
             tile.className = state.grid ? 'card skeleton' : 'row skeleton';
             tile.setAttribute('aria-hidden', 'true');
@@ -117,11 +129,11 @@ window.List = function (el, options) {
         el.appendChild(strip);
     }
 
-    // Poster cards, GRID.cols per row; only the visible rows exist in the DOM.
-    function renderGrid(start, count) {
+    // Poster cards follow CSS columns; only the visible rows exist in the DOM.
+    function renderGrid(start, count, size) {
         var grid = document.createElement('div');
         grid.className = 'grid';
-        for (var i = start; i < Math.min(count, start + GRID.cols * GRID.rows); i++) {
+        for (var i = start; i < Math.min(count, start + size.cols * size.rows); i++) {
             var item = state.items[i];
             var card = document.createElement('div');
             card.className = 'card';
@@ -139,6 +151,7 @@ window.List = function (el, options) {
             grid.appendChild(card);
         }
         el.appendChild(grid);
+        AppearanceLayout.reveal(el);
     }
 
     return {
@@ -168,10 +181,11 @@ window.List = function (el, options) {
             render();
         },
         cols: function () {
-            return state.grid ? GRID.cols : 1;
+            return state.grid ? AppearanceLayout.count('--grid-cols') : 1;
         },
         pageSize: function () {
-            return state.grid ? GRID.cols * GRID.rows : 10;
+            var grid = gridSize();
+            return state.grid ? grid.cols * grid.rows : visibleRows();
         },
         select: function (index) {
             state.index = index;

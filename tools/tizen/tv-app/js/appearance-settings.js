@@ -25,13 +25,13 @@ window.AppearanceSettings = (function () {
             { get group() { return I18n.t('settings.appearance'); }, get label() { return I18n.t('settings.language'); }, run: pickLanguage, text: languageName },
             { get label() { return I18n.t('settings.theme'); }, key: 'theme', pills: true, choices: ['dark', 'light'], get labels() { return [I18n.t('settings.dark'), I18n.t('settings.light')]; } },
             { get label() { return I18n.t('settings.accent'); }, key: 'accent', pills: true, swatches: true, choices: ['blue', 'saffron', 'asphalt', 'violet', 'pink'], get labels() { return [I18n.t('settings.blue'), I18n.t('settings.saffron'), I18n.t('settings.asphalt'), I18n.t('settings.violet'), I18n.t('settings.pink')]; } },
-            { get label() { return I18n.t('settings.density'); }, key: 'density', pills: true, choices: ['comfortable', 'compact'], get labels() { return [I18n.t('settings.comfortable'), I18n.t('settings.compact')]; } },
+            { get label() { return I18n.t('settings.density'); }, get hint() { return I18n.t('describe.density'); }, key: 'density', pills: true, choices: ['comfortable', 'compact'], get labels() { return [I18n.t('settings.comfortable'), I18n.t('settings.compact')]; } },
             // Off for older TVs where fades and growing tiles stutter.
-            { get label() { return I18n.t('settings.motion'); }, key: 'motion', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
+            { get label() { return I18n.t('settings.motion'); }, get hint() { return I18n.t('describe.motion'); }, key: 'motion', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
             // Search and the view buttons; Off hides them until ▲ at the top of a list (#45).
-            { get label() { return I18n.t('settings.topBar'); }, key: 'topBar', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
+            { get label() { return I18n.t('settings.topBar'); }, get hint() { return I18n.t('describe.topBar'); }, key: 'topBar', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
             // The main menu as a rail on the left or a bar along the top (#50).
-            { get label() { return I18n.t('settings.menuPosition'); }, key: 'menuPosition', pills: true, choices: ['side', 'top'], get labels() { return [I18n.t('settings.side'), I18n.t('settings.top')]; } },
+            { get label() { return I18n.t('settings.menuPosition'); }, get hint() { return I18n.t('describe.menuPosition'); }, key: 'menuPosition', pills: true, choices: ['side', 'top'], get labels() { return [I18n.t('settings.side'), I18n.t('settings.top')]; } },
         ],
     };
 })();

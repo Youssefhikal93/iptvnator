@@ -176,3 +176,17 @@ Refresh, Edit, the guide actions and Remove (Remove asks once more), then
 the account details as lines the focus passes over (`note` options).
 With no source the app opens Settings on Add Xtream account; Go to Sources
 on the account screen opens Settings on the source with the problem.
+
+## Settings groups (#49)
+
+Settings (`js/settings.js`, styles in `settings.css`) shows its groups down
+the left with their row counts and the chosen group's rows on the right. A
+row that names a `group` starts one. ▲▼ pick a group and show its rows at
+once; ▶ or OK enters the rows; Return or ◀ at the first choice goes back to
+the groups, and Return there goes to the menu. Rows are 96px cards with the
+label and, where a row has a `hint`, a line that says what it does
+(`describe.*`, in every language). On/off rows are a switch next to the word;
+other choices show ‹ value ›; Appearance keeps its pills. Every group is in
+the page and only the chosen one is shown, so tests can read any row's value;
+the `setting(page, label)` helper opens a row through its group. Sources are
+cards with a status dot, and the add rows are dashed.

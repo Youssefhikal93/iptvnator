@@ -20,7 +20,8 @@ test('Sources is the first group of Settings and has no menu item (#51)', async 
     await expect(page.locator('#menu .focused')).toHaveText('Remove');
     await back(page);
     await expect(page.locator('#menu')).toBeHidden();
-    // Back leaves Settings for the menu, like the rest of Settings (#50).
+    // Back goes to the groups, then leaves Settings for the menu (#49, #50).
+    await back(page);
     await back(page);
     await expect(page.locator('#rail .focused')).toHaveText('Settings');
 });

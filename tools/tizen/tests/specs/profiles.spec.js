@@ -1,4 +1,4 @@
-const { test, expect, boot, resumeSeed, movie, show, channel, section, press, back, moveTo } = require('./helpers');
+const { test, expect, boot, resumeSeed, movie, show, channel, section, press, back, moveTo, setting } = require('./helpers');
 
 const P = 'iptvnator-tv:';
 
@@ -16,9 +16,7 @@ const profiles = page => page.evaluate(key => JSON.parse(localStorage.getItem(ke
 const row = (page, label) => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: label }) });
 
 async function settingsRow(page, label) {
-    await section(page, 'Settings');
-    for (let i = 0; i < 12; i++) await press(page, 'ArrowUp');
-    await moveTo(page, '.st-row.focused .st-label', label);
+    await setting(page, label);
 }
 
 async function enterName(page, name) {

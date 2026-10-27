@@ -829,40 +829,6 @@ body.bar-off #header {
     color: var(--selection);
     text-align: right;
 }
-/* Settings > Sources (#51): the name over its state, a chip on the right. */
-.st-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    padding: 6px 0;
-}
-.st-text .st-label,
-.st-sub {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.st-sub {
-    font-size: 20px;
-    color: var(--muted);
-}
-.st-chip {
-    flex: none;
-    padding: 4px 18px;
-    border-radius: 999px;
-    background: var(--search-bg);
-    color: var(--muted);
-    font-size: 22px;
-}
-.st-row.focused .st-chip {
-    background: var(--selection-surface-strong);
-    color: var(--on-surface);
-}
-.st-chip.warn,
-.st-row.focused .st-chip.warn {
-    background: var(--warn-bg);
-    color: var(--warn-fg);
-}
 #content.home .pane {
     display: none;
 }

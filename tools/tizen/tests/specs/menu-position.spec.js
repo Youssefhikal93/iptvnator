@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, toolbar, press, back, moveTo } = require('./helpers');
+const { test, expect, boot, section, enterItems, toolbar, press, back, moveTo, setting } = require('./helpers');
 
 // Settings > Appearance > Menu position: Side (rail) or Top (bar), and Back
 // from inside a screen goes straight to the menu (#50).
@@ -10,8 +10,7 @@ test('the menu moves between the side and the top at once and keeps its keys', a
     expect(rail.width).toBe(208);
     await expect(page.locator('body')).not.toHaveClass(/menu-top/);
 
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Menu position');
+    await setting(page, 'Menu position');
     await expect(page.locator('.st-row.focused')).toContainText('Side');
     await press(page, 'ArrowRight');
     await expect(page.locator('body')).toHaveClass(/menu-top/);
@@ -23,6 +22,8 @@ test('the menu moves between the side and the top at once and keeps its keys', a
     expect(content.y).toBeGreaterThanOrEqual(96);
 
     // ◀/▶ walk the bar, ◀ past the first section reaches the profile, ▼ enters.
+    // Return goes from the rows to the groups, then to the menu (#49).
+    await back(page);
     await back(page);
     await expect(focusedSection(page)).toHaveText('Settings');
     await press(page, 'ArrowLeft');

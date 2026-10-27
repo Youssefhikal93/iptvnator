@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, back, moveTo, openFirst } = require('./helpers');
+const { test, expect, boot, section, press, back, moveTo, openFirst, setting } = require('./helpers');
 
 const RAIL_GERMAN = ['Startseite', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
 const RAIL_ENGLISH = ['Home', 'Live TV', 'Movies', 'Series', 'Settings'];
@@ -48,9 +48,8 @@ async function focusContrast(page, selector) {
 test('Settings language list switches the app to Deutsch, survives a reload and back to English restores it', async ({ page }) => {
     await boot(page);
     expect(await railLabels(page)).toEqual(RAIL_ENGLISH);
-    await section(page, 'Settings');
+    await setting(page, 'Language');
     await expect(page.locator('.st-row .st-label', { hasText: /^Language$/ })).toBeVisible();
-    await moveTo(page, '.st-row.focused .st-label', 'Language');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('English');
 
     await pickLanguage(page, 'Deutsch');
@@ -72,9 +71,7 @@ test('Settings language list switches the app to Deutsch, survives a reload and 
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
 
     await backToRail(page);
-    await moveTo(page, '#rail .focused', 'Einstellungen', 'ArrowDown');
-    await press(page, 'ArrowRight');
-    await moveTo(page, '.st-row.focused .st-label', 'Sprache');
+    await setting(page, 'Sprache', 'Einstellungen');
     await pickLanguage(page, 'English', 'ArrowUp');
     expect(await railLabels(page)).toEqual(RAIL_ENGLISH);
     await expect(page.locator('.st-row.focused .st-label')).toHaveText('Language');
@@ -84,8 +81,7 @@ test('Settings language list switches the app to Deutsch, survives a reload and 
 
 test('the Language list offers the desktop languages by their own names, current one first selected', async ({ page }) => {
     await boot(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Language');
+    await setting(page, 'Language');
     await press(page, 'Enter');
     const names = (await page.locator('#menu .menu-row').allTextContents()).map(text => text.replace('✓ ', ''));
     expect(names.slice(0, 2)).toEqual(['English', 'العربية']);
@@ -114,8 +110,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     await boot(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Theme');
+    await setting(page, 'Theme');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Dark');
     const darkFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
@@ -152,8 +147,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(238, 240, 243)');
 
     // Back to Dark restores the original colours.
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Theme');
+    await setting(page, 'Theme');
     await press(page, 'Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(dark);
@@ -176,8 +170,7 @@ test('Animations Off stops artwork fades and focus growth, and survives a reload
     await openFirst(page, 'Movies');
     await expect(page.locator('#detail .dt-poster')).toHaveClass(/art-in/);
     await back(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Animations');
+    await setting(page, 'Animations');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('On');
     await press(page, 'Enter');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Off');

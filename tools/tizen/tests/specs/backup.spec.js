@@ -1,9 +1,8 @@
-const { test, expect, boot, section, press, moveTo, back, openFirst } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, back, openFirst, setting } = require('./helpers');
 const fixture = require('../fixtures/backup/desktop-backup.json');
 
 async function backupRow(page, label) {
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', label);
+    await setting(page, label);
     await press(page, 'Enter');
     await expect(page.locator('#backup-screen')).toBeVisible();
 }

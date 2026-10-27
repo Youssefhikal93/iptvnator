@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, toolbar, press, sendKeyCode, back, playing, moveTo } = require('./helpers');
+const { test, expect, boot, section, enterItems, toolbar, press, sendKeyCode, back, playing, moveTo, setting } = require('./helpers');
 
 const ON = { livePreview: true };
 const label = page => page.locator('#items .focused > .label');
@@ -201,8 +201,7 @@ test('hiding the app stops the preview', async ({ page }) => {
 
 test('the Live preview setting defaults On; Off sends OK straight to fullscreen', async ({ page }) => {
     await boot(page, ON);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Live preview');
+    await setting(page, 'Live preview');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('On');
     await press(page, 'Enter');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Off');
@@ -217,8 +216,7 @@ test('the Live preview setting defaults On; Off sends OK straight to fullscreen'
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await page.reload();
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Live preview');
+    await setting(page, 'Live preview');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Off');
 });
 

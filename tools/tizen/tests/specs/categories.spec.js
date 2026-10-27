@@ -1,4 +1,4 @@
-const { test, expect, boot, channel, section, category, enterItems, toolbar, press, back, holdOK, menuChoice, moveTo, playing } = require('./helpers');
+const { test, expect, boot, channel, section, category, enterItems, toolbar, press, back, holdOK, menuChoice, moveTo, playing, setting } = require('./helpers');
 
 const labels = page => page.locator('#categories .row .label').allTextContents();
 const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:hidden-categories:s1') || '{}'));
@@ -49,8 +49,7 @@ test('Hide all except this keeps one real category; virtual rows stay and cannot
 
 test('Manage categories toggles, searches and shows all; its choices carry into the lists', async ({ page }) => {
     await boot(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'Manage Movies categories');
+    await setting(page, 'Manage Movies categories');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('All shown');
     await press(page, 'Enter');
     await expect(page.locator('#manage')).toBeVisible();

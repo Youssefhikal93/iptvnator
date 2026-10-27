@@ -52,6 +52,7 @@ function fixture(options) {
             return Promise.resolve().then(run);
         },
         onUpdating: function (count) { updates.push(count); },
+        stamps: options.stamps,
     });
     return { loader: loader, store: store, calls: calls, updates: updates, screens: screens };
 }
@@ -228,4 +229,29 @@ test('updating counts overlapping refreshes until both have finished', async fun
     items.resolve([]);
     await settle();
     assert.deepEqual(f.updates, [1, 2, 1, 0]);
+});
+
+test('a saved list fetched less than a day ago is not refreshed again on the next start', async function () {
+    var saved = [{ stream_id: 1, name: 'Saved' }];
+    var times = {};
+    var stamps = { get: function (key) { return times[key] || 0; }, set: function (key) { times[key] = Date.now(); } };
+    var what = { section: 'movies', kind: 'items' };
+    var first = fixture({ saved: { 'A|movies:items:': saved }, stamps: stamps, fetch: function () { return Promise.resolve(saved); } });
+    await first.loader.load(what, {});
+    await settle();
+    // Never stamped: the saved list refreshes once and is stamped.
+    assert.equal(first.calls.length, 1);
+    assert.ok(times['movies:items:'] > 0);
+    // The next start within a day keeps the saved list.
+    var next = fixture({ saved: { 'A|movies:items:': saved }, stamps: stamps });
+    assert.equal(await next.loader.load(what, {}), saved);
+    await settle();
+    assert.equal(next.calls.length, 0);
+    assert.deepEqual(next.updates, []);
+    // Older than a day: refreshed again.
+    times['movies:items:'] = Date.now() - 25 * 3600000;
+    var later = fixture({ saved: { 'A|movies:items:': saved }, stamps: stamps });
+    await later.loader.load(what, {});
+    await settle();
+    assert.equal(later.calls.length, 1);
 });

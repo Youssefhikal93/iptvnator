@@ -9,7 +9,14 @@
     overflow: auto;
 }
 .tm-dialog {
-    inset: 200px 360px;
+    /* Sized by its content from the top: the TV keyboard shrinks the page
+       while typing, and a box pinned to both edges collapsed (#31). */
+    top: 120px;
+    left: 360px;
+    right: 360px;
+    bottom: auto;
+    max-height: calc(100% - 160px);
+    box-sizing: border-box;
     z-index: 20;
     border: 3px solid var(--focus-ring);
     border-radius: 20px;

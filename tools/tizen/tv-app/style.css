@@ -186,36 +186,6 @@ body.no-bar #content,
 body.bar-off #content {
     top: var(--menu-h);
 }
-/* Genre pills under the search bar in Movies and Series (#31). */
-#genre-pills {
-    position: absolute;
-    left: 36px;
-    right: 40px;
-    top: 100px;
-    display: flex;
-    gap: 14px;
-    padding: 6px;
-    overflow: hidden;
-    font-size: 26px;
-}
-#genre-pills:empty {
-    display: none;
-}
-#genre-pills .tm-chip {
-    flex: none;
-}
-#genre-pills .tm-chip.selected {
-    border-color: var(--selection);
-    color: var(--selection);
-}
-body.has-pills #header {
-    height: 180px;
-    align-items: flex-start;
-    padding-top: 22px;
-}
-body.has-pills:not(.no-bar):not(.bar-off) #content {
-    top: calc(var(--menu-h) + 180px);
-}
 /* Top bar Off: the bar comes up over the list while the remote is on it. */
 body.bar-off #header {
     z-index: 5;
@@ -271,6 +241,10 @@ body.bar-off #header {
     background: var(--search-bg);
 }
 #guide-button { width: 140px; font-size: 24px; }
+/* The genre filter (#31): the genre in use shows beside the funnel. */
+#genre-button { width: auto; min-width: 64px; gap: 8px; padding: 0 12px; box-sizing: border-box; font-size: 24px; white-space: nowrap; }
+#genre-button > span:empty { display: none; }
+#genre-button.chosen { color: var(--selection); }
 .view-btn {
     display: flex;
     align-items: center;

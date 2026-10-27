@@ -102,7 +102,14 @@
 .menu-check { color: var(--selection); font-weight: 700; }
 .pf-dialog {
     position: fixed;
-    inset: 200px 360px;
+    /* Sized by its content from the top: the TV keyboard shrinks the page
+       while typing, and a box pinned to both edges collapsed (#31). */
+    top: 120px;
+    left: 360px;
+    right: 360px;
+    max-height: calc(100% - 160px);
+    overflow: auto;
+    box-sizing: border-box;
     z-index: 70;
     padding: 70px 110px;
     background: var(--shell-bg);

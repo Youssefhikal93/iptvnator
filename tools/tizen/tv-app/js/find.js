@@ -1,6 +1,7 @@
 // Search everything (#31), from the box on Home: one query over Live TV,
 // Movies and Series, a row for each section that has matches. Titles that
-// start with the query come before those that contain it.
+// start with the query come first, then those that contain it, then those
+// whose genre it names.
 //
 // api: sections() -> the sections the source has, in order
 //      title(section) -> the row title for a section
@@ -11,22 +12,24 @@ window.Find = (api) => {
 
     const ROW_MAX = 60;
 
-    const match = (list, needle) => {
+    const match = (list, needle, section, query) => {
         const starts = [];
         const contains = [];
+        const genre = [];
         list.forEach((item) => {
             const at = String(item.name || '').toLowerCase().indexOf(needle);
             if (at === 0) starts.push(item);
             else if (at > 0) contains.push(item);
+            else if (Genres.matches(item, section, query)) genre.push(item);
         });
-        return starts.concat(contains).slice(0, ROW_MAX);
+        return starts.concat(contains, genre).slice(0, ROW_MAX);
     };
 
     // Promise of [{ id, title, live, entries }] for the sections with matches.
     const search = (query) => {
         const needle = query.trim().toLowerCase();
         return Promise.all(api.sections().map((section) => api.items(section)
-            .then((list) => match(list, needle))
+            .then((list) => match(list, needle, section, query))
             .catch(() => [])
             .then((found) => ({ id: 'find-' + section, title: api.title(section), live: section === 'live', entries: found.map((item) => ({ item, section })) }))))
             .then((rows) => rows.filter((row) => row.entries.length));

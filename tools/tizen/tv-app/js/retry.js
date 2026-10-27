@@ -48,7 +48,9 @@ window.Retry = function (options) {
             if (finished) return;
             running = false;
             failure = err;
-            remaining = count < delays.length ? delays[count++] * 1000 : null;
+            // A busy source (429) asks for its rest: wait it out, then try again.
+            if (err && err.code === 'busy') remaining = Math.max(1000, err.wait || 0);
+            else remaining = count < delays.length ? delays[count++] * 1000 : null;
             schedule();
         });
     }

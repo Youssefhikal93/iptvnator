@@ -289,8 +289,11 @@
     content: '›';
     right: 2px;
 }
-/* The last tile fades into the edge, as if the row runs on. */
+/* The last tile fades into the edge, as if the row runs on. The mask clips
+   to the box, so the box reaches past the tiles for the focused one to grow. */
 .hm-row.fade .hm-cards {
+    margin: -12px 0 -12px -24px;
+    padding: 26px 0 26px 24px;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 220px), rgba(0, 0, 0, 0.15));
     mask-image: linear-gradient(to right, #000 calc(100% - 220px), rgba(0, 0, 0, 0.15));
 }

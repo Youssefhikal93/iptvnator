@@ -124,6 +124,7 @@ I18n.tables.by = {
     'player.upNext': 'Далей',
     'player.watchFromStart': 'Глядзець спачатку',
     'rail.home': 'На галоўную',
+    'rail.search': 'Пошук',
     'rail.live': 'Жывое ТБ',
     'rail.movies': 'Фільмы',
     'rail.series': 'Серыялы',

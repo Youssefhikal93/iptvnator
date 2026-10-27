@@ -124,6 +124,7 @@ I18n.tables.tr = {
     'player.upNext': 'Sıradaki',
     'player.watchFromStart': 'Baştan izle',
     'rail.home': 'Ana Sayfa',
+    'rail.search': 'Ara',
     'rail.live': 'Canlı TV',
     'rail.movies': 'Filmler',
     'rail.series': 'Diziler',

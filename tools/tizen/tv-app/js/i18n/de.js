@@ -124,6 +124,7 @@ I18n.tables.de = {
     'player.upNext': 'Als Nächstes',
     'player.watchFromStart': 'Von Anfang an ansehen',
     'rail.home': 'Startseite',
+    'rail.search': 'Suche',
     'rail.live': 'Live-TV',
     'rail.movies': 'Filme',
     'rail.series': 'Serien',

@@ -124,6 +124,7 @@ I18n.tables.ary = {
     'player.upNext': 'اللي جاي',
     'player.watchFromStart': 'تفرج من البداية',
     'rail.home': 'الرئيسية',
+    'rail.search': 'قلّب',
     'rail.live': 'تلفزة مباشرة',
     'rail.movies': 'الأفلام',
     'rail.series': 'سلاسل',

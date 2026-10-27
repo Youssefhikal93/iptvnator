@@ -124,6 +124,7 @@ I18n.tables.zh = {
     'player.upNext': '接下来',
     'player.watchFromStart': '从头开始观看',
     'rail.home': '首页',
+    'rail.search': '搜索',
     'rail.live': '直播电视',
     'rail.movies': '电影',
     'rail.series': '剧集',

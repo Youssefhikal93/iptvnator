@@ -2,18 +2,15 @@
 window.SourceGuide = function (source, hooks) {
     'use strict';
 
+    // The same rules as the full form: only a changed guide is downloaded again.
     function save(updated) {
-        Sources.update(updated);
-        hooks.changed(updated);
+        hooks.changed(SourceEdit.commit(source, updated).source);
     }
 
     function edit() {
         hooks.openForm(source, function (updated) {
             if (!updated) return;
-            var changed = source.epgUrl !== updated.epgUrl || source.epgOffset !== updated.epgOffset;
             save(updated);
-            if (!updated.epgUrl) XmltvGuide.remove(source.id);
-            else if (changed) XmltvGuide.refresh(updated);
         });
     }
 
@@ -26,7 +23,6 @@ window.SourceGuide = function (source, hooks) {
         options.push({ label: I18n.t('guide.refresh'), run: function () { XmltvGuide.refresh(source); } });
         options.push({ label: I18n.t('guide.remove'), run: function () {
             save(Object.assign({}, source, { epgUrl: '' }));
-            XmltvGuide.remove(source.id);
         } });
     }
     return options;

@@ -155,6 +155,7 @@ test('all-sources views omit orphaned history and restore it with the original a
 test('editing the account refreshes an unchanged guide under the new id and forgets stale account health', async function () {
     var manifests = {};
     var downloads = 0;
+    var removed = [];
     var errors = [];
     var env = app({}, ['xmltv-parser.js', 'xmltv.js', 'source-account.js', 'source-edit.js'], {
         Date: Date,
@@ -171,6 +172,7 @@ test('editing the account refreshes an unchanged guide under the new id and forg
             publish: function (manifest) { manifests[manifest.source] = manifest; return Promise.resolve(); },
             prune: function () { return Promise.resolve(); },
             discard: function () { return Promise.resolve(); },
+            remove: function (id) { removed.push(id); return Promise.resolve(); },
             programmes: function (saved) { return Promise.resolve(manifests[saved.id] || null); },
         },
     });
@@ -189,7 +191,7 @@ test('editing the account refreshes an unchanged guide under the new id and forg
             assert.equal(mode, 'source');
             done(updated);
         },
-        saved: function (edited, reconnect, previousId) { saved = { source: edited, reconnect: reconnect, previousId: previousId }; },
+        saved: function (change) { saved = change; },
     })();
     var guide = await globals.XmltvGuide(updated).programmes({});
     assert.equal(guide.source, 's2');
@@ -197,6 +199,8 @@ test('editing the account refreshes an unchanged guide under the new id and forg
     assert.equal(globals.XmltvGuide.subtitle(updated).indexOf('Guide: updated'), 0);
     assert.equal(globals.SourceAccount.row({ id: 's2', type: 'xtream' }, false, '').chip, 'Xtream');
     assert.equal(errors.length, 0);
+    // The guide kept under the old id is not left behind.
+    assert.deepEqual(removed, ['s1']);
     assert.equal(saved.source.id, 's2');
     assert.equal(saved.previousId, 's1');
     assert.equal(saved.reconnect, true);

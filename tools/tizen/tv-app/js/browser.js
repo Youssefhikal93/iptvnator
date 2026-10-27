@@ -1029,14 +1029,16 @@ window.Browser = function (hooks) {
         setZone(contentZone());
     }
 
-    function sourceEdited(updated, reconnect, previousId) {
-        var current = state.source && state.source.id === previousId;
-        if (reconnect && current) {
-            (previousId === updated.id ? state.catalogue.drop() : Promise.resolve()).then(function () {
+    // `change` is what SourceEdit already saved; this brings the screen in line with it.
+    function sourceEdited(change) {
+        var updated = change.source;
+        var current = state.source && state.source.id === change.previousId;
+        if (change.reconnect && current) {
+            (change.rekeyed ? Promise.resolve() : state.catalogue.drop()).then(function () {
                 setSource(updated);
                 settings.render();
             });
-        } else if (reconnect) {
+        } else if (change.reconnect) {
             Catalogue.drop(updated.id);
         } else if (current) {
             state.source = updated;

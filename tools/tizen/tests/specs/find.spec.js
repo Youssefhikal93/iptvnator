@@ -52,20 +52,42 @@ test('genre pills under the Series search bar narrow the list; Arabic and Englis
     await expect(page.locator('#searchbar')).toHaveClass(/focused/);
 });
 
-test('genres TMDB has matched join the provider genres for movies', async ({ page }) => {
+test('a genre TMDB gives a movie joins the provider genres', async ({ page }) => {
     await boot(page);
     await page.evaluate(() => {
         Tmdb.enabled = () => true;
         Tmdb.cached = (item) => (item.name === 'Movie 2' ? { genres: [{ id: 53, name: 'Thriller' }] } : null);
+        Tmdb.match = () => Promise.resolve(null);
     });
     await section(page, 'Movies');
     await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
     await enterItems(page);
     const pills = page.locator('#genre-pills .tm-chip');
-    await expect(pills).toHaveText(['All', 'Thriller']);
+    await expect(pills.nth(1)).toHaveText('Thriller');
     await press(page, 'ArrowUp');
     await press(page, 'ArrowRight');
     await press(page, 'Enter');
+    // The others are looked up on their provider pages (Crime, Drama) and stay out.
+    await expect(page.locator('#hints')).not.toContainText('Looking up');
     await expect(page.locator('#items .card, #items .row')).toHaveCount(1);
     await expect(page.locator('#items')).toContainText('Movie 2');
+});
+
+test('Movies have the same pills as Series and a genre is looked up on the provider movie pages', async ({ page }) => {
+    let pages = 0;
+    page.on('request', req => { if (new URL(req.url()).searchParams.get('action') === 'get_vod_info') pages++; });
+    await boot(page);
+    await section(page, 'Movies');
+    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
+    await enterItems(page);
+    const pills = page.locator('#genre-pills .tm-chip');
+    await expect(pills.first()).toHaveText('All');
+    await expect(pills.filter({ hasText: /^Crime$/ })).toHaveCount(1);
+    await press(page, 'ArrowUp');
+    await moveTo(page, '#genre-pills .tm-chip.focus', 'Crime', 'ArrowRight');
+    await press(page, 'Enter');
+    // The fake provider pages say Crime, Drama: every movie joins as it is found.
+    await expect(page.locator('#items .list-header .count')).toContainText('/ 24', { timeout: 30000 });
+    expect(pages).toBeGreaterThanOrEqual(24);
+    await expect(page.locator('#hints')).not.toContainText('Looking up');
 });

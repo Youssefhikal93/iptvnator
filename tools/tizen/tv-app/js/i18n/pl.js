@@ -46,6 +46,7 @@ I18n.tables.pl = {
     'describe.skipIntro': 'Jak daleko przeskakuje „Pomiń intro” na początku odcinka',
     'describe.topBar': 'Wyszukiwanie i przyciski widoku nad listami',
     'detail.more': 'Więcej',
+    'detail.moreIn': 'Więcej w kategorii {category}',
     'detail.play': '▶  Odtwórz',
     'detail.startOver': 'Zacznij od nowa',
     'detail.trailer': 'Zwiastun',

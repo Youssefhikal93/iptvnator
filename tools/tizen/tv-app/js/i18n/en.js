@@ -125,6 +125,7 @@ I18n.tables.en = {
     'detail.director': 'Director: {director}',
     'detail.loading': 'Loading details…',
     'detail.more': 'More',
+    'detail.moreIn': 'More in {category}',
     'detail.play': '▶  Play',
     'detail.resumeFrom': '▶  Resume from {time}',
     'detail.returnClose': 'Return: close',

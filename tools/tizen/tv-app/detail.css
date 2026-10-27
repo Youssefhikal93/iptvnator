@@ -322,3 +322,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Rows under the page (#47): "More in <category>", cast, similar titles. */
+.dt-rows { position: absolute; top: 720px; left: 96px; right: 96px; bottom: 0; overflow: auto; }
+/* A show keeps its episodes on the first screen; its rows show once the focus goes below them. */
+.dt-show:not(.dt-rows-focus) .dt-rows { display: none; }
+.dt-rows-focus :is(.dt-body, .dt-episodes) { display: none; }
+.dt-rows-focus .dt-rows { top: 70px; }

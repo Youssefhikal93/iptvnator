@@ -17,6 +17,31 @@ test('OK opens movie plot, cast and actions; Return restores the selected movie'
     await expect(page.locator('#items .focused .card-title')).toHaveText('Movie 25');
 });
 
+test('"More in <category>" lists the other titles of the category from the saved list; OK opens one (#47)', async ({ page }) => {
+    await boot(page);
+    await openFirst(page, 'Movies');
+    await expect(page.locator('.dt-title')).toHaveText('Movie 25: The Long Title');
+    const row = page.locator('#detail .tm-row.related');
+    await expect(row).toBeVisible();
+    await expect(row.locator('h2')).toHaveText(/^More in get_vod_categories cat \d+$/);
+    expect(await row.locator('.tm-card').count()).toBeGreaterThan(3);
+    await expect(row.locator('.tm-card', { hasText: /^Movie 25$/ })).toHaveCount(0);
+    // No TMDB key: the library row is the only one, under the buttons.
+    await expect(page.locator('#detail .tm-row')).toHaveCount(1);
+    await press(page, 'ArrowDown');
+    await expect(row.locator('.tm-card').first()).toHaveClass(/focus/);
+    await press(page, 'ArrowRight');
+    const next = (await row.locator('.tm-card.focus').innerText()).trim();
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#detail .dt-btn.focus')).toContainText('Play');
+    // Leaving the rows starts them again at the first title.
+    await press(page, 'ArrowDown');
+    await expect(row.locator('.tm-card').first()).toHaveClass(/focus/);
+    await press(page, 'ArrowRight');
+    await press(page, 'Enter');
+    await expect(page.locator('.dt-title')).toHaveText(next + ': The Long Title');
+});
+
 test('saved progress offers Resume from X and Start over; Start over starts at zero', async ({ page }) => {
     await boot(page, resumeSeed());
     await openFirst(page, 'Movies');

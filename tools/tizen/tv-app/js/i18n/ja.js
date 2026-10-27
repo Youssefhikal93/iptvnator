@@ -46,6 +46,7 @@ I18n.tables.ja = {
     'describe.skipIntro': 'エピソード冒頭で「イントロをスキップ」が飛ばす長さ',
     'describe.topBar': 'リストの上の検索と表示ボタン',
     'detail.more': 'もっと見る',
+    'detail.moreIn': '{category}のその他',
     'detail.play': '▶  再生',
     'detail.startOver': '最初から再生',
     'detail.trailer': '予告編',

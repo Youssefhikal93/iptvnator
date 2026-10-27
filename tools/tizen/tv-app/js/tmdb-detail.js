@@ -4,8 +4,6 @@ window.TmdbDetail = function (page, changed) {
     var cast = [];
     var similar = [];
     var similarCredits = [];
-    var row = 0;
-    var focus = 0;
     var trailer = null;
     var active = true;
     var secret = Prefs.get('tmdbApiKey');
@@ -20,13 +18,6 @@ window.TmdbDetail = function (page, changed) {
             trailer = YouTube.videoId(video.key);
             changed();
         });
-    }
-
-    function rows() {
-        var list = [];
-        if (cast.length) list.push({ label: I18n.t('tmdb.cast'), entries: cast });
-        if (similar.length) list.push({ label: I18n.t('tmdb.similar'), entries: similar });
-        return list;
     }
 
     return {
@@ -57,34 +48,21 @@ window.TmdbDetail = function (page, changed) {
             });
         },
         dispose: function () { active = false; },
-        hasRows: function () { return current() && rows().length > 0; },
-        view: function (focused) {
-            var html = UI.html;
-            if (!current()) return html`<div class="tm-detail-rows"></div>`;
-            return html`<div class="tm-detail-rows">${rows().map(function (entry, i) {
-                var cards = entry.entries === cast ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w185') }; }) : similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); });
-                return html`<${Kit.Row} label=${entry.label} tiles=${cards} focus=${focused && i === row ? focus : -1} />`;
-            })}</div>`;
-        },
-        key: function (code) {
-            var list = rows();
-            if (Keys.isBack(code)) return row = 0, focus = 0, 'up';
-            if (code === Keys.ENTER) {
-                if (list[row].entries === cast) Actor.open(cast[focus], page);
-                else page.open(similar[focus].item, similar[focus].type === 'movie' ? 'movies' : 'series');
-                return undefined;
-            }
-            if (code === Keys.UP || code === Keys.DOWN) {
-                var line = Focus.step(row, list.length, code, 'column');
-                if (line.exit === 'up') return row = 0, focus = 0, 'up';
-                if (line.exit === 'down') return 'down';
-                row = line.index;
-                focus = 0;
-                return undefined;
-            }
-            var moved = Focus.step(focus, list[row].entries.length, code, 'row');
-            if (moved.index !== undefined) focus = moved.index;
-            return undefined;
+        // Cast and similar titles as detail rows (see detail-rows.js).
+        rows: function () {
+            if (!current()) return [];
+            var list = [];
+            if (cast.length) list.push({
+                label: I18n.t('tmdb.cast'),
+                cards: cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w185') }; }),
+                open: function (i) { Actor.open(cast[i], page); },
+            });
+            if (similar.length) list.push({
+                label: I18n.t('tmdb.similar'),
+                cards: similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); }),
+                open: function (i) { page.open(similar[i].item, similar[i].type === 'movie' ? 'movies' : 'series'); },
+            });
+            return list;
         },
         trailer: function () { return current() && !!trailer; },
         openTrailer: function () {

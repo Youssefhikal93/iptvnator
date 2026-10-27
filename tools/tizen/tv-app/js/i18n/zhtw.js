@@ -46,6 +46,7 @@ I18n.tables.zhtw = {
     'describe.skipIntro': '在一集開頭「跳過片頭」跳過的時長',
     'describe.topBar': '清單上方的搜尋和檢視按鈕',
     'detail.more': '更多',
+    'detail.moreIn': '{category}中的更多內容',
     'detail.play': '▶  播放',
     'detail.startOver': '從頭開始',
     'detail.trailer': '預告片',

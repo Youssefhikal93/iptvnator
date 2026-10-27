@@ -46,6 +46,7 @@ I18n.tables.de = {
     'describe.skipIntro': 'Wie weit „Intro überspringen“ am Anfang einer Folge springt',
     'describe.topBar': 'Suche und Ansichtstasten über den Listen',
     'detail.more': 'Mehr',
+    'detail.moreIn': 'Mehr in {category}',
     'detail.play': '▶  Wiedergabe',
     'detail.startOver': 'Neu starten',
     'detail.trailer': 'Trailer',

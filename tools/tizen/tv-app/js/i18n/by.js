@@ -46,6 +46,7 @@ I18n.tables.by = {
     'describe.skipIntro': 'На колькі «Прапусціць застаўку» перамотвае ў пачатку серыі',
     'describe.topBar': 'Пошук і кнопкі выгляду над спісамі',
     'detail.more': 'Болей',
+    'detail.moreIn': 'Яшчэ ў «{category}»',
     'detail.play': '▶  Прайграць',
     'detail.startOver': 'Спачатку',
     'detail.trailer': 'Трэйлер',

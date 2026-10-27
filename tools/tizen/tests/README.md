@@ -32,7 +32,7 @@ Coverage is grouped by viewer journey:
 | --- | --- |
 | `catalogue` | Live, movie and series categories/items; saved catalogue before network responses; search; persistent list/grid view |
 | `now-next` | Guided and unguided live rows; player Now/Next and description |
-| `movie-detail` | Plot, cast, actions, Return, Resume/Start over |
+| `movie-detail` | Plot, cast, actions, Return, Resume/Start over, More in <category> row (#47) |
 | `series-detail` | Seasons, episode rows, watched counts and progress-based main action |
 | `home` | Continue watching hero/resume, favorites and recently added rows |
 | `channel-list` | Drawer category/focus, preview vs playback, switching, previous-channel keys, Return ordering, startup last channel, return focus |

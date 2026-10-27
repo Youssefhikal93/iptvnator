@@ -46,6 +46,7 @@ I18n.tables.pt = {
     'describe.skipIntro': 'Quanto salta «Saltar intro» no início de um episódio',
     'describe.topBar': 'Pesquisa e botões de vista acima das listas',
     'detail.more': 'Mais',
+    'detail.moreIn': 'Mais em {category}',
     'detail.play': '▶  Reproduzir',
     'detail.startOver': 'Recomeçar',
     'detail.trailer': 'Trailer',

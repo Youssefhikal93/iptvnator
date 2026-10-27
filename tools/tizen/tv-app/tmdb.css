@@ -48,8 +48,3 @@
 .tm-chips { display: flex; flex-wrap: wrap; gap: 16px; }
 .tm-chip { padding: 12px 20px; border: 3px solid transparent; border-radius: 30px; background: var(--widget-bg); }
 .tm-chip.selected { border-color: var(--muted); }
-.tm-detail-rows { position: absolute; top: 720px; left: 110px; right: 110px; bottom: 0; overflow: auto; }
-/* A show keeps its episodes on the first screen; its TMDB rows show once the focus goes below them. */
-.dt-show:not(.dt-tmdb-focus) .tm-detail-rows { display: none; }
-.dt-tmdb-focus :is(.dt-body, .dt-episodes) { display: none; }
-.dt-tmdb-focus .tm-detail-rows { top: 70px; }

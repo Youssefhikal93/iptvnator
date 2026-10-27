@@ -46,6 +46,7 @@ I18n.tables.nl = {
     'describe.skipIntro': 'Hoe ver Intro overslaan springt aan het begin van een aflevering',
     'describe.topBar': 'Zoeken en weergaveknoppen boven de lijsten',
     'detail.more': 'Meer',
+    'detail.moreIn': 'Meer in {category}',
     'detail.play': '▶  Afspelen',
     'detail.startOver': 'Opnieuw beginnen',
     'detail.trailer': 'Trailer',

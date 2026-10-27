@@ -312,6 +312,8 @@ I18n.tables.en = {
     'pin.wait': 'Wait {s} s',
     'pin.wrong': 'Wrong PIN',
     'player.audio': 'Audio',
+    'player.menuKeys': 'OK: choose · Return: close',
+    'player.menuKeysBack': 'OK: choose · ◀ / Return: back',
     'player.backToLive': 'Back to live',
     'player.busy': 'This channel is offline or your connection is busy.',
     'player.endsAt': 'Ends {time}',

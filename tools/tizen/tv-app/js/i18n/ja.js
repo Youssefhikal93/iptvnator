@@ -104,6 +104,8 @@ I18n.tables.ja = {
     'pin.lockCategory': 'カテゴリーをロック',
     'pin.unlockCategory': 'カテゴリーのロックを解除',
     'player.audio': 'オーディオ',
+    'player.menuKeys': 'OK: 選択 · Return: 閉じる',
+    'player.menuKeysBack': 'OK: 選択 · ◀ / Return: 戻る',
     'player.endsAt': '{time} 終了',
     'player.episodes': 'エピソード',
     'player.hide': '非表示',

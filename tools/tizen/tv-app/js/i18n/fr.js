@@ -104,6 +104,8 @@ I18n.tables.fr = {
     'pin.lockCategory': 'Verrouiller la catégorie',
     'pin.unlockCategory': 'Déverrouiller la catégorie',
     'player.audio': 'Audio',
+    'player.menuKeys': 'OK : choisir · Return : fermer',
+    'player.menuKeysBack': 'OK : choisir · ◀ / Return : retour',
     'player.endsAt': 'Fin à {time}',
     'player.episodes': 'Épisodes',
     'player.hide': 'Masquer',

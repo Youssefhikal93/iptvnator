@@ -104,6 +104,8 @@ I18n.tables.ru = {
     'pin.lockCategory': 'Заблокировать категорию',
     'pin.unlockCategory': 'Разблокировать категорию',
     'player.audio': 'Аудио',
+    'player.menuKeys': 'OK: выбрать · Return: закрыть',
+    'player.menuKeysBack': 'OK: выбрать · ◀ / Return: назад',
     'player.endsAt': 'Конец в {time}',
     'player.episodes': 'Серии',
     'player.hide': 'Скрыть',

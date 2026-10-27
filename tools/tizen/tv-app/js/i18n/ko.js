@@ -104,6 +104,8 @@ I18n.tables.ko = {
     'pin.lockCategory': '카테고리 잠그기',
     'pin.unlockCategory': '카테고리 잠금 해제',
     'player.audio': '오디오',
+    'player.menuKeys': 'OK: 선택 · Return: 닫기',
+    'player.menuKeysBack': 'OK: 선택 · ◀ / Return: 뒤로',
     'player.endsAt': '{time} 종료',
     'player.episodes': '에피소드',
     'player.hide': '숨기기',

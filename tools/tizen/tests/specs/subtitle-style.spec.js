@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting, playerGroup } = require('./helpers');
 
 const setting = (page, label) => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.st-value');
 const menuLabel = '#pl-menu .pl-menu-item.focus span:last-child';
@@ -40,12 +40,19 @@ test('player menu updates subtitle classes, native cues and the same Settings va
     });
     await expect.poll(() => page.locator('#video').evaluate(video => video.textTracks[0].activeCues[0]?.line)).toBe(90);
     await press(page, 'ArrowUp');
-    expect((await page.locator('.pl-menu-head').allTextContents()).slice(0, 4)).toEqual(['Audio', 'Subtitles', 'Subtitle style', 'Picture']);
-    for (const [before, after] of [['Size: Medium', 'Size: Large'], ['Colour: White', 'Colour: Yellow'], ['Background: Shadow', 'Background: Box'], ['Position: Bottom', 'Position: Higher'], ['Aspect: Auto', 'Aspect: Fit'], ['Aspect: Fit', 'Aspect: Fill']]) {
-        await moveTo(page, menuLabel, before);
-        await press(page, 'Enter');
-        await expect(page.locator(menuLabel)).toHaveText(after);
-    }
+    expect((await page.locator('#pl-menu .pl-menu-group .label').allTextContents()).slice(0, 4)).toEqual(['Audio', 'Subtitles', 'Subtitle style', 'Picture']);
+    await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Subtitle style' }).locator('.value')).toHaveText('Medium · White');
+    const cycle = async (group, steps) => {
+        await playerGroup(page, group);
+        for (const [before, after] of steps) {
+            await moveTo(page, menuLabel, before);
+            await press(page, 'Enter');
+            await expect(page.locator(menuLabel)).toHaveText(after);
+        }
+        await back(page);
+    };
+    await cycle('Subtitle style', [['Size: Medium', 'Size: Large'], ['Colour: White', 'Colour: Yellow'], ['Background: Shadow', 'Background: Box'], ['Position: Bottom', 'Position: Higher']]);
+    await cycle('Picture', [['Aspect: Auto', 'Aspect: Fit'], ['Aspect: Fit', 'Aspect: Fill']]);
     await expect(page.locator('#player')).toHaveClass(/sub-size-l sub-colour-yellow sub-bg-box sub-pos-high/);
     await expect(page.locator('#video')).toHaveCSS('object-fit', 'cover');
     const cueColour = await page.evaluate(() => Array.from(document.styleSheets).flatMap(sheet => Array.from(sheet.cssRules))
@@ -57,9 +64,11 @@ test('player menu updates subtitle classes, native cues and the same Settings va
     });
     await expect.poll(() => page.locator('#video').evaluate(video => Array.from(video.textTracks[0].activeCues).map(cue => cue.line).join(','))).toBe('75,75');
     expect(await page.locator('#video').evaluate(video => video.textTracks[0].activeCues[1].snapToLines)).toBe(false);
-    await moveTo(page, menuLabel, 'Position: Higher', 'ArrowUp');
+    await playerGroup(page, 'Subtitle style');
+    await moveTo(page, menuLabel, 'Position: Higher');
     await press(page, 'Enter');
     await expect.poll(() => page.locator('#video').evaluate(video => video.textTracks[0].activeCues[0]?.line)).toBe(90);
+    await back(page);
     await back(page);
     await back(page);
     await expect(page.locator('#pl-controls')).toBeHidden();
@@ -88,11 +97,13 @@ test('live preview uses Fit and fullscreen restores the saved aspect without ope
     await expect(page.locator('#video')).toHaveCSS('left', '240px');
     await expect(page.locator('#video')).toHaveCSS('width', '1440px');
     await sendKeyCode(page, 405); // Yellow opens the live player menu.
+    await playerGroup(page, 'Picture');
     await moveTo(page, menuLabel, 'Aspect: 4:3');
     await press(page, 'Enter');
     await expect(page.locator('#video')).toHaveCSS('object-fit', 'contain');
     await expect(page.locator('#video')).toHaveCSS('left', '0px');
     await expect(page.locator('#video')).toHaveCSS('width', '1920px');
+    await back(page);
     await back(page);
     await back(page);
     await expect(page.locator('#pl-controls')).toBeHidden();

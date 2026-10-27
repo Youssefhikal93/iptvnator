@@ -104,6 +104,8 @@ I18n.tables.tr = {
     'pin.lockCategory': 'Kategoriyi kilitle',
     'pin.unlockCategory': 'Kategorinin kilidini aç',
     'player.audio': 'Ses',
+    'player.menuKeys': 'OK: seç · Return: kapat',
+    'player.menuKeysBack': 'OK: seç · ◀ / Return: geri',
     'player.endsAt': 'Bitiş {time}',
     'player.episodes': 'Bölümler',
     'player.hide': 'Gizle',

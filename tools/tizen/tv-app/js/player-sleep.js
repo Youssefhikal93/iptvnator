@@ -49,8 +49,7 @@ window.PlayerSleep = function (api) {
         snapshot = next;
         badge.classList.toggle('hidden', !next.choice);
         badge.textContent = I18n.t(next.remaining === null ? 'sleep.atEnd' : 'sleep.in', { m: minutes() });
-        var head = document.querySelector('.pl-sleep-head');
-        if (head) head.textContent = heading();
+        if (api.changed) api.changed();
         warning.classList.toggle('hidden', !next.warning);
         if (next.warning) count.textContent = I18n.t('sleep.stopsIn', { s: Math.ceil(next.remaining / 1000) });
         if (next.warning && !shown) {

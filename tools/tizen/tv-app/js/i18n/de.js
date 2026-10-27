@@ -104,6 +104,8 @@ I18n.tables.de = {
     'pin.lockCategory': 'Kategorie sperren',
     'pin.unlockCategory': 'Kategorie entsperren',
     'player.audio': 'Audio',
+    'player.menuKeys': 'OK: auswählen · Return: schließen',
+    'player.menuKeysBack': 'OK: auswählen · ◀ / Return: zurück',
     'player.endsAt': 'Endet {time}',
     'player.episodes': 'Episoden',
     'player.hide': 'Ausblenden',

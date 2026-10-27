@@ -104,6 +104,8 @@ I18n.tables.hu = {
     'pin.lockCategory': 'Kategória zárolása',
     'pin.unlockCategory': 'Kategória feloldása',
     'player.audio': 'Hang',
+    'player.menuKeys': 'OK: kiválasztás · Return: bezárás',
+    'player.menuKeysBack': 'OK: kiválasztás · ◀ / Return: vissza',
     'player.endsAt': 'Vége: {time}',
     'player.episodes': 'Epizódok',
     'player.hide': 'Elrejtés',

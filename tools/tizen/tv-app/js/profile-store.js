@@ -202,6 +202,19 @@ window.ProfileStore = (function () {
             saveList();
             return true;
         },
+        // avatar: an Avatars id, or '' for the initial.
+        setAvatar: function (id, avatar) {
+            var profile = find(id);
+            if (!profile) return false;
+            if (avatar) profile.avatar = String(avatar);
+            else delete profile.avatar;
+            saveList();
+            return true;
+        },
+        // Whether a profile has a PIN; Who's watching marks those.
+        hasPin: function (id) {
+            return !!parse(get(keyFor(id, 'pin')));
+        },
         nameError: nameError,
         onSwitch: function (listener) { listeners.push(listener); },
         // Exposed for the unit tests: runs the start-up step again.

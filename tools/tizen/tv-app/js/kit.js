@@ -23,16 +23,24 @@ window.Kit = (() => {
     const Pill = ({ cls, label, active, selected, focused }) =>
         html`<span class=${classes(cls, { active, selected, focus: focused })}>${label}</span>`;
 
-    // A profile's initial on its colour.
-    const Avatar = ({ cls, profile }) =>
-        html`<div class=${cls} style=${{ background: profile.color }}>${profile.name.charAt(0).toUpperCase()}</div>`;
+    // A profile's drawn avatar (avatars.js), or its initial, on its colour.
+    const Avatar = ({ cls, profile }) => (Avatars.has(profile.avatar)
+        ? html`<div class=${cls + ' drawn'} style=${{ background: profile.color }}>${Avatars.svg(profile.avatar)}</div>`
+        : html`<div class=${cls} style=${{ background: profile.color }}>${profile.name.charAt(0).toUpperCase()}</div>`);
 
     // Full-screen artwork with the shade that keeps text readable on it.
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;
 
-    // A titled list of options with one focused row.
+    // A titled list of options with one focused row. An option may carry an
+    // icon before its label and a check mark after it.
+    const MenuRow = ({ option, focused }) => (option.icon
+        ? html`<div class=${classes('menu-row with-icon', { focused })}>
+            ${option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
+        </div>`
+        : html`<div class=${classes('menu-row', { focused })}>${option.label}</div>`);
+
     const SideMenu = ({ title, options, index }) => html`<div class="menu-title">${title}</div>
-        ${options.map((option, i) => html`<div class=${classes('menu-row', { focused: i === index })}>${option.label}</div>`)}`;
+        ${options.map((option, i) => html`<${MenuRow} option=${option} focused=${i === index} />`)}`;
 
     return { Tile, Row, Pill, Avatar, Backdrop, SideMenu };
 })();

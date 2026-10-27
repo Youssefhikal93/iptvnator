@@ -252,3 +252,17 @@ test('a profile switch locks the parental session again', function () {
     g.ProfileStore.setActive(anna.id);
     assert.equal(g.ParentalLock.isUnlocked(), false);
 });
+
+test('an avatar is saved with its profile, cleared back to the initial, and PINs are seen per profile', function () {
+    var store = app(oldData()).globals.ProfileStore;
+    var anna = store.add('Anna');
+    assert.equal(store.setAvatar(anna.id, 'fox'), true);
+    assert.equal(store.list()[1].avatar, 'fox');
+    var reloaded = app(store.list().length && JSON.parse(JSON.stringify({ 'iptvnator-tv:profiles': JSON.stringify(store.list()) }))).globals.ProfileStore;
+    assert.equal(reloaded.list()[1].avatar, 'fox');
+    assert.equal(store.setAvatar(anna.id, ''), true);
+    assert.equal('avatar' in store.list()[1], false);
+    assert.equal(store.setAvatar('missing', 'fox'), false);
+    assert.equal(store.hasPin('default'), true);
+    assert.equal(store.hasPin(anna.id), false);
+});

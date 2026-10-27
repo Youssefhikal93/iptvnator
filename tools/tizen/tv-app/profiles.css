@@ -1,3 +1,6 @@
+/* Who's watching (#43, design review 13): big avatars that grow inside a
+   ring when focused, names in secondary text except the focused one, and a
+   soft accent glow instead of an empty black page. */
 #profiles {
     position: fixed;
     inset: 0;
@@ -6,27 +9,97 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--shell-bg);
+    background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--selection) 16%, var(--shell-bg)) 0%, var(--shell-bg) 70%);
     color: var(--on-surface);
 }
-.pf-title { margin: 0 0 70px; font-size: 56px; font-weight: 500; }
-.pf-tiles { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; max-width: 1700px; }
-.pf-tile { width: 220px; padding: 18px; text-align: center; border: 4px solid transparent; border-radius: 20px; }
-.pf-tile.focused { border-color: var(--focus-ring); background: var(--selection-surface); }
+.pf-title { margin: 0 0 80px; font-size: 68px; font-weight: 700; }
+.pf-tiles { display: flex; gap: 56px; flex-wrap: wrap; justify-content: center; max-width: 1700px; }
+.pf-tile { position: relative; width: 240px; padding: 10px; text-align: center; color: var(--muted); }
+#profiles .pf-tile.focused { background: transparent; box-shadow: none; color: var(--on-surface); }
 .pf-avatar {
-    width: 160px;
-    height: 160px;
-    margin: 0 auto 20px;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 78px;
+    overflow: hidden;
+    font-size: 104px;
     font-weight: 600;
     color: #071225;
+    transition: transform 0.15s ease-out;
 }
+.pf-tile.focused .pf-avatar { transform: scale(1.1); box-shadow: 0 0 0 6px var(--shell-bg), 0 0 0 12px var(--focus-ring), 0 20px 40px rgba(0, 0, 0, 0.45); }
 .pf-avatar.pf-add { background: var(--widget-bg); color: var(--muted); }
-.pf-name { font-size: 30px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-name { font-size: 34px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-tile.focused .pf-name { font-size: 38px; font-weight: 700; }
+.pf-lock {
+    position: absolute;
+    top: 14px;
+    right: 22px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--shell-bg);
+    color: var(--on-surface);
+    font-size: 22px;
+    font-weight: 700;
+}
+.pf-hint { min-height: 34px; margin: 60px 0 0; font-size: 26px; color: var(--muted); }
+
+/* Drawn avatars fill their circle or square. */
+.drawn { padding: 0; overflow: hidden; }
+.drawn svg { display: block; width: 100%; height: 100%; }
+
+/* The avatar picker: the initial and every drawn avatar on the profile's colour. */
+#avatar-picker {
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--shell-bg);
+    color: var(--on-surface);
+}
+.ap-title { margin: 0 0 60px; font-size: 52px; font-weight: 700; }
+.ap-grid { display: grid; grid-template-columns: repeat(7, 160px); gap: 40px 44px; }
+.ap-choice { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ap-avatar {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 76px;
+    font-weight: 600;
+    color: #071225;
+    transition: transform 0.15s ease-out;
+}
+.ap-choice.current .ap-avatar { box-shadow: 0 0 0 4px var(--shell-bg), 0 0 0 8px color-mix(in srgb, var(--selection) 55%, transparent); }
+.ap-choice.focused .ap-avatar { transform: scale(1.1); box-shadow: 0 0 0 5px var(--shell-bg), 0 0 0 10px var(--focus-ring), 0 18px 36px rgba(0, 0, 0, 0.45); }
+.ap-letter { font-size: 24px; color: var(--muted); }
+
+/* Profile menu rows: avatar, name and a check on the active one. */
+.menu-row.with-icon { display: flex; align-items: center; gap: 18px; }
+.menu-avatar {
+    flex: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 26px;
+    font-weight: 700;
+    color: #071225;
+}
+.menu-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-check { color: var(--selection); font-weight: 700; }
 .pf-dialog {
     position: fixed;
     inset: 200px 360px;

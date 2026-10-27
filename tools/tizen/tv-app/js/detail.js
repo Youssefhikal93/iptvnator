@@ -10,26 +10,9 @@ window.Detail = function () {
     'use strict';
 
     var KEY = Keys;
+    var html = UI.html;
     var root = document.getElementById('detail');
     var s = null;
-
-    function el(tag, cls, text) {
-        var node = document.createElement(tag);
-        if (cls) node.className = cls;
-        if (text !== undefined && text !== null) node.textContent = text;
-        return node;
-    }
-
-    function img(cls, src, fallback) {
-        var node = el('img', cls);
-        node.onerror = function () {
-            if (fallback && node.getAttribute('src') !== fallback) return node.src = fallback;
-            node.style.visibility = 'hidden';
-        };
-        if (src) node.src = src;
-        else node.style.visibility = 'hidden';
-        return node;
-    }
 
     function runtime(secs) {
         if (!secs) return '';
@@ -66,72 +49,78 @@ window.Detail = function () {
 
     // ---- Rendering --------------------------------------------------------
 
-    function render() {
+    function credits(d) {
+        return [
+            d.cast && html`<div class="dt-credit">${I18n.t('detail.cast', { cast: d.cast })}</div>`,
+            d.director && html`<div class="dt-credit">${I18n.t('detail.director', { director: d.director })}</div>`,
+        ];
+    }
+
+    function buttonsView() {
+        var list = buttons();
+        s.focus = Math.max(0, Math.min(s.focus, list.length - 1));
+        return html`<div class="dt-buttons">${list.map(function (button, i) {
+            var cls = 'dt-btn' + (i === 0 ? ' primary' : '') + (s.zone === 'buttons' && i === s.focus ? ' focus' : '');
+            return html`<span class=${cls}>${button.label}${button.progress ? html`<span class="dt-btn-bar"><span class="dt-btn-fill" style=${'width: ' + Progress.bar(button.progress)}></span></span>` : null}</span>`;
+        })}</div>`;
+    }
+
+    function moreView(d) {
+        return html`<div class="dt-more">
+            <div class="dt-more-title">${d.title}</div>
+            <div class="dt-more-plot">${d.plot}</div>
+            ${credits(d)}
+            <div class="dt-more-hint">${I18n.t('detail.returnClose')}</div>
+        </div>`;
+    }
+
+    function view() {
         var d = details();
         var provider = s.provider || {};
-        root.textContent = '';
+        var facts = [d.year, d.rating ? '★ ' + d.rating.toFixed(1) : '', d.genre, runtime(d.seconds)].filter(Boolean);
+        return html`
+            ${UI.img('dt-backdrop', d.backdrop, provider.backdrop || provider.poster)}
+            <div class="dt-shade"></div>
+            <div class="dt-body">
+                ${UI.img('dt-poster', d.poster, provider.poster)}
+                <div class="dt-info">
+                    <h1 class="dt-title">${d.title}</h1>
+                    <div class="dt-meta">${s.loading ? I18n.t('detail.loading') : facts.join('  ·  ')}</div>
+                    <div class="dt-plot">${d.plot}</div>
+                    ${credits(d)}
+                    ${buttonsView()}
+                </div>
+            </div>
+            ${s.page.episodes ? html`<div class="dt-ep-head">${d.title}</div>` : null}
+            ${s.page.episodes ? s.page.episodes.view(s.zone === 'episodes') : null}
+            ${s.tmdb ? s.tmdb.view(s.zone === 'tmdb') : null}
+            ${s.more ? moreView(d) : null}`;
+    }
+
+    function render() {
+        var started = performance.now();
         // A show's page scrolls up to its episodes while they have the focus.
         root.classList.toggle('dt-show', !!s.page.episodes);
         root.classList.toggle('dt-scrolled', s.zone === 'episodes');
         root.classList.toggle('dt-tmdb', !!s.tmdb && s.tmdb.hasRows());
         root.classList.toggle('dt-tmdb-focus', s.zone === 'tmdb');
-        root.appendChild(img('dt-backdrop', d.backdrop, provider.backdrop || provider.poster));
-        root.appendChild(el('div', 'dt-shade'));
-        var body = el('div', 'dt-body');
-        body.appendChild(img('dt-poster', d.poster, provider.poster));
-        var info = el('div', 'dt-info');
-        info.appendChild(el('h1', 'dt-title', d.title));
-        var facts = [d.year, d.rating ? '★ ' + d.rating.toFixed(1) : '', d.genre, runtime(d.seconds)].filter(Boolean);
-        info.appendChild(el('div', 'dt-meta', s.loading ? I18n.t('detail.loading') : facts.join('  ·  ')));
-        var plot = el('div', 'dt-plot', d.plot);
-        info.appendChild(plot);
-        if (d.cast) info.appendChild(el('div', 'dt-credit', I18n.t('detail.cast', { cast: d.cast })));
-        if (d.director) info.appendChild(el('div', 'dt-credit', I18n.t('detail.director', { director: d.director })));
-        info.appendChild(renderButtons());
-        body.appendChild(info);
-        root.appendChild(body);
-        if (s.page.episodes) {
-            root.appendChild(el('div', 'dt-ep-head', d.title));
-            root.appendChild(s.page.episodes.render(s.zone === 'episodes'));
-        }
-        if (s.tmdb) root.appendChild(s.tmdb.render(s.zone === 'tmdb'));
+        UI.render(view(), root);
         if (s.zone === 'tmdb') TmdbView.scroll(root);
-        if (s.more) root.appendChild(renderMore(d));
         // "More" only when the plot does not fit its lines.
+        var plot = root.querySelector('.dt-plot');
         var clipped = plot.scrollHeight > plot.clientHeight + 2;
         if (clipped !== s.clipped) {
             s.clipped = clipped;
-            var row = root.querySelector('.dt-buttons');
-            row.parentNode.replaceChild(renderButtons(), row);
+            UI.render(view(), root);
         }
+        s.renders.push(performance.now() - started);
     }
 
-    function renderButtons() {
-        var row = el('div', 'dt-buttons');
-        var list = buttons();
-        s.focus = Math.max(0, Math.min(s.focus, list.length - 1));
-        list.forEach(function (button, i) {
-            var node = el('span', 'dt-btn' + (i === 0 ? ' primary' : '') + (s.zone === 'buttons' && i === s.focus ? ' focus' : ''), button.label);
-            if (button.progress) {
-                var bar = el('span', 'dt-btn-bar');
-                var fill = el('span', 'dt-btn-fill');
-                fill.style.width = Progress.bar(button.progress);
-                bar.appendChild(fill);
-                node.appendChild(bar);
-            }
-            row.appendChild(node);
-        });
-        return row;
-    }
-
-    function renderMore(d) {
-        var box = el('div', 'dt-more');
-        box.appendChild(el('div', 'dt-more-title', d.title));
-        box.appendChild(el('div', 'dt-more-plot', d.plot));
-        if (d.cast) box.appendChild(el('div', 'dt-credit', I18n.t('detail.cast', { cast: d.cast })));
-        if (d.director) box.appendChild(el('div', 'dt-credit', I18n.t('detail.director', { director: d.director })));
-        box.appendChild(el('div', 'dt-more-hint', I18n.t('detail.returnClose')));
-        return box;
+    // One line per page for the TV check in docs/adr/0009.
+    function logRenders(list) {
+        if (!list.length) return;
+        var sorted = list.slice().sort(function (a, b) { return a - b; });
+        Log.info('DETAIL renders ' + list.length + ', median ' + sorted[sorted.length >> 1].toFixed(1) + ' ms, max ' + sorted[sorted.length - 1].toFixed(1) + ' ms');
     }
 
     function openMore() {
@@ -188,8 +177,9 @@ window.Detail = function () {
     function close() {
         var done = s.page.onClose;
         if (s.tmdb) s.tmdb.dispose();
+        logRenders(s.renders);
         s = null;
-        root.textContent = '';
+        UI.clear(root);
         root.classList.add('hidden');
         if (done) done();
     }
@@ -197,7 +187,7 @@ window.Detail = function () {
     return {
         open: function (page) {
             if (s && s.tmdb) s.tmdb.dispose();
-            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false };
+            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false, renders: [] };
             var mine = s;
             if (Tmdb.enabled() && page.catalogue) s.tmdb = TmdbDetail(page, function (enriched) {
                 if (s !== mine) return;

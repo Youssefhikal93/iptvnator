@@ -8,15 +8,9 @@ window.DetailEpisodes = function (opts) {
     'use strict';
 
     var KEY = Keys;
+    var html = UI.html;
     var ROWS = 5;
     var s = { list: [], seasons: [], season: 0, focus: 0, zone: 'pills', loaded: false };
-
-    function el(tag, cls, text) {
-        var node = document.createElement(tag);
-        if (cls) node.className = cls;
-        if (text !== undefined && text !== null) node.textContent = text;
-        return node;
-    }
 
     function code(ep) {
         return 'S' + ep.season + ' E' + ep.num;
@@ -92,64 +86,45 @@ window.DetailEpisodes = function (opts) {
         return secs ? I18n.t('unit.minutesOnly', { m: Math.round(secs / 60) }) : '';
     }
 
-    function renderRow(index, focused) {
+    function rowView(index, focused) {
         var ep = s.list[index];
         var p = opts.progressOf(ep);
-        var row = el('div', 'dt-ep' + (focused ? ' focus' : ''));
-        var thumb = el('div', 'dt-ep-thumb');
-        if (ep.image) {
-            var image = el('img');
-            image.onerror = function () {
-                image.style.visibility = 'hidden';
-            };
-            image.src = ep.image;
-            thumb.appendChild(image);
-        }
-        thumb.appendChild(el('span', 'dt-ep-num', ep.num));
-        if (watched(ep)) {
-            var tick = el('span', 'watched-tick', '\u2713');
-            tick.setAttribute('aria-label', I18n.t('browser.watched'));
-            thumb.appendChild(tick);
-        }
-        if (p) {
-            var bar = el('div', 'dt-ep-bar');
-            var fill = el('div', 'dt-ep-fill');
-            fill.style.width = Progress.bar(p.ratio);
-            bar.appendChild(fill);
-            thumb.appendChild(bar);
-        }
-        row.appendChild(thumb);
-        var text = el('div', 'dt-ep-text');
-        text.appendChild(el('div', 'dt-ep-title', ep.num + '. ' + (ep.title || code(ep))));
         var meta = [runtime(ep.seconds), p && p.status === 'watched' ? I18n.t('browser.watched') : p ? I18n.t('episodes.percentWatched', { percent: Math.round(p.ratio * 100) }) : ''].filter(Boolean);
-        if (meta.length) text.appendChild(el('div', 'dt-ep-meta', meta.join('  ·  ')));
-        if (ep.plot) text.appendChild(el('div', 'dt-ep-plot', ep.plot));
-        row.appendChild(text);
-        return row;
+        return html`<div key=${ep.id} class=${'dt-ep' + (focused ? ' focus' : '')}>
+            <div class="dt-ep-thumb">
+                ${ep.image ? UI.img(undefined, ep.image) : null}
+                <span class="dt-ep-num">${ep.num}</span>
+                ${watched(ep) ? html`<span class="watched-tick" aria-label=${I18n.t('browser.watched')}>✓</span>` : null}
+                ${p ? html`<div class="dt-ep-bar"><div class="dt-ep-fill" style=${'width: ' + Progress.bar(p.ratio)}></div></div>` : null}
+            </div>
+            <div class="dt-ep-text">
+                <div class="dt-ep-title">${ep.num + '. ' + (ep.title || code(ep))}</div>
+                ${meta.length ? html`<div class="dt-ep-meta">${meta.join('  ·  ')}</div>` : null}
+                ${ep.plot ? html`<div class="dt-ep-plot">${ep.plot}</div>` : null}
+            </div>
+        </div>`;
     }
 
-    function render(active) {
-        var box = el('div', 'dt-episodes' + (active ? ' active' : ''));
-        if (!s.list.length) {
-            box.appendChild(el('div', 'dt-ep-empty', I18n.t(s.loaded ? 'episodes.none' : 'episodes.loading')));
-            return box;
-        }
-        var head = el('div', 'dt-ep-pills');
-        s.seasons.forEach(function (season, i) {
-            var cls = 'dt-ep-pill' + (i === s.season ? ' active' : '') + (active && s.zone === 'pills' && i === s.season ? ' focus' : '');
-            head.appendChild(el('span', cls, I18n.t('episodes.season', { n: season })));
-        });
+    function view(active) {
+        var cls = 'dt-episodes' + (active ? ' active' : '');
+        if (!s.list.length) return html`<div class=${cls}><div class="dt-ep-empty">${I18n.t(s.loaded ? 'episodes.none' : 'episodes.loading')}</div></div>`;
         var shown = inSeason();
         var done = shown.filter(function (index) {
             return watched(s.list[index]);
         }).length;
-        head.appendChild(el('span', 'dt-ep-count', I18n.t('episodes.doneOf', { done: done, total: shown.length })));
-        box.appendChild(head);
         var start = Math.max(0, Math.min(s.focus - 1, shown.length - ROWS));
-        shown.slice(start, start + ROWS).forEach(function (index, i) {
-            box.appendChild(renderRow(index, active && s.zone === 'rows' && start + i === s.focus));
-        });
-        return box;
+        return html`<div class=${cls}>
+            <div class="dt-ep-pills">
+                ${s.seasons.map(function (season, i) {
+                    var pill = 'dt-ep-pill' + (i === s.season ? ' active' : '') + (active && s.zone === 'pills' && i === s.season ? ' focus' : '');
+                    return html`<span class=${pill}>${I18n.t('episodes.season', { n: season })}</span>`;
+                })}
+                <span class="dt-ep-count">${I18n.t('episodes.doneOf', { done: done, total: shown.length })}</span>
+            </div>
+            ${shown.slice(start, start + ROWS).map(function (index, i) {
+                return rowView(index, active && s.zone === 'rows' && start + i === s.focus);
+            })}
+        </div>`;
     }
 
     // Returns 'up' when the focus leaves the section upwards.
@@ -201,7 +176,7 @@ window.DetailEpisodes = function (opts) {
         enter: function () {
             s.zone = 'rows';
         },
-        render: render,
+        view: view,
         key: key,
     };
 };

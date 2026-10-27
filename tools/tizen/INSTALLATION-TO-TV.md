@@ -141,12 +141,16 @@ certificate that lists the TV's DUID.
 ## 8. Package the app (PC)
 
 The `vendor/` scripts (`hls.js` 1.7.3, `mpegts.js` 1.8.2, same versions as
-`package.json`) are not committed; download them once:
+`package.json`; `preact` 10.24.3 and `htm` 3.1.1 for the screens, see
+[ADR 0009](docs/adr/0009-screens-in-preact-with-htm.md)) are not committed;
+download them once:
 
 ```powershell
 cd <repo>\tools\tizen\tv-app; mkdir vendor -Force
 curl.exe -sSfL -o vendor\hls.min.js https://cdn.jsdelivr.net/npm/hls.js@1.7.3/dist/hls.min.js
 curl.exe -sSfL -o vendor\mpegts.js https://cdn.jsdelivr.net/npm/mpegts.js@1.8.2/dist/mpegts.js
+curl.exe -sSfL -o vendor\preact.umd.js https://cdn.jsdelivr.net/npm/preact@10.24.3/dist/preact.umd.js
+curl.exe -sSfL -o vendor\htm.umd.js https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js
 ```
 
 Package a copy so signature files and the `.wgt` stay out of the repo:

@@ -24,3 +24,13 @@ test('saved progress offers Resume from X and Start over; Start over starts at z
     expect(await page.locator('#video').evaluate(v => v.currentTime)).toBeLessThan(10);
     await expect(page.locator('#pl-resume')).toBeHidden();
 });
+
+test('moving between buttons keeps the same backdrop and poster images', async ({ page }) => {
+    await boot(page);
+    await openFirst(page, 'Movies');
+    await page.evaluate(() => { window.__art = [...document.querySelectorAll('#detail .dt-backdrop, #detail .dt-poster')]; });
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#detail .dt-btn.focus')).toHaveText('Add to Favorites');
+    await press(page, 'ArrowLeft');
+    expect(await page.evaluate(() => window.__art.length === 2 && window.__art.every(node => node.isConnected))).toBe(true);
+});

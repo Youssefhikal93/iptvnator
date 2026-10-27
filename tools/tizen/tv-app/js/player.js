@@ -12,8 +12,6 @@
 window.Player = (function () {
     'use strict';
 
-    var ATTEMPT_TIMEOUT_MS = 20000;
-    var BUSY_RETRY_MS = 2000;
     var HIDE_AFTER_MS = 5000;
     var TICK_MS = 500;
     var SAVE_EVERY_MS = 10000;
@@ -62,7 +60,7 @@ window.Player = (function () {
 
     var lib = null;
     var usingAv = false;
-    var session = 0;
+    var chain = PlaybackChain();
     var current = null;
     var ready = false; // a stream is playing
     var channelListOpen = false;
@@ -174,12 +172,6 @@ window.Player = (function () {
         playerEl.style.width = box ? at.w + 'px' : '';
         playerEl.style.height = box ? at.h + 'px' : '';
         PlayerPicture.apply();
-    }
-
-    function wait(ms) {
-        return new Promise(function (resolve) {
-            setTimeout(resolve, ms);
-        });
     }
 
     function el(tag, cls, text) {
@@ -949,27 +941,6 @@ window.Player = (function () {
         usingAv = false;
     }
 
-    // Runs one playback attempt; resolves null when playing, else a reason.
-    function attempt(start) {
-        return new Promise(function (resolve) {
-            var done = false;
-            function finish(error) {
-                if (done) return;
-                done = true;
-                clearTimeout(timer);
-                resolve(error);
-            }
-            var timer = setTimeout(function () {
-                finish('timeout');
-            }, ATTEMPT_TIMEOUT_MS);
-            try {
-                start(finish);
-            } catch (e) {
-                finish(e.name || String(e));
-            }
-        });
-    }
-
     function viaMpegts(url) {
         return function (finish) {
             if (!window.mpegts || !mpegts.isSupported()) return finish('mpegts.js unsupported');
@@ -1014,16 +985,16 @@ window.Player = (function () {
             var av = avplay();
             if (!av) return finish('AVPlay unavailable');
             usingAv = true;
-            var mine = session;
+            var mine = chain.session();
             var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
             target.then(function (address) {
-                if (mine !== session) return null;
+                if (chain.stale(mine)) return null;
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
                 // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
                 return MovieHash.prepare(current, address.url || address).then(function () { return address; });
             }).then(function (address) {
-                if (!address || mine !== session || address.error) return;
+                if (!address || chain.stale(mine) || address.error) return;
                 try {
                     open(av, address.url || address, finish);
                 } catch (e) {
@@ -1074,9 +1045,9 @@ window.Player = (function () {
             video.onerror = function () {
                 finish('media error ' + (video.error ? video.error.code : '?'));
             };
-            var mine = session;
+            var mine = chain.session();
             MovieHash.prepare(current, url).then(function () {
-                if (mine !== session) return;
+                if (chain.stale(mine)) return;
                 video.src = url;
                 video.play().catch(function () {});
             });
@@ -1146,7 +1117,6 @@ window.Player = (function () {
     function start(req, onAttempt, rect) {
         playbackError = false;
         release();
-        var mine = ++session;
         current = req;
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
@@ -1157,7 +1127,7 @@ window.Player = (function () {
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
 
         var attempts = req.sources.map(function (source) {
-            return [source.via, STARTERS[source.via](source.url, source)];
+            return { name: source.via, start: STARTERS[source.via](source.url, source) };
         });
 
         function fail(message) {
@@ -1165,42 +1135,22 @@ window.Player = (function () {
             showStatus(heading(req) + '\n' + message, true);
         }
 
-        function next(index, retried) {
-            if (mine !== session) return Promise.resolve();
-            if (index >= attempts.length) {
-                fail(I18n.t('player.offline'));
-                return Promise.resolve();
-            }
-            var name = attempts[index][0];
-            var began = Date.now();
-            return attempt(attempts[index][1]).then(function (error) {
-                if (mine !== session) return;
-                if (!error) {
-                    Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + (Date.now() - began) + 'ms');
-                    onReady();
-                    if (onAttempt) onAttempt(null);
-                    return;
-                }
-                Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + (Date.now() - began) + 'ms');
+        return chain.run(attempts, {
+            ready: function (name, ms) {
+                Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + ms + 'ms');
+                onReady();
+                if (onAttempt) onAttempt(null);
+            },
+            failed: function (name, error, ms) {
+                Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + ms + 'ms');
                 release();
                 // release() also clears the now/next guide; the next player needs it again.
                 epg.load(req);
-                // 503 means the previous stream is still counted (retry once
-                // after a pause) or the channel is offline (other players
-                // would get the same answer, so stop).
-                if (/503/.test(error)) {
-                    if (retried) {
-                        fail(I18n.t('player.busy'));
-                        return;
-                    }
-                    return wait(BUSY_RETRY_MS).then(function () {
-                        return next(index, true);
-                    });
-                }
-                return next(index + 1, false);
-            });
-        }
-        return next(0, false);
+            },
+            giveUp: function (kind) {
+                fail(I18n.t(kind === 'busy' ? 'player.busy' : 'player.offline'));
+            },
+        });
     }
 
     function stop() {
@@ -1208,7 +1158,7 @@ window.Player = (function () {
         playbackError = false;
         reconnect.cancel();
         freeze.clear();
-        session++;
+        chain.cancel();
         release();
         current = null;
         hideStatus();

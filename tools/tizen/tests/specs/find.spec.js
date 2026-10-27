@@ -86,9 +86,15 @@ test('Movies have the same pills as Series and a genre is looked up on the provi
     await press(page, 'ArrowUp');
     await moveTo(page, '#genre-pills .tm-chip.focus', 'Crime', 'ArrowRight');
     await press(page, 'Enter');
-    // The fake provider pages say Crime, Drama: every movie joins as it is found.
+    // The fake provider pages say Crime, Drama: the first twenty join as they are found.
+    await expect(page.locator('#items .list-header .count')).toContainText('/ 20', { timeout: 30000 });
+    expect(pages).toBe(20);
+    await expect(page.locator('#hints')).toContainText('check 20 more (4 left)');
+    // ▼ past the last row checks the next ones.
+    await press(page, 'ArrowDown');
+    for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
     await expect(page.locator('#items .list-header .count')).toContainText('/ 24', { timeout: 30000 });
-    expect(pages).toBeGreaterThanOrEqual(24);
+    expect(pages).toBe(24);
     await expect(page.locator('#hints')).not.toContainText('Looking up');
 });
 

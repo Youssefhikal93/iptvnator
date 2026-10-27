@@ -111,7 +111,7 @@
     left: 0;
     right: 0;
     top: 0;
-    padding: 56px 80px 120px;
+    padding: 64px 96px 120px;
     display: flex;
     align-items: flex-start;
     gap: 24px;
@@ -156,18 +156,71 @@
     font-size: 30px;
     font-weight: 600;
 }
+/* The clock and when the title ends (#48). */
+.pl-clock {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+#pl-ends {
+    margin-top: 4px;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--pc-text-secondary);
+}
+#pl-ends:empty {
+    display: none;
+}
 .pl-dock {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
-    padding: 150px 80px 52px;
+    padding: 150px 96px 42px;
     background: linear-gradient(to top, rgba(4, 7, 11, 0.92) 0%, rgba(4, 7, 11, 0.55) 45%, rgba(4, 7, 11, 0) 100%);
+}
+/* -10, play/pause and +10, with the ▼ buttons on the right (#48). */
+#pl-transport {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 44px;
+}
+.pl-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.22);
+    background: rgba(10, 14, 20, 0.55);
+    font-size: 30px;
+    font-weight: 700;
+}
+.pl-circle.active {
+    background: var(--pc-accent-strong);
+}
+.pl-circle.pl-play {
+    width: 116px;
+    height: 116px;
+    font-size: 44px;
+    background: var(--pc-accent);
+    color: #fff;
+    box-shadow: 0 0 0 5px #000, 0 0 0 10px #fff;
+}
+/* The focus is on the ▼ buttons, not on play/pause. */
+#pl-transport.on-buttons .pl-play {
+    box-shadow: none;
 }
 #pl-bar {
     position: relative;
-    height: 12px;
-    border-radius: 6px;
+    height: 16px;
+    border-radius: 8px;
     background: var(--pc-timeline-track);
     overflow: visible;
 }
@@ -209,18 +262,19 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-top: 26px;
-    font-size: 36px;
-    font-weight: 500;
+    margin-top: 18px;
+    font-size: 28px;
+    font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
-#pl-state {
-    width: 44px;
-    font-size: 36px;
-    color: var(--pc-accent);
-}
-#pl-total,
+/* Play/pause shows in the transport row; the time left sits on the right. */
+#pl-state,
 #pl-sep {
+    display: none;
+}
+#pl-total {
+    order: 2;
+    margin-left: auto;
     color: var(--pc-text-secondary);
 }
 #pl-jump {
@@ -235,9 +289,10 @@
     display: none;
 }
 #pl-hint {
-    margin-top: 22px;
-    font-size: 27px;
+    margin-top: 26px;
+    font-size: 22px;
     color: var(--pc-text-secondary);
+    opacity: 0.8;
 }
 #pl-hint b {
     display: inline-block;
@@ -250,22 +305,67 @@
     font-weight: 600;
 }
 #pl-hint span {
-    margin-right: 36px;
+    margin-right: 28px;
 }
 
-/* Track / speed / info menu */
+/* The ▲ menu (#48): a panel down the right, groups first, then a group's choices. */
 #pl-menu {
     position: absolute;
-    right: 64px;
-    top: 80px;
-    bottom: 80px;
-    width: 700px;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 680px;
+    display: flex;
+    flex-direction: column;
+    padding: 70px 96px 54px 56px;
+    background: rgba(14, 17, 24, 0.94);
+    border-left: 2px solid var(--pc-glass-border);
+    box-shadow: -30px 0 80px rgba(0, 0, 0, 0.5);
+}
+.pl-menu-title {
+    margin: 0 0 26px 24px;
+    font-size: 42px;
+    font-weight: 700;
+}
+.pl-menu-back {
+    margin-right: 18px;
+    color: var(--pc-text-secondary);
+}
+.pl-menu-rows {
+    flex: 1;
+    min-height: 0;
+    padding-top: 4px;
     overflow: hidden;
-    padding: 28px 0;
-    border-radius: 24px;
-    background: var(--pc-glass);
-    border: 2px solid var(--pc-glass-border);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.pl-menu-keys {
+    margin: 24px 0 0 24px;
+    font-size: 22px;
+    color: var(--pc-text-secondary);
+}
+.pl-menu-group {
+    min-height: 88px;
+    box-sizing: border-box;
+}
+.pl-menu-group .label {
+    flex: 1;
+    min-width: 0;
+    font-size: 30px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pl-menu-group .value {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 26px;
+    color: var(--pc-text-secondary);
+}
+.pl-menu-group .chev {
+    font-size: 34px;
+    color: var(--pc-text-secondary);
 }
 .pl-menu-head {
     padding: 22px 40px 8px;
@@ -279,9 +379,9 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    margin: 4px 20px;
-    padding: 14px 20px;
-    border-radius: 14px;
+    margin: 0 0 8px;
+    padding: 14px 24px;
+    border-radius: 18px;
     border: 3px solid transparent;
     font-size: 32px;
 }
@@ -298,12 +398,12 @@
     color: var(--pc-cyan);
 }
 .pl-menu-info {
-    margin: 4px 40px;
+    margin: 8px 24px;
     font-size: 27px;
     color: var(--pc-text-secondary);
 }
 .pl-menu-empty {
-    margin: 4px 40px;
+    margin: 8px 24px;
     font-size: 28px;
     color: var(--pc-text-secondary);
 }
@@ -349,7 +449,7 @@
 #pl-buttons {
     display: flex;
     gap: 20px;
-    margin-top: 28px;
+    margin-left: auto;
 }
 #pl-buttons:empty {
     display: none;
@@ -381,12 +481,18 @@
     margin-left: 12px;
     color: var(--pc-cyan);
 }
+/* Up next (#48): the next episode's still and name at the top right; it
+   moves under the clock while the controls are up. */
 #pl-next {
     position: absolute;
-    right: 80px;
-    top: 80px;
-    width: 620px;
-    padding: 28px 36px;
+    right: 96px;
+    top: 64px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    box-sizing: border-box;
+    width: 760px;
+    padding: 24px 32px 24px 24px;
     border-radius: 22px;
     background: var(--pc-glass);
     border: 2px solid var(--pc-glass-border);
@@ -409,6 +515,29 @@
     margin-top: 16px;
     font-size: 26px;
     color: var(--pc-text-secondary);
+}
+#player.controls-on #pl-next {
+    top: 200px;
+}
+#pl-next-art {
+    flex: none;
+    width: 240px;
+    height: 135px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+}
+.pl-next-text {
+    flex: 1;
+    min-width: 0;
+}
+#pl-next.counting .pl-next-text::after {
+    content: '';
+    display: block;
+    height: 6px;
+    margin-top: 16px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--pc-accent) calc(var(--pl-next-left, 1) * 100%), rgba(255, 255, 255, 0.2) 0);
 }
 #pl-episodes {
     position: absolute;

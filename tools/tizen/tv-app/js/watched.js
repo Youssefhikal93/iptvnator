@@ -15,6 +15,7 @@ window.Watched = function (api) {
         var done = Progress.isWatched(id, item.sourceId);
         return {
             label: I18n.t((item.episode ? 'watched.markEpisode' : 'watched.markAs') + (done ? '.unwatched' : '.watched')),
+            glyph: '✓',
             run: function () {
                 Progress.mark([id], !done, [item.seconds], item.sourceId);
                 api.changed();
@@ -26,6 +27,7 @@ window.Watched = function (api) {
         var done = Progress.allWatched(episodes);
         return {
             label: I18n.t(label + (done ? '.unwatched' : '.watched')),
+            glyph: '✓',
             run: function () {
                 Progress.mark(episodes.map(Progress.episodeId), !done, episodes.map(function (ep) { return ep.seconds; }));
                 api.changed();
@@ -33,24 +35,25 @@ window.Watched = function (api) {
         };
     }
 
-    function openShowMenu(item, options, title) {
-        var current = Menu.open(title, [{ label: I18n.t('episodes.loading') }, { label: I18n.t('common.cancel') }]);
+    // Return closes the sheet, so it has no Cancel row (#48).
+    function openShowMenu(item, options, title, header) {
+        var current = Menu.open(title, [{ label: I18n.t('episodes.loading'), note: true }], 0, header);
         api.loadShow(item).then(function (info) {
             if (!current()) return;
-            if (info.episodes && info.episodes.length) options.splice(options.length - 1, 0, episodesOption('watched.markShow', info.episodes));
+            if (info.episodes && info.episodes.length) options.push(episodesOption('watched.markShow', info.episodes));
             else api.toast(I18n.t('episodes.none'));
-            Menu.open(title, options);
+            Menu.open(title, options, 0, header);
         }).catch(function () {
             if (!current()) return;
             api.toast(I18n.t('watched.loadFailed'));
-            Menu.open(title, options);
+            Menu.open(title, options, 0, header);
         });
     }
 
-    function openItemMenu(item, section, options, title) {
-        if (section === 'series' && !item.episode) return openShowMenu(item, options, title);
-        if (section === 'movies' || item.episode) options.splice(options.length - 1, 0, itemOption(item, section));
-        Menu.open(title, options);
+    function openItemMenu(item, section, options, title, header) {
+        if (section === 'series' && !item.episode) return openShowMenu(item, options, title, header);
+        if (section === 'movies' || item.episode) options.push(itemOption(item, section));
+        Menu.open(title, options, 0, header);
     }
 
     function openEpisodeMenu(selection) {
@@ -61,7 +64,6 @@ window.Watched = function (api) {
         Menu.open(ep.label || ep.title, [
             itemOption({ episode: ep, seconds: ep.seconds }, 'series'),
             episodesOption('watched.markSeason', season),
-            { label: I18n.t('common.cancel') },
         ]);
     }
 

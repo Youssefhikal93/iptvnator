@@ -115,6 +115,22 @@ async function openFirst(page, name) {
     await expect(page.locator('#detail .dt-meta')).not.toContainText('Loading');
 }
 
+// Opens the group of the player's ▲ menu whose row starts with `group` (#48).
+async function playerGroup(page, group) {
+    const rows = page.locator('#pl-menu .pl-menu-item');
+    await expect(rows.first()).toBeVisible();
+    const where = await rows.evaluateAll((items, group) => items.findIndex((item) => {
+        const label = item.querySelector('.label');
+        return label && label.textContent.trim().startsWith(group);
+    }), group);
+    if (where < 0) throw new Error('No player menu group ' + JSON.stringify(group));
+    const now = await rows.evaluateAll((items) => items.findIndex((item) => item.classList.contains('focus')));
+    for (let i = now; i !== where; i += where > now ? 1 : -1) await press(page, where > now ? 'ArrowDown' : 'ArrowUp');
+    await expect(rows.nth(where)).toHaveClass(/focus/);
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-menu .pl-menu-title')).toContainText(group);
+}
+
 // Opens Settings on the row labelled `label` (#49): picks its group on the
 // left, then moves to the row on the right.
 async function setting(page, label, settings = 'Settings') {
@@ -187,4 +203,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, playerGroup, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };

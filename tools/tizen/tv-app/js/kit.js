@@ -35,15 +35,23 @@ window.Kit = (() => {
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;
 
     // A titled list of options with one focused row. An option may carry an
-    // icon before its label and a check mark after it; a note is a line of
-    // information the focus passes over.
+    // icon before its label and a check mark after it, or a glyph that CSS
+    // draws before it (so the row's text stays its label); a note is a line
+    // of information the focus passes over.
     const MenuRow = ({ option, focused }) => (option.icon
         ? html`<div class=${classes('menu-row with-icon', { focused })}>
             ${option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
         </div>`
-        : html`<div class=${classes('menu-row', { focused, note: option.note })}>${option.label}</div>`);
+        : html`<div class=${classes('menu-row', { focused, note: option.note })} data-glyph=${option.glyph}>${option.label}</div>`);
 
-    const SideMenu = ({ title, options, index }) => html`<div class="menu-title">${title}</div>
+    // header { image, sub } puts the item's artwork and a line beside the title (#48).
+    const MenuHead = ({ title, header }) => (header
+        ? html`<div class="menu-head">${header.image ? img('menu-art', header.image) : null}<div class="menu-head-text">
+            <div class="menu-title">${title}</div>${header.sub ? html`<div class="menu-sub">${header.sub}</div>` : null}
+        </div></div>`
+        : html`<div class="menu-title">${title}</div>`);
+
+    const SideMenu = ({ title, options, index, header }) => html`<${MenuHead} title=${title} header=${header} />
         ${options.map((option, i) => html`<${MenuRow} option=${option} focused=${i === index} />`)}`;
 
     // A channel's 16:9 plate (#44): its logo on a light plate, or, without a

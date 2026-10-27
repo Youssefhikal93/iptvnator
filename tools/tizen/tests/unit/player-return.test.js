@@ -63,7 +63,7 @@ function scene() {
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js',
         'subtitle-file.js', 'subtitle-rank.js', 'movie-hash.js', 'subtitle-store.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'player-reconnect.js',
-        'sleep-timer.js', 'player-sleep.js', 'player-series.js', 'player-picture.js', 'player.js',
+        'sleep-timer.js', 'player-sleep.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'player.js',
     ], {}, {
         UI: uiSandbox.UI,
         document: {
@@ -77,7 +77,8 @@ function scene() {
         addEventListener: function () {},
         innerWidth: 1920,
         innerHeight: 1080,
-        Date: { now: function () { return now; } },
+        // The clock (#48) builds dates; the fake keeps them on the test's time.
+        Date: Object.assign(function (when) { return new Date(when === undefined ? now : when); }, { now: function () { return now; } }),
         setTimeout: function () { return ++serial; },
         clearTimeout: function () {},
         setInterval: function (fn, ms) { intervals[++serial] = { fn: fn, ms: ms }; return serial; },

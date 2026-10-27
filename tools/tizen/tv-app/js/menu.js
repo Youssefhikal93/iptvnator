@@ -1,4 +1,6 @@
-// A small options dialog over the browser, opened by holding OK on an item.
+// The options sheet down the right (#48), opened by holding OK on an item.
+// open(title, options, index, header) where header { image, sub } shows the
+// item's artwork beside the title.
 // Options are { label, run }; an option without run just closes the menu,
 // and a { label, note: true } line is passed over by the focus.
 window.Menu = (() => {
@@ -6,10 +8,10 @@ window.Menu = (() => {
 
     const { html } = UI;
     const el = document.getElementById('menu');
-    let state = { options: [], index: 0, title: '', open: false };
+    let state = { options: [], index: 0, title: '', header: null, open: false };
 
     const render = () => {
-        UI.render(html`<${Kit.SideMenu} title=${state.title} options=${state.options} index=${state.index} />`, el);
+        UI.render(html`<${Kit.SideMenu} title=${state.title} options=${state.options} index=${state.index} header=${state.header} />`, el);
         // A long list (the languages) scrolls inside the dialog.
         const focused = el.querySelector('.focused');
         if (focused) focused.scrollIntoView({ block: 'nearest' });
@@ -22,8 +24,8 @@ window.Menu = (() => {
 
     return {
         close,
-        open: (title, options, index) => {
-            state = { options, index: index || 0, title, open: true };
+        open: (title, options, index, header) => {
+            state = { options, index: index || 0, title, header: header || null, open: true };
             el.classList.remove('profile-menu');
             render();
             el.classList.remove('hidden');

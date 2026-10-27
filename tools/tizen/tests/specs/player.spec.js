@@ -1,4 +1,4 @@
-const { test, expect, boot, openFirst, press, playing, sendKeyCode, back, moveTo } = require('./helpers');
+const { test, expect, boot, openFirst, press, playing, sendKeyCode, back, moveTo, playerGroup } = require('./helpers');
 
 test('movie controls pause, play, seek and change speed; track menu and stream info close before player', async ({ page }) => {
     await boot(page);
@@ -18,14 +18,23 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(10);
     await press(page, 'ArrowUp');
     await expect(page.locator('#pl-menu')).toBeVisible();
-    await expect(page.locator('#pl-menu')).toContainText('Audio');
+    // Groups with their values first; OK opens one, Return goes back (#48).
+    await expect(page.locator('#pl-menu .pl-menu-group .label').first()).toHaveText('Audio');
+    await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Playback speed' }).locator('.value')).toHaveText('1×');
+    await playerGroup(page, 'Subtitles');
     await expect(page.locator('#pl-menu')).toContainText('No subtitles available');
+    await back(page);
+    await playerGroup(page, 'Stream info');
     await expect(page.locator('#pl-menu')).toContainText('HTML5 video');
     await expect(page.locator('#pl-menu')).toContainText('320');
+    await press(page, 'ArrowLeft');
+    await playerGroup(page, 'Playback speed');
     await moveTo(page, '.pl-menu-item.focus span:last-child', '1.5×');
     await expect(page.locator('.pl-menu-item.focus')).toContainText('1.5');
     await press(page, 'Enter');
     await expect.poll(() => page.locator('#video').evaluate(v => v.playbackRate)).toBe(1.5);
+    await back(page);
+    await expect(page.locator('#pl-menu .pl-menu-group.focus .value')).toHaveText('1.5×');
     await back(page);
     await expect(page.locator('#pl-menu')).toBeHidden();
     await expect(page.locator('#player')).toBeVisible();

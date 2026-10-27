@@ -1,4 +1,4 @@
-const { test, expect, boot, openFirst, press, playing, sendKeyCode, back, moveTo, section, enterItems, savedProgress } = require('./helpers');
+const { test, expect, boot, openFirst, press, playing, sendKeyCode, back, moveTo, section, enterItems, savedProgress, playerGroup } = require('./helpers');
 
 async function start(page, name = 'Movies', seed) {
     await page.clock.install();
@@ -12,9 +12,11 @@ async function start(page, name = 'Movies', seed) {
 async function choose(page, label, live = false) {
     if (live) await sendKeyCode(page, 405);
     else await press(page, 'ArrowUp');
+    await playerGroup(page, 'Sleep timer');
     await moveTo(page, '#pl-menu .focus span:last-child', label);
     await press(page, 'Enter');
     await expect(page.locator('#pl-menu .active span:last-child').filter({ hasText: new RegExp('^' + label + '$') })).toHaveCount(1);
+    await back(page);
     await back(page);
 }
 
@@ -45,7 +47,7 @@ test('#22 15 minutes warns after 14, Keep watching extends, expiry releases play
     await press(page, 'Enter');
     await expect(page.locator('#pl-sleep-warning')).toBeHidden();
     await press(page, 'ArrowUp');
-    await expect(page.locator('.pl-sleep-head')).toHaveText('Sleep timer · 16 min left');
+    await expect(page.locator('#pl-menu .pl-menu-group .label', { hasText: 'Sleep timer' })).toHaveText('Sleep timer · 16 min left');
     await expect(page.locator('#pl-sleep-badge')).toHaveText('Sleep in 16 min');
     await back(page);
     await page.clock.fastForward(15 * 60000);
@@ -103,7 +105,7 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await playing(page);
     await page.clock.fastForward(60000);
     await press(page, 'ArrowUp');
-    await expect(page.locator('.pl-sleep-head')).toHaveText('Sleep timer · 29 min left');
+    await expect(page.locator('#pl-menu .pl-menu-group .label', { hasText: 'Sleep timer' })).toHaveText('Sleep timer · 29 min left');
     await back(page);
     await back(page);
     await expect(page.locator('#pl-controls')).toBeHidden();
@@ -121,7 +123,7 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await playing(page);
     await press(page, 'ArrowUp');
     // Downloaded subtitles and the sleep timer both start Off.
-    await expect(page.locator('.pl-menu-item.active').filter({ hasText: 'Off' })).toHaveCount(2);
+    await expect(page.locator('#pl-menu .pl-menu-group .value').filter({ hasText: /^Off$/ })).toHaveCount(2);
 });
 
 test('#22 live zapping keeps the timer; Return to live preview cancels it', async ({ page }) => {
@@ -137,7 +139,9 @@ test('#22 live zapping keeps the timer; Return to live preview cancels it', asyn
     await playing(page);
     await sendKeyCode(page, 405);
     await expect(page.locator('#pl-sleep-badge')).toHaveText('Sleep in 15 min');
+    await playerGroup(page, 'Sleep timer');
     await expect(page.locator('#pl-menu')).not.toContainText('End of');
+    await back(page);
     await back(page);
     await back(page);
     await expect(page.locator('#pl-controls')).toBeHidden();

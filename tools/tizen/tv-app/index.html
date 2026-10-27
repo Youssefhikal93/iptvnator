@@ -119,9 +119,19 @@
                     </div>
                     <span id="pl-speed" class="pl-chip hidden"></span>
                     <span id="pl-live" class="pl-badge hidden" data-i18n="player.live">LIVE</span>
+                    <div class="pl-clock">
+                        <span id="pl-now"></span>
+                        <span id="pl-ends"></span>
+                    </div>
                 </div>
                 <div class="pl-dock">
                     <div id="pl-epg" class="hidden"></div>
+                    <div id="pl-transport">
+                        <span id="pl-back10" class="pl-circle">−10</span>
+                        <span id="pl-play" class="pl-circle pl-play"></span>
+                        <span id="pl-fwd10" class="pl-circle">+10</span>
+                        <div id="pl-buttons"></div>
+                    </div>
                     <div id="pl-seekbox">
                         <div id="pl-bar">
                             <div id="pl-fill"></div>
@@ -135,15 +145,17 @@
                             <span id="pl-jump"></span>
                         </div>
                     </div>
-                    <div id="pl-buttons"></div>
                     <div id="pl-hint"></div>
                 </div>
             </div>
             <div id="pl-skip" class="hidden"><span data-i18n="player.skipIntro">Skip intro</span> <b>▼</b></div>
             <div id="pl-next" class="hidden">
-                <div class="pl-next-eyebrow" data-i18n="player.upNext">Up next</div>
-                <div id="pl-next-title"></div>
-                <div id="pl-next-count"></div>
+                <img id="pl-next-art" class="hidden" alt="" />
+                <div class="pl-next-text">
+                    <div class="pl-next-eyebrow" data-i18n="player.upNext">Up next</div>
+                    <div id="pl-next-title"></div>
+                    <div id="pl-next-count"></div>
+                </div>
             </div>
             <div id="pl-episodes" class="hidden"></div>
             <div id="pl-menu" class="hidden"></div>
@@ -246,6 +258,7 @@
         <script src="js/player-sleep.js"></script>
         <script src="js/player-picture.js"></script>
         <script src="js/av-resolve.js"></script>
+        <script src="js/player-menu.js"></script>
         <script src="js/player.js"></script>
         <script src="js/form.js"></script>
         <script src="js/profile-dialog.js"></script>

@@ -504,6 +504,7 @@ window.Browser = function (hooks) {
         var options = [
             {
                 label: I18n.t(section === 'live' ? 'menu.watch' : item.episode ? 'menu.play' : 'menu.details'),
+                glyph: section === 'live' || item.episode ? '▶' : 'ℹ',
                 run: function () {
                     openEntry(item, section);
                 },
@@ -512,6 +513,7 @@ window.Browser = function (hooks) {
         if (section === 'movies' && !item.episode) {
             options.push({
                 label: I18n.t('menu.play'),
+                glyph: '▶',
                 run: function () {
                     playMovie(item);
                 },
@@ -519,6 +521,7 @@ window.Browser = function (hooks) {
         }
         options.push({
             label: I18n.t(isFavorite(item, section) ? 'menu.removeFavorite' : 'menu.addFavorite'),
+            glyph: isFavorite(item, section) ? '☆' : '★',
             run: function () {
                 toggleFavorite(item, section);
             },
@@ -528,6 +531,7 @@ window.Browser = function (hooks) {
         if (progress && progress.status === 'continue') {
             options.push({
                 label: I18n.t('menu.removeContinue'),
+                glyph: '✕',
                 run: function () {
                     Progress.clear(progressId, item.sourceId);
                     toast(I18n.t('toast.removedContinue'));
@@ -538,6 +542,7 @@ window.Browser = function (hooks) {
         if (Library.isRecent(item.sourceId || sourceId(), section, item)) {
             options.push({
                 label: I18n.t('menu.removeRecent'),
+                glyph: '✕',
                 run: function () {
                     Library.removeRecent(item.sourceId || sourceId(), section, item);
                     toast(I18n.t('toast.removedRecent'));
@@ -545,9 +550,12 @@ window.Browser = function (hooks) {
                 },
             });
         }
-        options.push({ label: I18n.t('common.cancel') });
-        if (otherSource(item)) Menu.open(itemLabel(item), options);
-        else watched.openItemMenu(item, section, options, itemLabel(item));
+        var header = {
+            image: item.stream_icon || item.cover || item.logo || '',
+            sub: [I18n.t(section === 'live' ? 'rail.live' : section === 'movies' ? 'rail.movies' : 'rail.series'), item.year].filter(Boolean).join('  ·  '),
+        };
+        if (otherSource(item)) Menu.open(itemLabel(item), options, 0, header);
+        else watched.openItemMenu(item, section, options, itemLabel(item), header);
     }
 
     function viewMode() {

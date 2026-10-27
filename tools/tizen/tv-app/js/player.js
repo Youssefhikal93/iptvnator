@@ -46,6 +46,12 @@ window.Player = (function () {
         cur: $('pl-cur'),
         total: $('pl-total'),
         jump: $('pl-jump'),
+        transport: $('pl-transport'),
+        play: $('pl-play'),
+        back10: $('pl-back10'),
+        fwd10: $('pl-fwd10'),
+        now: $('pl-now'),
+        ends: $('pl-ends'),
         hint: $('pl-hint'),
         menu: $('pl-menu'),
         resume: $('pl-resume'),
@@ -75,7 +81,7 @@ window.Player = (function () {
     var avSeekPending = false;
     var avSeekSerial = 0;
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
-    var menu = { open: false, focus: 0, actions: [] };
+    var menu = { open: false };
     var subtitles = SubtitleDownload({
         position: position,
         draw: function (text) { clearSubs(); ui.subs.textContent = text; refreshCover(); },
@@ -114,6 +120,9 @@ window.Player = (function () {
     });
     var sleep = PlayerSleep({
         warn: closeMenu,
+        changed: function () {
+            if (menu.open) renderMenu();
+        },
         media: function () {
             if (!current || current.live || !ready || (!started && !ended) || progressBlocked()) return null;
             return { position: position(), duration: duration(), ended: ended, rate: speed };
@@ -351,13 +360,24 @@ window.Player = (function () {
         ui.live.classList.toggle('hidden', !live);
         var paused = isPaused();
         ui.state.textContent = ended ? '■' : paused ? '❚❚' : '▶';
+        // The transport row (#48): OK acts on the circle in the middle, so it
+        // shows what OK does next; ◀ ▶ light the -10 / +10 circles.
+        ui.transport.classList.toggle('hidden', live);
+        ui.transport.classList.toggle('on-buttons', series.busy());
+        ui.play.textContent = ended ? '■' : paused ? '▶' : '❚❚';
+        ui.back10.classList.toggle('active', seek.target !== null && seek.dir < 0);
+        ui.fwd10.classList.toggle('active', seek.target !== null && seek.dir > 0);
+        ui.now.textContent = I18n.time(Date.now());
+        ui.ends.textContent = '';
         if (live) return epg.render();
         var dur = duration();
         var pos = position();
         if (seek.target !== null) pos = seek.target;
         else if (Date.now() < seek.holdUntil) pos = seek.holdPos;
         ui.cur.textContent = current.catchUp ? CatchUp.clock(current.catchUp.start) : fmt(pos);
-        ui.total.textContent = current.catchUp ? CatchUp.clock(current.catchUp.end) : fmt(dur);
+        // The time left, and when it ends at this speed.
+        ui.total.textContent = current.catchUp ? CatchUp.clock(current.catchUp.end) : '−' + fmt(Math.max(0, dur - pos));
+        if (!current.catchUp && dur > 0) ui.ends.textContent = I18n.t('player.endsAt', { time: I18n.time(Date.now() + Math.max(0, dur - pos) / speed) });
         var pct = dur > 0 ? Math.min(100, (pos / dur) * 100) : 0;
         ui.fill.style.width = pct + '%';
         ui.bar.style.setProperty('--pl-knob', pct + '%');
@@ -704,60 +724,55 @@ window.Player = (function () {
 
     // ---- Menu -------------------------------------------------------------
 
-    function renderMenu() {
+    // What the ▲ menu shows (see player-menu.js), asked again on every render.
+    function menuEntries(m) {
         var tracks = getTracks();
-        ui.menu.textContent = '';
-        menu.actions = [];
-        function head(text) {
-            ui.menu.appendChild(el('div', 'pl-menu-head', text));
-        }
-        function item(label, active, action) {
-            var node = el('div', 'pl-menu-item' + (active ? ' active' : ''));
-            node.appendChild(el('span', 'dot', active ? '●' : ''));
-            node.appendChild(el('span', '', label));
-            node.setAttribute('data-i', menu.actions.length);
-            menu.actions.push(action);
-            ui.menu.appendChild(node);
-        }
         var watch = epg.watchFromStart();
-        if (watch) item(I18n.t('player.watchFromStart'), false, watch);
-        if (current.backToLive) item(I18n.t('player.backToLive'), false, current.backToLive);
-        head(I18n.t('player.audio'));
-        if (tracks.audio.length) tracks.audio.forEach(function (t) { item(t.label, t.active, t.select); });
-        else ui.menu.appendChild(el('div', 'pl-menu-empty', I18n.t('player.oneAudio')));
-        head(I18n.t('picture.subtitles'));
+        if (watch) m.item(I18n.t('player.watchFromStart'), false, watch);
+        if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
+        m.head(I18n.t('player.audio'));
+        if (tracks.audio.length) tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select); });
+        else m.note(I18n.t('player.oneAudio'));
+        m.head(I18n.t('picture.subtitles'));
         if (tracks.text.length > 1) tracks.text.forEach(function (t) {
-            item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
+            m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
         });
-        else ui.menu.appendChild(el('div', 'pl-menu-empty', I18n.t('player.noSubtitles')));
-        subtitles.menuEntries(item, tracks.text.length > 1);
-        PlayerPicture.menuEntries(head, item);
+        else m.note(I18n.t('player.noSubtitles'));
+        subtitles.menuEntries(m.item, tracks.text.length > 1);
+        PlayerPicture.menuEntries(m.head, m.item);
         if (!current.live) {
-            head(I18n.t('player.speed'));
+            m.head(I18n.t('player.speed'));
             (usingAv ? SPEEDS_AV : SPEEDS_HTML).forEach(function (value) {
-                item(value + '×', value === speed, function () {
+                m.item(value + '×', value === speed, function () {
                     applySpeed(value);
                 });
             });
         }
-        ui.menu.appendChild(el('div', 'pl-menu-head pl-sleep-head', sleep.heading()));
-        sleep.choices(current).forEach(function (choice) { item(choice.label, choice.active, choice.select); });
-        head(I18n.t('player.streamInfo'));
-        streamInfoLines().forEach(function (line) {
-            ui.menu.appendChild(el('div', 'pl-menu-info', line));
-        });
-        menu.focus = Math.max(0, Math.min(menu.focus, menu.actions.length - 1));
-        var focused = ui.menu.querySelector('[data-i="' + menu.focus + '"]');
-        if (focused) {
-            focused.classList.add('focus');
-            ui.menu.scrollTop = Math.max(0, focused.offsetTop - 300);
-        }
+        m.head(sleep.heading());
+        sleep.choices(current).forEach(function (choice) { m.item(choice.label, choice.active, choice.select); });
+        m.head(I18n.t('player.streamInfo'));
+        streamInfoLines().forEach(m.info);
+    }
+
+    var playerMenu = PlayerMenu(ui.menu, {
+        build: menuEntries,
+        run: function (action) {
+            try {
+                action();
+            } catch (e) {
+                Log.error('TRACK select failed ' + (e && e.message));
+            }
+            refreshCover();
+        },
+    });
+
+    function renderMenu() {
+        playerMenu.render();
     }
 
     function openMenu() {
         menu.open = true;
-        menu.focus = 0;
-        // Start on the active audio/subtitle choice that is not the default.
+        playerMenu.reset();
         ui.menu.classList.remove('hidden');
         renderMenu();
         showControls();
@@ -770,22 +785,8 @@ window.Player = (function () {
     }
 
     function menuKey(code) {
-        if (Keys.isBack(code) || code === KEY.YELLOW || code === KEY.INFO) closeMenu();
-        else if (code === KEY.UP || code === KEY.DOWN) {
-            menu.focus += code === KEY.UP ? -1 : 1;
-            renderMenu();
-        } else if (code === KEY.ENTER) {
-            var action = menu.actions[menu.focus];
-            if (action) {
-                try {
-                    action();
-                } catch (e) {
-                    Log.error('TRACK select failed ' + (e && e.message));
-                }
-                refreshCover();
-                if (menu.open) renderMenu();
-            }
-        }
+        if (code === KEY.YELLOW || code === KEY.INFO || playerMenu.key(code) === 'close') closeMenu();
+        else if (menu.open) renderMenu();
         return true; // The menu swallows every key.
     }
 

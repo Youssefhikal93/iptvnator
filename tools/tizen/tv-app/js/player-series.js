@@ -21,13 +21,14 @@ window.PlayerSeries = function (api) {
         skip: $('pl-skip'),
         next: $('pl-next'),
         nextTitle: $('pl-next-title'),
+        nextArt: $('pl-next-art'),
         nextCount: $('pl-next-count'),
         panel: $('pl-episodes'),
     };
     var s = fresh();
 
     function fresh() {
-        return { focus: -1, introDone: false, dismissed: false, autoplayAt: 0, panel: null };
+        return { focus: -1, introDone: false, dismissed: false, autoplayAt: 0, panel: null, art: '' };
     }
 
     function el(tag, cls, text) {
@@ -97,16 +98,28 @@ window.PlayerSeries = function (api) {
             s.autoplayAt = 0;
             return;
         }
-        ui.nextTitle.textContent = episodes().items[nextIndex()].label;
+        var next = episodes().items[nextIndex()];
+        ui.nextTitle.textContent = next.label;
+        // The episode's still beside its name (#48), set only when it changes.
+        var art = next.image || '';
+        if (art !== s.art) {
+            s.art = art;
+            ui.nextArt.src = art;
+            ui.nextArt.classList.toggle('hidden', !art);
+        }
         var autoplayMs = Prefs.get('autoplayMs');
         if (!api.isEnded() || !autoplayMs) {
             s.autoplayAt = 0;
+            ui.next.classList.remove('counting');
             ui.nextCount.textContent = I18n.t('player.nextHide');
             return;
         }
         if (!s.autoplayAt) s.autoplayAt = Date.now() + autoplayMs;
         var left = Math.ceil((s.autoplayAt - Date.now()) / 1000);
         if (left <= 0) return playNext();
+        // A bar under the text runs down with the countdown.
+        ui.next.classList.add('counting');
+        ui.next.style.setProperty('--pl-next-left', Math.max(0, (s.autoplayAt - Date.now()) / autoplayMs));
         ui.nextCount.textContent = I18n.t('player.nextCountdown', { s: left });
     }
 

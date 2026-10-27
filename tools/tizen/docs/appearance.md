@@ -70,8 +70,11 @@ Home and the lists move to Preact (#44, #45).
 
 ## Profile avatars (#43)
 
-`js/avatars.js` holds twelve drawn avatars (animals and fairy-tale
-characters) made for this app as SVG; `Kit.Avatar` draws a profile's
+`js/avatars.js` exposes 16 animal IDs through `Avatars.ids`, `has(id)` and
+`art(id)`. Artwork ships in `tv-app/avatars/` as transparent 320 x 320 WebPs,
+each under 40 KB, mixing portraits and full-body 3D characters. Retired saved
+IDs remain supported: `princess` resolves to `unicorn` and `wizard` to `owl`,
+without rewriting profile storage. `Kit.Avatar` draws a profile's
 `avatar` on its colour, or its initial when it has none. Settings > Profiles >
 Avatar and ▲ on Who's watching open `AvatarPicker`; `ProfileStore.setAvatar`
 saves the choice in the profile list. Who's watching follows design review

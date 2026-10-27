@@ -15,7 +15,7 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 |---|---|---|---|
 | Continue hero on Home: up to 3 titles, Previous/Next, Continue watching + Details | Done (not yet tested on the TV) | #5 | Yes |
 | Full-width backdrop on Home and details, gradients, no blur | Done | #3, #4, #5 | Yes |
-| TMDB artwork and description (optional key, 8 s limit, session cache) | Done (not yet tested on the TV): viewer key only, separate seven-day cache, cast, Actor screen, catalogue-only similar titles and Discover genres; provider and TMDB trailers open the YouTube app, Back returns to the detail page | #20, #38 | Yes, the TV calls TMDB |
+| TMDB artwork and description (optional key, 8 s limit, session cache) | Done (not yet tested on the TV): viewer key only, separate seven-day cache per language with legacy English reuse, details and similar titles in the app language with English plot fallback, cast, Actor screen and Discover genres; TMDB trailers prefer the app language then English; provider and TMDB trailers open the YouTube app, Back returns to the detail page | #20, #38 | Yes, the TV calls TMDB |
 | Catalogue sort: Recently added (default), Title A–Z, Provider order | Done (not yet tested on the TV): six orders and a Recently added category | #9 | Yes |
 | Live category browser with restored focus per category | Partial | #8 | Yes |
 | Live preview: OK previews beside the list, OK again fullscreen | Done (not yet tested on the TV): list view only, Settings On/Off | #32 | Yes, one stream at a time |

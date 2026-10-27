@@ -60,12 +60,12 @@ window.Tmdb = (function () {
     function request(path, params, force) {
         var secret = key();
         if (!secret) return Promise.resolve(null);
-        var query = Object.keys(params || {}).sort().map(function (name) {
-            return encodeURIComponent(name) + '=' + encodeURIComponent(params[name]);
-        }).join('&');
+        params = TmdbLanguage.parameters(path, params);
+        var query = TmdbLanguage.query(params);
         var cacheKey = fingerprint(secret) + '|' + path + '?' + query;
+        var legacyKey = params.language === 'en-US' ? fingerprint(secret) + '|' + path + '?' + TmdbLanguage.legacyQuery(params) : null;
         if (pending[cacheKey]) return pending[cacheKey];
-        var promise = (force ? Promise.resolve(null) : TmdbStore.get(cacheKey)).then(function (saved) {
+        var promise = (force ? Promise.resolve(null) : TmdbStore.get(cacheKey, legacyKey)).then(function (saved) {
             if (key() !== secret) return null;
             return saved || schedule({ path: path, query: query, secret: secret, cacheKey: cacheKey });
         });
@@ -102,7 +102,8 @@ window.Tmdb = (function () {
 
     function same(item, candidate) {
         if (id(item) && candidate.id) return id(item) === Number(candidate.id);
-        return normalize(title(item)) === normalize(title(candidate)) && (!year(item) || !year(candidate) || year(item) === year(candidate));
+        var name = normalize(title(item));
+        return (name === normalize(title(candidate)) || name === normalize(candidate.original_title || candidate.original_name)) && (!year(item) || !year(candidate) || year(item) === year(candidate));
     }
 
     function pick(item, results) {
@@ -110,10 +111,25 @@ window.Tmdb = (function () {
         return candidates.length === 1 ? candidates[0] : null;
     }
 
-    function identity(item, type) { return type + '|' + id(item) + '|' + normalize(title(item)) + '|' + year(item); }
+    function identity(item, type, language) { return (language || TmdbLanguage.tag(I18n.language())) + '|' + type + '|' + id(item) + '|' + normalize(title(item)) + '|' + year(item); }
+
+    function detail(path, language) {
+        var params = { append_to_response: 'credits,videos,similar', language: language };
+        return request(path, params).then(function (body) {
+            if (!body) return null;
+            // Keep the translated facts and trailers when only the plot is missing.
+            var fallback = language !== 'en-US' && !body.overview ? request(path, Object.assign({}, params, { language: 'en-US' })) : Promise.resolve(null);
+            return fallback.then(function (english) {
+                var localized = TmdbLanguage.fill(body, english, language);
+                expiries.set(localized, Math.min(expiries.get(body), english ? expiries.get(english) : Infinity));
+                return localized;
+            });
+        });
+    }
 
     function match(item, type, wanted) {
         if (!enabled() || (wanted && !wanted())) return Promise.resolve(null);
+        var language = TmdbLanguage.tag(I18n.language());
         var params = { query: clean(title(item)) };
         if (year(item)) params[type === 'movie' ? 'year' : 'first_air_date_year'] = year(item);
         var resolving = id(item) ? Promise.resolve({ id: id(item) }) : request('/search/' + type, params).then(function (body) {
@@ -121,9 +137,9 @@ window.Tmdb = (function () {
         });
         return resolving.then(function (found) {
             if (!found || (wanted && !wanted())) return null;
-            return request('/' + type + '/' + found.id, { append_to_response: 'credits,videos,similar' });
+            return detail('/' + type + '/' + found.id, language);
         }).then(function (body) {
-            if (body) matches[identity(item, type)] = { body: body, expires: expiries.get(body) };
+            if (body) matches[identity(item, type, language)] = { body: body, expires: expiries.get(body) };
             return body;
         });
     }
@@ -133,9 +149,12 @@ window.Tmdb = (function () {
         credits.forEach(function (credit) {
             if (credit.media_type && credit.media_type !== type) return;
             index.ids[credit.id] = true;
-            var name = normalize(title(credit));
-            if (!index.titles[name]) index.titles[name] = [];
-            index.titles[name].push(credit);
+            [title(credit), credit.original_title || credit.original_name].forEach(function (candidateTitle) {
+                var name = normalize(candidateTitle);
+                if (!name) return;
+                if (!index.titles[name]) index.titles[name] = [];
+                if (index.titles[name].indexOf(credit) === -1) index.titles[name].push(credit);
+            });
         });
         return index;
     }

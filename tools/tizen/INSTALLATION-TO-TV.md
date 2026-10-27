@@ -228,6 +228,12 @@ from step 8 must already be downloaded.
   then **DOWN** to matched titles. **CH ▲▼** checks another page of 12 catalogue
   titles, with at most three TMDB requests at once. **Return** goes back.
   Metadata is kept separately for seven days (failed requests for one hour).
+- **TMDB language**: TMDB titles, genres, similar titles and missing source
+  plots follow **Settings → Language** the next time you open a detail page.
+  A missing translation of a plot falls back to English when available;
+  source plots already present stay as supplied. TMDB trailers prefer your
+  language, then English. Changing language keeps each language's saved
+  metadata separately, including existing English metadata.
 - **Sleep timer**: open the player menu with **UP** (or **Yellow** on Live TV),
   then choose Off, 15, 30, 60 or 90 minutes, or **End of episode/movie**.
   The controls show the minutes left. During the final minute, **Keep watching**

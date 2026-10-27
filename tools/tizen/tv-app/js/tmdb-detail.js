@@ -3,6 +3,7 @@ window.TmdbDetail = function (page, changed) {
 
     var cast = [];
     var similar = [];
+    var similarCredits = [];
     var row = 0;
     var focus = 0;
     var trailer = null;
@@ -35,6 +36,7 @@ window.TmdbDetail = function (page, changed) {
                 if (!current() || !body) return;
                 var enriched = Object.assign({}, provider);
                 enriched.tmdb_id = body.id;
+                enriched.title = body.title || body.name || provider.title;
                 enriched.poster = Tmdb.image(body.poster_path, 'w500') || provider.poster;
                 enriched.backdrop = Tmdb.image(body.backdrop_path, 'w1280') || provider.backdrop;
                 enriched.plot = provider.plot || body.overview;
@@ -47,8 +49,8 @@ window.TmdbDetail = function (page, changed) {
                 page.catalogue().then(function (catalogue) {
                     if (!current()) return;
                     var type = page.episodes ? 'tv' : 'movie';
-                    var credits = ((body.similar || {}).results || []).map(function (entry) { return Object.assign({}, entry, { media_type: type }); });
-                    similar = Tmdb.inLibrary(credits, catalogue).filter(function (entry) { return entry.item !== page.item && !Tmdb.pick(entry.item, [body]); });
+                    similarCredits = ((body.similar || {}).results || []).map(function (entry) { return Object.assign({}, entry, { media_type: type }); });
+                    similar = Tmdb.inLibrary(similarCredits, catalogue).filter(function (entry) { return entry.item !== page.item && !Tmdb.pick(entry.item, [body]); });
                     changed();
                 });
             });
@@ -59,7 +61,7 @@ window.TmdbDetail = function (page, changed) {
             var box = TmdbView.el('div', 'tm-detail-rows');
             if (!current()) return box;
             rows().forEach(function (entry, i) {
-                var cards = entry.label === 'Cast' ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w500') }; }) : similar.map(TmdbView.catalogueCard);
+                var cards = entry.entries === cast ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w500') }; }) : similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); });
                 box.appendChild(TmdbView.cards(entry.label, cards, focused && i === row ? focus : -1));
             });
             if (focused) TmdbView.scroll(box);
@@ -76,7 +78,7 @@ window.TmdbDetail = function (page, changed) {
             } else if (code === Keys.LEFT) focus = Math.max(0, focus - 1);
             else if (code === Keys.RIGHT) focus = Math.min(list[row].entries.length - 1, focus + 1);
             else if (code === Keys.ENTER) {
-                if (list[row].label === 'Cast') Actor.open(cast[focus], page);
+                if (list[row].entries === cast) Actor.open(cast[focus], page);
                 else page.open(similar[focus].item, similar[focus].type === 'movie' ? 'movies' : 'series');
             }
         },

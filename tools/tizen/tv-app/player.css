@@ -481,12 +481,18 @@
     margin-left: 12px;
     color: var(--pc-cyan);
 }
+/* Up next (#48): the next episode's still and name at the top right; it
+   moves under the clock while the controls are up. */
 #pl-next {
     position: absolute;
-    right: 80px;
-    top: 80px;
-    width: 620px;
-    padding: 28px 36px;
+    right: 96px;
+    top: 64px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    box-sizing: border-box;
+    width: 760px;
+    padding: 24px 32px 24px 24px;
     border-radius: 22px;
     background: var(--pc-glass);
     border: 2px solid var(--pc-glass-border);
@@ -509,6 +515,29 @@
     margin-top: 16px;
     font-size: 26px;
     color: var(--pc-text-secondary);
+}
+#player.controls-on #pl-next {
+    top: 200px;
+}
+#pl-next-art {
+    flex: none;
+    width: 240px;
+    height: 135px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+}
+.pl-next-text {
+    flex: 1;
+    min-width: 0;
+}
+#pl-next.counting .pl-next-text::after {
+    content: '';
+    display: block;
+    height: 6px;
+    margin-top: 16px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--pc-accent) calc(var(--pl-next-left, 1) * 100%), rgba(255, 255, 255, 0.2) 0);
 }
 #pl-episodes {
     position: absolute;

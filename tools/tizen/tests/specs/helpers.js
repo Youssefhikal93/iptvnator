@@ -77,6 +77,9 @@ async function section(page, name) {
     // Return/LEFT through content zones until the rail owns focus.
     for (let i = 0; i < 12 && !await page.locator('#rail .focused').count(); i++) await back(page);
     await expect(page.locator('#rail .focused')).toHaveCount(1);
+    // A section turns on once the source's lists say it has content; requests
+    // are paced, so give it a moment (a section that stays off is skipped).
+    await expect(page.locator('#rail .rail-item').filter({ hasText: name })).not.toHaveClass(/disabled/, { timeout: 5000 }).catch(() => {});
     const labels = await page.locator('#rail .rail-item').allTextContents();
     const current = (await page.locator('#rail .focused').innerText()).trim();
     // The menu runs down the side or along the top (#50).

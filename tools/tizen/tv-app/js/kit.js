@@ -25,7 +25,7 @@ window.Kit = (() => {
 
     // A profile's drawn avatar (avatars.js), or its initial, on its colour.
     const Avatar = ({ cls, profile }) => (Avatars.has(profile.avatar)
-        ? html`<div class=${cls + ' drawn'} style=${{ background: profile.color }}>${Avatars.svg(profile.avatar)}</div>`
+        ? html`<div class=${cls + ' drawn'} style=${{ background: profile.color }}>${Avatars.art(profile.avatar)}</div>`
         : html`<div class=${cls} style=${{ background: profile.color }}>${profile.name.charAt(0).toUpperCase()}</div>`);
 
     // Full-screen artwork with the shade that keeps text readable on it.

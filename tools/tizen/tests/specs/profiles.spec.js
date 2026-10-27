@@ -267,25 +267,25 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await addProfile(page, 'Anna');
     await settingsRow(page, 'Avatar');
     await press(page, 'Enter');
-    await expect(page.locator('#avatar-picker .ap-choice')).toHaveCount(13);
+    await expect(page.locator('#avatar-picker .ap-choice')).toHaveCount(17);
     await expect(page.locator('#avatar-picker .ap-choice.focused')).toContainText('Letter');
     await press(page, 'ArrowRight');
     await press(page, 'Enter');
     await expect(page.locator('#avatar-picker')).toHaveCount(0);
     expect((await profiles(page))[1].avatar).toBe('fox');
-    await expect(page.locator('#rail .rail-avatar.drawn svg')).toHaveCount(1);
+    await expect(page.locator('#rail .rail-avatar.drawn .avatar-art')).toHaveCount(1);
 
     for (let i = 0; i < 12 && !await page.locator('#rail .focused').count(); i++) await back(page);
     for (let i = 0; i < 8 && !await page.locator('.rail-profile.focused').count(); i++) await press(page, 'ArrowUp');
     await press(page, 'Enter');
     await expect(page.locator('#menu .menu-row.with-icon .menu-label')).toHaveText(['Me', 'Anna']);
     await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-check')).toHaveCount(1);
-    await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-avatar.drawn svg')).toHaveCount(1);
+    await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-avatar.drawn .avatar-art')).toHaveCount(1);
     await back(page);
 
     await page.reload();
     await expect(page.locator('#profiles')).toBeVisible();
-    await expect(page.locator('#profiles .pf-tile.focused .pf-avatar.drawn svg')).toHaveCount(1);
+    await expect(page.locator('#profiles .pf-tile.focused .pf-avatar.drawn .avatar-art')).toHaveCount(1);
     // ▲ on Who's watching opens the same picker; Return keeps the avatar.
     await press(page, 'ArrowUp');
     await expect(page.locator('#avatar-picker')).toBeVisible();

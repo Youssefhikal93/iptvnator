@@ -251,7 +251,7 @@ from step 8 must already be downloaded.
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on
-  its row in **Sources**, then choose **Guide link…** to edit or clear it;
+  press **OK** on it in **Settings > Sources**, then choose **Guide link…** to edit or clear it;
   **Return** or **Cancel** leaves it unchanged. **Prefer my guide** is on
   by default for Xtream; turn it off to ask the provider first and fill
   missing channels from your link. M3U sources use the link for now and
@@ -281,21 +281,24 @@ from step 8 must already be downloaded.
   watching, Live now on your favorite channels, Favorite movies and series,
   Recently added movies and series, Recently watched channels. ◀ ▶ within
   a row, ▲ ▼ between rows, OK opens, hold OK for options.
-- **Sources** (left rail): add an Xtream account or an M3U link, switch
-  between them, or remove one (press OK twice). Each row shows its type, the
+- **Sources** (the first group of **Settings**; there is no Sources item in
+  the menu): add an Xtream account or an M3U link, switch
+  between them, or remove one (Remove, then OK once more). OK on a source opens
+  its options; with no source yet, the app opens here on Add Xtream account. Each row shows its type, the
   channel count when the saved catalogue knows it, an Xtream account's expiry
   ("Expires in 3 days" inside the last seven) and a red badge for a problem:
   **Expired**, **Inactive**, **Login failed** or **Not responding**. Opening
-  Sources checks every Xtream account in the background. A source's details
-  list its status, expiry date, connections in use / allowed and the output
+  Settings checks every Xtream account in the background. Under a source's
+  options its details list its status, expiry date, connections in use / allowed and the output
   formats the provider allows. M3U sources show type and channel count only.
 - **Account expiry**: when the Xtream account in use ends within seven days,
   a notice appears once per start (and again if the date changes). If the
   account has expired, is inactive or the login is wrong, a screen says which
   (with the expiry date), offers **Retry** and **Go to Sources** (RIGHT moves
-  to it, LEFT back), and retries a few times in the background.
-- **Edit source**: choose **Edit source…** in a source's details, or hold OK
-  on its row. The same form as adding opens with the name, link, username and
+  to it, LEFT back; it opens Settings > Sources on that source), and retries a
+  few times in the background.
+- **Edit source**: choose **Edit source…** in a source's options (OK on its
+  row in Settings > Sources). The same form as adding opens with the name, link, username and
   password filled in. A new name or guide link only saves; a new link or
   login is checked first, then the source in use reloads. An account
   that has lapsed can still be saved, because its login works.

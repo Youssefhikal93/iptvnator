@@ -42,7 +42,7 @@ async function reloadAndPick(page, name) {
     await moveTo(page, '#profiles .pf-tile.focused .pf-name', name, 'ArrowRight');
     await press(page, 'Enter');
     await expect(page.locator('#profiles')).toHaveCount(0);
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
 }
 
 test('old-format data moves under the profile Me and looks unchanged', async ({ page }) => {
@@ -67,7 +67,7 @@ test('old-format data moves under the profile Me and looks unchanged', async ({ 
     await expect(row(page, 'TMDB API key').locator('.st-value')).toContainText('cret');
     // One profile never asks who is watching, even after a reload.
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     await expect(page.locator('#profiles')).toHaveCount(0);
 });
 
@@ -93,7 +93,7 @@ test('a second profile starts empty with its own settings; Who is watching appea
     await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Anna');
     await press(page, 'ArrowLeft');
     await press(page, 'Enter');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
     await expect(page.locator('#home')).toHaveClass(/showcase/);
 });
@@ -195,7 +195,7 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
     // Back to one profile: the question is never asked.
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     await expect(page.locator('#profiles')).toHaveCount(0);
 });
 
@@ -207,7 +207,7 @@ test('Ask who is watching Off skips the screen; On brings it back', async ({ pag
     await press(page, 'Enter');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Off');
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     await expect(page.locator('#profiles')).toHaveCount(0);
     // The last active profile stays; the choice is shared, not per profile.
     await section(page, 'Settings');
@@ -243,7 +243,7 @@ test('Add profile on the picker creates and opens a profile', async ({ page }) =
     await press(page, 'Enter');
     await enterName(page, 'Ben');
     await expect(page.locator('#profiles')).toHaveCount(0);
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     expect((await profiles(page)).map(p => p.name)).toEqual(['Me', 'Anna', 'Ben']);
     await section(page, 'Settings');
     await expect(row(page, 'Current profile').locator('.st-value')).toHaveText('Ben');

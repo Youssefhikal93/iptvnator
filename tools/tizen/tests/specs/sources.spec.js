@@ -1,9 +1,40 @@
-const { test, expect, boot, section, moveTo, press, back, enterItems, category } = require('./helpers');
+const { test, expect, boot, section, moveTo, press, back, category, sources, sourceMenu, menuChoice } = require('./helpers');
+
+test('Sources is the first group of Settings and has no menu item (#51)', async ({ page }) => {
+    await boot(page);
+    await expect(page.locator('#rail .rail-item')).toHaveText(['Home', 'Live TV', 'Movies', 'Series', 'Settings']);
+    await sources(page);
+    await expect(page.locator('#settings .st-group').first()).toHaveText('Sources');
+    await expect(page.locator('#settings .st-row').nth(0)).toHaveClass(/st-source/);
+    await expect(page.locator('#settings .st-row').nth(0).locator('.st-label')).toHaveText('Regression TV');
+    await expect(page.locator('#settings .st-row').nth(0).locator('.st-sub')).toContainText('Active');
+    await expect(page.locator('#settings .st-row .st-label').nth(1)).toHaveText('+  Add Xtream account');
+    await expect(page.locator('#settings .st-row .st-label').nth(2)).toHaveText('+  Add M3U playlist');
+    await expect(page.locator('#settings .st-group').nth(1)).toHaveText('Profiles');
+    // OK opens the source's options; the account details are lines the focus skips.
+    await press(page, 'Enter');
+    await expect(page.locator('#menu .menu-title')).toHaveText('Regression TV');
+    await expect(page.locator('#menu .focused')).toHaveText('Watch this source');
+    await expect(page.locator('#menu .menu-row.note').first()).toContainText('Xtream Code · ');
+    for (let i = 0; i < 10; i++) await press(page, 'ArrowDown');
+    await expect(page.locator('#menu .focused')).toHaveText('Remove');
+    await back(page);
+    await expect(page.locator('#menu')).toBeHidden();
+    // Back leaves Settings for the menu, like the rest of Settings (#50).
+    await back(page);
+    await expect(page.locator('#rail .focused')).toHaveText('Settings');
+});
+
+test('with no source the app opens Settings on Add Xtream account', async ({ page }) => {
+    await boot(page, { storage: { sources: [] } });
+    await expect(page.locator('#rail .active')).toHaveText('Settings');
+    await expect(page.locator('#settings .st-row.focused')).toHaveText('+  Add Xtream account');
+    await expect(page.locator('#rail .rail-item').filter({ hasText: 'Home' })).toHaveClass(/disabled/);
+});
 
 test('add form validates Xtream fields, saves an account, and restores it after reload', async ({ page }) => {
     await boot(page);
-    await section(page, 'Sources');
-    await moveTo(page, '#categories .focused .label', '+  Add Xtream account');
+    await sources(page, '+  Add Xtream account');
     await press(page, 'Enter');
     await expect(page.locator('#form-title')).toHaveText('Add Xtream account');
     await page.locator('#form-save').click();
@@ -17,19 +48,19 @@ test('add form validates Xtream fields, saves an account, and restores it after 
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Second account');
+    await expect(page.locator('#rail .active')).toHaveText('Home');
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Second account');
-    await section(page, 'Sources');
-    await expect(page.locator('#items')).toContainText('Switch to this source');
-    await enterItems(page);
+    await sourceMenu(page, 'Regression TV');
+    await expect(page.locator('#menu .focused')).toHaveText('Switch to this source');
     await press(page, 'Enter');
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
+    await expect(page.locator('#rail .active')).toHaveText('Home');
 });
 
 test('M3U import preserves comma-containing group names and exposes only Live TV; removal needs two OKs', async ({ page }) => {
     await boot(page);
-    await section(page, 'Sources');
-    await moveTo(page, '#categories .focused .label', '+  Add M3U playlist');
+    await sources(page, '+  Add M3U playlist');
     await press(page, 'Enter');
     await expect(page.locator('#form-login')).toBeHidden();
     await page.locator('#form-name').fill('Test playlist');
@@ -43,35 +74,40 @@ test('M3U import preserves comma-containing group names and exposes only Live TV
     await category(page, 'Sports, HD');
     await expect(page.locator('#items .count')).toHaveText('1 / 6');
     await expect(page.locator('#items .row').first()).toContainText('M3U Channel 2');
-    await section(page, 'Sources');
-    await moveTo(page, '#categories .focused .label', 'Test playlist');
-    await expect(page.locator('#items')).toContainText('12 channels in 2 groups');
-    await enterItems(page);
-    await moveTo(page, '#items .focused .label', 'Remove');
+    await sourceMenu(page, 'Test playlist');
+    await expect(page.locator('#menu')).toContainText('12 channels in 2 groups');
+    await moveTo(page, '#menu .focused', 'Remove');
     await press(page, 'Enter');
-    await expect(page.locator('#items .focused')).toHaveText('Press OK again to remove');
+    await expect(page.locator('#menu .focused')).toHaveText('Press OK again to remove');
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Test playlist');
     await press(page, 'Enter');
-    await expect(page.locator('body')).toHaveAttribute('data-source', 'No source yet');
-    await expect(page.locator('#categories')).not.toContainText('Test playlist');
+    await expect(page.locator('body')).toHaveAttribute('data-source', '');
+    await expect(page.locator('#settings')).not.toContainText('Test playlist');
+    await expect(page.locator('#settings .st-row.focused')).toHaveCount(1);
 });
 
-test('refresh source refetches catalogues and Return cancels an add form', async ({ page }) => {
+test('Cancel keeps a source; refresh refetches catalogues; Return cancels an add form', async ({ page }) => {
     let loads = 0;
     page.on('request', req => { if (new URL(req.url()).searchParams.get('action') === 'get_vod_streams') loads++; });
     await boot(page);
+    await sourceMenu(page);
+    await moveTo(page, '#menu .focused', 'Remove');
+    await press(page, 'Enter');
+    await moveTo(page, '#menu .focused', 'Cancel');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu .menu-title')).toHaveText('Regression TV');
+    await back(page);
+    await expect(page.locator('#settings .st-source')).toHaveCount(1);
     await section(page, 'Movies');
     const before = loads;
-    await section(page, 'Sources');
-    await enterItems(page);
-    await moveTo(page, '#items .focused .label', 'Refresh source');
-    await press(page, 'Enter');
+    await sourceMenu(page);
+    await menuChoice(page, 'Refresh source');
     await expect(page.locator('#rail .active')).toHaveText('Home');
     await expect.poll(() => loads).toBeGreaterThan(before);
-    await section(page, 'Sources');
-    await moveTo(page, '#categories .focused .label', '+  Add Xtream account');
+    await sources(page, '+  Add Xtream account');
     await press(page, 'Enter');
     await back(page);
     await expect(page.locator('#form')).toBeHidden();
+    await expect(page.locator('#settings .st-row.focused')).toHaveText('+  Add Xtream account');
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });

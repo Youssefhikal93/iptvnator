@@ -22,7 +22,6 @@ I18n.tables.pt = {
     'browser.recentlyWatched': 'Assistidos recentemente',
     'browser.search': 'Pesquisar',
     'browser.searchResults': 'Resultados da pesquisa',
-    'browser.source': 'Fonte',
     'browser.watched': 'Assistido',
     'common.back': 'Voltar',
     'common.cancel': 'Cancelar',

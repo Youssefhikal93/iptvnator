@@ -22,7 +22,6 @@ I18n.tables.zh = {
     'browser.recentlyWatched': '最近观看',
     'browser.search': '搜索',
     'browser.searchResults': '搜索结果',
-    'browser.source': '来源',
     'browser.watched': '已观看',
     'common.back': '返回',
     'common.cancel': '取消',

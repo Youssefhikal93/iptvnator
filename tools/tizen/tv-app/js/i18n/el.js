@@ -22,7 +22,6 @@ I18n.tables.el = {
     'browser.recentlyWatched': 'Πρόσφατα προβληθέντα',
     'browser.search': 'Αναζήτηση',
     'browser.searchResults': 'Αποτελέσματα αναζήτησης',
-    'browser.source': 'Πηγή',
     'browser.watched': 'Έχει προβληθεί',
     'common.back': 'Πίσω',
     'common.cancel': 'Ακύρωση',

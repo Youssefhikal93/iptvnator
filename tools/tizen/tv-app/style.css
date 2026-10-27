@@ -516,26 +516,6 @@ body.bar-off #header {
 #form .form-columns label {
     width: 100%;
 }
-.source-guide-status {
-    font-size: 20px;
-    font-weight: 400;
-    color: var(--muted);
-}
-.source-text {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-}
-.source-text .source-guide-status {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.row .badge.warn,
-.row.focused .badge.warn,
-.row.selected .badge.warn {
-    background: var(--warn-bg);
-    color: var(--warn-fg);
-}
 
 /* Player */
 #player {
@@ -716,6 +696,20 @@ body.bar-off #header {
     border-radius: 14px;
     border: 3px solid transparent;
 }
+/* A source's account details under its options; the focus passes over them. */
+.menu-row.note {
+    margin-top: 0;
+    padding: 4px 20px;
+    border-width: 0;
+    color: var(--muted);
+    font-size: 22px;
+}
+.menu-row:not(.note) + .menu-row.note {
+    margin-top: 14px;
+    padding-top: 18px;
+    border-top: 2px solid var(--line);
+    border-radius: 0;
+}
 .menu-row.focused {
     color: var(--selection);
     font-weight: 600;
@@ -834,6 +828,40 @@ body.bar-off #header {
 .st-value {
     color: var(--selection);
     text-align: right;
+}
+/* Settings > Sources (#51): the name over its state, a chip on the right. */
+.st-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 6px 0;
+}
+.st-text .st-label,
+.st-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.st-sub {
+    font-size: 20px;
+    color: var(--muted);
+}
+.st-chip {
+    flex: none;
+    padding: 4px 18px;
+    border-radius: 999px;
+    background: var(--search-bg);
+    color: var(--muted);
+    font-size: 22px;
+}
+.st-row.focused .st-chip {
+    background: var(--selection-surface-strong);
+    color: var(--on-surface);
+}
+.st-chip.warn,
+.st-row.focused .st-chip.warn {
+    background: var(--warn-bg);
+    color: var(--warn-fg);
 }
 #content.home .pane {
     display: none;

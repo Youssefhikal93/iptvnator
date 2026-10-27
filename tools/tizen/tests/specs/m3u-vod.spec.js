@@ -1,10 +1,9 @@
-const { test, expect, boot, press, back, section, category, moveTo, openFirst, playing } = require('./helpers');
+const { test, expect, boot, press, back, section, category, moveTo, sources, sourceMenu, openFirst, playing } = require('./helpers');
 
-// Adds an M3U source through the Sources form, like a viewer would.
+// Adds an M3U source through Settings > Sources, like a viewer would.
 async function addPlaylist(page, file) {
     await boot(page);
-    await section(page, 'Sources');
-    await moveTo(page, '#categories .focused .label', '+  Add M3U playlist');
+    await sources(page, '+  Add M3U playlist');
     await press(page, 'Enter');
     await page.locator('#form-name').fill('VOD playlist');
     await page.locator('#form-url').fill(new URL(page.url()).origin + file);
@@ -30,10 +29,9 @@ test('playlist with movies and episodes adds Movies and Series; live channels st
     await section(page, 'Series');
     await expect(page.locator('#items .count')).toHaveText('1 / 2');
     await expect(page.locator('#items .card-title')).toHaveText(['Show A', 'Show B']);
-    await section(page, 'Sources');
-    await moveTo(page, '#categories .focused .label', 'VOD playlist');
-    await expect(page.locator('#items')).toContainText('2 movies');
-    await expect(page.locator('#items')).toContainText('2 shows');
+    await sourceMenu(page, 'VOD playlist');
+    await expect(page.locator('#menu')).toContainText('2 movies');
+    await expect(page.locator('#menu')).toContainText('2 shows');
 });
 
 test('a movie opens its detail from the playlist data, plays, seeks and saves progress', async ({ page }) => {

@@ -1,5 +1,6 @@
 // A small options dialog over the browser, opened by holding OK on an item.
-// Options are { label, run }; an option without run just closes the menu.
+// Options are { label, run }; an option without run just closes the menu,
+// and a { label, note: true } line is passed over by the focus.
 window.Menu = (() => {
     'use strict';
 
@@ -33,8 +34,13 @@ window.Menu = (() => {
         isOpen: () => state.open,
         onKey: (code) => {
             if (code === Keys.UP || code === Keys.DOWN) {
-                const moved = Focus.step(state.index, state.options.length, code, 'column');
-                if (moved.index !== undefined) state.index = moved.index;
+                let at = state.index;
+                do {
+                    const moved = Focus.step(at, state.options.length, code, 'column');
+                    if (moved.index === undefined) at = state.index;
+                    else at = moved.index;
+                } while (at !== state.index && state.options[at].note);
+                state.index = at;
                 render();
             } else if (code === Keys.ENTER) {
                 const option = state.options[state.index];

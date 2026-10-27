@@ -1,7 +1,7 @@
 const { test, expect, boot, section, press, back, moveTo, openFirst } = require('./helpers');
 
-const RAIL_GERMAN = ['Startseite', 'Quellen', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
-const RAIL_ENGLISH = ['Home', 'Sources', 'Live TV', 'Movies', 'Series', 'Settings'];
+const RAIL_GERMAN = ['Startseite', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
+const RAIL_ENGLISH = ['Home', 'Live TV', 'Movies', 'Series', 'Settings'];
 
 const railLabels = page => page.locator('#rail .rail-item').allTextContents().then(list => list.map(text => text.trim()));
 
@@ -67,7 +67,7 @@ test('Settings language list switches the app to Deutsch, survives a reload and 
     expect(stored).toBe('de');
 
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     expect(await railLabels(page)).toEqual(RAIL_GERMAN);
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
 
@@ -147,7 +147,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     expect(ring.shadow !== 'none' || ring.outline !== 'none').toBe(true);
 
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(6);
+    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(238, 240, 243)');
 

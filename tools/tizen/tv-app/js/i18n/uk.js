@@ -22,7 +22,6 @@ I18n.tables.uk = {
     'browser.recentlyWatched': 'Нещодавно переглянуті',
     'browser.search': 'Пошук',
     'browser.searchResults': 'Результати пошуку',
-    'browser.source': 'Джерело',
     'browser.watched': 'Переглянуто',
     'common.back': 'Назад',
     'common.cancel': 'Скасувати',

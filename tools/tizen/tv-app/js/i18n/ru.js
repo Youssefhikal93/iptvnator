@@ -22,7 +22,6 @@ I18n.tables.ru = {
     'browser.recentlyWatched': 'Недавно просмотренные',
     'browser.search': 'Поиск',
     'browser.searchResults': 'Результаты поиска',
-    'browser.source': 'Источник',
     'browser.watched': 'Просмотрено',
     'common.back': 'Назад',
     'common.cancel': 'Отмена',

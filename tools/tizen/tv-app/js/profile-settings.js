@@ -3,10 +3,12 @@ window.ProfileSettings = (function () {
     'use strict';
 
     function rows(hooks, render) {
-        // A switch reloads the Home of the current source with the new profile's data.
+        // A switch reloads the Home of the current source with the new profile's data;
+        // a new avatar or name shows on the menu at once.
         function changed(didChange) {
             render();
             if (didChange) hooks.profileChanged();
+            else hooks.chrome();
         }
 
         function add() {

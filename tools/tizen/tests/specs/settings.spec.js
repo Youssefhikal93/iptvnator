@@ -29,7 +29,7 @@ test('settings show current values; guide Off stops requests and On resumes them
     await expect(page.locator('#items .epg-now').first()).toBeVisible();
 });
 
-test('Showcase home has a 320px hero and settings survive reload', async ({ page }) => {
+test('Showcase home has a 360px hero and settings survive reload', async ({ page }) => {
     await boot(page, resumeSeed());
     await section(page, 'Settings');
     await moveTo(page, '.st-row.focused .st-label', 'Home layout');
@@ -37,10 +37,10 @@ test('Showcase home has a 320px hero and settings survive reload', async ({ page
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Showcase');
     await section(page, 'Home');
     await expect(page.locator('#home')).toHaveClass(/showcase/);
-    await expect(page.locator('.hm-hero')).toHaveCSS('height', '320px');
+    await expect(page.locator('.hm-hero')).toHaveCSS('height', '360px');
     await page.reload();
     await expect(page.locator('#home')).toHaveClass(/showcase/);
-    await expect(page.locator('.hm-hero')).toHaveCSS('height', '320px');
+    await expect(page.locator('.hm-hero')).toHaveCSS('height', '360px');
     await section(page, 'Settings');
     await expect(page.locator('.st-row').filter({ hasText: 'Home layout' }).locator('.st-value')).toHaveText('Showcase');
 });

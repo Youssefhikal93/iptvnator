@@ -15,7 +15,6 @@ I18n.tables.tr = {
     'backup.exportTitle': 'Yedeği dışa aktar',
     'browser.allChannels': 'Tüm kanallar',
     'browser.continueWatching': 'İzlemeye Devam Et',
-    'browser.discover': 'Keşfet',
     'browser.favorites': 'Favoriler',
     'browser.notAvailable': 'Mevcut değil',
     'browser.recentlyAdded': 'Yeni Eklenenler',

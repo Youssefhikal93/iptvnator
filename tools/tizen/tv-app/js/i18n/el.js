@@ -15,7 +15,6 @@ I18n.tables.el = {
     'backup.exportTitle': 'Εξαγωγή αντιγράφου',
     'browser.allChannels': 'Όλα τα κανάλια',
     'browser.continueWatching': 'Συνέχεια παρακολούθησης',
-    'browser.discover': 'Ανακάλυψη',
     'browser.favorites': 'Αγαπημένα',
     'browser.notAvailable': 'Μη διαθέσιμο',
     'browser.recentlyAdded': 'Πρόσφατα προστέθηκε',

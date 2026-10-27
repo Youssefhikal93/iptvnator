@@ -41,13 +41,6 @@ async function emptyPlot(page, series = false) {
     });
 }
 
-async function discover(page, name = 'Movies') {
-    await section(page, name);
-    await moveTo(page, '#categories .focused .label', 'Discover', 'ArrowUp');
-    await press(page, 'Enter');
-    await expect(page.locator('#discover .tm-chip').first()).toHaveText('Drama');
-}
-
 test('without a viewer key movie and show browsing sends no TMDB requests', async ({ page }) => {
     const seen = await routes(page);
     await boot(page);
@@ -62,8 +55,6 @@ test('without a viewer key movie and show browsing sends no TMDB requests', asyn
     await expect(page.locator('#toast')).toHaveText('Set a TMDB API key first');
     await page.waitForTimeout(600);
     expect(seen).toHaveLength(0);
-    await section(page, 'Movies');
-    await expect(page.locator('#categories')).not.toContainText('Discover');
 });
 
 for (const status of [200, 401]) {
@@ -134,44 +125,6 @@ test('series enrichment preserves provider plot and episodes, with cast and libr
     await expect(page.locator('#detail .dt-title')).toHaveText('Show 3');
 });
 
-test('Discover matches visible catalogue titles for a genre with at most three requests in flight', async ({ page }, testInfo) => {
-    const seen = await routes(page, { delay: 40 });
-    let active = 0;
-    let peak = 0;
-    page.on('request', request => {
-        if (request.url().startsWith('https://api.themoviedb.org/')) { active++; peak = Math.max(peak, active); }
-    });
-    page.on('requestfinished', request => { if (request.url().startsWith('https://api.themoviedb.org/')) active--; });
-    await boot(page, seed);
-    await discover(page);
-    expect(seen).toEqual(['/3/genre/movie/list']);
-    await press(page, 'Enter');
-    await expect(page.locator('#discover')).not.toContainText('Matching visible');
-    await expect(page.locator('#discover .tm-card')).toHaveCount(6);
-    await expect(page.locator('#discover .tm-card').first()).toHaveText('Movie 1');
-    await page.screenshot({ path: testInfo.outputPath('discover.png') });
-    expect(seen.filter(endpoint => endpoint === '/3/search/movie')).toHaveLength(12);
-    expect(peak).toBeLessThanOrEqual(3);
-    await press(page, 'ArrowRight');
-    await press(page, 'Enter');
-    await expect(page.locator('#discover .tm-card').first()).toHaveText('Movie 2');
-    // Cached matches change genre without sending the same requests again.
-    expect(seen.filter(endpoint => endpoint === '/3/search/movie')).toHaveLength(12);
-    await press(page, 'ArrowDown');
-    await press(page, 'Enter');
-    await expect(page.locator('#detail .dt-title')).toContainText('Movie 2');
-    expect(await page.locator('#detail .dt-title').evaluate(node => {
-        const rect = node.getBoundingClientRect();
-        return node.contains(document.elementFromPoint(rect.x + 10, rect.y + 10));
-    })).toBe(true);
-    await back(page);
-    await expect(page.locator('#discover')).toBeVisible();
-    await sendKeyCode(page, 428);
-    await expect(page.locator('#discover')).toContainText('Titles 13–24');
-    await expect(page.locator('#discover')).not.toContainText('Matching visible');
-    await expect(page.locator('#discover .tm-card').first()).toHaveText('Movie 14');
-});
-
 test('TMDB 500 leaves provider artwork, facts, plot and actions intact', async ({ page }) => {
     const seen = await routes(page, { status: 500 });
     await boot(page, seed);
@@ -185,7 +138,7 @@ test('TMDB 500 leaves provider artwork, facts, plot and actions intact', async (
     await expect(page.locator('#detail .tm-row:not(.related) .tm-card')).toHaveCount(0);
 });
 
-test('removing a key stops enrichment and removes Discover, including after reload', async ({ page }) => {
+test('removing a key stops enrichment, including after reload', async ({ page }) => {
     const seen = await routes(page);
     await boot(page, seed);
     await openFirst(page, 'Movies');
@@ -199,8 +152,6 @@ test('removing a key stops enrichment and removes Discover, including after relo
     await page.waitForTimeout(500);
     expect(seen).toHaveLength(count);
     await expect(page.locator('#detail .tm-row:not(.related) .tm-card')).toHaveCount(0);
-    await back(page);
-    await expect(page.locator('#categories')).not.toContainText('Discover');
 });
 
 test('YouTube trailers launch an implicit view control and never an iframe', async ({ page }) => {

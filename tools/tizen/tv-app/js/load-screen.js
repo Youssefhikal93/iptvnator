@@ -16,6 +16,7 @@ window.LoadScreen = (function () {
     function message(err) {
         if (err.code === 'saved') return [I18n.t('load.savedTitle'), I18n.t('load.savedHint')];
         if (err.code === 'account') return SourceAccount.screen(err);
+        if (err.code === 'busy') return [I18n.t('load.busyTitle'), I18n.t('load.busyHint')];
         if (navigator.onLine === false || err.name === 'TypeError' || /network|failed to fetch|load failed/i.test(err.message)) {
             return [I18n.t('load.networkTitle'), I18n.t('load.networkHint')];
         }

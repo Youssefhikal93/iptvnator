@@ -46,6 +46,15 @@ window.Genres = (() => {
     const has = (item, section, genre) => of(item, section).indexOf(genre) !== -1;
     const known = (item, section) => of(item, section).length > 0;
 
+    // A search word that names a genre ("drama", "دراما", "sci"): matches
+    // titles whose known genres start with it. Channels have none.
+    const matches = (item, section, query) => {
+        const word = String(query || '').trim();
+        const needle = (SAME[word] || word).toLowerCase();
+        if (section === 'live' || needle.length < 3) return false;
+        return of(item, section).some((name) => name.toLowerCase().indexOf(needle) === 0);
+    };
+
     // The most common genres in a list, most common first.
     const common = (list, section, max) => {
         const counts = {};
@@ -59,5 +68,5 @@ window.Genres = (() => {
         return top.concat((STANDARD[section] || []).filter((name) => top.indexOf(name) === -1)).slice(0, max);
     };
 
-    return { of, has, known, common, pills, usePage };
+    return { of, has, known, matches, common, pills, usePage };
 })();

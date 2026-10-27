@@ -15,7 +15,6 @@ I18n.tables.ja = {
     'backup.exportTitle': 'バックアップをエクスポート',
     'browser.allChannels': 'すべてのチャンネル',
     'browser.continueWatching': '視聴を続ける',
-    'browser.discover': '発見',
     'browser.favorites': 'お気に入り',
     'browser.notAvailable': '利用不可',
     'browser.recentlyAdded': '最近追加した項目',

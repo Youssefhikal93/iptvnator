@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, moveTo, enterItems } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, enterItems, toolbar, menuChoice } = require('./helpers');
 
 // Search everything (#31): the icon at the top right of Home opens a bar;
 // the results take the place of the rows, movies first.
@@ -26,97 +26,124 @@ test('Home search shows movies, series and Live TV results and Return closes it'
     await expect(page.locator('.hm-search-icon')).toBeVisible();
 });
 
-test('genre pills under the Series search bar narrow the list; Arabic and English names are one genre', async ({ page }) => {
-    await boot(page);
-    await section(page, 'Series');
-    // Recently added holds every show.
+// Recently added holds every title; the genre button opens the menu.
+async function genre(page, section_, name) {
+    await section(page, section_);
     await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
     await enterItems(page);
-    const pills = page.locator('#genre-pills .tm-chip');
-    await expect(pills.first()).toHaveText('All');
-    // Drama is the most common genre, so it comes right after All.
-    await expect(pills.nth(1)).toHaveText('Drama');
-    await expect(pills.filter({ hasText: 'دراما' })).toHaveCount(0);
-    await press(page, 'ArrowUp');
-    await expect(pills.first()).toHaveClass(/focus/);
-    await press(page, 'ArrowRight');
+    await toolbar(page, 'genre');
     await press(page, 'Enter');
-    await expect(pills.nth(1)).toHaveClass(/selected/);
+    await expect(page.locator('#menu')).toBeVisible();
+    if (name) await menuChoice(page, name);
+}
+
+test('the genre button beside the Series search bar narrows the list; Arabic and English names are one genre', async ({ page }) => {
+    await boot(page);
+    await genre(page, 'Series');
+    await expect(page.locator('#menu')).toContainText('All');
+    await expect(page.locator('#menu')).toContainText('Drama');
+    await expect(page.locator('#menu')).not.toContainText('دراما');
+    await menuChoice(page, 'Drama');
     // Show 2 is a Comedy; Show 1 is Drama in Arabic.
     const names = await page.locator('#items .card .card-title, #items .row .label').allTextContents();
     expect(names.length).toBe(10);
     expect(names).toContain('Show 1');
     expect(names).not.toContain('Show 2');
-    // ▲ from the pills reaches the bar.
-    await press(page, 'ArrowUp');
-    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
-});
-
-test('a genre TMDB gives a movie joins the provider genres', async ({ page }) => {
-    await boot(page);
-    await page.evaluate(() => {
-        Tmdb.enabled = () => true;
-        Tmdb.cached = (item) => (item.name === 'Movie 2' ? { genres: [{ id: 53, name: 'Thriller' }] } : null);
-        Tmdb.match = () => Promise.resolve(null);
-    });
-    await section(page, 'Movies');
-    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
-    await enterItems(page);
-    const pills = page.locator('#genre-pills .tm-chip');
-    await expect(pills.nth(1)).toHaveText('Thriller');
-    await press(page, 'ArrowUp');
-    await press(page, 'ArrowRight');
+    await expect(page.locator('#genre-button')).toHaveClass(/chosen/);
+    await expect(page.locator('#genre-button')).toContainText('Drama');
+    // The menu marks the genre in use; All clears it.
+    await toolbar(page, 'genre');
     await press(page, 'Enter');
-    // The others are looked up on their provider pages (Crime, Drama) and stay out.
-    await expect(page.locator('#hints')).not.toContainText('Looking up');
-    await expect(page.locator('#items .card, #items .row')).toHaveCount(1);
-    await expect(page.locator('#items')).toContainText('Movie 2');
+    await expect(page.locator('#menu .focused')).toContainText('\u2713 Drama');
+    await moveTo(page, '#menu .focused', 'All', 'ArrowUp');
+    await press(page, 'Enter');
+    await expect(page.locator('#genre-button')).not.toHaveClass(/chosen/);
 });
 
-test('Movies have the same pills as Series and a genre is looked up on the provider movie pages', async ({ page }) => {
+// TMDB is on and says the odd-numbered movies are Thrillers; it is asked
+// one title at a time and remembers what it said.
+async function tmdbThrillers(page) {
+    await page.evaluate(() => {
+        const said = {};
+        window.tmdbAsked = 0;
+        Tmdb.enabled = () => true;
+        Tmdb.cached = (item) => said[item.name] || null;
+        Tmdb.match = (item) => {
+            window.tmdbAsked++;
+            const n = Number(String(item.name).replace(/\D/g, ''));
+            said[item.name] = { genres: [{ id: n % 2 ? 53 : 18, name: n % 2 ? 'Thriller' : 'Drama' }] };
+            return Promise.resolve(said[item.name]);
+        };
+    });
+}
+
+test('a picked genre checks the open list with TMDB twenty titles at a time and never asks the provider', async ({ page }) => {
     let pages = 0;
     page.on('request', req => { if (new URL(req.url()).searchParams.get('action') === 'get_vod_info') pages++; });
     await boot(page);
-    await section(page, 'Movies');
-    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
-    await enterItems(page);
-    const pills = page.locator('#genre-pills .tm-chip');
-    await expect(pills.first()).toHaveText('All');
-    await expect(pills.filter({ hasText: /^Crime$/ })).toHaveCount(1);
-    await press(page, 'ArrowUp');
-    await moveTo(page, '#genre-pills .tm-chip.focus', 'Crime', 'ArrowRight');
-    await press(page, 'Enter');
-    // The fake provider pages say Crime, Drama: the first twenty join as they are found.
-    await expect(page.locator('#items .list-header .count')).toContainText('/ 20', { timeout: 30000 });
-    expect(pages).toBe(20);
-    await expect(page.locator('#hints')).toContainText('check 20 more (4 left)');
-    // ▼ past the last row checks the next ones.
-    await press(page, 'ArrowDown');
+    await tmdbThrillers(page);
+    await genre(page, 'Movies', 'Thriller');
+    // Recently added has 24 movies; the first twenty are checked.
+    await expect(page.locator('#hints')).toContainText('check 20 more (4 left)', { timeout: 30000 });
+    expect(await page.evaluate(() => window.tmdbAsked)).toBe(20);
+    const first = await page.locator('#items .list-header .count').innerText();
+    // ▼ past the last row checks the other four.
     for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
-    await expect(page.locator('#items .list-header .count')).toContainText('/ 24', { timeout: 30000 });
-    expect(pages).toBe(24);
-    await expect(page.locator('#hints')).not.toContainText('Looking up');
+    await expect(page.locator('#hints')).not.toContainText('check 20 more', { timeout: 30000 });
+    expect(await page.evaluate(() => window.tmdbAsked)).toBe(24);
+    expect(await page.locator('#items .list-header .count').innerText()).not.toBe(first);
+    expect(pages).toBe(0);
 });
 
-test('a provider that answers 429 stops the genre lookups at once', async ({ page }) => {
-    let pages = 0;
-    await page.route(/action=get_vod_info/, (route) => {
-        pages++;
-        return route.fulfill({ status: 429, body: 'Too Many Requests' });
-    });
+test('without TMDB the genre menu offers only the genres the provider lists carry', async ({ page }) => {
     await boot(page);
+    // The fake movie list has no genres: no genre button in Movies.
     await section(page, 'Movies');
-    await moveTo(page, '#categories .row.focused .label', 'Recently added', 'ArrowUp');
     await enterItems(page);
     await press(page, 'ArrowUp');
-    await moveTo(page, '#genre-pills .tm-chip.focus', 'Crime', 'ArrowRight');
+    await expect(page.locator('#genre-button')).toBeHidden();
+    // Series lists carry genres: the button is there.
+    await section(page, 'Series');
+    await enterItems(page);
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#genre-button')).toBeVisible();
+});
+
+test('a provider that answers 429 is left alone: no retries every few seconds', async ({ page }) => {
+    let calls = 0;
+    await boot(page);
+    await page.route(/action=get_series_categories/, (route) => {
+        calls++;
+        return route.fulfill({ status: 429, body: 'Too Many Requests' });
+    });
+    // Open Series by hand: its categories never load here.
+    for (let i = 0; i < 12 && !await page.locator('#rail .focused').count(); i++) await press(page, 'Escape');
+    await moveTo(page, '#rail .focused', 'Series', 'ArrowDown');
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#load-message')).toHaveText('Too many requests');
+    await expect(page.locator('#load-countdown')).toContainText(/Retrying in (59|60) s/);
+    await page.waitForTimeout(6000);
+    expect(calls).toBe(1);
+});
+
+test('a genre typed in a search finds titles of that genre, in English or Arabic', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Series');
+    await enterItems(page);
+    await toolbar(page, 'search');
     await press(page, 'Enter');
-    await expect(page.locator('.list-empty')).toContainText('Nothing in Crime here');
-    await page.waitForTimeout(1500);
-    expect(pages).toBe(1);
-    // Picking again within the rest asks the provider nothing.
+    await page.keyboard.type('comedy');
     await press(page, 'Enter');
+    // Show 2, 5, 8, 11 and 14 are the Comedy shows.
+    const names = page.locator('#items .card .card-title, #items .row .label');
+    await expect(names).toHaveCount(5);
+    await expect(names.first()).toContainText('Show');
+    // From Home: the Arabic name finds the same Drama shows as Drama.
+    await section(page, 'Home');
+    await press(page, 'ArrowUp');
     await press(page, 'Enter');
-    await page.waitForTimeout(1000);
-    expect(pages).toBe(1);
+    await page.keyboard.type('دراما');
+    await press(page, 'Enter');
+    await expect(page.locator('#home .hm-row h2')).toHaveText(['Series']);
+    await expect(page.locator('#home .hm-row .hm-aside')).toContainText('10');
 });

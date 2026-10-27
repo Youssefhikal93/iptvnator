@@ -1,6 +1,12 @@
 #backup-screen {
     position: fixed;
-    inset: 100px 180px;
+    /* Sized by its content from the top: the TV keyboard shrinks the page
+       while typing, and a box pinned to both edges collapsed (#31). */
+    top: 100px;
+    left: 180px;
+    right: 180px;
+    max-height: calc(100% - 140px);
+    box-sizing: border-box;
     z-index: 100;
     overflow: auto;
     padding: 50px;

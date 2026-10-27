@@ -15,7 +15,6 @@ I18n.tables.ru = {
     'backup.exportTitle': 'Экспортировать копию',
     'browser.allChannels': 'Все каналы',
     'browser.continueWatching': 'Продолжить просмотр',
-    'browser.discover': 'Подборка',
     'browser.favorites': 'Избранное',
     'browser.notAvailable': 'Недоступно',
     'browser.recentlyAdded': 'Недавно добавленные',

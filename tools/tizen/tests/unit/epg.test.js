@@ -36,3 +36,48 @@ test('without overlaps the running programme and the one after it are shown', as
     assert.equal(shown.now.title, 'Now');
     assert.equal(shown.next.title, 'Next');
 });
+
+// A guide whose answers are scripted per call, on a clock the test moves.
+function scripted(answers) {
+    var clock = { at: Date.now() };
+    var calls = 0;
+    var Epg = load(['epg.js'], {}, {
+        Log: { error: function () {} },
+        Prefs: { get: function () { return true; } },
+        Date: { now: function () { return clock.at; } },
+    }).globals.Epg;
+    var guide = Epg({ nowNext: function () { return answers[Math.min(calls++, answers.length - 1)](); } }, null);
+    return { guide: guide, clock: clock, calls: function () { return calls; } };
+}
+
+function busy(wait) {
+    var err = new Error('Source is busy');
+    err.code = 'busy';
+    err.wait = wait;
+    return Promise.reject(err);
+}
+
+test('a busy provider is not "no guide": the channel is asked again once the rest is over', async function () {
+    var t = scripted([function () { return busy(60 * 1000); }, function () { return Promise.resolve([p('Now', -30, 30)]); }]);
+    var channel = { stream_id: 1 };
+    assert.equal((await t.guide.load(channel)).now, null);
+    t.clock.at += 30 * 1000;
+    assert.notEqual(t.guide.peek(channel), undefined, 'not asked again during the rest');
+    t.clock.at += 31 * 1000;
+    assert.equal(t.guide.peek(channel), undefined, 'asked again after the rest, not in 30 minutes');
+    assert.equal((await t.guide.load(channel)).now.title, 'Now');
+    assert.equal(t.calls(), 2);
+});
+
+test('a failed request is retried after two minutes; an empty answer waits thirty', async function () {
+    var failed = scripted([function () { return Promise.reject(new Error('HTTP 500')); }]);
+    await failed.guide.load({ stream_id: 1 });
+    failed.clock.at += 2 * MIN + 1000;
+    assert.equal(failed.guide.peek({ stream_id: 1 }), undefined);
+    var empty = scripted([function () { return Promise.resolve([]); }]);
+    await empty.guide.load({ stream_id: 1 });
+    empty.clock.at += 2 * MIN + 1000;
+    assert.notEqual(empty.guide.peek({ stream_id: 1 }), undefined);
+    empty.clock.at += 30 * MIN;
+    assert.equal(empty.guide.peek({ stream_id: 1 }), undefined);
+});

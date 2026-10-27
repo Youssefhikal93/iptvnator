@@ -15,7 +15,6 @@ I18n.tables.ar = {
     'backup.exportTitle': 'تصدير نسخة احتياطية',
     'browser.allChannels': 'جميع القنوات',
     'browser.continueWatching': 'متابعة المشاهدة',
-    'browser.discover': 'استكشاف',
     'browser.favorites': 'المفضلة',
     'browser.notAvailable': 'غير متاح',
     'browser.recentlyAdded': 'أُضيفت مؤخرًا',

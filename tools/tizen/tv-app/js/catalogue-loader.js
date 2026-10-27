@@ -73,6 +73,7 @@ window.CatalogueLoader = function (deps) {
     }
 
     function save(key, catalogue, mine) {
+        if (deps.stamps && current(mine)) deps.stamps.set(key);
         check(mine);
         memory[key] = catalogue;
         deps.store.put(deps.sourceId, key, catalogue);
@@ -84,10 +85,15 @@ window.CatalogueLoader = function (deps) {
         deps.onUpdating(count);
     }
 
+    // A saved list refreshes in the background once a session, and with
+    // deps.stamps no sooner than REFRESH_AGE_MS after its last refresh:
+    // whole catalogues are large and providers limit requests.
+    var REFRESH_AGE_MS = 24 * 3600000;
     function refreshSaved(what, options, saved, mine) {
         var key = keyOf(what);
         if (refreshed[key]) return;
         refreshed[key] = true;
+        if (deps.stamps && Date.now() - deps.stamps.get(key) < REFRESH_AGE_MS) return;
         changedUpdating(updating + 1);
         fetch(what, options, mine).then(function (catalogue) {
             save(key, catalogue, mine);

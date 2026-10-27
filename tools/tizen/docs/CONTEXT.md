@@ -134,9 +134,9 @@ _Avoid_: Zoom, resolution, text size
 The full-screen page for one movie or show: artwork, facts, plot and its buttons; a show's page also lists its episodes.
 _Avoid_: Info page, details screen
 
-**Discover**:
-An optional Movies or Series category that finds catalogue titles by TMDB genre after the viewer saves their own TMDB API key.
-_Avoid_: Recommendations, trending
+**Genre filter**:
+The button beside the search bar in Movies and Series: it narrows the open list to a genre, from the provider's list and the TMDB match of each title (checked twenty at a time, with the viewer's own TMDB API key). It replaced Discover.
+_Avoid_: Recommendations, trending, Discover
 
 **Actor screen**:
 A cast member's photo, biography and movie or show credits found in the current source's catalogue, labelled "In your library".

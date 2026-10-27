@@ -227,10 +227,9 @@ from step 8 must already be downloaded.
   artwork, facts and missing plots. Press **DOWN** from the buttons to **Cast**;
   **LEFT/RIGHT** selects a person and **OK** opens their biography and **In your
   library** titles. Press **DOWN** again for **Similar in your library**, then
-  again for a show's episodes. **Discover**, at the top of Movies and Series
-  categories, offers genre chips: choose with **LEFT/RIGHT**, press **OK**,
-  then **DOWN** to matched titles. **CH ▲▼** checks another page of 12 catalogue
-  titles, with at most three TMDB requests at once. **Return** goes back.
+  again for a show's episodes. The **genre** button beside the search bar in Movies and
+  Series opens a menu of genres; the pick narrows the open list, checked with
+  TMDB twenty titles at a time (**▼** past the end or **CH▼** checks more).
   Metadata is kept separately for seven days (failed requests for one hour).
 - **TMDB language**: TMDB titles, genres, similar titles and missing source
   plots follow **Settings → Language** the next time you open a detail page.

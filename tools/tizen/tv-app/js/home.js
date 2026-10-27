@@ -36,6 +36,16 @@ window.Home = function (api) {
         return node;
     }
 
+    // Host and file name only: enough to tell which logo server fails.
+    function logoHost(src) {
+        try {
+            var u = new URL(src);
+            return u.host + ' ' + u.pathname.split('/').pop();
+        } catch (e) {
+            return '?';
+        }
+    }
+
     function art(item) {
         var show = item.show || item;
         return show.stream_icon || show.cover || show.logo || '';
@@ -148,8 +158,16 @@ window.Home = function (api) {
         var card = el('div', 'hm-card' + (live ? ' live' : '') + (focused ? ' focus' : ''));
         var poster = el('div', 'hm-poster');
         var src = art(entry.item);
-        if (src) poster.appendChild(img('', src));
-        else poster.appendChild(el('span', 'hm-initials', titleOf(entry).replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()));
+        var initials = function () { return el('span', 'hm-initials', titleOf(entry).replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()); };
+        if (src) {
+            // A logo link that fails shows the initials, not an empty tile.
+            var logo = img('', src);
+            logo.onerror = function () {
+                Log.error('Logo failed ' + logoHost(src));
+                if (logo.parentNode) logo.parentNode.replaceChild(initials(), logo);
+            };
+            poster.appendChild(logo);
+        } else poster.appendChild(initials());
         LibraryChip(poster, entry.item, Sources.current().id);
         var p = live ? null : api.progress(entry);
         if (api.watched(entry)) {

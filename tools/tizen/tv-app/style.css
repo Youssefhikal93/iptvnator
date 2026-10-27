@@ -276,9 +276,12 @@ svg {
     background: var(--selection-surface-strong);
     color: var(--selection);
 }
-#header.no-tools #searchbar,
-#header.no-tools #view-toggle {
+#header.no-tools #searchbar {
     opacity: 0.3;
+}
+/* Home and Sources have one fixed layout: no list/grid choice to offer. */
+#header.no-tools #view-toggle {
+    visibility: hidden;
 }
 
 /* Content */

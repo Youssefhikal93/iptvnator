@@ -104,6 +104,7 @@ I18n.tables.pl = {
     'pin.lockCategory': 'Zablokuj kategorię',
     'pin.unlockCategory': 'Odblokuj kategorię',
     'player.audio': 'Dźwięk',
+    'player.endsAt': 'Koniec o {time}',
     'player.episodes': 'Odcinki',
     'player.hide': 'Ukryj',
     'player.hint.channel': 'Kanał',

@@ -104,6 +104,7 @@ I18n.tables.el = {
     'pin.lockCategory': 'Κλείδωμα κατηγορίας',
     'pin.unlockCategory': 'Ξεκλείδωμα κατηγορίας',
     'player.audio': 'Ήχος',
+    'player.endsAt': 'Λήγει {time}',
     'player.episodes': 'Επεισόδια',
     'player.hide': 'Απόκρυψη',
     'player.hint.channel': 'Κανάλι',

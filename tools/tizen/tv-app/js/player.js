@@ -46,6 +46,12 @@ window.Player = (function () {
         cur: $('pl-cur'),
         total: $('pl-total'),
         jump: $('pl-jump'),
+        transport: $('pl-transport'),
+        play: $('pl-play'),
+        back10: $('pl-back10'),
+        fwd10: $('pl-fwd10'),
+        now: $('pl-now'),
+        ends: $('pl-ends'),
         hint: $('pl-hint'),
         menu: $('pl-menu'),
         resume: $('pl-resume'),
@@ -351,13 +357,24 @@ window.Player = (function () {
         ui.live.classList.toggle('hidden', !live);
         var paused = isPaused();
         ui.state.textContent = ended ? '■' : paused ? '❚❚' : '▶';
+        // The transport row (#48): OK acts on the circle in the middle, so it
+        // shows what OK does next; ◀ ▶ light the -10 / +10 circles.
+        ui.transport.classList.toggle('hidden', live);
+        ui.transport.classList.toggle('on-buttons', series.busy());
+        ui.play.textContent = ended ? '■' : paused ? '▶' : '❚❚';
+        ui.back10.classList.toggle('active', seek.target !== null && seek.dir < 0);
+        ui.fwd10.classList.toggle('active', seek.target !== null && seek.dir > 0);
+        ui.now.textContent = I18n.time(Date.now());
+        ui.ends.textContent = '';
         if (live) return epg.render();
         var dur = duration();
         var pos = position();
         if (seek.target !== null) pos = seek.target;
         else if (Date.now() < seek.holdUntil) pos = seek.holdPos;
         ui.cur.textContent = current.catchUp ? CatchUp.clock(current.catchUp.start) : fmt(pos);
-        ui.total.textContent = current.catchUp ? CatchUp.clock(current.catchUp.end) : fmt(dur);
+        // The time left, and when it ends at this speed.
+        ui.total.textContent = current.catchUp ? CatchUp.clock(current.catchUp.end) : '−' + fmt(Math.max(0, dur - pos));
+        if (!current.catchUp && dur > 0) ui.ends.textContent = I18n.t('player.endsAt', { time: I18n.time(Date.now() + Math.max(0, dur - pos) / speed) });
         var pct = dur > 0 ? Math.min(100, (pos / dur) * 100) : 0;
         ui.fill.style.width = pct + '%';
         ui.bar.style.setProperty('--pl-knob', pct + '%');

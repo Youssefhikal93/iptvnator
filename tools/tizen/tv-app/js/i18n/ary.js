@@ -104,6 +104,7 @@ I18n.tables.ary = {
     'pin.lockCategory': 'قفل الفئة',
     'pin.unlockCategory': 'حل القفل على الفئة',
     'player.audio': 'الصوت',
+    'player.endsAt': 'كيسالي {time}',
     'player.episodes': 'الحلقات',
     'player.hide': 'خبّي',
     'player.hint.channel': 'قناة',

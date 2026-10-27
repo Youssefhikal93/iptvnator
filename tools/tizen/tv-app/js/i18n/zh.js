@@ -104,6 +104,7 @@ I18n.tables.zh = {
     'pin.lockCategory': '锁定分类',
     'pin.unlockCategory': '解锁分类',
     'player.audio': '音频',
+    'player.endsAt': '{time} 结束',
     'player.episodes': '剧集',
     'player.hide': '隐藏',
     'player.hint.channel': '频道',

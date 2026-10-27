@@ -104,6 +104,7 @@ I18n.tables.ja = {
     'pin.lockCategory': 'カテゴリーをロック',
     'pin.unlockCategory': 'カテゴリーのロックを解除',
     'player.audio': 'オーディオ',
+    'player.endsAt': '{time} 終了',
     'player.episodes': 'エピソード',
     'player.hide': '非表示',
     'player.hint.channel': 'チャンネル',

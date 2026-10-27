@@ -314,6 +314,7 @@ I18n.tables.en = {
     'player.audio': 'Audio',
     'player.backToLive': 'Back to live',
     'player.busy': 'This channel is offline or your connection is busy.',
+    'player.endsAt': 'Ends {time}',
     'player.episodes': 'Episodes',
     'player.episodesHint': '◀ ▶ Season · ▲▼ Episode · OK Play · Return Close',
     'player.hide': 'Hide',

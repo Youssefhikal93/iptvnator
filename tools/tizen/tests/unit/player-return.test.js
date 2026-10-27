@@ -77,7 +77,8 @@ function scene() {
         addEventListener: function () {},
         innerWidth: 1920,
         innerHeight: 1080,
-        Date: { now: function () { return now; } },
+        // The clock (#48) builds dates; the fake keeps them on the test's time.
+        Date: Object.assign(function (when) { return new Date(when === undefined ? now : when); }, { now: function () { return now; } }),
         setTimeout: function () { return ++serial; },
         clearTimeout: function () {},
         setInterval: function (fn, ms) { intervals[++serial] = { fn: fn, ms: ms }; return serial; },

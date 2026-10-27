@@ -104,6 +104,7 @@ I18n.tables.pt = {
     'pin.lockCategory': 'Bloquear categoria',
     'pin.unlockCategory': 'Desbloquear categoria',
     'player.audio': 'Áudio',
+    'player.endsAt': 'Termina às {time}',
     'player.episodes': 'Episódios',
     'player.hide': 'Ocultar',
     'player.hint.channel': 'Canal',

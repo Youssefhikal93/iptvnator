@@ -104,6 +104,7 @@ I18n.tables.zhtw = {
     'pin.lockCategory': '鎖定類別',
     'pin.unlockCategory': '解鎖類別',
     'player.audio': '音訊',
+    'player.endsAt': '{time} 結束',
     'player.episodes': '集數',
     'player.hide': '隱藏',
     'player.hint.channel': '頻道',

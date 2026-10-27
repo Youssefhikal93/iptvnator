@@ -104,6 +104,7 @@ I18n.tables.hu = {
     'pin.lockCategory': 'Kategória zárolása',
     'pin.unlockCategory': 'Kategória feloldása',
     'player.audio': 'Hang',
+    'player.endsAt': 'Vége: {time}',
     'player.episodes': 'Epizódok',
     'player.hide': 'Elrejtés',
     'player.hint.channel': 'Csatorna',

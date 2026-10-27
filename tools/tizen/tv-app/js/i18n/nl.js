@@ -104,6 +104,7 @@ I18n.tables.nl = {
     'pin.lockCategory': 'Categorie vergrendelen',
     'pin.unlockCategory': 'Categorie ontgrendelen',
     'player.audio': 'Audio',
+    'player.endsAt': 'Eindigt om {time}',
     'player.episodes': 'Afleveringen',
     'player.hide': 'Verbergen',
     'player.hint.channel': 'Kanaal',

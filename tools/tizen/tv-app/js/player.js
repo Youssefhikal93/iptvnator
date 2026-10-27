@@ -984,36 +984,50 @@ window.Player = (function () {
             var av = avplay();
             if (!av) return finish('AVPlay unavailable');
             usingAv = true;
-            av.open(url);
-            av.setListener({
-                onbufferingstart: function () {
-                    if (ready) showStatus('', false);
-                },
-                onbufferingcomplete: hideStatus,
-                onerror: function (type) {
-                    if (ready) streamLost(String(type), I18n.t('player.stoppedType', { type: type }));
-                    finish(String(type));
-                },
-                onstreamcompleted: onCompleted,
-                oncurrentplaytime: restoration.onTime,
-                onsubtitlechange: showSub,
-            });
-            PlayerPicture.apply();
-            av.prepareAsync(
-                function () {
-                    try {
-                        av.setSilentSubtitle(true);
-                    } catch (e) {
-                        // Older firmware.
-                    }
-                    av.play();
-                    finish(null);
-                },
-                function (err) {
-                    finish('prepare ' + (err && err.name));
+            var mine = session;
+            var target = current.live ? Promise.resolve(url) : AvResolve.final(url);
+            target.then(function (address) {
+                if (mine !== session) return;
+                try {
+                    open(av, address, finish);
+                } catch (e) {
+                    finish(e.name || String(e));
                 }
-            );
+            });
         };
+    }
+
+    function open(av, url, finish) {
+        av.open(url);
+        av.setListener({
+            onbufferingstart: function () {
+                if (ready) showStatus('', false);
+            },
+            onbufferingcomplete: hideStatus,
+            onerror: function (type) {
+                if (ready) streamLost(String(type), I18n.t('player.stoppedType', { type: type }));
+                finish(String(type));
+            },
+            onstreamcompleted: onCompleted,
+            oncurrentplaytime: restoration.onTime,
+            onsubtitlechange: showSub,
+        });
+        PlayerPicture.apply();
+        av.prepareAsync(
+            function () {
+                try {
+                    av.setSilentSubtitle(true);
+                } catch (e) {
+                    // Older firmware.
+                }
+                AvResolve.tracks(av);
+                av.play();
+                finish(null);
+            },
+            function (err) {
+                finish('prepare ' + (err && err.name));
+            }
+        );
     }
 
     function viaVideo(url) {

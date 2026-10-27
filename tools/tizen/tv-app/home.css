@@ -165,11 +165,55 @@
     padding: 14px 0 0 56px;
     box-sizing: border-box;
 }
+.hm-row {
+    position: relative;
+}
 .hm-row > h2 {
+    display: inline-block;
     margin: 0 0 10px;
     font-size: 34px;
     font-weight: 700;
     color: var(--heading);
+}
+/* How many titles the row has, or the place in it while focused. */
+.hm-aside {
+    margin-left: 18px;
+    font-size: 24px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+/* ‹ › in the gutters when the row goes on past its edges. */
+.hm-row.more-left::before,
+.hm-row.more-right::after {
+    position: absolute;
+    top: calc(50% + 24px);
+    z-index: 1;
+    box-sizing: border-box;
+    width: 52px;
+    height: 52px;
+    margin-top: -26px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    background: var(--widget-bg);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 44px;
+    text-align: center;
+    color: var(--heading);
+}
+.hm-row.more-left::before {
+    content: '‹';
+    left: 0;
+}
+.hm-row.more-right::after {
+    content: '›';
+    right: 2px;
+}
+/* The last tile fades into the edge, as if the row runs on. */
+.hm-row.fade .hm-cards {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 220px), rgba(0, 0, 0, 0.15));
+    mask-image: linear-gradient(to right, #000 calc(100% - 220px), rgba(0, 0, 0, 0.15));
 }
 .hm-card {
     padding: 6px;

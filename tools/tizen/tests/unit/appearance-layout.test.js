@@ -131,14 +131,16 @@ test('Home keeps the focused entry visible while row counts change and at the en
         isNew: function () { return false; },
     });
     home.setActive(true);
-    assert.equal(run.home.children[0].children[1].children.length, 6);
+    // The row's title, its count (#31 rows), then its cards.
+    assert.equal(run.home.children[0].children[1].textContent, '1 / 12');
+    assert.equal(run.home.children[0].children[2].children.length, 6);
     for (var i = 0; i < 7; i++) home.key(run.globals.Keys.RIGHT);
     assert.equal(home.focused().item.name, 'Title 7');
     run.globals.Prefs.set('density', 'compact');
-    assert.equal(run.home.children[0].children[1].children.length, 7);
+    assert.equal(run.home.children[0].children[2].children.length, 7);
     assert.equal(home.focused().item.name, 'Title 7');
     run.globals.Prefs.set('density', 'comfortable');
-    assert.equal(run.home.children[0].children[1].children.length, 6);
+    assert.equal(run.home.children[0].children[2].children.length, 6);
     for (var j = 0; j < 8; j++) home.key(run.globals.Keys.RIGHT);
     assert.equal(home.focused().item.name, 'Title 11');
 });

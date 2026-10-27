@@ -194,7 +194,14 @@ window.Home = (api) => {
         const visible = visibleCount();
         // The tiles RIGHT scrolls to next load while this row is on screen.
         Art.preload(row.entries.slice(r.offset + visible, r.offset + 2 * visible).map((entry) => art(entry.item)));
-        return html`<${Kit.Row} cls="hm" kind=${row.id === 'live' ? 'live' : ''} label=${row.title}
+        // A row says when it goes on: its size (the place while focused),
+        // ‹ › at its edges, and the last tile fades unless it has the focus.
+        const total = row.entries.length;
+        const right = r.offset + visible < total;
+        const kind = [row.id === 'live' ? 'live' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
+            right && !(focused && r.focus === r.offset + visible - 1) ? 'fade' : ''].filter(Boolean).join(' ');
+        const aside = focused ? (r.focus + 1) + ' / ' + total : String(total);
+        return html`<${Kit.Row} cls="hm" kind=${kind} label=${row.title} aside=${aside}
             tiles=${row.entries.slice(r.offset, r.offset + visible).map(tile)} focus=${focused ? r.focus - r.offset : -1} />`;
     };
 

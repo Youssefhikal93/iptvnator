@@ -72,7 +72,8 @@ test('player menu updates subtitle classes, native cues and the same Settings va
 
 test('live preview uses Fit and fullscreen restores the saved aspect without opening another stream', async ({ page }) => {
     let streams = 0;
-    page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/live/')) streams++; });
+    // The transport stream only: the HLS address the player asks for first is 404 here.
+    page.on('request', request => { const p = new URL(request.url()).pathname; if (p.startsWith('/live/') && p.endsWith('.ts')) streams++; });
     await boot(page, { livePreview: true, storage: { settings: { pictureAspect: '4:3' } } });
     await section(page, 'Live TV');
     await enterItems(page);

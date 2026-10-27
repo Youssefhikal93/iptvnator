@@ -113,8 +113,9 @@ test('second OK goes fullscreen on the same stream; Return comes back to the pre
     await expect(page.locator('#content')).not.toHaveClass(/previewing/);
     expect(await page.locator('#video').evaluate(v => v.paused)).toBe(true);
     await expect(label(page)).toContainText('3. Channel 3');
+    // Back from the list goes to the menu (#50).
     await back(page);
-    await expect(page.locator('#categories .focused')).toHaveCount(1);
+    await expect(page.locator('#rail .focused')).toHaveText('Live TV');
     await expect(page.locator('#items .focused')).toHaveCount(0);
 });
 

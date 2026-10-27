@@ -244,10 +244,11 @@ window.Home = (api) => {
         return undefined;
     };
 
-    // Returns 'left' when the focus leaves Home to the rail.
+    // Returns the edge the focus leaves Home by, 'left' or 'up', for the menu.
     const key = (code) => {
         const list = blocks();
         const block = list[s.block];
+        if (code === KEY.UP && (!block || s.block === 0)) return 'up';
         if (!block) return code === KEY.LEFT ? 'left' : undefined;
         if (code === KEY.UP && s.block > 0) {
             s.block--;

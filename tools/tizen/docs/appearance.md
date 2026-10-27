@@ -126,3 +126,20 @@ view buttons) is hidden on screens without tools (Home, Settings, Sources),
 which then start at the top edge. Settings > Appearance > Top bar (`topBar`,
 On by default) Off hides it everywhere; ▲ at the top of a list still brings it
 up over the list while the remote is on it (`body.no-bar`, `body.bar-off`).
+
+## Menu position and Back (#50)
+
+Settings > Appearance > Menu position (`menuPosition`, per profile) is Side
+(default) or Top. Side is the 208px rail with its items 28px in from the edge;
+Top turns the same `#rail` into a 96px bar (`body.menu-top`, `menu.css`) with
+the profile first and Settings at the far end. The header, content, load error
+and hints start after the menu through `--menu-w` and `--menu-h`; the hints sit
+in a 54px bottom margin (`--hint-h`). On top, lists show one row fewer and the
+Home hero is 484px with a one-line plot, so the first row stays in view.
+
+Along the menu ▲/▼ (Side) or ◀/▶ (Top) move, and ▲ or ◀ past the first section
+reaches the profile; ▶ (Side) or ▼ (Top) enters the screen. From a screen, the
+edge that faces the menu leads to it: ◀ on the side, ▲ on top (Home and
+Settings report the edge they left by, `'left'` or `'up'`). Back from a list, a
+category, the toolbar, Home or Settings goes straight to the menu; ◀ in a list
+still steps to the categories. Back on the menu exits as before.

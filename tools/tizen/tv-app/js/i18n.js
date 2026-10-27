@@ -103,7 +103,9 @@ window.I18n = (function () {
         // BCP 47 tag for toLocaleTimeString and friends.
         locale: function () { return find(current).locale; },
         // The catalogue saves "All channels" in English; it is told by its empty id.
+        // All movies and All series say which section they hold.
         categoryName: function (category) {
+            if (category.all) return t(category.all === 'movies' ? 'browser.allMovies' : 'browser.allSeries');
             return category.category_id === '' ? t('browser.allChannels') : category.category_name;
         },
         // 24-hour clock time in the chosen language, as the guide always showed it.

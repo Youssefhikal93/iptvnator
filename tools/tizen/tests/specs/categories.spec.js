@@ -143,3 +143,14 @@ test('the channel list while watching skips hidden categories', async ({ page })
     await expect(page.locator('.pl-channel-header')).toContainText('All channels');
     await expect(page.locator('.pl-channel-header')).not.toContainText('cat 2');
 });
+
+test('All movies and All series come first and list the whole section', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Movies');
+    await expect(page.locator('#categories .row .label').first()).toHaveText('All movies');
+    await moveTo(page, '#categories .row.focused .label', 'All movies', 'ArrowUp');
+    await expect(page.locator('#items .list-header')).toContainText('All movies');
+    await expect(page.locator('#items .list-header .count')).toContainText('/ 25');
+    await section(page, 'Series');
+    await expect(page.locator('#categories .row .label').first()).toHaveText('All series');
+});

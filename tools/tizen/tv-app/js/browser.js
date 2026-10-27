@@ -21,7 +21,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, genres: {}, genre: {}, pill: 0, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, genres: {}, genre: {}, pill: 0, genreToken: 0, genreProgress: null, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -429,6 +429,9 @@ window.Browser = function (hooks) {
             rows.unshift({ category_id: '__added', category_name: I18n.t('browser.recentlyAdded'), virtual: 'added', count: addedOf(section).length });
         }
         if (section !== 'live' && Tmdb.enabled()) rows.unshift({ category_id: '__discover', category_name: I18n.t('browser.discover'), virtual: 'discover' });
+        // All movies / All series comes first: the whole section, without
+        // hidden categories (a category with no id loads all of it).
+        if (section === 'movies' || section === 'series') rows.unshift({ category_id: '', category_name: I18n.t(section === 'movies' ? 'browser.allMovies' : 'browser.allSeries'), all: section });
         return rows;
     }
 
@@ -612,13 +615,77 @@ window.Browser = function (hooks) {
 
     function setItems(list, index, empty) {
         visible = { list: list, empty: empty };
+        lookUpGenre();
+        drawItems(index);
+    }
+
+    // The list with the genre pill applied; keep holds the focused title.
+    function drawItems(index, keep) {
         var mode = sortMode();
         var genre = genreFilter();
         var section = state.section;
+        var list = visible.list;
+        var empty = visible.empty;
         var shown = genre ? list.filter(function (item) { return Genres.has(item, section, genre); }) : list;
-        if (genre && !shown.length && list.length) empty = [I18n.t('find.noGenre', { genre: genre }), I18n.t('find.noGenreHint')];
-        items.set(mode ? Sort.order(shown, section, mode) : shown.slice(), index, empty);
+        if (genre && !shown.length && list.length) {
+            empty = state.genreProgress
+                ? [I18n.t('find.looking', { genre: genre }), I18n.t('find.lookingHint')]
+                : [I18n.t('find.noGenre', { genre: genre }), I18n.t('find.noGenreHint')];
+        }
+        shown = mode ? Sort.order(shown, section, mode) : shown.slice();
+        items.set(shown, keep ? Math.max(0, indexIn(shown, items.item(), index)) : index, empty);
     }
+
+    // A picked genre matches what the provider or TMDB says (#31). Titles
+    // not matched yet are looked up: a movie's provider page (lists rarely
+    // carry movie genres) and, when TMDB is on, the TMDB match of movies
+    // and series alike; three at a time, matches join the list as they come.
+    var GENRE_LOOKUPS = 300;
+    function lookUpGenre() {
+        var mine = ++state.genreToken;
+        var genre = genreFilter();
+        var section = state.section;
+        state.genreProgress = null;
+        if (!genre) return;
+        var tmdb = Tmdb.enabled();
+        var info = section === 'movies' && !!state.adapter.movieInfo;
+        if (!tmdb && !info) return;
+        var type = section === 'movies' ? 'movie' : 'tv';
+        var needsPage = function (item) { return info && item.stream_id !== undefined && !state.catalogue.peek({ kind: 'movie', id: item.stream_id }); };
+        var needsTmdb = function (item) { return tmdb && !Tmdb.cached(item, type); };
+        var todo = visible.list.filter(function (item) {
+            return !Genres.has(item, section, genre) && (needsPage(item) || needsTmdb(item));
+        }).slice(0, GENRE_LOOKUPS);
+        if (!todo.length) return;
+        var progress = state.genreProgress = { done: 0, total: todo.length };
+        var current = function () { return mine === state.genreToken; };
+        var step = function () {
+            if (!current() || !todo.length) return Promise.resolve();
+            var item = todo.shift();
+            var ask = needsPage(item) ? state.catalogue.load({ kind: 'movie', id: item.stream_id, item: item }, { screen: false }) : Promise.resolve();
+            return ask.catch(function () {}).then(function () {
+                if (current() && !Genres.has(item, section, genre) && needsTmdb(item)) return Tmdb.match(item, type, current);
+            }).catch(function () {}).then(function () {
+                if (!current()) return;
+                progress.done++;
+                if (Genres.has(item, section, genre)) drawItems(items.index(), true);
+                renderHints();
+                return step();
+            });
+        };
+        Promise.all([step(), step(), step()]).then(function () {
+            if (!current()) return;
+            state.genreProgress = null;
+            drawItems(items.index(), true);
+            renderChrome();
+        });
+    }
+
+    // A movie's own page carries its genre; pages already opened count.
+    Genres.usePage(function (item, section) {
+        var page = section === 'movies' && state.catalogue && item.stream_id !== undefined && state.catalogue.peek({ kind: 'movie', id: item.stream_id });
+        return page ? page.genre : '';
+    });
 
     // ---- Genre pills (#31) ----
 
@@ -635,15 +702,13 @@ window.Browser = function (hooks) {
 
     function loadGenres(section) {
         if (state.genres[section]) return;
-        state.genres[section] = [];
+        state.genres[section] = Genres.pills([], section, 20);
         var adapter = state.adapter;
         state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
             if (adapter !== state.adapter) return;
-            state.genres[section] = Genres.common(ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)), section, 16);
+            state.genres[section] = Genres.pills(ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)), section, 20);
             if (state.section === section) renderChrome();
-        }).catch(function () {
-            if (adapter === state.adapter) delete state.genres[section];
-        });
+        }).catch(function () {});
     }
 
     function renderPills() {
@@ -886,6 +951,7 @@ window.Browser = function (hooks) {
                 : I18n.t('hints.default');
         // With the source pill gone (#45), a catalogue refresh shows here.
         if (state.updating) $('hints').textContent += '  ·  ' + I18n.t('browser.updating');
+        if (state.genreProgress) $('hints').textContent += '  ·  ' + I18n.t('find.progress', state.genreProgress);
     }
 
     function renderToolbar() {
@@ -1081,6 +1147,8 @@ window.Browser = function (hooks) {
         $('content').classList.toggle('settings', id === 'settings');
         state.showingSearch = false;
         state.base = null;
+        state.genreToken++;
+        state.genreProgress = null;
         state.favKeys = null;
         var token = ++state.token;
         applyView();
@@ -1582,6 +1650,7 @@ window.Browser = function (hooks) {
     }
 
     function renderHints() {
+        if (state.zone !== 'home') return renderChrome(), true;
         if (state.zone === 'home') $('hints').textContent = I18n.t(home.onSearch() ? 'hints.find' : 'hints.home');
         return true;
     }

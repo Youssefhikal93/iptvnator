@@ -1,5 +1,6 @@
-// A title's genres in two layers (#31): what the provider lists and what
-// its TMDB match says, once TMDB has looked the title up. Providers copy
+// A title's genres in layers (#31): what the provider's list says, what
+// the title's own page said once it was opened or looked up, and what its
+// TMDB match says once TMDB has looked the title up. Providers copy
 // TMDB's genres, often in Arabic; both languages count as one genre under
 // its English name.
 window.Genres = (() => {
@@ -14,6 +15,21 @@ window.Genres = (() => {
         'فانتازيا': 'Fantasy', 'تاريخ': 'History', 'موسيقى': 'Music', 'حرب': 'War', 'فيلم تلفزيوني': 'TV Movie',
     };
 
+    // TMDB's genre names, so the pills are the same in both sections even
+    // when the lists carry none.
+    const STANDARD = {
+        movies: ['Action', 'Adventure', 'Animation', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy',
+            'History', 'Horror', 'Music', 'Mystery', 'Romance', 'Science Fiction', 'Thriller', 'War', 'Western'],
+        series: ['Action & Adventure', 'Animation', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Kids',
+            'Mystery', 'Reality', 'Sci-Fi & Fantasy', 'Soap', 'War & Politics', 'Western'],
+    };
+
+    // The title's own page (set by the browser): a genre string or ''.
+    let page = () => '';
+    const usePage = (lookup) => {
+        page = lookup;
+    };
+
     const tmdb = (item, section) => {
         if (!window.Tmdb || !Tmdb.enabled()) return [];
         const body = Tmdb.cached(item, section === 'movies' ? 'movie' : 'tv');
@@ -22,12 +38,13 @@ window.Genres = (() => {
 
     // section is 'movies' or 'series'.
     const of = (item, section) => {
-        const names = String(item.genre || '').split(/[,/|]/).concat(tmdb(item, section))
+        const names = String(item.genre || '').split(/[,/|]/).concat(String(page(item, section) || '').split(/[,/|]/), tmdb(item, section))
             .map((name) => name.trim()).filter(Boolean).map((name) => SAME[name] || name);
         return names.filter((name, i) => names.indexOf(name) === i);
     };
 
     const has = (item, section, genre) => of(item, section).indexOf(genre) !== -1;
+    const known = (item, section) => of(item, section).length > 0;
 
     // The most common genres in a list, most common first.
     const common = (list, section, max) => {
@@ -36,5 +53,11 @@ window.Genres = (() => {
         return Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, max);
     };
 
-    return { of, has, common };
+    // The pills: the list's most common genres, then the standard ones.
+    const pills = (list, section, max) => {
+        const top = common(list, section, max);
+        return top.concat((STANDARD[section] || []).filter((name) => top.indexOf(name) === -1)).slice(0, max);
+    };
+
+    return { of, has, known, common, pills, usePage };
 })();

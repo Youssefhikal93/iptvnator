@@ -1,108 +1,123 @@
-window.Discover = (function () {
+// Discover: pick a TMDB genre and see the library titles that belong to it,
+// twelve at a time (CH▲/CH▼ pages).
+window.Discover = (() => {
     'use strict';
 
-    var state = null;
-    var root;
-    var token = 0;
+    const { html } = UI;
+    const PAGE = 12;
+    let state = null;
+    let root;
+    let token = 0;
 
-    function close() {
+    const close = () => {
         token++;
         state = null;
         if (root) root.remove();
         root = null;
-    }
+    };
 
-    function render() {
-        root.textContent = '';
-        root.appendChild(TmdbView.el('h1', '', I18n.t('browser.discover')));
-        var chips = TmdbView.el('div', 'tm-chips');
-        state.genres.forEach(function (genre, i) {
-            chips.appendChild(TmdbView.el('span', 'tm-chip' + (state.genre === i ? ' selected' : '') + (state.zone === 'chips' && state.chip === i ? ' focus' : ''), genre.name));
-        });
-        root.appendChild(chips);
-        var start = state.all.length ? state.offset + 1 : 0;
-        root.appendChild(TmdbView.el('p', '', I18n.t('discover.titles', { from: start, to: Math.min(state.offset + 12, state.all.length), total: state.all.length })));
-        root.appendChild(TmdbView.cards(I18n.t('tmdb.inLibrary'), state.entries.map(TmdbView.catalogueCard), state.zone === 'items' ? state.focus : -1));
-        root.appendChild(TmdbView.el('p', '', I18n.t(state.loading ? 'discover.matching' : state.genre < 0 ? 'discover.chooseGenre' : state.entries.length ? 'discover.hint' : 'discover.noMatches')));
+    const view = () => {
+        const start = state.all.length ? state.offset + 1 : 0;
+        const hint = state.loading ? 'discover.matching' : state.genre < 0 ? 'discover.chooseGenre' : state.entries.length ? 'discover.hint' : 'discover.noMatches';
+        return html`<h1>${I18n.t('browser.discover')}</h1>
+            <div class="tm-chips">${state.genres.map((genre, i) => html`<${Kit.Pill} cls="tm-chip" label=${genre.name} selected=${state.genre === i} focused=${state.zone === 'chips' && state.chip === i} />`)}</div>
+            <p>${I18n.t('discover.titles', { from: start, to: Math.min(state.offset + PAGE, state.all.length), total: state.all.length })}</p>
+            <${Kit.Row} label=${I18n.t('tmdb.inLibrary')} tiles=${state.entries.map(TmdbView.catalogueCard)} focus=${state.zone === 'items' ? state.focus : -1} />
+            <p>${I18n.t(hint)}</p>`;
+    };
+
+    const render = () => {
+        UI.render(view(), root);
         TmdbView.scroll(root);
-    }
+    };
 
-    function loadPage() {
-        var mine = ++token;
-        var screen = state;
-        var genre = state.genres[state.genre];
+    const loadPage = () => {
+        const mine = ++token;
+        const screen = state;
+        const genre = state.genres[state.genre];
         if (!genre) return render();
         state.entries = [];
         state.focus = 0;
         state.loading = true;
-        var visible = state.all.slice(state.offset, state.offset + 12);
+        const visible = state.all.slice(state.offset, state.offset + PAGE);
         render();
-        var next = 0;
-        function wanted() { return state === screen && mine === token && Tmdb.enabled(); }
-        function matchNext() {
+        let next = 0;
+        const wanted = () => state === screen && mine === token && Tmdb.enabled();
+        const matchNext = () => {
             if (!wanted() || next >= visible.length) return Promise.resolve();
-            var entry = visible[next++];
-            var cached = Tmdb.cached(entry.item, entry.type);
-            return (cached ? Promise.resolve(cached) : Tmdb.match(entry.item, entry.type, wanted)).then(function (body) {
+            const entry = visible[next++];
+            const cached = Tmdb.cached(entry.item, entry.type);
+            return (cached ? Promise.resolve(cached) : Tmdb.match(entry.item, entry.type, wanted)).then((body) => {
                 if (!wanted()) return;
-                if (body && (body.genres || []).some(function (found) { return found.id === genre.id; })) {
-                    state.entries = visible.filter(function (candidate) { return candidate === entry || state.entries.indexOf(candidate) !== -1; });
+                if (body && (body.genres || []).some((found) => found.id === genre.id)) {
+                    state.entries = visible.filter((candidate) => candidate === entry || state.entries.indexOf(candidate) !== -1);
                     render();
                 }
                 return matchNext();
             });
-        }
+        };
         // Retiring a page stops starting lookups for titles that are no longer visible.
-        Promise.all([matchNext(), matchNext(), matchNext()]).then(function () {
+        Promise.all([matchNext(), matchNext(), matchNext()]).then(() => {
             if (state !== screen || mine !== token) return;
             state.loading = false;
             render();
         });
-    }
+    };
+
+    const chipsKey = (code) => {
+        if (code === Keys.LEFT || code === Keys.RIGHT) {
+            const moved = Focus.step(state.chip, state.genres.length, code, 'row');
+            if (moved.index !== undefined) state.chip = moved.index;
+        }
+        if (code === Keys.ENTER && state.genres[state.chip]) {
+            state.genre = state.chip;
+            state.offset = 0;
+            loadPage();
+        }
+        if (code === Keys.DOWN && state.entries.length) state.zone = 'items';
+    };
+
+    const itemsKey = (code) => {
+        if (code === Keys.UP) state.zone = 'chips';
+        if (code === Keys.LEFT || code === Keys.RIGHT) {
+            const moved = Focus.step(state.focus, state.entries.length, code, 'row');
+            if (moved.index !== undefined) state.focus = moved.index;
+        }
+        if (code === Keys.ENTER && state.entries[state.focus]) {
+            const entry = state.entries[state.focus];
+            state.page.open(entry.item, entry.type === 'movie' ? 'movies' : 'series');
+            return true;
+        }
+        return false;
+    };
 
     return {
-        open: function (type, page) {
+        open: (type, page) => {
             close();
             root = TmdbView.el('section', 'tm-screen');
             root.id = 'discover';
             document.body.appendChild(root);
-            state = { all: [], entries: [], genres: [], chip: 0, genre: -1, focus: 0, offset: 0, zone: 'chips', loading: true, page: page };
-            var screen = state;
+            state = { all: [], entries: [], genres: [], chip: 0, genre: -1, focus: 0, offset: 0, zone: 'chips', loading: true, page };
+            const screen = state;
             render();
-            Promise.all([Tmdb.request('/genre/' + type + '/list'), page.catalogue()]).then(function (answers) {
+            Promise.all([Tmdb.request('/genre/' + type + '/list'), page.catalogue()]).then(([genres, catalogue]) => {
                 if (state !== screen || !Tmdb.enabled()) return;
-                state.genres = (answers[0] || {}).genres || [];
-                state.all = answers[1].filter(function (entry) { return entry.type === type; });
+                state.genres = (genres || {}).genres || [];
+                state.all = catalogue.filter((entry) => entry.type === type);
                 state.loading = false;
                 render();
             });
         },
-        close: close,
-        isOpen: function () { return !!state; },
-        key: function (code) {
+        close,
+        isOpen: () => !!state,
+        key: (code) => {
             if (Keys.isBack(code)) return close(), true;
             if (code === Keys.CH_DOWN || code === Keys.CH_UP) {
-                state.offset = Math.max(0, Math.min(Math.max(0, Math.ceil(state.all.length / 12) - 1) * 12, state.offset + (code === Keys.CH_DOWN ? 12 : -12)));
+                const last = Math.max(0, Math.ceil(state.all.length / PAGE) - 1) * PAGE;
+                state.offset = Math.max(0, Math.min(last, state.offset + (code === Keys.CH_DOWN ? PAGE : -PAGE)));
                 loadPage();
-            } else if (state.zone === 'chips') {
-                if (code === Keys.LEFT) state.chip = Math.max(0, state.chip - 1);
-                if (code === Keys.RIGHT) state.chip = Math.max(0, Math.min(state.genres.length - 1, state.chip + 1));
-                if (code === Keys.ENTER && state.genres[state.chip]) {
-                    state.genre = state.chip;
-                    state.offset = 0;
-                    loadPage();
-                }
-                if (code === Keys.DOWN && state.entries.length) state.zone = 'items';
-            } else {
-                if (code === Keys.UP) state.zone = 'chips';
-                if (code === Keys.LEFT) state.focus = Math.max(0, state.focus - 1);
-                if (code === Keys.RIGHT) state.focus = Math.max(0, Math.min(state.entries.length - 1, state.focus + 1));
-                if (code === Keys.ENTER && state.entries[state.focus]) {
-                    var entry = state.entries[state.focus];
-                    state.page.open(entry.item, entry.type === 'movie' ? 'movies' : 'series');
-                    return true;
-                }
-            }
+            } else if (state.zone === 'chips') chipsKey(code);
+            else if (itemsKey(code)) return true;
             render();
             return true;
         },

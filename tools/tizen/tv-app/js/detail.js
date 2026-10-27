@@ -79,8 +79,7 @@ window.Detail = function () {
         var provider = s.provider || {};
         var facts = [d.year, d.rating ? '★ ' + d.rating.toFixed(1) : '', d.genre, runtime(d.seconds)].filter(Boolean);
         return html`
-            ${UI.img('dt-backdrop', d.backdrop, provider.backdrop || provider.poster)}
-            <div class="dt-shade"></div>
+            <${Kit.Backdrop} src=${d.backdrop} fallback=${provider.backdrop || provider.poster} />
             <div class="dt-body">
                 ${UI.img('dt-poster', d.poster, provider.poster)}
                 <div class="dt-info">
@@ -136,8 +135,10 @@ window.Detail = function () {
 
     function buttonsKey(code) {
         var list = buttons();
-        if (code === KEY.LEFT && s.focus > 0) s.focus--;
-        else if (code === KEY.RIGHT && s.focus < list.length - 1) s.focus++;
+        if (code === KEY.LEFT || code === KEY.RIGHT) {
+            var moved = Focus.step(s.focus, list.length, code, 'row');
+            if (moved.index !== undefined) s.focus = moved.index;
+        }
         else if (code === KEY.DOWN && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
         else if (code === KEY.DOWN && s.page.episodes && s.page.episodes.hasRows()) {
             s.zone = 'episodes';

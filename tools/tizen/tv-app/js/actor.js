@@ -1,59 +1,64 @@
-window.Actor = (function () {
+// An actor's page from the Detail cast row: photo, biography and the
+// titles of theirs that are in the library.
+window.Actor = (() => {
     'use strict';
 
-    var state = null;
-    var root;
+    const { html } = UI;
+    let state = null;
+    let root;
 
-    function close() {
+    const close = () => {
         state = null;
         if (root) root.remove();
         root = null;
-    }
+    };
 
-    function render() {
-        root.textContent = '';
-        var person = state.person;
-        var photo = Tmdb.image(person.profile_path, 'w500');
-        if (photo) {
-            var image = TmdbView.el('img', 'tm-person');
-            image.src = photo;
-            root.appendChild(image);
-        }
-        root.appendChild(TmdbView.el('h1', '', person.name));
-        root.appendChild(TmdbView.el('p', 'tm-bio', (person.biography || '').slice(0, 900)));
-        root.appendChild(TmdbView.cards(I18n.t('tmdb.inLibrary'), state.entries.map(TmdbView.catalogueCard), state.focus));
-        root.appendChild(TmdbView.el('p', '', I18n.t(state.loading ? 'common.loadingEllipsis' : state.entries.length ? 'actor.hint' : 'actor.none')));
+    const view = () => {
+        const person = state.person;
+        const photo = Tmdb.image(person.profile_path, 'w500');
+        const hint = state.loading ? 'common.loadingEllipsis' : state.entries.length ? 'actor.hint' : 'actor.none';
+        return html`${photo ? UI.img('tm-person', photo) : null}
+            <h1>${person.name}</h1>
+            <p class="tm-bio">${(person.biography || '').slice(0, 900)}</p>
+            <${Kit.Row} label=${I18n.t('tmdb.inLibrary')} tiles=${state.entries.map(TmdbView.catalogueCard)} focus=${state.focus} />
+            <p>${I18n.t(hint)}</p>`;
+    };
+
+    const render = () => {
+        UI.render(view(), root);
         TmdbView.scroll(root);
-    }
+    };
 
     return {
-        open: function (person, page) {
+        open: (person, page) => {
             close();
             root = TmdbView.el('section', 'tm-screen');
             root.id = 'actor';
             document.body.appendChild(root);
-            state = { person: person, entries: [], focus: 0, page: page, loading: true };
-            var mine = state;
+            state = { person, entries: [], focus: 0, page, loading: true };
+            const mine = state;
             render();
-            Promise.all([Tmdb.request('/person/' + person.id, { append_to_response: 'combined_credits' }), page.catalogue()]).then(function (answers) {
+            Promise.all([Tmdb.request('/person/' + person.id, { append_to_response: 'combined_credits' }), page.catalogue()]).then(([found, catalogue]) => {
                 if (state !== mine || !Tmdb.enabled()) return;
-                if (answers[0]) {
-                    state.person = answers[0];
-                    state.entries = Tmdb.inLibrary((answers[0].combined_credits || {}).cast || [], answers[1]);
+                if (found) {
+                    state.person = found;
+                    state.entries = Tmdb.inLibrary((found.combined_credits || {}).cast || [], catalogue);
                 }
                 state.loading = false;
                 render();
             });
         },
-        isOpen: function () { return !!state; },
-        close: close,
-        key: function (code) {
+        isOpen: () => !!state,
+        close,
+        key: (code) => {
             if (Keys.isBack(code)) return close(), true;
-            if (code === Keys.LEFT) state.focus = Math.max(0, state.focus - 1);
-            if (code === Keys.RIGHT) state.focus = Math.max(0, Math.min(state.entries.length - 1, state.focus + 1));
+            if (code === Keys.LEFT || code === Keys.RIGHT) {
+                const moved = Focus.step(state.focus, state.entries.length, code, 'row');
+                if (moved.index !== undefined) state.focus = moved.index;
+            }
             if (code === Keys.ENTER && state.entries[state.focus]) {
-                var entry = state.entries[state.focus];
-                var open = state.page.open;
+                const entry = state.entries[state.focus];
+                const open = state.page.open;
                 close();
                 open(entry.item, entry.type === 'movie' ? 'movies' : 'series');
                 return true;

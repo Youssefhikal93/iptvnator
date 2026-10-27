@@ -62,23 +62,28 @@ window.TmdbDetail = function (page, changed) {
             if (!current()) return html`<div class="tm-detail-rows"></div>`;
             return html`<div class="tm-detail-rows">${rows().map(function (entry, i) {
                 var cards = entry.entries === cast ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w500') }; }) : similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); });
-                return TmdbView.cardsView(entry.label, cards, focused && i === row ? focus : -1);
+                return html`<${Kit.Row} label=${entry.label} tiles=${cards} focus=${focused && i === row ? focus : -1} />`;
             })}</div>`;
         },
         key: function (code) {
             var list = rows();
-            if (code === Keys.UP || Keys.isBack(code)) {
-                if (!row || Keys.isBack(code)) return row = 0, focus = 0, 'up';
-                row--; focus = 0;
-            } else if (code === Keys.DOWN) {
-                if (row === list.length - 1) return 'down';
-                row++; focus = 0;
-            } else if (code === Keys.LEFT) focus = Math.max(0, focus - 1);
-            else if (code === Keys.RIGHT) focus = Math.min(list[row].entries.length - 1, focus + 1);
-            else if (code === Keys.ENTER) {
+            if (Keys.isBack(code)) return row = 0, focus = 0, 'up';
+            if (code === Keys.ENTER) {
                 if (list[row].entries === cast) Actor.open(cast[focus], page);
                 else page.open(similar[focus].item, similar[focus].type === 'movie' ? 'movies' : 'series');
+                return undefined;
             }
+            if (code === Keys.UP || code === Keys.DOWN) {
+                var line = Focus.step(row, list.length, code, 'column');
+                if (line.exit === 'up') return row = 0, focus = 0, 'up';
+                if (line.exit === 'down') return 'down';
+                row = line.index;
+                focus = 0;
+                return undefined;
+            }
+            var moved = Focus.step(focus, list[row].entries.length, code, 'row');
+            if (moved.index !== undefined) focus = moved.index;
+            return undefined;
         },
         trailer: function () { return current() && !!trailer; },
         openTrailer: function () {

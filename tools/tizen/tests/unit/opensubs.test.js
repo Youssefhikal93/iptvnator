@@ -3,8 +3,9 @@
 var test = require('node:test');
 var assert = require('node:assert/strict');
 var load = require('./sandbox');
+var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-store.js', 'subtitle-context.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -20,6 +21,7 @@ function fixture(fetcher, stored, overrides) {
     var intervals = [];
     var env = load(FILES, stored, Object.assign({
         AbortController: AbortController,
+        UI: uiSandbox.UI,
         document: { body: node(), getElementById: function () { return menu; }, createElement: node, addEventListener: function () {} },
         fetch: fetcher || function () { throw new Error('Unexpected HTTP'); },
         Log: { info: function (text) { logs.push(text); }, error: function (text) { logs.push(text); } },

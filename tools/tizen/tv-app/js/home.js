@@ -156,20 +156,30 @@ window.Home = function (api) {
     function renderCard(entry, focused) {
         var live = entry.section === 'live';
         var card = el('div', 'hm-card' + (live ? ' live' : '') + (focused ? ' focus' : ''));
-        var poster = el('div', 'hm-poster');
         var src = art(entry.item);
+        var failed = function () { Log.error('Logo failed ' + logoHost(src)); };
+        // Channels get a wide plate (#44) with the logo or the name.
+        var poster = live ? Kit.plateNode({ cls: 'hm-poster', name: titleOf(entry), logo: src, onFail: failed }) : el('div', 'hm-poster');
         var initials = function () { return el('span', 'hm-initials', titleOf(entry).replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()); };
-        if (src) {
-            // A logo link that fails shows the initials, not an empty tile.
+        if (!live && src) {
+            // A poster link that fails shows the initials, not an empty tile.
             var logo = img('', src);
             logo.onerror = function () {
-                Log.error('Logo failed ' + logoHost(src));
+                failed();
                 if (logo.parentNode) logo.parentNode.replaceChild(initials(), logo);
             };
             poster.appendChild(logo);
-        } else poster.appendChild(initials());
+        } else if (!live) poster.appendChild(initials());
         LibraryChip(poster, entry.item, Sources.current().id);
         var p = live ? null : api.progress(entry);
+        var now = live ? api.programme(entry.item) : null;
+        if (now && now.end > now.start) {
+            var onAir = el('div', 'hm-bar live');
+            var done = el('div', 'hm-fill');
+            done.style.width = Math.round(Math.min(1, Math.max(0, (Date.now() - now.start) / (now.end - now.start))) * 100) + '%';
+            onAir.appendChild(done);
+            poster.appendChild(onAir);
+        }
         if (api.watched(entry)) {
             var tick = el('span', 'watched-tick', '\u2713');
             tick.setAttribute('aria-label', I18n.t('browser.watched'));
@@ -192,7 +202,7 @@ window.Home = function (api) {
 
     function renderRow(row, focused) {
         var visible = AppearanceLayout.count('--home-cols');
-        var box = el('div', 'hm-row');
+        var box = el('div', 'hm-row' + (row.id === 'live' ? ' live' : ''));
         box.appendChild(el('div', 'hm-row-title', row.title));
         var strip = el('div', 'hm-strip');
         if (row.loading) {

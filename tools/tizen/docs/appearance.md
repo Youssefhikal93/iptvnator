@@ -86,3 +86,24 @@ profile, a PIN chip on protected profiles and an accent glow. The rail's
 profile menu lists every profile with its avatar, its name and a check on the
 active one. The new strings are English until a person checks translations
 (see the table builder).
+
+## Channel plates (#44)
+
+Channels are drawn as 16:9 plates (`Kit.Plate`, `channels.css`) in the Live
+TV list and grid, the Home live row, the player drawer and the guide. The logo
+sits on a light plate (`--plate`) because provider logos are mostly
+transparent PNGs; a dark outline (`drop-shadow`) keeps white logos readable on
+it. A channel without a logo, or whose logo fails, shows its name on a colour
+taken from the name (`--h`), never initials. A failed logo address is not
+requested again while the app runs (up to 400 addresses).
+
+| Live TV | Comfortable | Compact |
+|---|---|---|
+| List rows, plate | 7 rows of 104px, 150px plate | 9 rows of 84px, 120px plate |
+| Grid | 4 x 3 | 5 x 4 |
+
+`#items.channels` sets these on the list itself, so `List` reads them with
+`AppearanceLayout.count(name, el)`; movies and series keep the poster sizes.
+Rows show the time left (`epg.minLeft`) and a live progress bar in
+`--now-line`. Grid tiles move the logo above the programme caption with
+`:has(.epg-now)`.

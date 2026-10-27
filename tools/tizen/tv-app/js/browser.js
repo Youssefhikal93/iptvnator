@@ -172,6 +172,9 @@ window.Browser = function (hooks) {
         subtitle: sortSubtitle,
         decorate: decorate,
         label: itemLabel,
+        plate: function () {
+            return state.section === 'live';
+        },
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
@@ -371,6 +374,13 @@ window.Browser = function (hooks) {
         fill.style.width = Math.round(Math.min(1, (Date.now() - now.start) / (now.end - now.start)) * 100) + '%';
         bar.appendChild(fill);
         (label || el).appendChild(bar);
+        // Rows say when the programme ends; grid tiles have no room for it.
+        if (label) {
+            var left = document.createElement('span');
+            left.className = 'epg-left';
+            left.textContent = I18n.t('epg.minLeft', { m: Math.max(1, Math.round((now.end - Date.now()) / 60000)) });
+            el.appendChild(left);
+        }
     }
 
     // Rows ask while they render; the fetch waits until scrolling stops and

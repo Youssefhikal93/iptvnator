@@ -84,7 +84,11 @@ window.GuideView = function (el) {
         var strip = node('div', 'gd-row' + (frame.selected ? ' selected' : ''));
         strip.setAttribute('data-index', frame.index);
         strip.setAttribute('data-channel', frame.channel.stream_id === undefined ? frame.channel.url : frame.channel.stream_id);
-        strip.appendChild(node('div', 'gd-channel', (frame.channel.num || frame.index + 1) + '. ' + frame.channel.name));
+        // Logo plate (#44), then number and name.
+        var channel = node('div', 'gd-channel');
+        channel.appendChild(Kit.plateNode({ cls: 'gd-plate', name: frame.channel.name, logo: frame.channel.stream_icon || frame.channel.logo || '' }));
+        channel.appendChild(node('span', 'gd-name', (frame.channel.num || frame.index + 1) + '. ' + frame.channel.name));
+        strip.appendChild(channel);
         var track = node('div', 'gd-track');
         strip.appendChild(track);
         if (frame.programmes === undefined) {

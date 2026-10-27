@@ -1,0 +1,176 @@
+/* Channel plates (#44): wide 16:9 tiles with the logo on a light plate,
+   because logos are mostly transparent PNGs drawn for a light background.
+   Without a logo, or when it fails, the name shows on a colour of its own
+   (--h comes from the name, so a channel keeps its colour). Loaded after
+   appearance.css so the channel sizes win over the poster sizes. */
+.plate {
+    --plate-bg: var(--plate);
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--plate-bg);
+}
+.plate.nologo {
+    --plate-bg: linear-gradient(135deg, hsl(var(--h) 35% 30%), hsl(calc(var(--h) + 30) 40% 16%));
+}
+[data-theme="light"] .plate:not(.nologo) {
+    box-shadow: inset 0 0 0 1px var(--line);
+}
+.plate .plate-logo {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 9% 12%;
+    object-fit: contain;
+    /* An outline keeps white logos (common on IPTV) readable on the light plate. */
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 4px rgba(0, 0, 0, 0.35));
+}
+/* The name waits under the logo and shows once the logo is missing or fails. */
+.plate:not(.nologo) .plate-name,
+.plate.nologo .plate-logo {
+    display: none;
+}
+.plate-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    padding: 0 8%;
+    color: #fff;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Live TV list: a 150 x 84 plate, bold name, now-title, progress and time left. */
+#items.channels {
+    --item-row-h: 104px;
+    --visible-rows: 7;
+    --grid-cols: 4;
+    --grid-rows: 3;
+}
+[data-density="compact"] #items.channels {
+    --item-row-h: 84px;
+    --visible-rows: 9;
+    --grid-cols: 5;
+    --grid-rows: 4;
+}
+.pane.main .row.channel {
+    padding-left: 10px;
+}
+.row.channel .row-plate {
+    flex: none;
+    width: 150px;
+    border-radius: 10px;
+}
+[data-density="compact"] .row.channel .row-plate {
+    width: 120px;
+}
+.row.channel .plate-name {
+    font-size: 21px;
+}
+.row.channel > .label {
+    font-weight: 700;
+}
+.row.channel .epg-bar {
+    width: 320px;
+    height: 6px;
+    border-radius: 3px;
+}
+.row.channel .epg-bar .fill {
+    background: var(--now-line);
+}
+.row .epg-left {
+    flex: none;
+    order: 1;
+    color: var(--muted);
+    font-size: var(--text-meaning);
+    font-weight: 400;
+}
+/* Time left follows the name; badges and the star stay at the row end. */
+.row.channel > :not(.row-plate):not(.label):not(.epg-left) {
+    order: 2;
+}
+
+/* Live TV grid: fewer, bigger tiles that show the whole logo. */
+.card.channel .poster.plate {
+    height: auto;
+    border-radius: 12px;
+    background: var(--plate-bg);
+}
+.card.channel .plate-name {
+    font-size: 28px;
+}
+[data-density="compact"] .card.channel .plate-name {
+    font-size: 22px;
+}
+.card.channel .plate-logo {
+    padding: 10% 14%;
+}
+/* With a programme on the tile, logo and name move above its caption. */
+.card.channel .plate:has(.epg-now) .plate-logo {
+    padding: 10% 12% 30%;
+}
+.card.channel .plate:has(.epg-now) .plate-name {
+    align-self: flex-start;
+    margin-top: 16%;
+    -webkit-line-clamp: 1;
+}
+.card.channel :is(.catch-up-badge, .star) {
+    z-index: 1;
+}
+.card.channel .catch-up-badge {
+    padding: 2px 8px;
+    font-size: 17px;
+}
+.card.channel.skeleton .poster {
+    height: auto;
+    aspect-ratio: 16 / 9;
+}
+.card.channel .bar .fill {
+    background: var(--now-line);
+}
+
+/* Home: the live row gets the same wide plates and a shorter row. */
+.hm-row.live {
+    height: auto;
+    padding-bottom: 26px;
+}
+.hm-card.live .hm-poster.plate {
+    height: auto;
+    background: var(--plate-bg);
+}
+.hm-card.live .plate-name {
+    font-size: 26px;
+}
+.hm-bar.live .hm-fill {
+    background: var(--now-line);
+}
+
+/* TV guide: a small plate before the number and name. */
+.gd-row > .gd-channel {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+}
+.gd-plate {
+    flex: none;
+    width: 104px;
+    border-radius: 8px;
+}
+.gd-plate .plate-name {
+    font-size: 16px;
+}
+.gd-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

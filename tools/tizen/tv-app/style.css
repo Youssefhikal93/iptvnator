@@ -33,6 +33,8 @@
     --warn-bg: #6b2b2b;
     --warn-fg: #ffd9d2;
     --poster-bg: linear-gradient(135deg, #2a3150, #1e2330);
+    /* Channel logos sit on a light plate in both themes (#44). */
+    --plate: #dfe4ec;
     --star: #ffc857;
     --track: rgba(255, 255, 255, 0.22);
     --primary-bg: rgba(255, 255, 255, 0.92);
@@ -73,6 +75,7 @@
     --warn-bg: rgba(244, 67, 54, 0.14);
     --warn-fg: #b3261e;
     --poster-bg: linear-gradient(135deg, #eef0f3, #f5f6f8);
+    --plate: #ffffff;
     --star: #b45309;
     --track: rgba(0, 0, 0, 0.16);
     --primary-bg: #1a1d23;
@@ -1295,11 +1298,6 @@ svg {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-.hm-card.live .hm-poster img {
-    object-fit: contain;
-    padding: 30px;
-    box-sizing: border-box;
 }
 .hm-initials {
     display: flex;

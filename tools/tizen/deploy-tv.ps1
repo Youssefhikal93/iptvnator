@@ -10,6 +10,11 @@ $src = Join-Path $PSScriptRoot 'tv-app'
 $build = Join-Path $env:TEMP 'iptvnator-tv'
 $target = "${TvIp}:26101"
 
+# The vendor scripts are not committed (INSTALLATION-TO-TV.md section 8).
+foreach ($file in 'hls.min.js', 'mpegts.js', 'preact.umd.js', 'htm.umd.js') {
+    if (-not (Test-Path (Join-Path $src "vendor\$file"))) { throw "tv-app\vendor\$file is missing; download it as in INSTALLATION-TO-TV.md section 8." }
+}
+
 # Package a copy so signature files and the .wgt stay out of the repo.
 Remove-Item -Recurse -Force $build -ErrorAction SilentlyContinue
 Copy-Item -Recurse $src $build

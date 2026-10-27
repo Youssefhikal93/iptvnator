@@ -5,6 +5,7 @@ var assert = require('node:assert/strict');
 var fs = require('node:fs');
 var path = require('node:path');
 var load = require('./sandbox');
+var uiSandbox = require('./ui-sandbox');
 var languages = fs.readdirSync(path.join(__dirname, '../../tv-app/js/i18n')).filter(function (name) { return /\.js$/.test(name); });
 
 function client(fetch, overrides) {
@@ -14,6 +15,7 @@ function client(fetch, overrides) {
     ]), {}, Object.assign({
         AbortController: AbortController,
         Log: { error: function () {} },
+        UI: uiSandbox.UI,
         document: { documentElement: { setAttribute: function () {} }, addEventListener: function () {} },
         fetch: fetch,
     }, overrides)).globals;
@@ -214,7 +216,7 @@ test('a translated detail page shows the localized title and plot fallback, and 
     await new Promise(setImmediate);
     assert.equal(enriched.title, 'Titel');
     assert.equal(enriched.plot, 'English plot');
-    var rendered = detail.render(false);
+    var rendered = uiSandbox.toNodes(detail.view(false))[0];
     assert.equal(rendered.children[0].children[0].textContent, api.I18n.t('tmdb.cast'));
     assert.equal(rendered.children[0].children[1].children[0].children[0].textContent, 'Actor');
     detail.key(api.Keys.ENTER);

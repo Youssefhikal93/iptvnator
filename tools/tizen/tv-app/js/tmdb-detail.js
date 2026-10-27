@@ -57,15 +57,13 @@ window.TmdbDetail = function (page, changed) {
         },
         dispose: function () { active = false; },
         hasRows: function () { return current() && rows().length > 0; },
-        render: function (focused) {
-            var box = TmdbView.el('div', 'tm-detail-rows');
-            if (!current()) return box;
-            rows().forEach(function (entry, i) {
+        view: function (focused) {
+            var html = UI.html;
+            if (!current()) return html`<div class="tm-detail-rows"></div>`;
+            return html`<div class="tm-detail-rows">${rows().map(function (entry, i) {
                 var cards = entry.entries === cast ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w500') }; }) : similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); });
-                box.appendChild(TmdbView.cards(entry.label, cards, focused && i === row ? focus : -1));
-            });
-            if (focused) TmdbView.scroll(box);
-            return box;
+                return TmdbView.cardsView(entry.label, cards, focused && i === row ? focus : -1);
+            })}</div>`;
         },
         key: function (code) {
             var list = rows();

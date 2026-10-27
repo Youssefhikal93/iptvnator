@@ -9,23 +9,21 @@ window.TmdbView = (function () {
         return node;
     }
 
+    function cardsView(label, entries, focus) {
+        var html = UI.html;
+        return html`<section class="tm-row">
+            <h2 class="">${label}</h2>
+            <div class="tm-cards">${entries.map(function (entry, i) {
+                return html`<div class=${'tm-card' + (i === focus ? ' focus' : '')}>${entry.image ? UI.img('', entry.image) : null}<span class="">${entry.name}</span></div>`;
+            })}</div>
+        </section>`;
+    }
+
+    // For screens not yet in Preact (Actor, Discover): the same row as a node.
     function cards(label, entries, focus) {
-        var row = el('section', 'tm-row');
-        row.appendChild(el('h2', '', label));
-        var list = el('div', 'tm-cards');
-        entries.forEach(function (entry, i) {
-            var card = el('div', 'tm-card' + (i === focus ? ' focus' : ''));
-            if (entry.image) {
-                var image = el('img', '');
-                image.src = entry.image;
-                image.onerror = function () { image.style.visibility = 'hidden'; };
-                card.appendChild(image);
-            }
-            card.appendChild(el('span', '', entry.name));
-            list.appendChild(card);
-        });
-        row.appendChild(list);
-        return row;
+        var box = document.createElement('div');
+        UI.render(cardsView(label, entries, focus), box);
+        return box.firstChild;
     }
 
     function catalogueCard(entry) {
@@ -37,5 +35,5 @@ window.TmdbView = (function () {
         if (selected) selected.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
 
-    return { el: el, cards: cards, catalogueCard: catalogueCard, scroll: scroll };
+    return { el: el, cards: cards, cardsView: cardsView, catalogueCard: catalogueCard, scroll: scroll };
 })();

@@ -22,7 +22,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, genres: {}, genre: {}, genreToken: 0, genreProgress: null, genreMore: 0, genreTried: [], epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -91,6 +91,16 @@ window.Browser = function (hooks) {
         else if (state.section === 'home') home.render();
     });
     var visible = { list: [], empty: '' };
+    var genres = GenreFilter({
+        section: function () { return state.section; },
+        ready: hasTools,
+        candidates: function () { return visible.list; },
+        tmdb: Tmdb,
+        changed: function (listChanged) {
+            if (listChanged) drawItems(items.index(), true);
+            renderChrome();
+        },
+    });
 
     var categories = List($('categories'), {
         rows: 11,
@@ -618,90 +628,16 @@ window.Browser = function (hooks) {
 
     function setItems(list, index, empty) {
         visible = { list: list, empty: empty };
-        lookUpGenre();
+        genres.look();
         drawItems(index);
     }
 
     // The list with the genre pill applied; keep holds the focused title.
     function drawItems(index, keep) {
         var mode = sortMode();
-        var genre = genreFilter();
-        var section = state.section;
-        var list = visible.list;
-        var empty = visible.empty;
-        var shown = genre ? list.filter(function (item) { return Genres.has(item, section, genre); }) : list;
-        if (genre && !shown.length && list.length) {
-            empty = state.genreProgress
-                ? [I18n.t('find.looking', { genre: genre }), I18n.t('find.lookingHint')]
-                : state.genreMore
-                ? [I18n.t('find.noneYet', { genre: genre }), I18n.t('find.moreHint', { n: state.genreMore })]
-                : [I18n.t('find.noGenre', { genre: genre }), I18n.t('find.noGenreHint')];
-        }
-        shown = mode ? Sort.order(shown, section, mode) : shown.slice();
-        items.set(shown, keep ? Math.max(0, indexIn(shown, items.item(), index)) : index, empty);
-    }
-
-    // A picked genre matches what the provider's list or TMDB says (#31).
-    // Only the list showing is checked, GENRE_PAGE titles at a time, and
-    // only with TMDB: the provider is never asked, so filtering cannot add
-    // to its request limit. ▼ at the end of the list or CH▼ checks the next
-    // ones; nothing found yet keeps going a few batches by itself.
-    var GENRE_PAGE = 20;
-    function lookUpGenre(more) {
-        var mine = ++state.genreToken;
-        var genre = genreFilter();
-        var section = state.section;
-        state.genreProgress = null;
-        state.genreMore = 0;
-        if (!more) {
-            state.genreTried = [];
-            state.genreRuns = 0;
-        }
-        state.genreRuns++;
-        if (!genre || !Tmdb.enabled()) return;
-        var type = section === 'movies' ? 'movie' : 'tv';
-        var tried = state.genreTried;
-        var open = function (item) { return !Genres.has(item, section, genre); };
-        var waiting = function () {
-            return visible.list.filter(function (item) {
-                return open(item) && tried.indexOf(item) === -1 && !Tmdb.cached(item, type);
-            });
-        };
-        var batch = waiting().slice(0, GENRE_PAGE);
-        if (!batch.length) return;
-        var progress = state.genreProgress = { done: 0, total: batch.length };
-        var current = function () { return mine === state.genreToken; };
-        var step = function () {
-            if (!current() || !batch.length) return Promise.resolve();
-            var item = batch.shift();
-            tried.push(item);
-            return Tmdb.match(item, type, current).catch(function () {}).then(function () {
-                if (!current()) return;
-                progress.done++;
-                if (!open(item)) drawItems(items.index(), true);
-                renderHints();
-                return step();
-            });
-        };
-        Promise.all([step(), step()]).then(function () {
-            if (!current()) return;
-            state.genreProgress = null;
-            state.genreMore = waiting().length;
-            drawItems(items.index(), true);
-            renderChrome();
-            // Nothing found yet: keep going a few batches before asking.
-            var none = !visible.list.some(function (item) { return !open(item); });
-            if (none && state.genreMore && state.genreRuns < 5) moreGenre();
-        });
-    }
-
-    // ▼ at the end of the list or CH▼: the next titles for the genre.
-    function moreGenre() {
-        if (!state.genreMore || state.genreProgress) return false;
-        lookUpGenre(true);
-        drawItems(items.index(), true);
-        renderChrome();
-        return true;
+        var view = genres.apply(visible.list, visible.empty);
+        var shown = mode ? Sort.order(view.list, state.section, mode) : view.list.slice();
+        items.set(shown, keep ? Math.max(0, indexIn(shown, items.item(), index)) : index, view.empty);
     }
 
     // A movie's own page carries its genre; pages already opened count.
@@ -714,52 +650,42 @@ window.Browser = function (hooks) {
 
     // The filter button beside the search bar in Movies and Series opens a
     // menu: All and the section's most common genres. A genre narrows
-    // whatever list is showing.
-    function genreNames() {
-        var names = (state.section === 'movies' || state.section === 'series') && hasTools() && state.genres[state.section];
-        return names && names.length ? names : [];
-    }
-
-    function genreFilter() {
-        return genreNames().length ? state.genre[state.section] || null : null;
-    }
-
+    // whatever list is showing. ▼ at the end of the list or CH▼ checks the
+    // next titles for it.
     function loadGenres(section) {
-        if (state.genres[section]) return;
-        // With TMDB every standard genre can be found; without it only the
-        // genres the provider's list carries.
-        var offer = Tmdb.enabled() ? Genres.pills : Genres.common;
-        state.genres[section] = offer([], section, 20);
         var adapter = state.adapter;
-        state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
-            if (adapter !== state.adapter) return;
-            state.genres[section] = offer(visibility.items(section, all), section, 20);
-        }).catch(function () {});
+        genres.offer(section, function () {
+            return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
+                return adapter === state.adapter ? visibility.items(section, all) : null;
+            });
+        });
     }
 
     function pickGenre(name) {
-        state.genre[state.section] = name;
-        if (visible) setItems(visible.list, 0, visible.empty);
+        genres.pick(name);
+        setItems(visible.list, 0, visible.empty);
         setZone(items.items().length ? 'items' : 'categories');
     }
 
     function openGenreMenu() {
-        var chosen = genreFilter();
-        var mark = function (name) { return (name === chosen ? '\u2713 ' : '') + (name || I18n.t('find.all')); };
-        var options = [null].concat(genreNames()).map(function (name) {
+        var chosen = genres.current();
+        var names = genres.names();
+        var mark = function (name) { return (name === chosen ? '✓ ' : '') + (name || I18n.t('find.all')); };
+        var options = [null].concat(names).map(function (name) {
             return { label: mark(name), run: function () { pickGenre(name); } };
         });
-        if (chosen && state.genreMore && !state.genreProgress) {
-            options.push({ label: I18n.t('find.checkMore', { n: state.genreMore }), run: function () { moreGenre(); setZone(items.items().length ? 'items' : 'categories'); } });
+        var left = genres.pending();
+        if (left) {
+            options.push({ label: I18n.t('find.checkMore', { n: left }), run: function () { genres.more(); setZone(items.items().length ? 'items' : 'categories'); } });
         }
-        Menu.open(I18n.t('find.genre'), options, Math.max(0, genreNames().indexOf(chosen) + 1));
+        Menu.open(I18n.t('find.genre'), options, Math.max(0, names.indexOf(chosen) + 1));
     }
 
     function toolbarTools() {
         var category = !state.showingSearch && categories.item();
         var canSort = sortableSection() && (!category || !category.virtual || (category.virtual === 'favorites' && Prefs.get('librarySources') !== 'all'));
         var tools = canSort ? TOOLS : TOOLS.slice(0, 3);
-        if (genreNames().length) tools = ['search', 'genre'].concat(tools.slice(1));
+        if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
         return guideAvailable() ? tools.concat(['guide']) : tools;
     }
 
@@ -956,8 +882,8 @@ window.Browser = function (hooks) {
                 : I18n.t('hints.default');
         // With the source pill gone (#45), a catalogue refresh shows here.
         if (state.updating) $('hints').textContent += '  ·  ' + I18n.t('browser.updating');
-        if (state.genreProgress) $('hints').textContent += '  ·  ' + I18n.t('find.progress', state.genreProgress);
-        else if (state.genreMore && genreFilter()) $('hints').textContent += '  ·  ' + I18n.t('find.moreHint', { n: state.genreMore });
+        var genreHint = genres.hint();
+        if (genreHint) $('hints').textContent += '  ·  ' + genreHint;
     }
 
     function renderToolbar() {
@@ -982,8 +908,9 @@ window.Browser = function (hooks) {
             if (mode === 'genre') {
                 // The genre in use shows on the button.
                 btn.classList.toggle('hidden', tools.indexOf('genre') === -1);
-                btn.classList.toggle('chosen', !!genreFilter());
-                btn.lastChild.textContent = genreFilter() || '';
+                var picked = genres.current();
+                btn.classList.toggle('chosen', !!picked);
+                btn.lastChild.textContent = picked || '';
             }
             btn.classList.toggle('active', on && viewMode() === mode);
             btn.classList.toggle('focused', focus === mode);
@@ -1106,8 +1033,7 @@ window.Browser = function (hooks) {
         state.showingSearch = false;
         state.favKeys = null;
         state.added = {};
-        state.genres = {};
-        state.genre = {};
+        genres.reset();
         homeLoading = {};
         home.reset(!!screenReady);
         if (!source) return renderChrome();
@@ -1177,8 +1103,7 @@ window.Browser = function (hooks) {
         $('content').classList.toggle('settings', id === 'settings');
         state.showingSearch = false;
         state.base = null;
-        state.genreToken++;
-        state.genreProgress = null;
+        genres.cancel();
         state.favKeys = null;
         var token = ++state.token;
         applyView();
@@ -1774,7 +1699,7 @@ window.Browser = function (hooks) {
             if (STEPS[code]) {
                 var moved = moveItems(code);
                 if (!moved && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
-                else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) moreGenre();
+                else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) genres.more();
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {

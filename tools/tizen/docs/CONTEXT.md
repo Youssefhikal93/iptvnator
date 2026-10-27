@@ -70,7 +70,7 @@ Everything kept for one viewer per source: favorites, recently watched and progr
 _Avoid_: History (for all of it)
 
 **Profile**:
-One viewer of the TV (up to six) with their own library, watched marks, app settings, hidden and locked categories and PIN; sources, catalogues and the TMDB key are shared. "Who's watching?" picks one on start when there are two or more.
+One viewer of the TV (up to six) with their own library, watched marks, app settings, hidden and locked categories and PIN; sources, catalogues, the TMDB key and the OpenSubtitles key are shared. "Who's watching?" picks one on start when there are two or more.
 _Avoid_: User, account, family member
 
 **Favorite**:
@@ -150,6 +150,10 @@ _Avoid_: Mini player, picture-in-picture
 **Subtitle style**:
 The saved size, text colour, background and position of subtitles, shared by Settings and the player menu.
 _Avoid_: Subtitle theme, caption preset
+
+**Downloaded subtitles**:
+Subtitles chosen from OpenSubtitles for a movie or episode, kept on the TV and shown in the player with a saved timing delay.
+_Avoid_: External tracks, sidecar captions
 
 **Aspect**:
 How the picture fits the screen: Auto, Fit, Fill, or a forced 16:9 or 4:3 shape; live preview always uses Fit.

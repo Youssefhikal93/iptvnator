@@ -119,6 +119,7 @@
         if (ProfileScreen.isOpen()) return ProfileScreen.onKey(event);
         if (BackupScreen.isOpen()) return BackupScreen.onKey(event);
         if (TmdbSettings.isOpen()) return TmdbSettings.onKey(event);
+        if (OpenSubsSettings.isOpen()) return OpenSubsSettings.onKey(event);
         if (screen === 'form') return Form.onKey(event);
         var handled = screen === 'player' ? onPlayerKey(event.keyCode) : browser.onKey(event.keyCode);
         if (handled) event.preventDefault();
@@ -149,6 +150,10 @@
     });
     document.addEventListener('trailer-unavailable', function () {
         browser.toast(I18n.t('trailer.unavailable'));
+    });
+
+    document.addEventListener('subtitle-toast', function (event) {
+        browser.toast(event.detail, 8000);
     });
 
     // Leaving the app (Home, Source) must free the account's connection.

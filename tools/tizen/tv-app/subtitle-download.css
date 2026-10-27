@@ -1,0 +1,10 @@
+#menu.subtitle-picker {
+    z-index: 40;
+}
+#menu.subtitle-picker .menu-row {
+    overflow-wrap: anywhere;
+}
+body.subtitles-open #toast {
+    z-index: 45;
+    white-space: normal;
+}

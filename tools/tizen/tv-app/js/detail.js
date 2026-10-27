@@ -231,6 +231,7 @@ window.Detail = function () {
         isOpen: function () {
             return !!s;
         },
+        subtitleInfo: function (item) { return s && s.page.item === item ? s.details : null; },
         onKey: onKey,
         close: close,
         episodeSelection: function () {

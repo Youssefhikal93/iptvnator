@@ -1092,6 +1092,7 @@ window.Browser = function (hooks) {
     // from the player records it like a pick from the list.
     function episodeRequest(show, list, index) {
         var req = state.adapter.episodeRequest(show, list[index]);
+        SubtitleContext.attach(req, { sourceId: sourceId(), item: show, episode: list[index], catalogue: state.catalogue, details: detail.subtitleInfo(show) });
         req.episodes = {
             items: list,
             index: index,
@@ -1110,6 +1111,7 @@ window.Browser = function (hooks) {
         var show = entry.show;
         record(entry, show, entry.episode);
         var play = function (req) {
+            if (!req.subtitleLookup) SubtitleContext.attach(req, { sourceId: sourceId(), item: show, episode: entry.episode, catalogue: state.catalogue });
             if (resume !== undefined) req.resume = resume;
             hooks.play(req);
         };
@@ -1253,6 +1255,7 @@ window.Browser = function (hooks) {
         if (otherSource(movie)) return libraryNavigation.open(movie, function () { playMovie(movie, resume); });
         record(movie, null, null, 'movies');
         var req = state.adapter.movieRequest(movie);
+        SubtitleContext.attach(req, { sourceId: sourceId(), item: movie, catalogue: state.catalogue, details: detail.subtitleInfo(movie) });
         if (resume !== undefined) req.resume = resume;
         hooks.play(req);
     }

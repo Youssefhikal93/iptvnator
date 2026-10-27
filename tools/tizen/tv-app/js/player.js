@@ -76,6 +76,13 @@ window.Player = (function () {
     var avSeekSerial = 0;
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
     var menu = { open: false, focus: 0, actions: [] };
+    var subtitles = SubtitleDownload({
+        position: position,
+        draw: function (text) { clearSubs(); ui.subs.textContent = text; },
+        embeddedOff: function () { var tracks = getTracks(); if (tracks.text.length) tracks.text[0].select(); },
+        closeMenu: closeMenu,
+        toast: function (text) { document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: text })); },
+    });
     var resume = { open: false, focus: 0, position: 0, failed: false };
     var restoration = PlayerResume({
         position: position,
@@ -719,8 +726,11 @@ window.Player = (function () {
         if (tracks.audio.length) tracks.audio.forEach(function (t) { item(t.label, t.active, t.select); });
         else ui.menu.appendChild(el('div', 'pl-menu-empty', I18n.t('player.oneAudio')));
         head(I18n.t('picture.subtitles'));
-        if (tracks.text.length > 1) tracks.text.forEach(function (t) { item(t.label, t.active, t.select); });
+        if (tracks.text.length > 1) tracks.text.forEach(function (t) {
+            item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
+        });
         else ui.menu.appendChild(el('div', 'pl-menu-empty', I18n.t('player.noSubtitles')));
+        subtitles.menuEntries(item, tracks.text.length > 1);
         PlayerPicture.menuEntries(head, item);
         if (!current.live) {
             head(I18n.t('player.speed'));
@@ -859,6 +869,7 @@ window.Player = (function () {
     }
 
     function showSub(durationMs, text) {
+        if (subtitles.active()) return;
         clearTimeout(subsTimer);
         ui.subs.textContent = String(text || '').replace(/<[^>]*>/g, '');
         if (Number(durationMs) > 0) subsTimer = setTimeout(clearSubs, Number(durationMs));
@@ -868,6 +879,7 @@ window.Player = (function () {
 
     // Closes whatever is playing; keeps the player screen.
     function release() {
+        subtitles.stop();
         saveProgress();
         restoration.cancel();
         avSeekSerial++;
@@ -1082,6 +1094,7 @@ window.Player = (function () {
             streamLost('media error ' + (video.error ? video.error.code : '?'), I18n.t('player.stopped'));
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
+        subtitles.start(current);
         renderHint();
         video.ontimeupdate = restoration.onTime;
         maybePrompt();
@@ -1205,6 +1218,7 @@ window.Player = (function () {
     // Returns true when consumed, or 'back' for OK on the error's Back button.
     // Return with hidden controls, Stop and live zapping are left to the caller.
     function key(code, live) {
+        if (Menu.isOpen()) return Menu.onKey(code);
         if (!current) return false;
         if (playbackError) return errorKey(code);
         if (resume.open) return resumeKey(code);

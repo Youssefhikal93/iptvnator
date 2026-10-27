@@ -51,7 +51,7 @@ window.ChannelList = function (hooks) {
         var url = channel.stream_icon || channel.logo;
         if (url) {
             var image = element('img', '');
-            image.src = url;
+            Art.prepare(image, url).src = url;
             image.onerror = function () { image.remove(); };
             logo.appendChild(image);
         }

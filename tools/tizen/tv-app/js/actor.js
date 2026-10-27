@@ -15,7 +15,7 @@ window.Actor = (() => {
 
     const view = () => {
         const person = state.person;
-        const photo = Tmdb.image(person.profile_path, 'w500');
+        const photo = Tmdb.image(person.profile_path, 'h632');
         const hint = state.loading ? 'common.loadingEllipsis' : state.entries.length ? 'actor.hint' : 'actor.none';
         return html`${photo ? UI.img('tm-person', photo) : null}
             <h1>${person.name}</h1>

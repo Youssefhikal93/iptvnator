@@ -37,7 +37,8 @@ window.TmdbDetail = function (page, changed) {
                 var enriched = Object.assign({}, provider);
                 enriched.tmdb_id = body.id;
                 enriched.title = body.title || body.name || provider.title;
-                enriched.poster = Tmdb.image(body.poster_path, 'w500') || provider.poster;
+                // Sizes match what is drawn: a 300 px poster, 154 px cast photos.
+                enriched.poster = Tmdb.image(body.poster_path, 'w342') || provider.poster;
                 enriched.backdrop = Tmdb.image(body.backdrop_path, 'w1280') || provider.backdrop;
                 enriched.plot = provider.plot || body.overview;
                 enriched.rating = Number(body.vote_average) || provider.rating;
@@ -61,7 +62,7 @@ window.TmdbDetail = function (page, changed) {
             var html = UI.html;
             if (!current()) return html`<div class="tm-detail-rows"></div>`;
             return html`<div class="tm-detail-rows">${rows().map(function (entry, i) {
-                var cards = entry.entries === cast ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w500') }; }) : similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); });
+                var cards = entry.entries === cast ? cast.map(function (person) { return { name: person.name, image: Tmdb.image(person.profile_path, 'w185') }; }) : similar.map(function (entry) { return TmdbLanguage.catalogueCard(entry, similarCredits); });
                 return html`<${Kit.Row} label=${entry.label} tiles=${cards} focus=${focused && i === row ? focus : -1} />`;
             })}</div>`;
         },

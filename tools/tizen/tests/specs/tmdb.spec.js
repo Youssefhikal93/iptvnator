@@ -101,7 +101,7 @@ test('provider page renders first, then TMDB fills plot and cast; OK opens actor
     await expect(page.locator('#detail .dt-plot')).toHaveText('A TMDB detective follows the missing clue.');
     await expect(page.locator('#detail .tm-row').first()).toContainText('Cast');
     await expect(page.locator('#detail .tm-card').first()).toContainText('Alex Example');
-    await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /\/w500\/poster.jpg$/);
+    await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /\/w342\/poster.jpg$/);
     await expect(page.locator('#detail .dt-backdrop')).toHaveAttribute('src', /\/w1280\/backdrop.jpg$/);
     await expect(page.locator('#detail .dt-btn', { hasText: 'Trailer' })).toHaveCount(1);
     await press(page, 'ArrowDown');

@@ -26,6 +26,8 @@ window.AppearanceSettings = (function () {
             { get label() { return I18n.t('settings.theme'); }, key: 'theme', pills: true, choices: ['dark', 'light'], get labels() { return [I18n.t('settings.dark'), I18n.t('settings.light')]; } },
             { get label() { return I18n.t('settings.accent'); }, key: 'accent', pills: true, swatches: true, choices: ['blue', 'saffron', 'asphalt', 'violet', 'pink'], get labels() { return [I18n.t('settings.blue'), I18n.t('settings.saffron'), I18n.t('settings.asphalt'), I18n.t('settings.violet'), I18n.t('settings.pink')]; } },
             { get label() { return I18n.t('settings.density'); }, key: 'density', pills: true, choices: ['comfortable', 'compact'], get labels() { return [I18n.t('settings.comfortable'), I18n.t('settings.compact')]; } },
+            // Off for older TVs where fades and growing tiles stutter.
+            { get label() { return I18n.t('settings.motion'); }, key: 'motion', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
         ],
     };
 })();

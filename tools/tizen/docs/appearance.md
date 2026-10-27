@@ -52,3 +52,18 @@ as well as the shipped tables. The table builder retains them when desktop
 translations are regenerated. Existing browser specs seed Compact in
 `tests/specs/helpers.js`; `i18n-theme.spec.js` inspects the outer shadow ring
 instead of the former translucent border. Real-TV verification is required.
+
+## Motion (#42)
+
+Artwork goes through `js/art.js`: an image starts transparent over its
+placeholder box and fades in once loaded, while an address already loaded this
+session shows at once, so lists that rebuild on every key press do not flash.
+Lists preload the next page's artwork and Home the tiles RIGHT scrolls to and
+the row DOWN brings up. TMDB images are requested at the size they are drawn
+(poster `w342`, cast `w185`, actor photo `h632`, backdrop `w1280`). Focused
+tiles grow to 1.1 with a 0.15 s transform; TMDB rows on Detail fade in. Only
+transform and opacity animate. Settings > Appearance > Animations (`motion`,
+On by default) sets `data-motion="off"`, which removes every transition and
+animation for TVs where they stutter. Vanilla screens rebuild their tiles on
+each key press, so the focus growth animates only on Preact screens until
+Home and the lists move to Preact (#44, #45).

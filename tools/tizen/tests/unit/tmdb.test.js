@@ -5,7 +5,7 @@ var assert = require('node:assert/strict');
 var load = require('./sandbox');
 
 function client(overrides) {
-    return load(['settings-store.js', 'tmdb-store.js', 'tmdb.js'], {}, Object.assign({
+    return load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'tmdb.js'], {}, Object.assign({
         AbortController: AbortController,
         Log: { error: function () {} },
     }, overrides)).globals;

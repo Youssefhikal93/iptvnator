@@ -38,10 +38,10 @@ window.TmdbStore = (function () {
 
     return {
         fresh: fresh,
-        get: function (key) {
+        get: function get(key, legacyKey) {
             if (fresh(memory[key])) return Promise.resolve(memory[key]);
             return run('readonly', key).then(function (record) {
-                if (!fresh(record)) return null;
+                if (!fresh(record)) return legacyKey ? get(legacyKey) : null;
                 memory[key] = record;
                 return record;
             });

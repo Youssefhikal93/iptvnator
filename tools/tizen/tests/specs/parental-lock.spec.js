@@ -1,12 +1,11 @@
-const { test, expect, boot, section, category, press, back, holdOK, menuChoice, moveTo, enterItems, toolbar, channel, playing, sendKeyCode } = require('./helpers');
+const { test, expect, boot, section, category, press, back, holdOK, menuChoice, moveTo, enterItems, toolbar, channel, playing, sendKeyCode, setting } = require('./helpers');
 
 async function digits(page, pin) {
     for (const digit of pin) await press(page, digit);
 }
 
 async function setPin(page) {
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'PIN');
+    await setting(page, 'PIN');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Set PIN…');
     await press(page, 'Enter');
     await expect(page.locator('.pin-title')).toHaveText('Enter a new PIN');
@@ -61,7 +60,7 @@ test('Settings PIN protects a category, search and All channels; unlock expires 
     await digits(page, '1234');
     await expect(page.locator('#pin-pad')).toBeHidden();
     await expect(page.locator('#items .focused .label')).toContainText('(cat 5)');
-    await back(page);
+    await press(page, 'ArrowLeft'); // ◀ to the categories; Back goes to the menu (#50)
     await allChannels(page, 500);
     await search(page, true);
 
@@ -73,8 +72,7 @@ test('Settings PIN protects a category, search and All channels; unlock expires 
     await press(page, 'Enter');
     await expect(page.locator('.pin-title')).toHaveText('Enter the PIN');
     await back(page);
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'PIN');
+    await setting(page, 'PIN');
     await press(page, 'Enter');
     await menuChoice(page, 'Remove PIN');
     await expect(page.locator('.pin-title')).toHaveText('Enter the current PIN');
@@ -107,8 +105,7 @@ test('pad supports arrows, Clear and Back; mismatch restarts and Change PIN chec
     await expect(page.locator('.pin-message')).toContainText('do not match');
     await digits(page, '1234');
     await digits(page, '1234');
-    await section(page, 'Settings');
-    await moveTo(page, '.st-row.focused .st-label', 'PIN');
+    await setting(page, 'PIN');
     await press(page, 'Enter');
     await menuChoice(page, 'Change PIN…');
     await digits(page, '0000');
@@ -131,7 +128,7 @@ test('pad supports arrows, Clear and Back; mismatch restarts and Change PIN chec
     await press(page, 'Enter');
     await digits(page, '5678');
     await expect(page.locator('#pin-pad')).toBeHidden();
-    await back(page);
+    await press(page, 'ArrowLeft'); // ◀ to the categories; Back goes to the menu (#50)
     await holdOK(page);
     await menuChoice(page, 'Unlock category');
     await digits(page, '5678');

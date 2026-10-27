@@ -429,7 +429,6 @@ window.Browser = function (hooks) {
         if (sortableSection() && addedOf(section).length) {
             rows.unshift({ category_id: '__added', category_name: I18n.t('browser.recentlyAdded'), virtual: 'added', count: addedOf(section).length });
         }
-        if (section !== 'live' && Tmdb.enabled()) rows.unshift({ category_id: '__discover', category_name: I18n.t('browser.discover'), virtual: 'discover' });
         // All movies / All series comes first: the whole section, without
         // hidden categories (a category with no id loads all of it).
         if (section === 'movies' || section === 'series') rows.unshift({ category_id: '', category_name: I18n.t(section === 'movies' ? 'browser.allMovies' : 'browser.allSeries'), all: section });
@@ -470,9 +469,9 @@ window.Browser = function (hooks) {
         state.token++;
         state.showingSearch = false;
         applyView();
-        setItems(category.virtual === 'discover' ? [] : virtualList(category.virtual).filter(function (item) {
+        setItems(virtualList(category.virtual).filter(function (item) {
             return ParentalLock.allows(item.sourceId || sourceId(), state.section, item);
-        }), index || 0, category.virtual === 'discover' ? [I18n.t('browser.discover'), I18n.t('empty.discover.hint')] : EMPTY[category.virtual]);
+        }), index || 0, EMPTY[category.virtual]);
         renderChrome();
     }
 
@@ -1708,7 +1707,6 @@ window.Browser = function (hooks) {
             });
             return true;
         }
-        if (Discover.isOpen()) return Discover.key(code);
         var loadKey = LoadScreen.key(code);
         if (loadKey === 'exit') hooks.exit();
         if (loadKey) return true;
@@ -1760,10 +1758,6 @@ window.Browser = function (hooks) {
             else return false;
         } else if (state.zone === 'categories') {
             var row = categories.item();
-            if (row && row.virtual === 'discover' && (code === KEY.ENTER || code === KEY.RIGHT)) {
-                Discover.open(state.section === 'movies' ? 'movie' : 'tv', { catalogue: tmdbCatalogue, open: openEntry });
-                return true;
-            }
             if (STEPS[code]) {
                 if (categories.move(STEPS[code])) onCategoryMoved();
                 else if (code === KEY.UP && !enterToolbar('categories') && menuOnTop()) setZone('rail');

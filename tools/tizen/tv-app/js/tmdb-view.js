@@ -1,4 +1,4 @@
-// Helpers shared by the TMDB screens (actor page, Discover, Detail rows).
+// Helpers shared by the TMDB screens (actor page, Detail rows).
 window.TmdbView = (() => {
     'use strict';
 

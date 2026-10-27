@@ -15,7 +15,6 @@ I18n.tables.zh = {
     'backup.exportTitle': '导出备份',
     'browser.allChannels': '所有频道',
     'browser.continueWatching': '继续观看',
-    'browser.discover': '发现',
     'browser.favorites': '收藏',
     'browser.notAvailable': '不可用',
     'browser.recentlyAdded': '最近添加',

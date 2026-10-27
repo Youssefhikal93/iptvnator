@@ -15,7 +15,6 @@ I18n.tables.es = {
     'backup.exportTitle': 'Exportar copia',
     'browser.allChannels': 'Todos los canales',
     'browser.continueWatching': 'Seguir viendo',
-    'browser.discover': 'Descubrir',
     'browser.favorites': 'Favoritos',
     'browser.notAvailable': 'No disponible',
     'browser.recentlyAdded': 'Añadidos recientemente',

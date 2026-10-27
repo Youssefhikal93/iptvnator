@@ -15,7 +15,6 @@ I18n.tables.hu = {
     'backup.exportTitle': 'Mentés exportálása',
     'browser.allChannels': 'Összes csatorna',
     'browser.continueWatching': 'Megtekintés folytatása',
-    'browser.discover': 'Felfedezés',
     'browser.favorites': 'Kedvencek',
     'browser.notAvailable': 'Nem érhető el',
     'browser.recentlyAdded': 'Legutóbb hozzáadott tartalmak',

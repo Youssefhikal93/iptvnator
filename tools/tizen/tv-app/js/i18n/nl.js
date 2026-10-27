@@ -15,7 +15,6 @@ I18n.tables.nl = {
     'backup.exportTitle': 'Back-up exporteren',
     'browser.allChannels': 'Alle kanalen',
     'browser.continueWatching': 'Verder kijken',
-    'browser.discover': 'Ontdekken',
     'browser.favorites': 'Favorieten',
     'browser.notAvailable': 'Niet beschikbaar',
     'browser.recentlyAdded': 'Recent toegevoegd',

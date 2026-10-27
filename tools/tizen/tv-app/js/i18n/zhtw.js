@@ -15,7 +15,6 @@ I18n.tables.zhtw = {
     'backup.exportTitle': '匯出備份',
     'browser.allChannels': '所有頻道',
     'browser.continueWatching': '繼續觀看',
-    'browser.discover': '探索',
     'browser.favorites': '我的最愛',
     'browser.notAvailable': '無法使用',
     'browser.recentlyAdded': '最近新增',

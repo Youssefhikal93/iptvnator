@@ -15,7 +15,6 @@ I18n.tables.uk = {
     'backup.exportTitle': 'Експортувати резервну копію',
     'browser.allChannels': 'Всі канали',
     'browser.continueWatching': 'Продовжити перегляд',
-    'browser.discover': 'Добірки',
     'browser.favorites': 'Вподобання',
     'browser.notAvailable': 'Недоступно',
     'browser.recentlyAdded': 'Нещодавно додані',

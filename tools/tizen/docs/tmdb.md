@@ -2,7 +2,7 @@
 
 The viewer opts in by saving their own TMDB v3 API key in Settings. `Prefs`
 keeps `tmdbApiKey` in the existing localStorage settings object. Without a
-key, `Tmdb` sends no requests, builds no TMDB image URLs and offers no Discover
+key, `Tmdb` sends no requests, builds no TMDB image URLs and offers no TMDB genres in the genre filter
 category. Never pass a TMDB URL or the key to `Log`; failures log the path only.
 
 `js/tmdb.js` limits all TMDB REST requests to three in flight, coalesces
@@ -58,11 +58,11 @@ checked once per session by a matching view control or installed YouTube app;
 unsupported TVs hide the button. Browser builds keep the button and show
 "YouTube is not available on this TV" on OK, also shown if both TV launches fail.
 
-`js/discover.js` loads genres and checks a page of 12 catalogue titles only
-after the viewer chooses a genre. Cached matches can be filtered again without
-another request. CH keys move between pages; it never scans the whole catalogue
-automatically. Return closes Discover, while closing a detail page opened from
-Discover restores its genre and title selection.
+The genre filter in Movies and Series (the button beside the search bar)
+checks the open list with TMDB twenty titles at a time, only after the viewer
+picks a genre. Cached matches filter again without another request; ▼ past the
+end, CH▼ or **Check 20 more** checks the next twenty. It never asks the provider
+and never scans the whole catalogue by itself. It replaced Discover.
 
 Network fixtures and browser checks are in `tests/specs/tmdb.spec.js` and
 `tests/fixtures/tmdb/`; matching, opt-in, request limits and expiry are checked

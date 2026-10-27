@@ -15,7 +15,6 @@ I18n.tables.ko = {
     'backup.exportTitle': '백업 내보내기',
     'browser.allChannels': '모든 채널',
     'browser.continueWatching': '이어서 시청',
-    'browser.discover': '탐색',
     'browser.favorites': '즐겨찾기',
     'browser.notAvailable': '사용 불가',
     'browser.recentlyAdded': '최근 추가됨',

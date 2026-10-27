@@ -21,7 +21,6 @@
     border: 3px solid var(--focus-ring);
     border-radius: 20px;
 }
-#discover { z-index: 7; }
 .tm-dialog input, .tm-dialog button {
     padding: 18px;
     font: inherit;

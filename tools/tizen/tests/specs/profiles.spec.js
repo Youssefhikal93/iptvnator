@@ -55,8 +55,10 @@ test('old-format data moves under the profile Me and looks unchanged', async ({ 
     expect(await stored(page, P + 'profiles-version')).toBe('1');
     for (const name of ['progress', 'settings', 'favorites:s1', 'recent:s1', 'hidden-categories:s1']) {
         expect(await stored(page, P + name)).toBeNull();
-        expect(await stored(page, P + 'p:default:' + name)).not.toBeNull();
+        expect(await stored(page, P + 'p:default:' + (name === 'progress' ? 'progress:s1' : name))).not.toBeNull();
     }
+    expect(await stored(page, P + 'p:default:progress')).toBeNull();
+    expect(await stored(page, P + 'p:default:progress:legacy')).not.toBeNull();
     // Sources stay shared and the TMDB key moves to the shared settings.
     expect(await stored(page, P + 'sources')).not.toBeNull();
     expect(JSON.parse(await stored(page, P + 'shared-settings')).tmdbApiKey).toBe('tmdb-secret');
@@ -129,7 +131,7 @@ test('favorites made in one profile stay out of the other', async ({ page }) => 
     expect(await stored(page, P + 'p:default:favorites:s1')).toContain('Movie 7');
     const anna = (await profiles(page))[1].id;
     expect(await stored(page, P + 'p:' + anna + ':favorites:s1')).toBeNull();
-    expect(await stored(page, P + 'p:' + anna + ':progress')).toBeNull();
+    expect(await stored(page, P + 'p:' + anna + ':progress:s1')).toBeNull();
     expect(await stored(page, P + 'p:' + anna + ':hidden-categories:s1')).toBeNull();
     expect(await stored(page, P + 'p:' + anna + ':settings')).toBeNull();
 });
@@ -252,7 +254,7 @@ test('the backup export holds only the active profile data', async ({ page }) =>
     await addProfile(page, 'Anna');
     // Anna has no progress: her stored progress key does not exist, Me keeps hers.
     const annaId = (await profiles(page))[1].id;
-    expect(await stored(page, P + 'p:' + annaId + ':progress')).toBeNull();
+    expect(await stored(page, P + 'p:' + annaId + ':progress:s1')).toBeNull();
     const exported = await page.evaluate(() => JSON.stringify(BackupStore.read('progress', {})));
     expect(exported).toBe('{}');
     await reloadAndPick(page, 'Me');

@@ -129,7 +129,7 @@ window.Library = (function () {
         },
         continueWatching: function (sourceId, section) {
             return listOf('recent', sourceId, section).filter(function (entry) {
-                return Progress.unfinished(section, entry);
+                return Progress.unfinished(section, entry, sourceId);
             });
         },
         sort: function (sourceId, section) {

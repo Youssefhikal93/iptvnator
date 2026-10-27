@@ -5,18 +5,18 @@ window.Watched = function (api) {
 
     function isWatched(item, section) {
         if (section === 'live') return false;
-        if (section !== 'series' || item.episode) return Progress.isWatched(Progress.id(section, item));
+        if (section !== 'series' || item.episode) return Progress.isWatched(Progress.id(section, item), item.sourceId);
         var info = api.knownShow(item);
-        return Progress.allWatched(info && info.episodes);
+        return Progress.allWatched(info && info.episodes, item.sourceId);
     }
 
     function itemOption(item, section) {
         var id = Progress.id(section, item);
-        var done = Progress.isWatched(id);
+        var done = Progress.isWatched(id, item.sourceId);
         return {
             label: I18n.t((item.episode ? 'watched.markEpisode' : 'watched.markAs') + (done ? '.unwatched' : '.watched')),
             run: function () {
-                Progress.mark([id], !done, [item.seconds]);
+                Progress.mark([id], !done, [item.seconds], item.sourceId);
                 api.changed();
             },
         };

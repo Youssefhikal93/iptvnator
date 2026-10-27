@@ -16,7 +16,7 @@ async function addPlaylist(page, file) {
 const railItem = (page, name) => page.locator('#rail .rail-item').filter({ hasText: name });
 
 // Progress ids saved by this playlist are based on the stream address.
-const savedIds = (page, prefix) => page.evaluate(prefix => Object.keys(JSON.parse(localStorage.getItem('iptvnator-tv:p:default:progress') || '{}')).filter(id => id.startsWith(prefix)), prefix);
+const savedIds = (page, prefix) => page.evaluate(prefix => Object.keys(JSON.parse(localStorage.getItem(ProfileStore.key('progress:' + Sources.current().id)) || '{}')).filter(id => id.startsWith(prefix)), prefix);
 
 test('playlist with movies and episodes adds Movies and Series; live channels stay in Live TV', async ({ page }) => {
     await addPlaylist(page, '/playlist-vod.m3u');

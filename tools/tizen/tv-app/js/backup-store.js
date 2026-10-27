@@ -7,11 +7,13 @@ window.BackupStore = (function () {
 
     // Sources are shared; everything else is the active profile's data.
     function storageKey(key) {
+        if (key === 'progress') return Progress.storageKey();
         return key === 'sources' || key === 'current' ? PREFIX + key : ProfileStore.key(key);
     }
 
     function read(key, fallback) {
-        var saved = localStorage.getItem(storageKey(key));
+        var storedKey = storageKey(key);
+        var saved = storedKey ? localStorage.getItem(storedKey) : null;
         return saved === null ? fallback : JSON.parse(saved);
     }
 
@@ -50,7 +52,10 @@ window.BackupStore = (function () {
             before[key] = localStorage.getItem(storageKey(key));
         });
         try {
-            Object.keys(writes).forEach(function (key) { localStorage.setItem(storageKey(key), JSON.stringify(writes[key])); });
+            Object.keys(writes).forEach(function (key) {
+                if (key.indexOf('progress:') === 0 && writes[key] === null) localStorage.removeItem(storageKey(key));
+                else localStorage.setItem(storageKey(key), JSON.stringify(writes[key]));
+            });
             Sources.replace(sources);
         } catch (error) {
             // Release newly occupied space before restoring the previous footprint.
@@ -67,10 +72,10 @@ window.BackupStore = (function () {
         var existing = Sources.all();
         var sources = mode === 'merge' ? existing.slice() : [];
         var writes = {};
+        var attributed = {};
         var catalogues = [];
-        var progress = mode === 'merge' ? read('progress', {}) : {};
         if (mode === 'replace') existing.forEach(function (source) {
-            ['favorites:', 'recent:', 'last-channel:', 'backup:'].forEach(function (kind) { writes[kind + source.id] = null; });
+            ['favorites:', 'recent:', 'last-channel:', 'backup:', 'progress:'].forEach(function (kind) { writes[kind + source.id] = null; });
         });
         backup.sources.forEach(function (entry, index) {
             var match = sources.filter(function (source) { return fingerprint(source) === fingerprint(entry.source); })[0];
@@ -89,12 +94,23 @@ window.BackupStore = (function () {
                 progressIds: (metadata.progressIds || []).concat(Object.keys(entry.progress)).filter(function (key, index, ids) { return ids.indexOf(key) === index; }),
             };
             if (entry.rawM3u) catalogues.push({ id: source.id, url: source.url, text: entry.rawM3u });
-            positions(progress, entry.progress);
+            var progressKey = 'progress:' + source.id;
+            attributed[progressKey] = positions(attributed[progressKey] || {}, entry.progress);
+            var progress = writes[progressKey] || (mode === 'merge' ? read(progressKey, {}) : {});
+            writes[progressKey] = positions(progress, entry.progress);
         });
-        positions(progress, backup.progress || {});
-        writes.progress = progress;
         var current = mode === 'merge' && Sources.current();
         writes.current = current ? current.id : sources.length ? sources[0].id : null;
+        if (writes.current) {
+            var currentKey = 'progress:' + writes.current;
+            var currentProgress = writes[currentKey] || (mode === 'merge' ? read(currentKey, {}) : {});
+            var fallback = {};
+            // The old extension has no source id; explicit playlist positions win.
+            Object.keys(backup.progress || {}).forEach(function (id) {
+                if (!attributed[currentKey] || !attributed[currentKey][id]) fallback[id] = backup.progress[id];
+            });
+            writes[currentKey] = positions(currentProgress, fallback);
+        }
         commit(writes, sources);
         // Raw playlists are catalogue data, never part of the localStorage library budget.
         return Promise.all(catalogues.map(function (catalogue) {

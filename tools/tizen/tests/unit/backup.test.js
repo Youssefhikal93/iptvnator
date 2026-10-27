@@ -8,7 +8,7 @@ var PREFIX = 'iptvnator-tv:';
 
 function app(stored, overrides) {
     var records = Object.assign({}, stored);
-    return load(['sources.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
+    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
         Object.assign({ URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } }, overrides));
 }
 
@@ -92,6 +92,7 @@ test('Replace clears removed-source library and old progress, and unsupported so
     assert.equal(tv.globals.Backup.parse(skipped).skipped, 1);
     tv.globals.Backup.apply(tv.globals.Backup.parse(skipped), 'replace');
     assert.equal(tv.globals.Progress.of('movie:99'), null);
+    assert.equal(tv.stored[PREFIX + 'progress:old'], undefined);
     assert.equal(tv.globals.Library.favorites('old', 'live').length, 0);
     assert.equal(tv.globals.Library.lastChannel('old'), null);
     skipped.playlists = [skipped.playlists[3]];
@@ -129,4 +130,57 @@ test('a quota failure rolls back every previously written backup key', function 
     var before = JSON.stringify(records);
     assert.throws(function () { tv.globals.Backup.apply(tv.globals.Backup.parse(archive()), 'replace'); }, /Could not save backup/);
     assert.deepEqual(records, JSON.parse(before));
+});
+
+test('#34 backup keeps colliding source positions separate and its TV extension uses the current source', async function () {
+    var manifest = archive();
+    var first = manifest.playlists[0];
+    var second = JSON.parse(JSON.stringify(first));
+    second.exportedId = 'other';
+    second.connection.username = 'another-viewer';
+    first.userState.playbackPositions = [first.userState.playbackPositions[0]];
+    second.userState.playbackPositions = [Object.assign({}, first.userState.playbackPositions[0], { positionSeconds: 600, updatedAt: '2026-10-28T00:00:00Z' })];
+    manifest.playlists = [first, second];
+    var tv = app();
+    await tv.globals.Backup.apply(tv.globals.Backup.parse(manifest), 'replace');
+    var sources = tv.globals.Sources.all();
+    assert.equal(tv.globals.Progress.of('movie:2025').position, 200);
+    assert.equal(tv.globals.Progress.of('movie:2025', sources[1].id).position, 600);
+    tv.globals.Sources.setCurrent(sources[1].id);
+    var exported = await tv.globals.Backup.build();
+    assert.equal(exported.tvState.progress['movie:2025'].position, 600);
+    assert.equal(exported.playlists[0].userState.playbackPositions[0].positionSeconds, 200);
+    assert.equal(exported.playlists[1].userState.playbackPositions[0].positionSeconds, 600);
+    // A portable extension has no source id; it belongs to the import's current source.
+    exported.tvState.progress['movie:99'] = { position: 120, duration: 1000, updatedAt: 1 };
+    var restored = app();
+    await restored.globals.Backup.apply(restored.globals.Backup.parse(exported), 'replace');
+    var restoredSources = restored.globals.Sources.all();
+    assert.equal(restored.globals.Progress.of('movie:99').position, 120);
+    assert.equal(restored.globals.Progress.of('movie:99', restoredSources[1].id), null);
+    assert.equal(restored.globals.Progress.of('movie:2025').position, 200);
+    assert.equal(restored.globals.Progress.of('movie:2025', restoredSources[1].id).position, 600);
+});
+
+test('#34 a failed import rolls back scoped progress and leaves the other source untouched', function () {
+    var stored = {};
+    stored[PREFIX + 'sources'] = JSON.stringify([{ id: 'old', type: 'xtream', url: 'https://tv.example.invalid', user: 'fake-viewer', name: 'Existing' }]);
+    stored[PREFIX + 'current'] = '"old"';
+    stored[PREFIX + 'progress:old'] = '{"movie:2025":{"position":50,"duration":6730,"updatedAt":1}}';
+    stored[PREFIX + 'progress:other'] = '{"movie:2025":{"position":300,"duration":6730,"updatedAt":1}}';
+    var tv = app(stored);
+    var before = JSON.stringify(tv.stored);
+    var originalSet = tv.globals.localStorage.setItem;
+    var failed = false;
+    tv.globals.localStorage.setItem = function (key, value) {
+        if (!failed && key === PREFIX + 'current') {
+            failed = true;
+            throw new Error('quota');
+        }
+        originalSet(key, value);
+    };
+    assert.throws(function () { tv.globals.Backup.apply(tv.globals.Backup.parse(archive()), 'merge'); }, /Could not save backup/);
+    assert.deepEqual(tv.stored, JSON.parse(before));
+    assert.equal(tv.globals.Progress.of('movie:2025').position, 50);
+    assert.equal(tv.globals.Progress.of('movie:2025', 'other').position, 300);
 });

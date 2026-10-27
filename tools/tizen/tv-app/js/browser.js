@@ -118,6 +118,7 @@ window.Browser = function (hooks) {
     var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged });
     var watched = Watched({
         knownShow: function (show) {
+            if (otherSource(show)) return null;
             return state.catalogue.peek({ kind: 'show', id: show.series_id });
         },
         loadShow: loadShow,
@@ -151,7 +152,7 @@ window.Browser = function (hooks) {
             return !otherSource(entry.item) && entry.section === 'series' && NewEpisodes.isNew(sourceId(), entry.item, seriesList());
         },
         watched: function (entry) {
-            return !otherSource(entry.item) && watched.isWatched(entry.item, entry.section);
+            return watched.isWatched(entry.item, entry.section);
         },
         programme: function (item) {
             if (!state.epg || otherSource(item)) return null;
@@ -287,12 +288,12 @@ window.Browser = function (hooks) {
             star.textContent = '\u2605';
             el.appendChild(star);
         }
-        if (otherSource(item)) return;
         if (state.section === 'live') {
+            if (otherSource(item)) return;
             if (state.source.type === 'xtream') CatchUp.decorate(el, item);
             return showProgramme(el, item);
         }
-        if (state.section === 'series' && NewEpisodes.isNew(sourceId(), item, seriesList())) el.appendChild(NewEpisodes.badge());
+        if (!otherSource(item) && state.section === 'series' && NewEpisodes.isNew(sourceId(), item, seriesList())) el.appendChild(NewEpisodes.badge());
         if (watched.isWatched(item, state.section)) {
             var tick = document.createElement('span');
             tick.className = 'watched-tick';
@@ -300,7 +301,7 @@ window.Browser = function (hooks) {
             tick.setAttribute('aria-label', I18n.t('browser.watched'));
             el.appendChild(tick);
         }
-        var p = Progress.of(Progress.id(state.section, item));
+        var p = Progress.of(Progress.id(state.section, item), item.sourceId);
         if (p && p.status === 'continue') {
             var bar = document.createElement('div');
             bar.className = 'bar';
@@ -518,12 +519,12 @@ window.Browser = function (hooks) {
             },
         });
         var progressId = Progress.id(section, item);
-        var progress = section === 'live' || otherSource(item) ? null : Progress.of(progressId);
+        var progress = section === 'live' ? null : Progress.of(progressId, item.sourceId);
         if (progress && progress.status === 'continue') {
             options.push({
                 label: I18n.t('menu.removeContinue'),
                 run: function () {
-                    Progress.clear(progressId);
+                    Progress.clear(progressId, item.sourceId);
                     toast(I18n.t('toast.removedContinue'));
                     refreshLibrary();
                 },
@@ -1139,8 +1140,7 @@ window.Browser = function (hooks) {
     }
 
     function progressOf(entry) {
-        if (otherSource(entry.item)) return null;
-        return Progress.of(Progress.id(entry.section, entry.item));
+        return Progress.of(Progress.id(entry.section, entry.item), entry.item.sourceId);
     }
 
     // Unfinished movies, and each show's latest episode while it is

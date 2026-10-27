@@ -210,9 +210,10 @@ window.Backup = (function () {
             var progress = BackupStore.read('progress', {});
             var sources = Sources.all();
             return Promise.all(sources.map(function (source) {
+                var sourceProgress = BackupStore.read('progress:' + source.id, {}) || {};
                 var state = sourceState(source);
                 var metadata = BackupStore.read('backup:' + source.id, {}) || {};
-                if (source.type === 'xtream') return catalogueProgress(source, metadata, progress).then(function (known) { return buildXtream(source, state, progress, known); });
+                if (source.type === 'xtream') return catalogueProgress(source, metadata, sourceProgress).then(function (known) { return buildXtream(source, state, sourceProgress, known); });
                 var raw = window.Catalogue ? Catalogue.get(source.id, 'backup:m3u') : Promise.resolve(null);
                 return raw.then(function (saved) {
                     return saved && saved.url === source.url ? saved.text : SourceRequest(source.url, 'text');

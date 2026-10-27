@@ -27,7 +27,8 @@ an imported source can reuse the original raw M3U until its URL changes.
 
 ## Field mapping
 
-LocalStorage keys below have the `iptvnator-tv:` prefix. `sourceId` is generated on
+Library keys below use `ProfileStore.key` under `iptvnator-tv:p:<profileId>:`;
+sources stay shared under `iptvnator-tv:`. `sourceId` is generated on
 Replace or first import; Merge retains a matching source's existing ID.
 
 | Desktop field | TV destination / export behavior |
@@ -42,18 +43,19 @@ Replace or first import; Merge retains a matching source's existing ID.
 | Favorite `snapshot.title`, `posterUrl` | Library snapshot `name`, `stream_icon` / `cover`; exported back in `snapshot`. |
 | Browser `collectionItems` or recent `collectionItem` title/name, posterUrl/poster_url/stream_icon/cover, container_extension | Fallback library title, artwork and playback extension; these cache objects are not preserved wholesale. |
 | Xtream `recentlyViewed[].contentType`, `xtreamId`, `viewedAt` | `recent:sourceId` section snapshots, typed identity and `watchedAt` in milliseconds; export ISO timestamp. |
-| `playbackPositions[].contentXtreamId`, `contentType` | `progress['movie:ID']` for `vod`, `progress['episode:ID']` for `episode`; IDs also retained in `backup:sourceId.progressIds` for attribution. |
+| `playbackPositions[].contentXtreamId`, `contentType` | `progress:sourceId['movie:ID']` for `vod`, `progress:sourceId['episode:ID']` for `episode`; IDs also retained in `backup:sourceId.progressIds` for attribution. |
 | `positionSeconds`, `durationSeconds`, `updatedAt` | Progress record `position`, `duration`, `updatedAt` in milliseconds. Missing duration becomes 0; unknown duration cannot resume or imply watched. |
 | `seriesXtreamId`, `seasonNumber`, `episodeNumber` | Optional fields retained on imported progress records; also reconstruct an episode recent snapshot under its show. Export back with current playlist ID. |
 | Watched state | No separate desktop flag or TV watched store. The shared `Progress.finished` rule converts near-end imported records to full duration; `watched.js` reads the same progress. |
 | M3U `userState.favorites[]` | Channel URLs resolve through the existing M3U parser into `favorites:sourceId` sections, including stable M3U movie/show IDs. A show exports its known episode URLs. |
 | M3U `recentlyViewed[].url`, `title`, `poster_url`, `added_at` | Parsed item/episode identity, `name`, `logo`, `watchedAt` in `recent:sourceId`; `group` comes from raw M3U. Export `source: 'm3u'`, URL as `id`, `category_id: 'live'`, title/artwork/group and timestamp. |
 
-The TV's existing progress IDs are global, not per source. Colliding numeric
-IDs therefore still share progress; the newer imported timestamp wins. Export
-attributes standard Xtream positions using imported progress IDs, library
-snapshots and known IndexedDB movie/episode rows. If no source can be identified,
-the record is retained in the TV extension only. The catalogue scan does not
+Progress records are scoped by profile and source, so colliding numeric ids
+stay separate. Merge chooses the newer timestamp within each source. Export
+reads each source's standard Xtream positions using imported progress IDs,
+library snapshots and known IndexedDB movie/episode rows. Records without those
+references are retained in the TV extension for the current source.
+The catalogue scan does not
 download a source or open any stream. Native playback saves may replace optional
 episode metadata; known catalogue episode rows restore it during export.
 
@@ -77,11 +79,15 @@ episode metadata; known catalogue episode rows restore it during export.
   and remaps playback `playlistId` to the TV source ID.
 
 Desktop M3U v1 has no progress field or show-favorite identity. To retain TV
-state for another TV, exports add optional top-level `tvState.progress` and
-per-M3U `tvState.favorites` / `tvState.recent` section snapshots. These fields
+state for another TV, exports add optional top-level `tvState.progress` for the
+current source and per-M3U `tvState.favorites` / `tvState.recent` section snapshots. These fields
 are validated on TV import and ignored by the desktop importer. Desktop
 re-export does not retain this extension; M3U progress therefore cannot round
-trip through the desktop. Existing TV storage key formats are unchanged.
+trip through the desktop. The top-level extension keeps its record format and
+imports into the resulting current source (the existing current source on Merge,
+or the first restored source on Replace). Explicit playlist positions take
+precedence over colliding ids in this extension. It does not represent other sources'
+M3U progress; standard Xtream positions remain attached to their own source.
 
 ## Export transport
 

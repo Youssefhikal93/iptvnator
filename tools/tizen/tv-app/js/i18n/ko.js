@@ -46,6 +46,7 @@ I18n.tables.ko = {
     'describe.skipIntro': '에피소드 시작 부분에서 인트로 건너뛰기가 건너뛰는 길이',
     'describe.topBar': '목록 위의 검색 및 보기 버튼',
     'detail.more': '더 보기',
+    'detail.moreIn': '{category}의 다른 작품',
     'detail.play': '▶  재생',
     'detail.startOver': '처음부터 보기',
     'detail.trailer': '예고편',

@@ -190,3 +190,16 @@ other choices show ‹ value ›; Appearance keeps its pills. Every group is in
 the page and only the chosen one is shown, so tests can read any row's value;
 the `setting(page, label)` helper opens a row through its group. Sources are
 cards with a status dot, and the add rows are dashed.
+
+## Rows under the detail page (#47)
+
+Under the buttons (a show: under its episodes) the detail page has rows of
+titles: "More in <category>" first, then TMDB's Cast and Similar in your
+library when a TMDB key is set. The first row comes from the section's saved
+list (`relatedTitles` in `browser.js`), so it needs no request and no key and
+is there before the details load; hidden and locked categories stay out. The
+rows are placed at a fixed height, so arriving rows never move the page.
+`js/detail-rows.js` keeps the focus across them; a row is `{ label, cards,
+open(index) }` and `TmdbDetail.rows()` returns its rows in that shape. ▼ from
+the buttons enters the rows, ▲ from the first row or Return goes back, and OK
+opens the title or the actor page.

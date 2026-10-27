@@ -25,7 +25,7 @@ test('Live TV has no sort; Movies default newest, top-rated ties keep provider o
     // Walk to the end by observing the displayed position (the grid is virtual).
     while ((await page.locator('#items .count').innerText()) !== '25 / 25') await press(page, 'ArrowRight');
     await expect(page.locator('#items .focused .card-title')).toHaveText('Movie 5');
-    await back(page);
+    await section(page, 'Movies');
     await category(page, 'Recently added');
     await expect(page.locator('#items .count')).toHaveText('1 / 24');
     await expect(page.locator('#items .list-subtitle')).toHaveText('Sorted by newest');

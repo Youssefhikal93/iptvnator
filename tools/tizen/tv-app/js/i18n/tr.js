@@ -46,6 +46,7 @@ I18n.tables.tr = {
     'describe.skipIntro': 'Girişi atla’nın bölüm başında ne kadar atladığı',
     'describe.topBar': 'Listelerin üstündeki arama ve görünüm düğmeleri',
     'detail.more': 'Daha fazla',
+    'detail.moreIn': '{category} içinde daha fazlası',
     'detail.play': '▶  Oynat',
     'detail.startOver': 'Baştan Başla',
     'detail.trailer': 'Fragman',

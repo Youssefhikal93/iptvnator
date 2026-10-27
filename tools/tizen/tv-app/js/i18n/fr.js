@@ -46,6 +46,7 @@ I18n.tables.fr = {
     'describe.skipIntro': 'La durée sautée par « Passer l’intro » au début d’un épisode',
     'describe.topBar': 'Recherche et boutons d’affichage au-dessus des listes',
     'detail.more': 'Plus',
+    'detail.moreIn': 'Plus dans {category}',
     'detail.play': '▶  Lecture',
     'detail.startOver': 'Recommencer',
     'detail.trailer': 'Bande-annonce',

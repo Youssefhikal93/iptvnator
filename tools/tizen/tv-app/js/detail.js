@@ -1,6 +1,7 @@
 // Full-screen detail page for a movie (and a show, see detail-episodes.js):
 // full-bleed backdrop, poster, eyebrow, title, fact chips, plot, cast and a
-// row of pill buttons (#46). A show's episodes are a strip under the buttons.
+// row of pill buttons (#46). A show's episodes are a strip under the buttons,
+// then rows of related titles and cast (#47, detail-rows.js).
 //
 // open(page) takes:
 //   item       the list item (name and artwork until the details arrive)
@@ -8,6 +9,7 @@
 //   actions(d) the buttons for details d: [{ label, run, progress? }]
 //   episodes   optional DetailEpisodes section under the buttons
 //   badges     optional extra chips, e.g. [I18n.t('home.newEpisodes')]
+//   related()  optional Promise of { label, items } for "More in <category>"
 window.Detail = function () {
     'use strict';
 
@@ -47,6 +49,21 @@ window.Detail = function () {
         if (s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
         if (s.clipped) list.push({ label: I18n.t('detail.more'), run: openMore });
         return list;
+    }
+
+    // "More in <category>", then the TMDB rows once they arrive.
+    function rows() {
+        return (s.related ? [s.related] : []).concat(s.tmdb ? s.tmdb.rows() : []);
+    }
+
+    function relatedRow(found) {
+        var section = s.page.episodes ? 'series' : 'movies';
+        return {
+            kind: 'related',
+            label: found.label,
+            cards: found.items.map(function (item) { return TmdbView.catalogueCard({ item: item }); }),
+            open: function (i) { s.page.open(found.items[i], section); },
+        };
     }
 
     // ---- Rendering --------------------------------------------------------
@@ -112,17 +129,16 @@ window.Detail = function () {
                 </div>
             </div>
             ${s.page.episodes ? s.page.episodes.view(s.zone === 'episodes', d.backdrop || d.poster) : null}
-            ${s.tmdb ? s.tmdb.view(s.zone === 'tmdb') : null}
+            ${s.rows.view(rows(), s.zone === 'rows')}
             ${s.more ? moreView(d) : null}`;
     }
 
     function render() {
         var started = performance.now();
         root.classList.toggle('dt-show', !!s.page.episodes);
-        root.classList.toggle('dt-tmdb', !!s.tmdb && s.tmdb.hasRows());
-        root.classList.toggle('dt-tmdb-focus', s.zone === 'tmdb');
+        root.classList.toggle('dt-rows-focus', s.zone === 'rows');
         UI.render(view(), root);
-        if (s.zone === 'tmdb') TmdbView.scroll(root);
+        if (s.zone === 'rows') TmdbView.scroll(root);
         // "More" only when the plot does not fit its lines.
         var plot = root.querySelector('.dt-plot');
         var clipped = plot.scrollHeight > plot.clientHeight + 2;
@@ -161,7 +177,7 @@ window.Detail = function () {
             s.zone = 'episodes';
             s.page.episodes.enter();
         }
-        else if (code === KEY.DOWN && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
+        else if (code === KEY.DOWN && rows().length) s.zone = 'rows';
         else if (code === KEY.ENTER && list[s.focus]) return list[s.focus].run(), true;
         render();
         return true;
@@ -175,16 +191,16 @@ window.Detail = function () {
             }
             return true;
         }
-        if (s.zone === 'tmdb') {
-            // The TMDB rows come after a show's episodes.
-            if (s.tmdb.key(code) === 'up') s.zone = s.page.episodes && s.page.episodes.hasRows() ? 'episodes' : 'buttons';
+        if (s.zone === 'rows') {
+            // The rows come after a show's episodes.
+            if (s.rows.key(rows(), code) === 'up') s.zone = s.page.episodes && s.page.episodes.hasRows() ? 'episodes' : 'buttons';
         }
         else if (Keys.isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
         else if (Keys.isBack(code)) return close(), true;
         else if (s.zone === 'episodes') {
             var result = s.page.episodes.key(code);
             if (result === 'up') s.zone = 'buttons';
-            if (result === 'down' && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
+            if (result === 'down' && rows().length) s.zone = 'rows';
         } else return buttonsKey(code);
         render();
         return true;
@@ -203,7 +219,7 @@ window.Detail = function () {
     return {
         open: function (page) {
             if (s && s.tmdb) s.tmdb.dispose();
-            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false, renders: [] };
+            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false, renders: [], rows: DetailRows(), related: null };
             var mine = s;
             if (Tmdb.enabled() && page.catalogue) s.tmdb = TmdbDetail(page, function (enriched) {
                 if (s !== mine) return;
@@ -212,6 +228,12 @@ window.Detail = function () {
             });
             root.classList.remove('hidden');
             render();
+            // From the saved lists, so it is there before the details (#47).
+            if (page.related) page.related().then(function (found) {
+                if (s !== mine || !found || !found.items.length) return;
+                s.related = relatedRow(found);
+                render();
+            });
             YouTube.available(function (available) {
                 if (s !== mine) return;
                 s.youtube = available;

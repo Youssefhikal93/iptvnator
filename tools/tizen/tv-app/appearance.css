@@ -161,6 +161,6 @@
 img.art { opacity: 0; transition: opacity 0.25s ease-out; }
 img.art.art-in { opacity: 1; }
 :is(.card, .hm-card, .tm-card) { transition: transform 0.15s ease-out; }
-.tm-detail-rows .tm-row { animation: appear 0.3s ease-out; }
+.dt-rows .tm-row { animation: appear 0.3s ease-out; }
 @keyframes appear { from { opacity: 0; } }
 [data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after { transition: none !important; animation: none !important; }

@@ -1236,10 +1236,29 @@ window.Browser = function (hooks) {
         hooks.play(req);
     }
 
+    // "More in <category>" on a detail page (#47): the other titles of the
+    // item's category from the section's saved list, so no new request.
+    function relatedTitles(item, section) {
+        var id = item.category_id;
+        if (otherSource(item) || id === undefined || id === null || String(id) === '') return Promise.resolve(null);
+        var load = function (kind) {
+            return state.catalogue.load({ section: section, kind: kind }, { screen: false });
+        };
+        var key = function (entry) { return String(entry.stream_id || entry.series_id || entry.url || entry.name); };
+        return Promise.all([load('categories'), load('items')]).then(function (lists) {
+            var category = lists[0].filter(function (row) { return String(row.category_id) === String(id); })[0];
+            if (!category) return null;
+            var shown = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, lists[1]));
+            var others = shown.filter(function (entry) { return String(entry.category_id) === String(id) && key(entry) !== key(item); });
+            return { label: I18n.t('detail.moreIn', { category: I18n.categoryName(category) }), items: others.slice(0, 20) };
+        }).catch(function () { return null; });
+    }
+
     function openMovie(movie) {
         detail.open({
             item: movie,
             catalogue: tmdbCatalogue,
+            related: relatedTitles.bind(null, movie, 'movies'),
             open: openEntry,
             load: function () {
                 if (!state.adapter.movieInfo) return Promise.resolve(null);
@@ -1293,6 +1312,7 @@ window.Browser = function (hooks) {
         detail.open({
             item: show,
             catalogue: tmdbCatalogue,
+            related: relatedTitles.bind(null, show, 'series'),
             open: openEntry,
             episodes: episodes,
             badges: fresh ? [I18n.t('home.newEpisodes')] : [],

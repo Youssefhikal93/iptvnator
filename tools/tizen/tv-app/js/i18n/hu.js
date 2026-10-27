@@ -46,6 +46,7 @@ I18n.tables.hu = {
     'describe.skipIntro': 'Mennyit ugrik az Intro átugrása egy rész elején',
     'describe.topBar': 'Keresés és nézetgombok a listák felett',
     'detail.more': 'Továbbiak megjelenítése',
+    'detail.moreIn': 'Továbbiak itt: {category}',
     'detail.play': '▶  Lejátszás',
     'detail.startOver': 'Lejátszás az elejétől',
     'detail.trailer': 'Előzetes',

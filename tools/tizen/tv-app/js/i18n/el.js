@@ -46,6 +46,7 @@ I18n.tables.el = {
     'describe.skipIntro': 'Πόσο πηδά η Παράλειψη εισαγωγής στην αρχή ενός επεισοδίου',
     'describe.topBar': 'Αναζήτηση και κουμπιά προβολής πάνω από τις λίστες',
     'detail.more': 'Περισσότερα',
+    'detail.moreIn': 'Περισσότερα στο {category}',
     'detail.play': '▶  Αναπαραγωγή',
     'detail.startOver': 'Από την αρχή',
     'detail.trailer': 'Τρέιλερ',

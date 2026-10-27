@@ -216,10 +216,10 @@ test('a translated detail page shows the localized title and plot fallback, and 
     await new Promise(setImmediate);
     assert.equal(enriched.title, 'Titel');
     assert.equal(enriched.plot, 'English plot');
-    var rendered = uiSandbox.toNodes(detail.view(false))[0];
-    assert.equal(rendered.children[0].children[0].textContent, api.I18n.t('tmdb.cast'));
-    assert.equal(rendered.children[0].children[1].children[0].children[0].textContent, 'Actor');
-    detail.key(api.Keys.ENTER);
+    var rows = detail.rows();
+    assert.equal(rows[0].label, api.I18n.t('tmdb.cast'));
+    assert.equal(rows[0].cards[0].name, 'Actor');
+    rows[0].open(0);
     assert.equal(api.Actor.isOpen(), true);
     await new Promise(setImmediate);
     assert.equal(api.document.body.children[0].children[0].textContent, 'Actor');

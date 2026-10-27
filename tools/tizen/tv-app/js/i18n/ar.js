@@ -46,6 +46,7 @@ I18n.tables.ar = {
     'describe.skipIntro': 'مقدار القفز عند تخطي المقدمة في بداية الحلقة',
     'describe.topBar': 'البحث وأزرار العرض فوق القوائم',
     'detail.more': 'المزيد',
+    'detail.moreIn': 'المزيد في {category}',
     'detail.play': '▶  تشغيل',
     'detail.startOver': 'البدء من جديد',
     'detail.trailer': 'الإعلان',

@@ -46,6 +46,7 @@ I18n.tables.ru = {
     'describe.skipIntro': 'На сколько «Пропустить заставку» перематывает в начале серии',
     'describe.topBar': 'Поиск и кнопки вида над списками',
     'detail.more': 'Больше',
+    'detail.moreIn': 'Ещё в «{category}»',
     'detail.play': '▶  Воспроизвести',
     'detail.startOver': 'С начала',
     'detail.trailer': 'Трейлер',

@@ -46,6 +46,7 @@ I18n.tables.ary = {
     'describe.skipIntro': 'شحال كيقفز تخطي المقدمة فبداية الحلقة',
     'describe.topBar': 'البحث وبوطونات العرض لفوق اللوائح',
     'detail.more': 'وري كثر',
+    'detail.moreIn': 'كثر فـ {category}',
     'detail.play': '▶  شغل',
     'detail.startOver': 'بدا من الأول',
     'detail.trailer': 'الإعلان',

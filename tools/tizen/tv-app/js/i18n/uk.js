@@ -46,6 +46,7 @@ I18n.tables.uk = {
     'describe.skipIntro': 'На скільки «Пропустити заставку» перемотує на початку серії',
     'describe.topBar': 'Пошук і кнопки вигляду над списками',
     'detail.more': 'Більше',
+    'detail.moreIn': 'Ще в «{category}»',
     'detail.play': '▶  Відтворити',
     'detail.startOver': 'З початку',
     'detail.trailer': 'Трейлер',

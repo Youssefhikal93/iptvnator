@@ -96,13 +96,12 @@ test('provider page renders first, then TMDB fills plot and cast; OK opens actor
     await openFirst(page, 'Movies');
     await expect(page.locator('#detail .dt-title')).toContainText('Movie 25');
     await expect(page.locator('#detail .dt-plot')).toHaveText('A TMDB detective follows the missing clue.');
-    await expect(page.locator('#detail .tm-row').first()).toContainText('Cast');
-    await expect(page.locator('#detail .tm-card').first()).toContainText('Alex Example');
+    await expect(page.locator('#detail .tm-row', { hasText: 'Cast' }).locator('.tm-card').first()).toContainText('Alex Example');
     await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /\/w342\/poster.jpg$/);
     await expect(page.locator('#detail .dt-backdrop')).toHaveAttribute('src', /\/w1280\/backdrop.jpg$/);
     await expect(page.locator('#detail .dt-btn', { hasText: 'Trailer' })).toHaveCount(1);
     await press(page, 'ArrowDown');
-    await expect(page.locator('#detail .tm-card.focus')).toContainText('Alex Example');
+    await moveTo(page, '#detail .tm-card.focus', 'Alex Example', 'ArrowDown');
     await page.screenshot({ path: testInfo.outputPath('cast.png') });
     await press(page, 'Enter');
     await expect(page.locator('#actor')).toBeVisible();
@@ -122,14 +121,14 @@ test('series enrichment preserves provider plot and episodes, with cast and libr
     await routes(page);
     await boot(page, seed);
     await openFirst(page, 'Series');
-    await expect(page.locator('#detail .tm-row').first()).toContainText('Alex Example');
+    await expect(page.locator('#detail .tm-row', { hasText: 'Cast' })).toContainText('Alex Example');
     await expect(page.locator('#detail .dt-plot')).toHaveText('A small town hides a big secret.');
-    await expect(page.locator('#detail .tm-row').nth(1)).toContainText('Similar in your library');
+    await expect(page.locator('#detail .tm-row').last()).toContainText('Similar in your library');
     // A show's episodes come first, then the TMDB rows (#46).
     await press(page, 'ArrowDown');
     await expect(page.locator('#detail .dt-ep.focus')).toBeVisible();
     await press(page, 'ArrowDown');
-    await press(page, 'ArrowDown');
+    await moveTo(page, '#detail .tm-row:has(.tm-card.focus) h2', 'Similar in your library', 'ArrowDown');
     await expect(page.locator('#detail .tm-card.focus')).toHaveText('Show 3');
     await press(page, 'Enter');
     await expect(page.locator('#detail .dt-title')).toHaveText('Show 3');
@@ -183,14 +182,14 @@ test('TMDB 500 leaves provider artwork, facts, plot and actions intact', async (
     await expect(page.locator('#detail .dt-chip')).toContainText(['Crime', 'Drama']);
     await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /\/img\/poster.jpg$/);
     await expect(page.locator('#detail .dt-btn').first()).toContainText('Play');
-    await expect(page.locator('#detail .tm-card')).toHaveCount(0);
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card')).toHaveCount(0);
 });
 
 test('removing a key stops enrichment and removes Discover, including after reload', async ({ page }) => {
     const seen = await routes(page);
     await boot(page, seed);
     await openFirst(page, 'Movies');
-    await expect(page.locator('#detail .tm-card').first()).toBeVisible();
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card').first()).toBeVisible();
     await back(page);
     await setting(page, 'Remove key');
     await press(page, 'Enter');
@@ -199,7 +198,7 @@ test('removing a key stops enrichment and removes Discover, including after relo
     await openFirst(page, 'Movies');
     await page.waitForTimeout(500);
     expect(seen).toHaveLength(count);
-    await expect(page.locator('#detail .tm-card')).toHaveCount(0);
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card')).toHaveCount(0);
     await back(page);
     await expect(page.locator('#categories')).not.toContainText('Discover');
 });
@@ -241,11 +240,11 @@ test('responses persist in the separate TMDB database and are reused after reloa
     const seen = await routes(page);
     await boot(page, seed);
     await openFirst(page, 'Movies');
-    await expect(page.locator('#detail .tm-card').first()).toBeVisible();
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card').first()).toBeVisible();
     const count = seen.length;
     await page.reload();
     await openFirst(page, 'Movies');
-    await expect(page.locator('#detail .tm-card').first()).toBeVisible();
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card').first()).toBeVisible();
     expect(seen).toHaveLength(count);
     const databases = await page.evaluate(() => indexedDB.databases());
     expect(databases.some(database => database.name === 'iptvnator-tv-tmdb' && database.version === 1)).toBe(true);
@@ -290,7 +289,7 @@ test('expired IndexedDB responses refetch and a failed detail request keeps prov
     const seen = await routes(page, options);
     await boot(page, seed);
     await openFirst(page, 'Movies');
-    await expect(page.locator('#detail .tm-card').first()).toBeVisible();
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card').first()).toBeVisible();
     const count = seen.length;
     await page.evaluate(() => new Promise((resolve, reject) => {
         const request = indexedDB.open('iptvnator-tv-tmdb', 1);
@@ -316,5 +315,5 @@ test('expired IndexedDB responses refetch and a failed detail request keeps prov
     await expect.poll(() => seen.length).toBeGreaterThan(count);
     await expect(page.locator('#detail .dt-plot')).toContainText('retired detective');
     await expect(page.locator('#detail .dt-chip')).toContainText(['Crime', 'Drama']);
-    await expect(page.locator('#detail .tm-card')).toHaveCount(0);
+    await expect(page.locator('#detail .tm-row:not(.related) .tm-card')).toHaveCount(0);
 });

@@ -12,8 +12,6 @@
 window.Player = (function () {
     'use strict';
 
-    var ATTEMPT_TIMEOUT_MS = 20000;
-    var BUSY_RETRY_MS = 2000;
     var HIDE_AFTER_MS = 5000;
     var TICK_MS = 500;
     var SAVE_EVERY_MS = 10000;
@@ -62,7 +60,7 @@ window.Player = (function () {
 
     var lib = null;
     var usingAv = false;
-    var session = 0;
+    var chain = PlaybackChain();
     var current = null;
     var ready = false; // a stream is playing
     var channelListOpen = false;
@@ -174,12 +172,6 @@ window.Player = (function () {
         playerEl.style.width = box ? at.w + 'px' : '';
         playerEl.style.height = box ? at.h + 'px' : '';
         PlayerPicture.apply();
-    }
-
-    function wait(ms) {
-        return new Promise(function (resolve) {
-            setTimeout(resolve, ms);
-        });
     }
 
     function el(tag, cls, text) {
@@ -491,98 +483,38 @@ window.Player = (function () {
 
     // ---- Tracks, speed and stream info ------------------------------------
 
-    function languageName(code) {
-        if (!code) return '';
+    // Which engine plays: 'avplay', 'hls', 'mpegts' or 'video'.
+    function engineKind() {
+        if (usingAv) return 'avplay';
+        if (!lib) return 'video';
+        return window.Hls && lib instanceof Hls ? 'hls' : 'mpegts';
+    }
+
+    // An AVPlay list (getTotalTrackInfo, getCurrentStreamInfo); empty when not prepared.
+    function avRead(method) {
         try {
-            return new Intl.DisplayNames([I18n.locale()], { type: 'language' }).of(code) || code;
+            return avplay()[method]() || [];
         } catch (e) {
-            return String(code).toUpperCase();
+            return [];
         }
     }
 
-    function avTracks(type) {
-        var out = [];
-        try {
-            avplay()
-                .getTotalTrackInfo()
-                .forEach(function (track) {
-                    if (track.type !== type) return;
-                    var extra = {};
-                    try {
-                        extra = JSON.parse(track.extra_info) || {};
-                    } catch (e) {
-                        // No details.
-                    }
-                    out.push({ index: track.index, label: languageName(extra.language), extra: extra });
-                });
-        } catch (e) {
-            // Not prepared.
-        }
-        out.forEach(function (track, i) {
-            if (!track.label) track.label = I18n.t('player.track', { n: i + 1 });
-        });
-        return out;
-    }
-
-    function avCurrentIndex(type) {
-        try {
-            var found = avplay()
-                .getCurrentStreamInfo()
-                .filter(function (info) {
-                    return info.type === type;
-                })[0];
-            return found ? found.index : -1;
-        } catch (e) {
-            return -1;
-        }
-    }
-
-    function nativeTracks(list, kinds) {
-        var out = [];
-        if (!list) return out;
-        for (var i = 0; i < list.length; i++) {
-            if (kinds && kinds.indexOf(list[i].kind) === -1) continue;
-            out.push(list[i]);
-        }
-        return out;
-    }
-
-    // Returns { audio: [{label, active, select}], text: [...] }.
+    // Returns { audio: [{label, active, select}], text: [...] }. The lists come
+    // from player-tracks.js; the switching is each engine's own.
     function getTracks() {
-        var audio = [];
-        var text = [];
-        var i;
-        if (usingAv) {
-            if (avAudio < 0) avAudio = avCurrentIndex('AUDIO');
-            avTracks('AUDIO').forEach(function (track) {
-                audio.push({
-                    label: track.label,
-                    active: track.index === avAudio,
-                    select: function () {
-                        avplay().setSelectTrack('AUDIO', track.index);
-                        avAudio = track.index;
-                    },
-                });
-            });
-            avTracks('TEXT').forEach(function (track) {
-                text.push({
-                    label: track.label,
-                    active: track.index === avText,
-                    select: function () {
-                        avplay().setSelectTrack('TEXT', track.index);
-                        try {
-                            avplay().setSilentSubtitle(false);
-                        } catch (e) {
-                            // Older firmware.
-                        }
-                        avText = track.index;
-                    },
-                });
-            });
-            text.unshift({
-                label: I18n.t('common.off'),
-                active: avText < 0,
-                select: function () {
+        var kind = engineKind();
+        var tracks;
+        var selectAudio;
+        var selectText;
+        if (kind === 'avplay') {
+            if (avAudio < 0) avAudio = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
+            tracks = PlayerTracks.av(avRead('getTotalTrackInfo'), avAudio, avText);
+            selectAudio = function (index) {
+                avplay().setSelectTrack('AUDIO', index);
+                avAudio = index;
+            };
+            selectText = function (index) {
+                if (index < 0) {
                     try {
                         avplay().setSilentSubtitle(true);
                     } catch (e) {
@@ -590,136 +522,66 @@ window.Player = (function () {
                     }
                     avText = -1;
                     clearSubs();
-                },
-            });
-        } else if (lib && window.Hls && lib instanceof Hls) {
-            (lib.audioTracks || []).forEach(function (track, n) {
-                audio.push({
-                    label: track.name || languageName(track.lang) || I18n.t('player.track', { n: n + 1 }),
-                    active: lib.audioTrack === n,
-                    select: function () {
-                        lib.audioTrack = n;
-                    },
-                });
-            });
-            text.push({
-                label: I18n.t('common.off'),
-                active: lib.subtitleTrack < 0,
-                select: function () {
-                    lib.subtitleTrack = -1;
-                },
-            });
-            (lib.subtitleTracks || []).forEach(function (track, n) {
-                text.push({
-                    label: track.name || languageName(track.lang) || I18n.t('player.subtitle', { n: n + 1 }),
-                    active: lib.subtitleTrack === n,
-                    select: function () {
-                        lib.subtitleDisplay = true;
-                        lib.subtitleTrack = n;
-                    },
-                });
-            });
+                    return;
+                }
+                avplay().setSelectTrack('TEXT', index);
+                try {
+                    avplay().setSilentSubtitle(false);
+                } catch (e) {
+                    // Older firmware.
+                }
+                avText = index;
+            };
+        } else if (kind === 'hls') {
+            var hls = lib;
+            tracks = PlayerTracks.hls(hls);
+            selectAudio = function (n) {
+                hls.audioTrack = n;
+            };
+            selectText = function (n) {
+                if (n < 0) {
+                    hls.subtitleTrack = -1;
+                    return;
+                }
+                hls.subtitleDisplay = true;
+                hls.subtitleTrack = n;
+            };
         } else {
-            nativeTracks(video.audioTracks).forEach(function (track, n) {
-                audio.push({
-                    label: track.label || languageName(track.language) || I18n.t('player.track', { n: n + 1 }),
-                    active: track.enabled,
-                    select: function () {
-                        nativeTracks(video.audioTracks).forEach(function (other) {
-                            other.enabled = other === track;
-                        });
-                    },
+            tracks = PlayerTracks.native(video.audioTracks, video.textTracks);
+            selectAudio = function (track) {
+                PlayerTracks.nativeList(video.audioTracks).forEach(function (other) {
+                    other.enabled = other === track;
                 });
+            };
+            selectText = function (track) {
+                PlayerTracks.nativeSubtitles(video.textTracks).forEach(function (t) {
+                    t.mode = t === track ? 'showing' : 'disabled';
+                });
+            };
+        }
+        function bind(list, select) {
+            return list.map(function (entry) {
+                return {
+                    label: entry.label,
+                    active: entry.active,
+                    select: function () {
+                        select(entry.ref);
+                    },
+                };
             });
-            var subs = nativeTracks(video.textTracks, ['subtitles', 'captions']);
-            if (subs.length) {
-                text.push({
-                    label: I18n.t('common.off'),
-                    active: subs.every(function (t) {
-                        return t.mode !== 'showing';
-                    }),
-                    select: function () {
-                        subs.forEach(function (t) {
-                            t.mode = 'disabled';
-                        });
-                    },
-                });
-            }
-            for (i = 0; i < subs.length; i++) {
-                (function (track, n) {
-                    text.push({
-                        label: track.label || languageName(track.language) || I18n.t('player.subtitle', { n: n + 1 }),
-                        active: track.mode === 'showing',
-                        select: function () {
-                            subs.forEach(function (t) {
-                                t.mode = t === track ? 'showing' : 'disabled';
-                            });
-                        },
-                    });
-                })(subs[i], i);
-            }
         }
-        return { audio: audio, text: text };
-    }
-
-    function pick(obj, names) {
-        for (var i = 0; i < names.length; i++) {
-            for (var key in obj) {
-                if (key.toLowerCase() === names[i] && obj[key]) return obj[key];
-            }
-        }
-        return '';
-    }
-
-    function bitrate(bps) {
-        bps = Number(bps);
-        if (!bps) return '';
-        return bps >= 1e6 ? (bps / 1e6).toFixed(1) + ' Mbps' : Math.round(bps / 1000) + ' kbps';
+        return { audio: bind(tracks.audio, selectAudio), text: bind(tracks.text, selectText) };
     }
 
     function streamInfoLines() {
-        var lines = [];
-        if (usingAv) {
-            try {
-                avplay()
-                    .getCurrentStreamInfo()
-                    .forEach(function (info) {
-                        var extra = {};
-                        try {
-                            extra = JSON.parse(info.extra_info) || {};
-                        } catch (e) {
-                            return;
-                        }
-                        var parts = [];
-                        if (info.type === 'VIDEO') {
-                            var w = pick(extra, ['width']);
-                            var h = pick(extra, ['height']);
-                            if (w && h) parts.push(w + '×' + h);
-                            parts.push(pick(extra, ['codec', 'fourcc']));
-                            parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                            lines.push(I18n.t('player.info.video') + '  ' + parts.filter(Boolean).join(' · '));
-                        } else if (info.type === 'AUDIO') {
-                            parts.push(languageName(pick(extra, ['language'])));
-                            parts.push(pick(extra, ['codec']));
-                            var ch = pick(extra, ['channels']);
-                            if (ch) parts.push(ch + ' ch');
-                            var rate = pick(extra, ['sample_rate']);
-                            if (rate) parts.push(rate + ' Hz');
-                            parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                            lines.push(I18n.t('player.audio') + '  ' + parts.filter(Boolean).join(' · '));
-                        }
-                    });
-            } catch (e) {
-                // Not available.
-            }
-        } else {
-            if (video.videoWidth) lines.push(I18n.t('player.info.video') + '  ' + video.videoWidth + '×' + video.videoHeight);
-            if (lib && window.Hls && lib instanceof Hls && lib.levels && lib.levels[lib.currentLevel]) {
-                lines.push(I18n.t('player.info.bitrate') + '  ' + bitrate(lib.levels[lib.currentLevel].bitrate));
-            }
-        }
-        lines.push(I18n.t('player.info.player') + '  ' + (usingAv ? 'Samsung AVPlay' : lib ? (window.Hls && lib instanceof Hls ? 'hls.js' : 'mpegts.js') : 'HTML5 video'));
-        return lines;
+        var kind = engineKind();
+        return PlayerTracks.infoLines({
+            engine: kind,
+            streams: kind === 'avplay' ? avRead('getCurrentStreamInfo') : null,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            level: kind === 'hls' && lib.levels ? lib.levels[lib.currentLevel] : null,
+        });
     }
 
     // ---- Menu -------------------------------------------------------------
@@ -949,27 +811,6 @@ window.Player = (function () {
         usingAv = false;
     }
 
-    // Runs one playback attempt; resolves null when playing, else a reason.
-    function attempt(start) {
-        return new Promise(function (resolve) {
-            var done = false;
-            function finish(error) {
-                if (done) return;
-                done = true;
-                clearTimeout(timer);
-                resolve(error);
-            }
-            var timer = setTimeout(function () {
-                finish('timeout');
-            }, ATTEMPT_TIMEOUT_MS);
-            try {
-                start(finish);
-            } catch (e) {
-                finish(e.name || String(e));
-            }
-        });
-    }
-
     function viaMpegts(url) {
         return function (finish) {
             if (!window.mpegts || !mpegts.isSupported()) return finish('mpegts.js unsupported');
@@ -1014,16 +855,16 @@ window.Player = (function () {
             var av = avplay();
             if (!av) return finish('AVPlay unavailable');
             usingAv = true;
-            var mine = session;
+            var mine = chain.session();
             var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
             target.then(function (address) {
-                if (mine !== session) return null;
+                if (chain.stale(mine)) return null;
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
                 // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
                 return MovieHash.prepare(current, address.url || address).then(function () { return address; });
             }).then(function (address) {
-                if (!address || mine !== session || address.error) return;
+                if (!address || chain.stale(mine) || address.error) return;
                 try {
                     open(av, address.url || address, finish);
                 } catch (e) {
@@ -1074,9 +915,9 @@ window.Player = (function () {
             video.onerror = function () {
                 finish('media error ' + (video.error ? video.error.code : '?'));
             };
-            var mine = session;
+            var mine = chain.session();
             MovieHash.prepare(current, url).then(function () {
-                if (mine !== session) return;
+                if (chain.stale(mine)) return;
                 video.src = url;
                 video.play().catch(function () {});
             });
@@ -1146,7 +987,6 @@ window.Player = (function () {
     function start(req, onAttempt, rect) {
         playbackError = false;
         release();
-        var mine = ++session;
         current = req;
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
@@ -1157,7 +997,7 @@ window.Player = (function () {
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
 
         var attempts = req.sources.map(function (source) {
-            return [source.via, STARTERS[source.via](source.url, source)];
+            return { name: source.via, start: STARTERS[source.via](source.url, source) };
         });
 
         function fail(message) {
@@ -1165,42 +1005,22 @@ window.Player = (function () {
             showStatus(heading(req) + '\n' + message, true);
         }
 
-        function next(index, retried) {
-            if (mine !== session) return Promise.resolve();
-            if (index >= attempts.length) {
-                fail(I18n.t('player.offline'));
-                return Promise.resolve();
-            }
-            var name = attempts[index][0];
-            var began = Date.now();
-            return attempt(attempts[index][1]).then(function (error) {
-                if (mine !== session) return;
-                if (!error) {
-                    Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + (Date.now() - began) + 'ms');
-                    onReady();
-                    if (onAttempt) onAttempt(null);
-                    return;
-                }
-                Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + (Date.now() - began) + 'ms');
+        return chain.run(attempts, {
+            ready: function (name, ms) {
+                Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + ms + 'ms');
+                onReady();
+                if (onAttempt) onAttempt(null);
+            },
+            failed: function (name, error, ms) {
+                Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + ms + 'ms');
                 release();
                 // release() also clears the now/next guide; the next player needs it again.
                 epg.load(req);
-                // 503 means the previous stream is still counted (retry once
-                // after a pause) or the channel is offline (other players
-                // would get the same answer, so stop).
-                if (/503/.test(error)) {
-                    if (retried) {
-                        fail(I18n.t('player.busy'));
-                        return;
-                    }
-                    return wait(BUSY_RETRY_MS).then(function () {
-                        return next(index, true);
-                    });
-                }
-                return next(index + 1, false);
-            });
-        }
-        return next(0, false);
+            },
+            giveUp: function (kind) {
+                fail(I18n.t(kind === 'busy' ? 'player.busy' : 'player.offline'));
+            },
+        });
     }
 
     function stop() {
@@ -1208,7 +1028,7 @@ window.Player = (function () {
         playbackError = false;
         reconnect.cancel();
         freeze.clear();
-        session++;
+        chain.cancel();
         release();
         current = null;
         hideStatus();

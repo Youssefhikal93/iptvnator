@@ -62,7 +62,7 @@ function scene() {
     var env = load([
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js',
         'subtitle-file.js', 'subtitle-rank.js', 'movie-hash.js', 'subtitle-store.js', 'subtitle-download.js',
-        'player-resume.js', 'player-epg.js', 'player-freeze.js', 'player-reconnect.js',
+        'player-resume.js', 'player-epg.js', 'player-freeze.js', 'playback-chain.js', 'player-tracks.js', 'player-reconnect.js',
         'sleep-timer.js', 'player-sleep.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'player.js',
     ], {}, {
         UI: uiSandbox.UI,

@@ -864,10 +864,10 @@ window.Browser = function (hooks) {
         if (state.zone !== 'items') showSourceDetails();
     }
 
-    function sourceEdited(updated, reconnect) {
-        var current = state.source && state.source.id === updated.id;
+    function sourceEdited(updated, reconnect, previousId) {
+        var current = state.source && state.source.id === previousId;
         if (reconnect && current) {
-            state.catalogue.drop().then(function () {
+            (previousId === updated.id ? state.catalogue.drop() : Promise.resolve()).then(function () {
                 setSource(updated);
                 sourcesChecked();
             });

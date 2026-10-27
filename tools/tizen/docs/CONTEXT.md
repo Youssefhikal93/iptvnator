@@ -16,6 +16,10 @@ and updating are in [../INSTALLATION-TO-TV.md](../INSTALLATION-TO-TV.md).
 One saved provider login on the TV: an Xtream account or an M3U playlist link.
 _Avoid_: Playlist (for Xtream), provider, account
 
+**Source account**:
+The server and Xtream username, or the full M3U playlist link, that a source's saved library belongs to; changing only an Xtream password keeps it.
+_Avoid_: Profile, source name
+
 **Section**:
 One kind of content a source offers: Live TV, Movies or Series. An M3U source offers Live TV, plus Movies and Series when its playlist holds them.
 _Avoid_: Tab, type, mode

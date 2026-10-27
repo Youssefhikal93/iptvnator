@@ -90,6 +90,10 @@ window.Sources = (function () {
         update: function (source) {
             write(LIST_KEY, all().map(function (saved) { return saved.id === source.id ? source : saved; }));
         },
+        rekey: function (oldId, source) {
+            write(LIST_KEY, all().map(function (saved) { return saved.id === oldId ? source : saved; }));
+            if (read(CURRENT_KEY) === oldId) write(CURRENT_KEY, source.id);
+        },
         remove: remove,
         current: current,
         setCurrent: function (id) {

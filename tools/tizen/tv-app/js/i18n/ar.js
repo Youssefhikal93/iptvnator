@@ -127,6 +127,7 @@ I18n.tables.ar = {
     'settings.dark': 'داكن',
     'settings.density': 'الكثافة',
     'settings.motion': 'الرسوم المتحركة',
+    'settings.topBar': 'الشريط العلوي',
     'settings.off': 'إيقاف',
     'settings.on': 'تشغيل',
     'settings.export': 'تصدير',

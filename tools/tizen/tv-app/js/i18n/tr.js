@@ -127,6 +127,7 @@ I18n.tables.tr = {
     'settings.dark': 'Koyu',
     'settings.density': 'Yoğunluk',
     'settings.motion': 'Animasyonlar',
+    'settings.topBar': 'Üst çubuk',
     'settings.off': 'Kapalı',
     'settings.on': 'Açık',
     'settings.export': 'Dışa aktar',

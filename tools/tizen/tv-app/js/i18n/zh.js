@@ -127,6 +127,7 @@ I18n.tables.zh = {
     'settings.dark': '深色',
     'settings.density': '显示密度',
     'settings.motion': '动画',
+    'settings.topBar': '顶部栏',
     'settings.off': '关闭',
     'settings.on': '开启',
     'settings.export': '导出',

@@ -127,6 +127,7 @@ I18n.tables.ary = {
     'settings.dark': 'داكن',
     'settings.density': 'الكثافة',
     'settings.motion': 'الحركات',
+    'settings.topBar': 'الشريط الفوقاني',
     'settings.off': 'معطلة',
     'settings.on': 'مفعلة',
     'settings.export': 'صدّر',

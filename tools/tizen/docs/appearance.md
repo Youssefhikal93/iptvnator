@@ -107,3 +107,22 @@ requested again while the app runs (up to 400 addresses).
 Rows show the time left (`epg.minLeft`) and a live progress bar in
 `--now-line`. Grid tiles move the logo above the programme caption with
 `:has(.epg-now)`.
+
+## Home and the top bar (#45)
+
+Home is drawn with Preact (`js/home.js`, styles in `home.css`) from
+`Kit.Row` and `Kit.Tile` (`cls="hm"`: `hm-row > h2`, `hm-cards`, `hm-card` with
+a poster box, a `span` title and a `small` second line). The hero is 580px over
+full-bleed artwork: eyebrow, 84px title, chips (episode, year, genre, runtime,
+rating), a two-line plot, progress with time left, the buttons and dots for
+the other continue-watching titles. It shows only while it has the focus;
+further down, the focused row moves to the top. The Continue watching row
+leaves out the title the hero is showing. Live tiles use the channel plate.
+
+The source pill is gone; sources are switched in Settings > Sources and the
+page keeps the current name in `body[data-source]` (tests read it). A
+catalogue refresh shows "Updating…" in the hint bar. The top bar (search and
+view buttons) is hidden on screens without tools (Home, Settings, Sources),
+which then start at the top edge. Settings > Appearance > Top bar (`topBar`,
+On by default) Off hides it everywhere; ▲ at the top of a list still brings it
+up over the list while the remote is on it (`body.no-bar`, `body.bar-off`).

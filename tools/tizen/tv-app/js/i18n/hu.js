@@ -127,6 +127,7 @@ I18n.tables.hu = {
     'settings.dark': 'Sötét',
     'settings.density': 'Sűrűség',
     'settings.motion': 'Animációk',
+    'settings.topBar': 'Felső sáv',
     'settings.off': 'Kikapcsolva',
     'settings.on': 'Bekapcsolva',
     'settings.export': 'Exportálás',

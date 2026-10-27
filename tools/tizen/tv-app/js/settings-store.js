@@ -31,6 +31,7 @@ window.Prefs = (function () {
         accent: 'blue',
         density: 'comfortable',
         motion: 'on',
+        topBar: 'on',
     };
 
     function read(key, fallback) {

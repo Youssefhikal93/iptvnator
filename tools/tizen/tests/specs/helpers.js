@@ -39,7 +39,7 @@ async function boot(page, seed = {}) {
     }, seed);
     await page.goto('/');
     await expect(page.locator('#rail .rail-item')).toHaveCount(6);
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 }
 
 async function press(page, key) {

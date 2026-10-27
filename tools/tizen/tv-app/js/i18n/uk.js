@@ -127,6 +127,7 @@ I18n.tables.uk = {
     'settings.dark': 'Темна',
     'settings.density': 'Щільність',
     'settings.motion': 'Анімації',
+    'settings.topBar': 'Верхня панель',
     'settings.off': 'Вимк.',
     'settings.on': 'Увімк.',
     'settings.export': 'Експорт',

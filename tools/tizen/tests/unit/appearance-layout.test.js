@@ -5,6 +5,7 @@ var assert = require('node:assert/strict');
 var fs = require('node:fs');
 var path = require('node:path');
 var load = require('./sandbox');
+var UI = require('./ui-sandbox').UI;
 
 var css = fs.readFileSync(path.join(__dirname, '../../tv-app/appearance.css'), 'utf8');
 
@@ -49,7 +50,8 @@ function app() {
         'iptvnator-tv:sources': JSON.stringify([{ id: 's1', name: 'Test source', type: 'm3u', url: 'https://example.test/list' }]),
         'iptvnator-tv:current': JSON.stringify('s1'),
     };
-    var run = load(['keys.js', 'settings-store.js', 'appearance.js', 'appearance-layout.js', 'sources.js', 'library-chip.js', 'art.js', 'list.js', 'home.js'], stored, {
+    var run = load(['keys.js', 'settings-store.js', 'appearance.js', 'appearance-layout.js', 'sources.js', 'library-chip.js', 'art.js', 'kit.js', 'list.js', 'home.js'], stored, {
+        UI: UI,
         document: {
             addEventListener: function () {},
             documentElement: html,

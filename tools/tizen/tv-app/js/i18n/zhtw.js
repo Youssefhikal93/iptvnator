@@ -127,6 +127,7 @@ I18n.tables.zhtw = {
     'settings.dark': '深色',
     'settings.density': '顯示密度',
     'settings.motion': '動畫',
+    'settings.topBar': '頂部列',
     'settings.off': '關閉',
     'settings.on': '開啟',
     'settings.export': '匯出',

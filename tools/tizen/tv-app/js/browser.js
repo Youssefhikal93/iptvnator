@@ -54,6 +54,7 @@ window.Browser = function (hooks) {
     });
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
+        if (name === 'topBar') renderChrome();
         // The rail, header and hints show the new language at once.
         if (name === 'language') {
             renderChrome();
@@ -773,8 +774,9 @@ window.Browser = function (hooks) {
             $('rail').appendChild(el);
         });
         RailProfile.render($('rail'), state.zone === 'rail' && state.profileFocus);
-        $('source-name').textContent = state.source ? state.source.name : I18n.t('browser.noSource');
-        $('source-type').textContent = state.source ? Sources.typeLabel(state.source) + (state.updating ? ' · ' + I18n.t('browser.updating') : '') : I18n.t('browser.addInSources');
+        // The source is switched in Settings > Sources (#45); the page keeps
+        // its name for diagnostics and tests.
+        document.body.setAttribute('data-source', state.source ? state.source.name : '');
         renderToolbar();
         $('hints').textContent =
             state.section === 'settings'
@@ -786,6 +788,8 @@ window.Browser = function (hooks) {
                 : state.zone === 'categories' && state.section !== 'sources'
                 ? I18n.t('hints.categories')
                 : I18n.t('hints.default');
+        // With the source pill gone (#45), a catalogue refresh shows here.
+        if (state.updating) $('hints').textContent += '  ·  ' + I18n.t('browser.updating');
     }
 
     function renderToolbar() {
@@ -794,6 +798,11 @@ window.Browser = function (hooks) {
         state.tool = Math.min(state.tool, tools.length - 1);
         var focus = state.zone === 'toolbar' ? tools[state.tool] : null;
         $('header').classList.toggle('no-tools', !on);
+        // The bar shows only where it does something; with Top bar Off it
+        // comes up over the list while the remote is on it.
+        var off = Prefs.get('topBar') === 'off';
+        document.body.classList.toggle('no-bar', !on || (off && state.zone !== 'toolbar'));
+        document.body.classList.toggle('bar-off', off);
         $('searchbar').classList.toggle('focused', focus === 'search');
         var input = $('search-input');
         input.placeholder = on ? I18n.t('browser.searchIn', { section: sectionOf(state.section).label }) : I18n.t('browser.search');

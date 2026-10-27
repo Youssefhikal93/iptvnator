@@ -10,6 +10,7 @@
         "settings.comfortable": "مريح",
         "settings.compact": "مضغوط",
         "settings.motion": "الرسوم المتحركة",
+        "settings.topBar": "الشريط العلوي",
         "settings.on": "تشغيل",
         "settings.off": "إيقاف"
     },
@@ -24,6 +25,7 @@
         "settings.comfortable": "مريح",
         "settings.compact": "مضغوط",
         "settings.motion": "الحركات",
+        "settings.topBar": "الشريط الفوقاني",
         "settings.on": "مفعلة",
         "settings.off": "معطلة"
     },
@@ -38,6 +40,7 @@
         "settings.comfortable": "Зручная",
         "settings.compact": "Кампактная",
         "settings.motion": "Анімацыі",
+        "settings.topBar": "Верхняя панэль",
         "settings.on": "Укл.",
         "settings.off": "Выкл."
     },
@@ -52,6 +55,7 @@
         "settings.comfortable": "Komfortabel",
         "settings.compact": "Kompakt",
         "settings.motion": "Animationen",
+        "settings.topBar": "Obere Leiste",
         "settings.on": "An",
         "settings.off": "Aus"
     },
@@ -66,6 +70,7 @@
         "settings.comfortable": "Άνετη",
         "settings.compact": "Συμπαγής",
         "settings.motion": "Κινούμενα εφέ",
+        "settings.topBar": "Επάνω γραμμή",
         "settings.on": "Ενεργά",
         "settings.off": "Ανενεργά"
     },
@@ -80,6 +85,7 @@
         "settings.comfortable": "Cómoda",
         "settings.compact": "Compacta",
         "settings.motion": "Animaciones",
+        "settings.topBar": "Barra superior",
         "settings.on": "Activadas",
         "settings.off": "Desactivadas"
     },
@@ -94,6 +100,7 @@
         "settings.comfortable": "Confortable",
         "settings.compact": "Compacte",
         "settings.motion": "Animations",
+        "settings.topBar": "Barre supérieure",
         "settings.on": "Activées",
         "settings.off": "Désactivées"
     },
@@ -108,6 +115,7 @@
         "settings.comfortable": "Kényelmes",
         "settings.compact": "Kompakt",
         "settings.motion": "Animációk",
+        "settings.topBar": "Felső sáv",
         "settings.on": "Bekapcsolva",
         "settings.off": "Kikapcsolva"
     },
@@ -122,6 +130,7 @@
         "settings.comfortable": "Comoda",
         "settings.compact": "Compatta",
         "settings.motion": "Animazioni",
+        "settings.topBar": "Barra superiore",
         "settings.on": "Attivate",
         "settings.off": "Disattivate"
     },
@@ -136,6 +145,7 @@
         "settings.comfortable": "ゆったり",
         "settings.compact": "コンパクト",
         "settings.motion": "アニメーション",
+        "settings.topBar": "上部バー",
         "settings.on": "オン",
         "settings.off": "オフ"
     },
@@ -150,6 +160,7 @@
         "settings.comfortable": "편안하게",
         "settings.compact": "촘촘하게",
         "settings.motion": "애니메이션",
+        "settings.topBar": "상단 바",
         "settings.on": "켜기",
         "settings.off": "끄기"
     },
@@ -164,6 +175,7 @@
         "settings.comfortable": "Comfortabel",
         "settings.compact": "Compact",
         "settings.motion": "Animaties",
+        "settings.topBar": "Bovenbalk",
         "settings.on": "Aan",
         "settings.off": "Uit"
     },
@@ -178,6 +190,7 @@
         "settings.comfortable": "Wygodna",
         "settings.compact": "Kompaktowa",
         "settings.motion": "Animacje",
+        "settings.topBar": "Górny pasek",
         "settings.on": "Włączone",
         "settings.off": "Wyłączone"
     },
@@ -192,6 +205,7 @@
         "settings.comfortable": "Confortável",
         "settings.compact": "Compacta",
         "settings.motion": "Animações",
+        "settings.topBar": "Barra superior",
         "settings.on": "Ativadas",
         "settings.off": "Desativadas"
     },
@@ -206,6 +220,7 @@
         "settings.comfortable": "Комфортная",
         "settings.compact": "Компактная",
         "settings.motion": "Анимация",
+        "settings.topBar": "Верхняя панель",
         "settings.on": "Вкл.",
         "settings.off": "Выкл."
     },
@@ -220,6 +235,7 @@
         "settings.comfortable": "Rahat",
         "settings.compact": "Kompakt",
         "settings.motion": "Animasyonlar",
+        "settings.topBar": "Üst çubuk",
         "settings.on": "Açık",
         "settings.off": "Kapalı"
     },
@@ -234,6 +250,7 @@
         "settings.comfortable": "Комфортна",
         "settings.compact": "Компактна",
         "settings.motion": "Анімації",
+        "settings.topBar": "Верхня панель",
         "settings.on": "Увімк.",
         "settings.off": "Вимк."
     },
@@ -248,6 +265,7 @@
         "settings.comfortable": "舒适",
         "settings.compact": "紧凑",
         "settings.motion": "动画",
+        "settings.topBar": "顶部栏",
         "settings.on": "开启",
         "settings.off": "关闭"
     },
@@ -262,6 +280,7 @@
         "settings.comfortable": "舒適",
         "settings.compact": "緊湊",
         "settings.motion": "動畫",
+        "settings.topBar": "頂部列",
         "settings.on": "開啟",
         "settings.off": "關閉"
     }

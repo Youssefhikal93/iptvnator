@@ -136,7 +136,7 @@ test('#34 All sources snapshots, Continue watching and watched actions use the i
     assert.equal(watched.isWatched(item, 'movies'), false);
     var options;
     g.Menu = { open: function (title, entries) { options = entries; } };
-    watched.openItemMenu(item, 'movies', [{ label: 'Cancel' }], 'Movie');
+    watched.openItemMenu(item, 'movies', [], 'Movie');
     options[0].run();
     assert.equal(watched.isWatched(item, 'movies'), true);
     assert.equal(g.Progress.of('movie:42').duration, 1000);

@@ -47,6 +47,7 @@ test('a movie opens its detail from the playlist data, plays, seeks and saves pr
     await playing(page);
     await page.locator('#video').evaluate(v => { v.currentTime = 60; });
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(60);
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect.poll(() => savedIds(page, 'movie:m3u:')).toHaveLength(1);
@@ -81,6 +82,7 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await page.locator('#video').evaluate(v => { v.currentTime = 30; });
     // Under load the seek can land late; confirm it before leaving so progress saves.
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(30);
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect.poll(() => savedIds(page, 'episode:m3u:')).toHaveLength(2);

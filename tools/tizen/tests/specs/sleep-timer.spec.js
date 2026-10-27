@@ -106,6 +106,8 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await expect(page.locator('.pl-sleep-head')).toHaveText('Sleep timer · 29 min left');
     await back(page);
     await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await back(page);
     await released(page);
     await press(page, 'Enter');
     await playing(page);
@@ -136,6 +138,8 @@ test('#22 live zapping keeps the timer; Return to live preview cancels it', asyn
     await expect(page.locator('#pl-sleep-badge')).toHaveText('Sleep in 15 min');
     await expect(page.locator('#pl-menu')).not.toContainText('End of');
     await back(page);
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#player')).toHaveClass(/preview/);
     await expect(page.locator('#pl-sleep-badge')).toHaveClass(/hidden/);

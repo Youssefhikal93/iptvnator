@@ -288,6 +288,7 @@ I18n.tables.en = {
     'player.busy': 'This channel is offline or your connection is busy.',
     'player.episodes': 'Episodes',
     'player.episodesHint': '◀ ▶ Season · ▲▼ Episode · OK Play · Return Close',
+    'player.hide': 'Hide',
     'player.hint.audioSubs': 'Audio & subtitles',
     'player.hint.audioSubsSpeed': 'Audio, subtitles, speed',
     'player.hint.channel': 'Channel',

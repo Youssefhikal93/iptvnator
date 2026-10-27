@@ -124,6 +124,10 @@ test('zapping in fullscreen then Return previews the channel that was zapped to'
     await playing(page);
     await expect(page.locator('#pl-title')).toHaveText('2. Channel 2 (cat all)');
     await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await isFullscreen(page);
+    expect(await videoPlaying(page)).toBe(true);
+    await back(page);
     await isPreview(page);
     await expect(page.locator('.lp-title')).toHaveText('2. Channel 2 (cat all)');
     await back(page);
@@ -166,6 +170,8 @@ test('opening the TV guide stops the preview; OK on a programme on now goes stra
     await isFullscreen(page);
     await expect(page.locator('#pl-title')).toHaveText('1. Channel 1 (cat all)');
     await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await back(page);
     // Opened from the guide, so Return goes back to the guide, not a preview.
     await expect(page.locator('#guide')).toBeVisible();
     await expect(page.locator('#player')).toBeHidden();
@@ -203,6 +209,8 @@ test('the Live preview setting defaults On; Off sends OK straight to fullscreen'
     await playing(page);
     await isFullscreen(page);
     await expect(page.locator('#content')).not.toHaveClass(/previewing/);
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await page.reload();

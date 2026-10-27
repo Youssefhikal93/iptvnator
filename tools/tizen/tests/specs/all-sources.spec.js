@@ -82,6 +82,7 @@ test('OK on another source channel switches quietly, plays its stream and Return
     expect(await page.evaluate(() => Sources.current().id)).toBe('s2');
     expect(streams.length).toBeGreaterThan(0);
     expect(streams.every(path => path.startsWith('/live/second/'))).toBe(true);
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect(page.locator('#items .list-header')).toContainText('Favorites');

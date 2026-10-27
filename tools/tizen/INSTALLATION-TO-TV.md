@@ -391,6 +391,12 @@ from step 8 must already be downloaded.
   offers OK to play. Skip intro jumps 90 s by default, adjustable in
   Settings: Xtream has no intro markers. Live TV: ▲▼ or CH change channel,
   OK shows now and next with times, description and progress when enabled.
+- **Return while watching**: first hides visible controls, including the Live TV
+  info bar after changing channel; press again with controls hidden to leave the
+  player. A paused movie or episode stays paused and its controls stay hidden
+  until a normal player key shows them again. Menus and other overlays handle
+  Return first. **STOP** leaves playback directly; live preview keeps its usual
+  Return behaviour.
 - **Subtitle style and picture**: in **Settings**, the **Subtitles** group
   offers Size (Small, Medium, Large, Extra large), Text colour (White, Yellow),
   Background (Off, Shadow, Box) and Position (Bottom, Higher). **Picture**
@@ -434,9 +440,9 @@ from step 8 must already be downloaded.
   box beside the list, with its now and next under it. Moving through the
   list does not change the stream; OK on another channel switches the box
   to it. OK on the playing channel goes full screen on the same stream, and
-  Return from full screen comes back to the box. Return in the list stops
-  the preview first; a second Return does what it always did. The preview
-  also stops when you leave Live TV, open the TV guide, change source or
+  Return from full screen with controls hidden comes back to the box. Return
+  in the list stops the preview first; a second Return does what it always did.
+  The preview also stops when you leave Live TV, open the TV guide, change source or
   leave the app. Turn it off in **Settings → Live preview** and OK opens
   full screen directly, as does the grid view.
 - **Channel list while watching**: with live player controls hidden, press

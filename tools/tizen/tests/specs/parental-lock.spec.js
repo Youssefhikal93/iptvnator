@@ -216,6 +216,7 @@ test('re-lock closes the channel list, blocks PRE-CH and startup restore, and ke
     await digits(page, '1234');
     await press(page, 'Enter');
     await playing(page);
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await section(page, 'Live TV');
     await category(page, 'get_live_categories cat 6');

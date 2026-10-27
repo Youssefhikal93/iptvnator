@@ -61,6 +61,8 @@ test('guide past programme plays a timeshift request, seeks, and returns without
     await press(page, 'ArrowLeft');
     await expect.poll(() => page.locator('#video').evaluate(video => video.currentTime)).toBeLessThan(5);
     await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await back(page);
     await expect(page.locator('#guide')).toBeVisible();
     await expect(page.locator('.gd-programme.focused')).toHaveAttribute('data-start', String(start));
     expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:progress'))).toBeNull();
@@ -111,6 +113,7 @@ test('now and next restarts the current programme, Return restores live and Back
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-title')).toContainText(' · ');
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await playing(page);
     await expect(page.locator('#pl-title')).toHaveText('1. Channel 1 (cat all)');
@@ -175,6 +178,8 @@ test('seeking clamps at the programme end and finishing never marks catch-up wat
     await sendKeyCode(page, 415);
     await expect.poll(() => page.locator('#video').evaluate(video => video.paused)).toBe(true);
     expect(await page.locator('#video').evaluate(video => video.currentTime)).toBeLessThan(21);
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#guide')).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('iptvnator-tv:p:default:progress'))).toBeNull();

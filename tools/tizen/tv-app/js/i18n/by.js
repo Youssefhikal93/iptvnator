@@ -73,6 +73,7 @@ I18n.tables.by = {
     'pin.unlockCategory': 'Разблакіраваць катэгорыю',
     'player.audio': 'Аўдыё',
     'player.episodes': 'Серыі',
+    'player.hide': 'Схаваць',
     'player.hint.channel': 'Канал',
     'player.hint.channelList': 'Спіс каналаў',
     'player.hint.close': 'Закрыць',

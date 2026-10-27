@@ -73,6 +73,7 @@ I18n.tables.zhtw = {
     'pin.unlockCategory': '解鎖類別',
     'player.audio': '音訊',
     'player.episodes': '集數',
+    'player.hide': '隱藏',
     'player.hint.channel': '頻道',
     'player.hint.channelList': '頻道清單',
     'player.hint.close': '關閉',

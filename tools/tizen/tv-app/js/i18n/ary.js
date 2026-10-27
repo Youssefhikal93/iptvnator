@@ -73,6 +73,7 @@ I18n.tables.ary = {
     'pin.unlockCategory': 'حل القفل على الفئة',
     'player.audio': 'الصوت',
     'player.episodes': 'الحلقات',
+    'player.hide': 'خبّي',
     'player.hint.channel': 'قناة',
     'player.hint.channelList': 'لائحة القنوات',
     'player.hint.close': 'سد',

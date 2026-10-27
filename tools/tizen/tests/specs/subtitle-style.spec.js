@@ -62,6 +62,8 @@ test('player menu updates subtitle classes, native cues and the same Settings va
     await expect.poll(() => page.locator('#video').evaluate(video => video.textTracks[0].activeCues[0]?.line)).toBe(90);
     await back(page);
     await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await back(page);
     await section(page, 'Settings');
     for (const [label, value] of [['Size', 'Large'], ['Text colour', 'Yellow'], ['Background', 'Box'], ['Position', 'Bottom'], ['Aspect', 'Fill']]) {
         await expect(setting(page, label)).toHaveText(value);
@@ -91,6 +93,8 @@ test('live preview uses Fit and fullscreen restores the saved aspect without ope
     await expect(page.locator('#video')).toHaveCSS('left', '0px');
     await expect(page.locator('#video')).toHaveCSS('width', '1920px');
     await back(page);
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#player')).toHaveClass(/preview/);
     await press(page, 'Enter');
@@ -136,6 +140,8 @@ test('AVPlay applies picture choices on start and preview transitions, and style
     expect(await page.evaluate(() => webapis.avplay.method)).toBe('PLAYER_DISPLAY_MODE_LETTER_BOX');
     await page.evaluate(() => Player.fullscreen());
     expect(await page.evaluate(() => webapis.avplay.rect)).toEqual([240, 0, 1440, 1080]);
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await press(page, 'Enter');
     await expect(page.locator('#pl-status')).toBeHidden();

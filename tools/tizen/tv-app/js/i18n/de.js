@@ -73,6 +73,7 @@ I18n.tables.de = {
     'pin.unlockCategory': 'Kategorie entsperren',
     'player.audio': 'Audio',
     'player.episodes': 'Episoden',
+    'player.hide': 'Ausblenden',
     'player.hint.channel': 'Sender',
     'player.hint.channelList': 'Senderliste',
     'player.hint.close': 'Schließen',

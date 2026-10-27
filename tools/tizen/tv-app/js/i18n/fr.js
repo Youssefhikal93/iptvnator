@@ -73,6 +73,7 @@ I18n.tables.fr = {
     'pin.unlockCategory': 'Déverrouiller la catégorie',
     'player.audio': 'Audio',
     'player.episodes': 'Épisodes',
+    'player.hide': 'Masquer',
     'player.hint.channel': 'Chaîne',
     'player.hint.channelList': 'Liste des chaînes',
     'player.hint.close': 'Fermer',

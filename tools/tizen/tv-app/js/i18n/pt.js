@@ -120,6 +120,7 @@ I18n.tables.pt = {
     'tmdb.cast': 'Elenco',
     'tmdb.checking': 'Verificando…',
     'tmdb.inLibrary': 'Na sua biblioteca',
+    'trailer.unavailable': 'O YouTube não está disponível nesta TV',
     'unit.hoursMinutes': '{h} h {m} min',
     'unit.minutes': '{n} min',
     'unit.minutesOnly': '{m} min',

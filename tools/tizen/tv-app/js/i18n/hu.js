@@ -120,6 +120,7 @@ I18n.tables.hu = {
     'tmdb.cast': 'Szereplők',
     'tmdb.checking': 'Ellenőrzés…',
     'tmdb.inLibrary': 'A médiatárban',
+    'trailer.unavailable': 'A YouTube nem érhető el ezen a tévén',
     'unit.hoursMinutes': '{h} ó {m} p',
     'unit.minutes': '{n} perc',
     'unit.minutesOnly': '{m} perc',

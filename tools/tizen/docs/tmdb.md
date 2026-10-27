@@ -24,8 +24,14 @@ an empty plot and improves artwork, rating, genre and runtime when TMDB supplies
 them, keeping provider values for missing TMDB fields. Stale page responses
 are discarded. Cast is limited to 12 people. `js/actor.js` opens person details
 and combined movie/TV credits; the displayed titles must exist in this source.
-YouTube trailers use a matching installed application's Tizen ApplicationControl;
-TMDB trailers never create an embedded player. Unsupported TVs hide the button.
+Provider and TMDB trailers share `js/youtube.js`: OK opens the video in the TV's
+YouTube app, after stopping IPTVnator playback. Return/Back in YouTube returns
+to the same detail page. The launcher tries an implicit view control with the
+watch URL first, then Samsung's YouTube app (`111299001912`) with a `PAYLOAD`
+deep link. Neither detail page creates an embedded player. Availability is
+checked once per session by a matching view control or installed YouTube app;
+unsupported TVs hide the button. Browser builds keep the button and show
+"YouTube is not available on this TV" on OK, also shown if both TV launches fail.
 
 `js/discover.js` loads genres and checks a page of 12 catalogue titles only
 after the viewer chooses a genre. Cached matches can be filtered again without

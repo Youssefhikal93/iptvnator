@@ -120,6 +120,7 @@ I18n.tables.es = {
     'tmdb.cast': 'Reparto',
     'tmdb.checking': 'Comprobando…',
     'tmdb.inLibrary': 'En tu biblioteca',
+    'trailer.unavailable': 'YouTube no está disponible en este televisor',
     'unit.hoursMinutes': '{h} h {m} min',
     'unit.minutes': '{n} min',
     'unit.minutesOnly': '{m} min',

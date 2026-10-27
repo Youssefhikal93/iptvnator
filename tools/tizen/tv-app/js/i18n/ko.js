@@ -120,6 +120,7 @@ I18n.tables.ko = {
     'tmdb.cast': '출연진',
     'tmdb.checking': '확인 중…',
     'tmdb.inLibrary': '내 라이브러리에 있음',
+    'trailer.unavailable': '이 TV에서는 YouTube를 사용할 수 없습니다',
     'unit.hoursMinutes': '{h}시간 {m}분',
     'unit.minutes': '{n}분',
     'unit.minutesOnly': '{m}분',

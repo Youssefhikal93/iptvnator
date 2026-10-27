@@ -120,6 +120,7 @@ I18n.tables.zh = {
     'tmdb.cast': '演员表',
     'tmdb.checking': '正在检查…',
     'tmdb.inLibrary': '已在您的媒体库中',
+    'trailer.unavailable': '此电视无法使用 YouTube',
     'unit.hoursMinutes': '{h} 小时 {m} 分钟',
     'unit.minutes': '{n} 分钟',
     'unit.minutesOnly': '{m} 分钟',

@@ -38,13 +38,6 @@ window.Detail = function () {
         return I18n.t(h ? 'unit.hoursMinutes' : 'unit.minutesOnly', { h: h, m: m });
     }
 
-    // A YouTube id from an id or any youtube.com / youtu.be link.
-    function youtubeId(text) {
-        var match = /(?:v=|youtu\.be\/|embed\/)([\w-]{11})/.exec(text || '');
-        if (match) return match[1];
-        return /^[\w-]{11}$/.test(text || '') ? text : '';
-    }
-
     function details() {
         var d = s.details || {};
         var item = s.page.item;
@@ -59,14 +52,14 @@ window.Detail = function () {
             plot: d.plot,
             cast: d.cast,
             director: d.director,
-            trailer: youtubeId(d.trailer),
+            trailer: YouTube.videoId(d.trailer),
         };
     }
 
     function buttons() {
         var d = details();
         var list = s.page.actions(d);
-        if (s.tmdb ? s.tmdb.trailer() : d.trailer) list.push({ label: I18n.t('detail.trailer'), run: s.tmdb ? s.tmdb.openTrailer : openTrailer });
+        if (s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
         if (s.clipped) list.push({ label: I18n.t('detail.more'), run: openMore });
         return list;
     }
@@ -104,7 +97,6 @@ window.Detail = function () {
         if (s.tmdb) root.appendChild(s.tmdb.render(s.zone === 'tmdb'));
         if (s.zone === 'tmdb') TmdbView.scroll(root);
         if (s.more) root.appendChild(renderMore(d));
-        if (s.trailer) root.appendChild(s.trailer);
         // "More" only when the plot does not fit its lines.
         var clipped = plot.scrollHeight > plot.clientHeight + 2;
         if (clipped !== s.clipped) {
@@ -147,17 +139,8 @@ window.Detail = function () {
         render();
     }
 
-    // The trailer plays in an embedded YouTube player; focus stays on the
-    // page so Return still reaches the app.
     function openTrailer() {
-        var frame = el('iframe', 'dt-trailer');
-        frame.setAttribute('tabindex', '-1');
-        frame.setAttribute('allow', 'autoplay; encrypted-media');
-        frame.src = 'https://www.youtube.com/embed/' + details().trailer + '?autoplay=1&controls=0&rel=0';
-        s.trailer = el('div', 'dt-trailer-box');
-        s.trailer.appendChild(frame);
-        s.trailer.appendChild(el('div', 'dt-more-hint', I18n.t('detail.returnCloseTrailer')));
-        render();
+        YouTube.open(details().trailer);
     }
 
     // ---- Keys -------------------------------------------------------------
@@ -177,9 +160,8 @@ window.Detail = function () {
     }
 
     function onKey(code) {
-        if (s.trailer || s.more) {
+        if (s.more) {
             if (Keys.isBack(code)) {
-                s.trailer = null;
                 s.more = false;
                 render();
             }
@@ -215,7 +197,7 @@ window.Detail = function () {
     return {
         open: function (page) {
             if (s && s.tmdb) s.tmdb.dispose();
-            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, trailer: null };
+            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false };
             var mine = s;
             if (Tmdb.enabled() && page.catalogue) s.tmdb = TmdbDetail(page, function (enriched) {
                 if (s !== mine) return;
@@ -224,6 +206,11 @@ window.Detail = function () {
             });
             root.classList.remove('hidden');
             render();
+            YouTube.available(function (available) {
+                if (s !== mine) return;
+                s.youtube = available;
+                render();
+            });
             page.load()
                 .then(function (d) {
                     if (s !== mine) return;
@@ -247,7 +234,7 @@ window.Detail = function () {
         onKey: onKey,
         close: close,
         episodeSelection: function () {
-            if (!s || s.zone !== 'episodes' || s.more || s.trailer) return null;
+            if (!s || s.zone !== 'episodes' || s.more) return null;
             return s.page.episodes.selection();
         },
         // After playback or a library change: new Resume labels and progress.

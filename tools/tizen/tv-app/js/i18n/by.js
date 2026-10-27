@@ -120,6 +120,7 @@ I18n.tables.by = {
     'tmdb.cast': 'Акцёрскі склад',
     'tmdb.checking': 'Правяраецца…',
     'tmdb.inLibrary': 'Ёсць у вашай бібліятэцы',
+    'trailer.unavailable': 'YouTube недаступны на гэтым тэлевізары',
     'unit.hoursMinutes': '{h} г {m} хв',
     'unit.minutes': '{n} хв',
     'unit.minutesOnly': '{m} хв',

@@ -143,6 +143,14 @@
         }
     });
 
+    document.addEventListener('trailer-open', function () {
+        if (preview.active()) preview.stop();
+        else Player.stop();
+    });
+    document.addEventListener('trailer-unavailable', function () {
+        browser.toast(I18n.t('trailer.unavailable'));
+    });
+
     // Leaving the app (Home, Source) must free the account's connection.
     document.addEventListener('visibilitychange', function () {
         if (document.hidden) preview.stop();

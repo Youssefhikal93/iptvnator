@@ -28,6 +28,8 @@ window.Prefs = (function () {
         parentalRelockMs: 900000,
         language: 'en',
         theme: 'dark',
+        accent: 'blue',
+        density: 'comfortable',
     };
 
     function read(key, fallback) {

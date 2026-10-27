@@ -21,6 +21,8 @@ async function boot(page, seed = {}) {
     // Live preview is off unless a spec opts in with { livePreview: true }, so
     // the specs that press OK on a channel keep expecting full screen.
     const storage = { ...seed.storage };
+    // Keep existing grid moves and size assertions on the original density.
+    storage.settings = { density: 'compact', ...storage.settings };
     if (!seed.livePreview) storage.settings = { livePreview: false, ...storage.settings };
     seed = { ...seed, storage };
     // Seed once per context; a reload must exercise the app's persisted state.

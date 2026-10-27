@@ -1,4 +1,4 @@
-// The Language and Theme rows of Settings.
+// The Appearance rows of Settings.
 window.AppearanceSettings = (function () {
     'use strict';
 
@@ -24,6 +24,8 @@ window.AppearanceSettings = (function () {
         rows: [
             { get group() { return I18n.t('settings.appearance'); }, get label() { return I18n.t('settings.language'); }, run: pickLanguage, text: languageName },
             { get label() { return I18n.t('settings.theme'); }, key: 'theme', choices: ['dark', 'light'], get labels() { return [I18n.t('settings.dark'), I18n.t('settings.light')]; } },
+            { get label() { return I18n.t('settings.accent'); }, key: 'accent', choices: ['blue', 'saffron', 'asphalt', 'violet', 'pink'], get labels() { return [I18n.t('settings.blue'), I18n.t('settings.saffron'), I18n.t('settings.asphalt'), I18n.t('settings.violet'), I18n.t('settings.pink')]; } },
+            { get label() { return I18n.t('settings.density'); }, key: 'density', choices: ['comfortable', 'compact'], get labels() { return [I18n.t('settings.comfortable'), I18n.t('settings.compact')]; } },
         ],
     };
 })();

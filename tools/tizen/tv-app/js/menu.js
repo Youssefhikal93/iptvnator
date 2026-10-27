@@ -32,6 +32,7 @@ window.Menu = (function () {
     }
 
     return {
+        close: close,
         open: function (title, options, index) {
             state = { options: options, index: index || 0, title: title, open: true };
             render();

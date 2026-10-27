@@ -120,7 +120,8 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await press(page, 'Enter');
     await playing(page);
     await press(page, 'ArrowUp');
-    await expect(page.locator('.pl-menu-item.active').filter({ hasText: 'Off' })).toHaveCount(1);
+    // Downloaded subtitles and the sleep timer both start Off.
+    await expect(page.locator('.pl-menu-item.active').filter({ hasText: 'Off' })).toHaveCount(2);
 });
 
 test('#22 live zapping keeps the timer; Return to live preview cancels it', async ({ page }) => {

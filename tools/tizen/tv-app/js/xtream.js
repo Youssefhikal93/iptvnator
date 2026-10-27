@@ -78,6 +78,7 @@ window.XtreamSource = function (source, options) {
     function details(info, item) {
         return {
             tmdb_id: info.tmdb_id || info.tmdb || item.tmdb_id || item.tmdb,
+            imdb_id: info.imdb_id || info.imdb || item.imdb_id || item.imdb,
             title: info.name || item.name,
             poster: info.movie_image || info.cover_big || info.cover || item.stream_icon || item.cover || '',
             backdrop: first(info.backdrop_path),

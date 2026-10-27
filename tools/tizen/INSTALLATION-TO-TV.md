@@ -194,6 +194,15 @@ from step 8 must already be downloaded.
 
 ### Using the TV app
 
+- **Downloaded subtitles (optional)**: save your own **OpenSubtitles API key**
+  in **Settings → Subtitles download**, use **Test key**, and choose **Subtitle
+  languages** with **OK/RIGHT**. While watching a movie or episode, press **UP →
+  Download subtitles…**, then **UP/DOWN → OK** on a match. **Return** cancels;
+  the player menu's **Off** hides subtitles. **Subtitle delay −0.5 s / +0.5 s**
+  adjusts timing and remembers it for the title. Reopening restores a cached
+  subtitle without another download. The key is shared; language and title
+  choices belong to each profile. See [OpenSubtitles](docs/opensubtitles.md)
+  for quota, storage and privacy details.
 - **Backup** (Settings, before About): **Import from link…** downloads a desktop
   backup JSON from an HTTP(S) link and previews source, favorite and progress
   counts. **Cancel** starts focused; choose **Replace** to overwrite the TV's

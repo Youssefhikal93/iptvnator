@@ -22,10 +22,7 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await expect(page.locator('#pl-menu')).toContainText('No subtitles available');
     await expect(page.locator('#pl-menu')).toContainText('HTML5 video');
     await expect(page.locator('#pl-menu')).toContainText('320');
-    for (let i = 0; i < 8; i++) {
-        if ((await page.locator('.pl-menu-item.focus').innerText()).includes('1.5')) break;
-        await press(page, 'ArrowDown');
-    }
+    await moveTo(page, '.pl-menu-item.focus span:last-child', '1.5×');
     await expect(page.locator('.pl-menu-item.focus')).toContainText('1.5');
     await press(page, 'Enter');
     await expect.poll(() => page.locator('#video').evaluate(v => v.playbackRate)).toBe(1.5);

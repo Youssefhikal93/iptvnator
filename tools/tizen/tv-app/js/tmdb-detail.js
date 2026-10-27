@@ -34,6 +34,7 @@ window.TmdbDetail = function (page, changed) {
             Tmdb.match(lookup, page.episodes ? 'tv' : 'movie').then(function (body) {
                 if (!current() || !body) return;
                 var enriched = Object.assign({}, provider);
+                enriched.tmdb_id = body.id;
                 enriched.poster = Tmdb.image(body.poster_path, 'w500') || provider.poster;
                 enriched.backdrop = Tmdb.image(body.backdrop_path, 'w1280') || provider.backdrop;
                 enriched.plot = provider.plot || body.overview;

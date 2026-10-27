@@ -28,7 +28,7 @@ window.Settings = function (hooks) {
         { get label() { return I18n.t('settings.manageSeries'); }, action: 'series', text: hiddenText('series') },
         { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },
         { get label() { return I18n.t('settings.export'); }, backup: 'export', text: '' },
-    ], TmdbSettings.rows, AppearanceSettings.rows, [
+    ], TmdbSettings.rows, OpenSubsSettings.rows, AppearanceSettings.rows, [
         { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('settings.version'); }, text: VERSION },
         { get label() { return I18n.t('settings.installGuide'); }, text: 'tools/tizen/INSTALLATION-TO-TV.md' },
     ]);
@@ -82,6 +82,7 @@ window.Settings = function (hooks) {
         if (!row.key) {
             if (row.backup) BackupScreen.open(row.backup);
             if (row.action && row.action.indexOf('tmdb-') === 0) return TmdbSettings.act(row.action, hooks, render);
+            if (row.action && row.action.indexOf('opensubs-') === 0) return OpenSubsSettings.act(row.action, hooks, render);
             if (row.run) row.run();
             if (row.action) hooks.manage(row.action);
             return;

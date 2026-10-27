@@ -56,11 +56,25 @@ window.Settings = function (hooks) {
         return Math.max(0, row.choices.indexOf(Prefs.get(row.key)));
     }
 
+    // Every choice is shown, so the viewer sees how many there are; the active one is filled.
+    function pills(row) {
+        var box = el('span', 'st-value st-pills');
+        var at = choice(row);
+        row.labels.forEach(function (label, index) {
+            var pill = el('span', 'st-pill' + (index === at ? ' on' : ''));
+            if (row.swatches) pill.appendChild(el('i', 'st-swatch st-swatch-' + row.choices[index]));
+            pill.appendChild(el('span', '', label));
+            box.appendChild(pill);
+        });
+        return box;
+    }
+
     function renderRow(row, index) {
         if (row.group) root.appendChild(el('h2', 'st-group', row.group));
         var node = el('div', 'st-row' + (active && focus === index ? ' focused' : ''));
         node.appendChild(el('span', 'st-label', row.label));
-        node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text));
+        if (row.pills) node.appendChild(pills(row));
+        else node.appendChild(el('span', 'st-value', row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text));
         root.appendChild(node);
     }
 
@@ -74,7 +88,7 @@ window.Settings = function (hooks) {
         if (selected) selected.scrollIntoView({ block: 'nearest' });
     }
 
-    function change(step) {
+    function change(step, cycle) {
         var row = rows[focus];
         var index = row.key ? choice(row) : 0;
         // LEFT at the first choice leaves the screen; RIGHT cycles forward.
@@ -87,6 +101,8 @@ window.Settings = function (hooks) {
             if (row.action) hooks.manage(row.action);
             return;
         }
+        // Pills stop at the last choice on RIGHT; OK still cycles.
+        if (row.pills && !cycle && index + step >= row.choices.length) return;
         Prefs.set(row.key, row.choices[(index + step) % row.choices.length]);
         hooks.toast(I18n.t('toast.saved'));
         render();
@@ -101,7 +117,8 @@ window.Settings = function (hooks) {
         key: function (code) {
             if (Keys.isBack(code)) return 'left';
             if (code === KEY.LEFT) return change(-1);
-            if (code === KEY.RIGHT || code === KEY.ENTER) return change(1);
+            if (code === KEY.RIGHT) return change(1, false);
+            if (code === KEY.ENTER) return change(1, true);
             if (code === KEY.UP || code === KEY.DOWN) {
                 focus = Math.max(0, Math.min(rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
                 render();

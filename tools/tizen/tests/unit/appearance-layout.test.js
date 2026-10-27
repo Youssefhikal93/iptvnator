@@ -21,7 +21,6 @@ function node() {
     var element = { children: [], className: '', style: {}, attributes: {} };
     element.appendChild = function (child) { element.children.push(child); return child; };
     element.setAttribute = function (name, text) { element.attributes[name] = text; };
-    element.scrollIntoView = function () { element.revealed = true; };
     element.classList = { toggle: function () {} };
     element.querySelector = function () {
         var found = null;
@@ -78,43 +77,42 @@ test('CSS column counts drive grid rendering, vertical moves, last rows and skel
     list.set(items(21));
     list.setGrid(true);
     list.setActive(true);
-    assert.equal(list.cols(), 4);
-    assert.equal(list.pageSize(), 8);
-    assert.equal(pane.children[1].children.length, 8);
-    list.move(list.cols());
-    assert.equal(list.item().name, 'Title 4');
-    assert.equal(pane.querySelector().revealed, true);
-    run.globals.Prefs.set('density', 'compact');
     assert.equal(list.cols(), 5);
     assert.equal(list.pageSize(), 10);
     assert.equal(pane.children[1].children.length, 10);
-    assert.equal(list.item().name, 'Title 4');
     list.move(list.cols());
-    assert.equal(list.item().name, 'Title 9');
+    assert.equal(list.item().name, 'Title 5');
+    run.globals.Prefs.set('density', 'compact');
+    assert.equal(list.cols(), 6);
+    assert.equal(list.pageSize(), 12);
+    assert.equal(pane.children[1].children.length, 12);
+    assert.equal(list.item().name, 'Title 5');
+    list.move(list.cols());
+    assert.equal(list.item().name, 'Title 11');
     list.select(20);
-    assert.equal(pane.children[1].children.length, 6);
+    assert.equal(pane.children[1].children.length, 9);
     assert.equal(pane.querySelector().children[1].textContent, 'Title 20');
     run.globals.Prefs.set('density', 'comfortable');
-    assert.equal(list.cols(), 4);
-    assert.equal(pane.children[1].children.length, 5);
+    assert.equal(list.cols(), 5);
+    assert.equal(pane.children[1].children.length, 6);
     assert.equal(list.item().name, 'Title 20');
     list.loading();
-    assert.equal(pane.children[1].children.length, 8);
+    assert.equal(pane.children[1].children.length, 10);
 });
 
-test('list and category windows fit the safe area and respect smaller caller limits', function () {
+test('list and category windows follow the density and respect smaller caller limits', function () {
     var run = app();
     var pane = node();
     var options = { rows: 11, title: function () { return ''; }, label: function (item) { return item.name; } };
     var list = run.globals.List(pane, options);
     list.set(items(30));
     assert.equal(list.cols(), 1);
-    assert.equal(pane.children.length - 1, 7);
+    assert.equal(pane.children.length - 1, 9);
     run.globals.Prefs.set('density', 'compact');
-    assert.equal(pane.children.length - 1, 8);
+    assert.equal(pane.children.length - 1, 9);
     pane.className = 'pane side';
     list.set(items(30));
-    assert.equal(pane.children.length - 1, 10);
+    assert.equal(pane.children.length - 1, 11);
     options.rows = 3;
     list.move(1);
     assert.equal(pane.children.length - 1, 3);
@@ -131,16 +129,14 @@ test('Home keeps the focused entry visible while row counts change and at the en
         isNew: function () { return false; },
     });
     home.setActive(true);
-    assert.equal(run.home.children[0].children[1].children.length, 5);
+    assert.equal(run.home.children[0].children[1].children.length, 6);
     for (var i = 0; i < 7; i++) home.key(run.globals.Keys.RIGHT);
     assert.equal(home.focused().item.name, 'Title 7');
-    assert.equal(run.home.querySelector().revealed, true);
     run.globals.Prefs.set('density', 'compact');
-    assert.equal(run.home.children[0].children[1].children.length, 6);
+    assert.equal(run.home.children[0].children[1].children.length, 7);
     assert.equal(home.focused().item.name, 'Title 7');
     run.globals.Prefs.set('density', 'comfortable');
-    assert.equal(run.home.children[0].children[1].children.length, 5);
+    assert.equal(run.home.children[0].children[1].children.length, 6);
     for (var j = 0; j < 8; j++) home.key(run.globals.Keys.RIGHT);
     assert.equal(home.focused().item.name, 'Title 11');
-    assert.equal(run.home.querySelector().revealed, true);
 });

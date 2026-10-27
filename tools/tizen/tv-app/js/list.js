@@ -108,7 +108,6 @@ window.List = function (el, options) {
             if (options.decorate) options.decorate(row, item);
             el.appendChild(row);
         }
-        AppearanceLayout.reveal(el);
     }
 
     function renderSkeleton(rows, grid) {
@@ -151,7 +150,6 @@ window.List = function (el, options) {
             grid.appendChild(card);
         }
         el.appendChild(grid);
-        AppearanceLayout.reveal(el);
     }
 
     return {

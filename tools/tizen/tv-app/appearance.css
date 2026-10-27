@@ -1,74 +1,45 @@
 /* Shared foundation for screen styles. Counts are also read by AppearanceLayout. */
 :root {
-    --safe-x: 96px;
-    --safe-y: 54px;
-    --rail-w: 264px;
-    --header-h: 150px;
-    --grid-cols: 4;
+    --grid-cols: 5;
     --grid-rows: 2;
-    --home-cols: 5;
-    --poster-w: 232px;
-    --home-poster-w: 232px;
-    --poster-h: 284px;
-    --row-h: 72px;
-    --item-row-h: 92px;
+    --home-cols: 6;
+    --poster-h: 300px;
+    --home-poster-h: 286px;
+    /* Lists keep today's rows in both densities: source details and guides must fit. */
+    --row-h: 64px;
+    --item-row-h: 84px;
     --settings-row-h: 92px;
     --settings-row-gap: 12px;
-    --category-rows: 9;
-    --list-rows: 7;
+    --category-rows: 11;
+    --list-rows: 9;
     --visible-rows: var(--list-rows);
-    --row-gap: 12px;
-    --gap: 24px;
-    --home-gap: 24px;
-    --home-row-h: 460px;
+    --row-gap: 6px;
+    --gap: 20px;
+    --home-gap: 22px;
+    --home-row-h: 452px;
     --text-sm: 22px;
     --text-meaning: 24px;
     --text-body: 30px;
 }
 
 [data-density="compact"] {
-    --grid-cols: 5;
-    --home-cols: 6;
-    --poster-w: 204px;
-    --home-poster-w: 218px;
-    --poster-h: 290px;
-    --row-h: 64px;
-    --item-row-h: 84px;
+    --grid-cols: 6;
+    --home-cols: 7;
+    --poster-h: 250px;
+    --home-poster-h: 262px;
     --settings-row-h: 72px;
     --settings-row-gap: 8px;
-    --category-rows: 10;
-    --list-rows: 8;
-    --row-gap: 6px;
     --gap: 16px;
-    --home-gap: 22px;
     --home-row-h: 440px;
     --text-sm: 20px;
     --text-meaning: 24px;
     --text-body: 28px;
 }
 
-/* Backgrounds bleed; focus rings and their contents stay inside the safe area. */
-#rail { width: var(--rail-w); }
-.rail-item { margin-left: calc(var(--safe-x) + 8px); }
-.rail-item > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.rail-item.rail-bottom { bottom: calc(var(--safe-y) + 8px); }
-#header {
-    left: var(--rail-w);
-    height: var(--header-h);
-    padding-top: var(--safe-y);
-    padding-right: calc(var(--safe-x) + 8px);
-    padding-bottom: 12px;
-}
-#source-pill { min-width: 400px; }
-#searchbar { min-width: 0; }
-#source-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
-#content { left: var(--rail-w); right: var(--safe-x); top: var(--header-h); bottom: 102px; }
-#load-error { inset: var(--header-h) var(--safe-x) 102px var(--rail-w); }
-/* Preserve space for the existing compact posters after widening the rail. */
-.pane.side { width: 368px; flex: none; --visible-rows: var(--category-rows); }
+/* Panels keep the full screen width; only the hint bar moves in from the bottom edge. */
+#hints { bottom: 24px; }
+.pane.side { --visible-rows: var(--category-rows); }
 .pane.main { min-width: 0; --visible-rows: var(--list-rows); }
-#content.previewing .pane.side { width: 280px; }
-#hints { left: calc(var(--rail-w) + 40px); right: var(--safe-x); bottom: var(--safe-y); }
 
 #content { font-size: var(--text-body); }
 .row { height: var(--row-h); margin-bottom: var(--row-gap); }
@@ -81,16 +52,17 @@
 [data-density="compact"] .source-chip { font-size: 16px; line-height: 22px; }
 [data-density="comfortable"] .list-header .list-subtitle,
 [data-density="comfortable"] .poster .epg-now { font-size: var(--text-meaning); }
-.grid { display: grid; grid-template-columns: repeat(var(--grid-cols), var(--poster-w)); gap: var(--gap); padding: 24px; }
-.card { width: var(--poster-w); }
-.card .poster, .hm-poster { height: var(--poster-h); }
-.hm-row { height: var(--home-row-h); padding-right: 24px; }
-.hm-strip { display: grid; grid-template-columns: repeat(var(--home-cols), var(--home-poster-w)); gap: var(--home-gap); padding: 24px 0; }
-.hm-card { box-sizing: border-box; width: var(--home-poster-w); }
+/* Columns share the row width, so every density fills it; padding leaves room for the focus scale. */
+.grid { display: grid; grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr)); gap: var(--gap); padding: 18px 24px; }
+.card { width: auto; min-width: 0; }
+.card .poster { height: var(--poster-h); }
+.hm-row { height: var(--home-row-h); padding-right: 56px; }
+.hm-strip { display: grid; grid-template-columns: repeat(var(--home-cols), minmax(0, 1fr)); gap: var(--home-gap); padding: 14px 0; }
+.hm-card { box-sizing: border-box; width: auto; min-width: 0; }
+.hm-poster { height: var(--home-poster-h); }
 .st-row { min-height: var(--settings-row-h); margin-bottom: var(--settings-row-gap); }
 [data-density="comfortable"] :is(.source-chip, .source-guide-status, .new-badge, .catch-up-badge, .lp-tag, .gd-programme small) { font-size: var(--text-meaning); }
 [data-density="comfortable"] .gd-programme { line-height: 1.1; }
-[data-density="comfortable"] .tm-card { box-sizing: border-box; width: var(--poster-w); }
 
 /* Keep selection when focus leaves a category, without imitating the focus ring. */
 .row.selected, .rail-item.active, .view-btn.active, .dt-ep-pill.active {
@@ -104,7 +76,6 @@
 :is(.focus, .focused, :focus) {
     --focus-gap: var(--shell-bg);
     --focus-shadow: 0 0 0 4px var(--focus-gap), 0 0 0 8px var(--focus-ring), 0 10px 24px rgba(0, 0, 0, 0.35);
-    scroll-margin: 8px;
 }
 :is(.rail-item.focused, #searchbar.focused, .view-btn.focused, .row.focused,
     .menu-row.focused, .st-row.focused, .dt-btn.focus, .dt-ep-pill.focus,
@@ -125,7 +96,6 @@
     position: relative;
     z-index: 1;
     transform: scale(1.08);
-    scroll-margin: 24px;
     border-color: transparent;
     background: var(--card-hover-bg);
     color: var(--on-surface);
@@ -134,3 +104,55 @@
 /* TMDB rows scroll by card offsets, so padding does not change their stride. */
 .tm-cards { padding: 24px; }
 .dt-episodes { padding: 8px; }
+
+/* Appearance rows show every choice as a pill; colour dots preview each accent. */
+.st-pills { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.st-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 18px;
+    border-radius: 999px;
+    border: 2px solid var(--line);
+    color: var(--muted);
+    font-size: var(--text-meaning);
+}
+.st-pill.on { background: var(--selection); border-color: var(--selection); color: var(--selection-on); font-weight: 600; }
+.st-swatch { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5); }
+.st-swatch-blue { background: #78adff; }
+.st-swatch-saffron { background: #f1bc50; }
+.st-swatch-asphalt { background: #a8bbd6; }
+.st-swatch-violet { background: #b8a2ff; }
+.st-swatch-pink { background: #f39ac6; }
+.st-pill.on .st-swatch { box-shadow: 0 0 0 2px var(--selection-on); }
+
+/* The active profile sits above the rail; its menu opens beside it. */
+.rail-profile {
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 0;
+    border-radius: 18px;
+    border: 3px solid transparent;
+    font-size: 20px;
+    color: var(--muted);
+}
+.rail-profile > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 700;
+    color: #fff;
+}
+.rail-profile.focused { background: var(--card-hover-bg); color: var(--on-surface); box-shadow: var(--focus-shadow); }
+#menu.profile-menu { top: 40px; left: 190px; width: 480px; transform: none; }

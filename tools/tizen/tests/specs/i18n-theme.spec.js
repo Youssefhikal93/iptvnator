@@ -116,12 +116,12 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     await section(page, 'Settings');
     await moveTo(page, '.st-row.focused .st-label', 'Theme');
-    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Dark');
+    await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Dark');
     const darkFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
 
     await press(page, 'Enter');
-    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Light');
+    await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Light');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     expect(light).not.toBe(dark);

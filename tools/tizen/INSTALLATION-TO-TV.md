@@ -313,7 +313,9 @@ from step 8 must already be downloaded.
   starts on **Who's watching?**: LEFT/RIGHT picks a tile, OK opens that profile,
   Return exits the app. Each profile has its own favorites, recently watched,
   Continue watching, watched marks, new-episode badges, hidden and locked
-  categories, PIN and settings; sources and the TMDB key are shared. In
+  categories, PIN and settings; sources and the TMDB key are shared. The
+  active profile's avatar sits above the rail: UP from Home reaches it and OK
+  opens a menu to switch profiles. In
   **Settings > Profiles** (the first group): **Current profile** (OK opens
   Who's watching? to switch), **Add profile…** (up to 6; the new profile starts
   empty and opens at once), **Rename profile…**, **Delete profile** (asks to

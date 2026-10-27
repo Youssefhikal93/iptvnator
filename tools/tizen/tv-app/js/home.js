@@ -236,7 +236,6 @@ window.Home = function (api) {
             var focused = s.active && i === s.block;
             root.appendChild(list[i].hero ? renderHero(list[i].hero, focused) : renderRow(list[i].row, focused));
         }
-        AppearanceLayout.reveal(root);
     }
 
     // ---- Keys -------------------------------------------------------------

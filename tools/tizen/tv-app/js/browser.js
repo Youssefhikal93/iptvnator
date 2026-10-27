@@ -754,7 +754,7 @@ window.Browser = function (hooks) {
             el.className =
                 'rail-item' +
                 (section.id === state.section ? ' active' : '') +
-                (section.id === state.section && state.zone === 'rail' ? ' focused' : '') +
+                (section.id === state.section && state.zone === 'rail' && !state.profileFocus ? ' focused' : '') +
                 (section.id === 'settings' ? ' rail-bottom' : '') +
                 (available(section.id) ? '' : ' disabled');
             el.innerHTML =
@@ -762,6 +762,7 @@ window.Browser = function (hooks) {
             el.lastChild.textContent = section.label;
             $('rail').appendChild(el);
         });
+        RailProfile.render($('rail'), state.zone === 'rail' && state.profileFocus);
         $('source-name').textContent = state.source ? state.source.name : I18n.t('browser.noSource');
         $('source-type').textContent = state.source ? Sources.typeLabel(state.source) + (state.updating ? ' · ' + I18n.t('browser.updating') : '') : I18n.t('browser.addInSources');
         renderToolbar();
@@ -803,6 +804,7 @@ window.Browser = function (hooks) {
 
     function setZone(zone) {
         if (state.zone === 'rail' && zone !== 'rail') LoadScreen.enter();
+        if (zone !== 'rail') state.profileFocus = false;
         state.zone = zone;
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
@@ -1524,9 +1526,28 @@ window.Browser = function (hooks) {
             if (settings.key(code) === 'left') setZone('rail');
             return true;
         }
-        if (state.zone === 'rail') {
-            if (code === KEY.UP || code === KEY.DOWN) moveSection(code === KEY.UP ? -1 : 1);
-            else if (code === KEY.RIGHT || code === KEY.ENTER) setZone(contentZone());
+        if (state.zone === 'rail' && state.profileFocus) {
+            if (code === KEY.DOWN || code === KEY.RIGHT) {
+                state.profileFocus = false;
+                renderChrome();
+            } else if (code === KEY.ENTER) {
+                RailProfile.open(profileChanged, function () {
+                    state.profileFocus = false;
+                    openSection('settings');
+                    setZone('settings');
+                });
+            } else if (Keys.isBack(code)) hooks.exit();
+            else return code === KEY.UP || code === KEY.LEFT;
+        } else if (state.zone === 'rail') {
+            var from = state.section;
+            if (code === KEY.UP || code === KEY.DOWN) {
+                moveSection(code === KEY.UP ? -1 : 1);
+                // UP past the first section reaches the profile avatar.
+                if (code === KEY.UP && state.section === from) {
+                    state.profileFocus = true;
+                    renderChrome();
+                }
+            } else if (code === KEY.RIGHT || code === KEY.ENTER) setZone(contentZone());
             else if (Keys.isBack(code)) hooks.exit();
             else return false;
         } else if (state.zone === 'categories') {

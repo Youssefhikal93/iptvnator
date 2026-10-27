@@ -124,7 +124,6 @@ I18n.tables.ko = {
     'player.upNext': '다음 에피소드',
     'player.watchFromStart': '처음부터 시청',
     'rail.home': '홈',
-    'rail.search': '검색',
     'rail.live': '라이브 TV',
     'rail.movies': '영화',
     'rail.series': '시리즈',

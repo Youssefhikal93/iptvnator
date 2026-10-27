@@ -42,7 +42,7 @@ Coverage is grouped by viewer journey:
 | `categories` | Hold-OK hide and hide-all-except, Manage categories screen, persistence, search/All channels/Home/channel list exclusion |
 | `loading-errors` | Skeletons, source error/countdown/retry, playback error/focus/retry |
 | `resume` | Restore and save progress; rejected seeks, real 30-second deadline and recovery |
-| `find` | Search everything: rows per section, opening a result, genre pills (provider and TMDB genres, Arabic names merged) |
+| `find` | Home search (icon, bar, Movies/Series/Live TV results, Return closes), genre pills in Movies and Series (provider and TMDB genres, Arabic names merged) |
 | `settings` | Groups and rows (#49), current values, programme guide requests, Big first row and Backdrop layouts and persistence |
 | `sources` | Settings > Sources (#51): no menu item, first group, first start on Add, Xtream form validation/add/switch, M3U groups, refresh, cancel and confirmed removal |
 | `i18n-theme` | Language list (Deutsch and back, reload), English fallback for a missing key, Light theme background, focus colour and persistence, dark player |

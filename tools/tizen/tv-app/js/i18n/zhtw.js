@@ -124,7 +124,6 @@ I18n.tables.zhtw = {
     'player.upNext': '接下來',
     'player.watchFromStart': '從頭觀看',
     'rail.home': '首頁',
-    'rail.search': '搜尋',
     'rail.live': '直播電視',
     'rail.movies': '電影',
     'rail.series': '影集',

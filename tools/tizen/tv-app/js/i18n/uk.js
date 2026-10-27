@@ -124,7 +124,6 @@ I18n.tables.uk = {
     'player.upNext': 'Далі',
     'player.watchFromStart': 'Дивитися з початку',
     'rail.home': 'На головну',
-    'rail.search': 'Пошук',
     'rail.live': 'Прямий етер',
     'rail.movies': 'Фільми',
     'rail.series': 'Серіали',

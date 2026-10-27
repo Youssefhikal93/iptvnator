@@ -22,7 +22,7 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, timer: null, catalogue: null, base: null, search: null, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -91,6 +91,9 @@ window.Browser = function (hooks) {
         else if (state.section === 'home') home.render();
     });
     var visible = { list: [], empty: '' };
+    var currentList = CurrentList(function () {
+        return { section: state.section, base: !!state.base, category: categories.item(), loading: homeLoading };
+    });
     var libraryRows = CategoryRows({
         ready: function () { return !!state.source; },
         section: function () { return state.section; },
@@ -200,7 +203,7 @@ window.Browser = function (hooks) {
     var items = List($('items'), {
         rows: 9,
         title: function () {
-            if (state.showingSearch) return I18n.t('browser.searchTitle', { query: state.search.query });
+            if (currentList.showingSearch()) return I18n.t('browser.searchTitle', { query: state.search.query });
             var category = categories.item();
             return category ? I18n.categoryName(category) : '';
         },
@@ -244,12 +247,12 @@ window.Browser = function (hooks) {
         var category = categories.item();
         // Category focus moves before the list debounce; Favorites must never
         // open the previous category's channels when Guide is pressed quickly.
-        if (category && category.virtual && !state.showingSearch) {
+        if (category && category.virtual && !currentList.showingSearch()) {
             clearTimeout(state.timer);
             showVirtual(category, items.index());
         }
         guide.open({ guide: state.guide, channels: items.items().slice(), index: items.index(),
-            title: state.showingSearch ? I18n.t('browser.searchResults') : category ? I18n.categoryName(category) : I18n.t('browser.allChannels') });
+            title: currentList.showingSearch() ? I18n.t('browser.searchResults') : category ? I18n.categoryName(category) : I18n.t('browser.allChannels') });
         return true;
     }
 
@@ -459,8 +462,7 @@ window.Browser = function (hooks) {
     }
 
     function showVirtual(category, index) {
-        state.token++;
-        state.showingSearch = false;
+        currentList.begin();
         applyView();
         // Library lists keep items of hidden categories; only the lock applies.
         setItems(category.list().filter(function (item) {
@@ -485,7 +487,7 @@ window.Browser = function (hooks) {
         state.favKeys = null;
         showCategories(categories.index());
         var category = categories.item();
-        if (category && category.virtual && !state.showingSearch) showVirtual(category, items.index());
+        if (category && category.virtual && !currentList.showingSearch()) showVirtual(category, items.index());
         else if (items.items().length) items.select(items.index());
         renderChrome();
     }
@@ -592,7 +594,7 @@ window.Browser = function (hooks) {
 
     // The category under the cursor, unless search results are showing.
     function shownCategory() {
-        return !state.showingSearch && categories.item();
+        return !currentList.showingSearch() && categories.item();
     }
 
     function sortMode() {
@@ -717,17 +719,16 @@ window.Browser = function (hooks) {
         var query = $('search-input').value.trim();
         var section = state.section;
         if (!query) {
-            if (state.showingSearch) loadItems();
+            if (currentList.showingSearch()) loadItems();
             return Promise.resolve(0);
         }
-        var token = ++state.token;
+        var token = currentList.beginSearch();
         state.search = { section: section, query: query, results: [] };
-        state.showingSearch = true;
         applyView();
         items.loading();
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
-                if (token !== state.token) return 0;
+                if (!currentList.isActive(token)) return 0;
                 // Best matches first, like Home's search; no cap here.
                 state.search.results = Find.rank(visibility.items(section, all), section, query);
                 setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('empty.search.hint')]);
@@ -735,7 +736,7 @@ window.Browser = function (hooks) {
                 return state.search.results.length;
             })
             .catch(function (err) {
-                if (token === state.token) fail(items, 'SEARCH')(err);
+                if (currentList.isActive(token)) fail(items, 'SEARCH')(err);
                 return 0;
             });
     }
@@ -799,22 +800,9 @@ window.Browser = function (hooks) {
     function loadCatalogue(what, onFresh) {
         return state.catalogue.load(what, {
             screen: !Player.isOpen() || hooks.preview.active(),
-            active: function () { return catalogueActive(what); },
+            active: function () { return currentList.wants(what); },
             onFresh: onFresh,
         });
-    }
-
-    function catalogueActive(what) {
-        var section = what.section;
-        var wholeSection = what.kind === 'items' && (what.id === undefined || what.id === '');
-        if (state.section === 'home') return !!homeLoading[section] && wholeSection;
-        if (state.section !== section) return false;
-        if (what.kind === 'categories') return !state.base;
-        if (state.showingSearch) return wholeSection;
-        var category = categories.item();
-        if (!category) return false;
-        if (category.virtual) return wholeSection && category.fromCatalogue;
-        return what.kind === 'items' && String(what.id === undefined ? '' : what.id) === String(category.category_id);
     }
 
     // Position of `item` in a refreshed list, matched by provider id.
@@ -879,7 +867,7 @@ window.Browser = function (hooks) {
         $('searchbar').classList.toggle('focused', focus === 'search');
         var input = $('search-input');
         input.placeholder = on ? I18n.t('browser.searchIn', { section: sectionOf(state.section).label }) : I18n.t('browser.search');
-        if (!state.searching) input.value = state.showingSearch ? state.search.query : '';
+        if (!state.searching) input.value = currentList.showingSearch() ? state.search.query : '';
         Array.prototype.forEach.call(document.querySelectorAll('.view-btn'), function (btn) {
             var mode = btn.getAttribute('data-mode');
             if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
@@ -1000,7 +988,7 @@ window.Browser = function (hooks) {
         if (state.catalogue) state.catalogue.dispose();
         state.catalogue = null;
         LoadScreen.reset();
-        state.token++;
+        currentList.begin();
         live.reset();
         restoring = false;
         state.source = source;
@@ -1009,7 +997,6 @@ window.Browser = function (hooks) {
         state.info = null;
         state.base = null;
         state.search = null;
-        state.showingSearch = false;
         state.favKeys = null;
         state.added = {};
         genres.reset();
@@ -1080,11 +1067,10 @@ window.Browser = function (hooks) {
         clearTimeout(state.searchTimer);
         $('content').classList.toggle('home', id === 'home');
         $('content').classList.toggle('settings', id === 'settings');
-        state.showingSearch = false;
         state.base = null;
         genres.cancel();
         state.favKeys = null;
-        var token = ++state.token;
+        var token = currentList.begin();
         applyView();
         items.set([], 0, '');
         if (id === 'home') return showHome();
@@ -1108,7 +1094,7 @@ window.Browser = function (hooks) {
             }
         )
             .then(function (list) {
-                if (token !== state.token) return;
+                if (!currentList.isActive(token)) return;
                 state.base = list;
                 showCategories(libraryRows.build().length);
                 loadItems();
@@ -1116,7 +1102,7 @@ window.Browser = function (hooks) {
                 if (id === 'movies' || id === 'series') loadGenres(id);
             })
             .catch(function (err) {
-                if (token === state.token) fail(categories, 'CATEGORIES')(err);
+                if (currentList.isActive(token)) fail(categories, 'CATEGORIES')(err);
             });
     }
 
@@ -1130,21 +1116,19 @@ window.Browser = function (hooks) {
         if (!category) return;
         if (category.virtual) return showVirtual(category);
         if (ParentalLock.isLocked(sourceId(), state.section, category.category_id) && !ParentalLock.isUnlocked()) {
-            state.token++;
-            state.showingSearch = false;
+            currentList.begin();
             setItems([], 0, [I18n.t('empty.locked.title'), I18n.t('empty.locked.hint')]);
             return renderChrome();
         }
         var section = state.section;
-        var token = ++state.token;
-        state.showingSearch = false;
+        var token = currentList.begin();
         applyView();
         items.loading();
         renderChrome();
         loadCatalogue(
             { section: section, kind: 'items', id: category.category_id },
             function (list) {
-                if (token !== state.token) return;
+                if (!currentList.isActive(token)) return;
                 var item = items.item();
                 var index = items.index();
                 setItems(shownItems(category, list), 0, I18n.t('empty.category.title'));
@@ -1152,10 +1136,10 @@ window.Browser = function (hooks) {
             }
         )
             .then(function (list) {
-                if (token === state.token) setItems(shownItems(category, list), 0, [I18n.t('empty.category.title'), I18n.t('empty.category.hint')]);
+                if (currentList.isActive(token)) setItems(shownItems(category, list), 0, [I18n.t('empty.category.title'), I18n.t('empty.category.hint')]);
             })
             .catch(function (err) {
-                if (token === state.token) fail(items, 'ITEMS')(err);
+                if (currentList.isActive(token)) fail(items, 'ITEMS')(err);
             });
     }
 
@@ -1297,7 +1281,7 @@ window.Browser = function (hooks) {
         if (state.section !== section || !state.base) return;
         var category = categories.item();
         showCategories(indexIn(categoryRows(), category, categories.index()));
-        if (category && !state.showingSearch && category.fromCatalogue) {
+        if (category && !currentList.showingSearch() && category.fromCatalogue) {
             showVirtual(categories.item(), items.index());
         }
         // Badges follow the refreshed dates in every list of shows.
@@ -1542,7 +1526,7 @@ window.Browser = function (hooks) {
         if (state.section === 'settings') return settings.render();
         if (state.section !== section || !state.base) return;
         showCategories(indexIn(categoryRows(), categories.item(), categories.index()));
-        if (state.showingSearch) runSearch();
+        if (currentList.showingSearch()) runSearch();
         else loadItems();
         renderChrome();
     }
@@ -1729,7 +1713,7 @@ window.Browser = function (hooks) {
             state.played = false;
             refreshLibrary();
             // Zapping does not move the list; land on the channel watched last.
-            var at = state.section === 'live' && !state.showingSearch ? live.indexOf(items.items(), live.current()) : -1;
+            var at = state.section === 'live' && !currentList.showingSearch() ? live.indexOf(items.items(), live.current()) : -1;
             if (at >= 0) items.select(at);
             detail.refresh();
             guide.resume(live.current());

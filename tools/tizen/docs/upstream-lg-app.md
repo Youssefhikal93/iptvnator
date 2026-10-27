@@ -30,7 +30,7 @@ branch point). Read upstream files with `git show upstream/master:<path>`.
 | Settings: programme guide on/off | Done (not yet tested on the TV) | #10 | Yes |
 | Subtitle style and picture aspect in Settings and the player menu | Done (not yet tested on the TV): AVPlay text and HTML/hls.js cues; live preview uses Fit | #26 | Yes |
 | Visual refinement: compact header, 2:3 posters, TV icon for missing logos, favorites split into Movies / Series / TV | Partial (Home has separate favorite rows; optional favorites and recents across sources with source-name chips, not yet tested on the TV; missing logos show initials) | #31, #24 | Yes |
-| History kept apart when a source's account changes | Missing | #34 | Yes |
+| History kept apart when a source's account changes | Partial (not yet tested on the TV); source account edits separate source ids and restore the old id when edited back; progress still uses a shared per-profile store | #34 | Yes |
 | Desktop-compatible backup and restore | Done (not yet tested on the TV): import link, Replace/Merge, password warning and PUT/POST export; QR encoding unavailable | #25 | Yes, with a viewer-supplied HTTP endpoint for phone export |
 | Phone QR setup for sources and settings | Not planned | #28 | No, needs the backend session |
 | Server source library and backend discovery | Not planned | #28 | No |

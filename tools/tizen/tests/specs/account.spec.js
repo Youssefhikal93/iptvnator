@@ -138,7 +138,7 @@ test('rows show a failed check as Not responding and M3U sources only their type
     expect(requests.filter(url => /playlist\.m3u|username=gone.*action=get_/.test(url))).toHaveLength(0);
 });
 
-test('Edit source reuses the add form; a new name keeps everything, a new login reloads', async ({ page }) => {
+test('Edit source reuses the add form; a new name keeps everything, a new account separates the library and reloads', async ({ page }) => {
     const calls = [];
     page.on('request', request => {
         if (new URL(request.url()).pathname === '/player_api.php') calls.push({ action: new URL(request.url()).searchParams.get('action'), user: accountUser(request) });
@@ -169,6 +169,7 @@ test('Edit source reuses the add form; a new name keeps everything, a new login 
         sources: JSON.parse(localStorage.getItem('iptvnator-tv:sources')),
         current: JSON.parse(localStorage.getItem('iptvnator-tv:current')),
         recent: localStorage.getItem('iptvnator-tv:p:default:recent:s1'),
+        currentRecent: localStorage.getItem('iptvnator-tv:p:default:recent:' + JSON.parse(localStorage.getItem('iptvnator-tv:current'))),
     }));
     let now = await saved();
     expect(now.sources.map(s => s.id + ':' + s.name)).toEqual(['s1:Living room']);
@@ -186,11 +187,17 @@ test('Edit source reuses the add form; a new name keeps everything, a new login 
     await page.locator('#form-pass').fill('other');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    // The source keeps its id and library; its account is read again with the new login.
+    // A new source account gets its own id; the old library stays stored separately.
     await expect.poll(() => calls.some(c => c.user === 'newuser' && !c.action)).toBe(true);
     now = await saved();
-    expect(now.sources.map(s => s.id + ':' + s.user + ':' + s.pass)).toEqual(['s1:newuser:other']);
+    expect(now.sources).toHaveLength(1);
+    expect(now.sources[0].id).toMatch(/^s\d+$/);
+    expect(now.sources[0].id).not.toBe('s1');
+    expect(now.sources[0].user).toBe('newuser');
+    expect(now.sources[0].pass).toBe('other');
+    expect(now.current).toBe(now.sources[0].id);
     expect(now.recent).not.toBeNull();
+    expect(now.currentRecent).toBeNull();
     await expect(page.locator('#source-name')).toHaveText('Living room');
     await section(page, 'Live TV');
     await expect.poll(() => calls.some(c => c.user === 'newuser' && c.action === 'get_live_categories')).toBe(true);

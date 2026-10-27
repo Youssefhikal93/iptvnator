@@ -274,10 +274,16 @@ from step 8 must already be downloaded.
   to it, LEFT back), and retries a few times in the background.
 - **Edit source**: choose **Edit source…** in a source's details, or hold OK
   on its row. The same form as adding opens with the name, link, username and
-  password filled in. The source keeps its library, progress and guide. A new
-  name or guide link only saves; a new link or login is checked first, then
-  the saved catalogue is dropped and the source in use reloads. An account
+  password filled in. A new name or guide link only saves; a new link or
+  login is checked first, then the source in use reloads. An account
   that has lapsed can still be saved, because its login works.
+- **Source account**: changing the server (scheme, host or port), Xtream
+  username, or M3U playlist link keeps the source's name, guide settings and
+  list position, with separate favorites, recently watched lists and catalogue.
+  Editing back to the previous source account restores those lists, including
+  in **All sources**. Progress still uses the profile's shared store.
+  A rename, Xtream password change or guide edit keeps the same library;
+  Xtream server host case, trailing slashes and server paths do too.
 - **M3U movies and series**: a playlist that holds movies or episodes gets
   Movies and Series in the rail after it has downloaded; a playlist with only
   channels still shows Live TV alone. An entry counts as a movie or episode

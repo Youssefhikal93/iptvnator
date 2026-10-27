@@ -5,7 +5,7 @@ window.PlayerPicture = (function () {
     var rows = [
         { get group() { return I18n.t('picture.subtitles'); }, get label() { return I18n.t('picture.size'); }, key: 'subtitleSize', choices: ['s', 'm', 'l', 'xl'], get labels() { return [I18n.t('picture.small'), I18n.t('picture.medium'), I18n.t('picture.large'), I18n.t('picture.xlarge')]; }, prefix: 'sub-size-' },
         { get label() { return I18n.t('picture.textColour'); }, get menuLabel() { return I18n.t('picture.colour'); }, key: 'subtitleColour', choices: ['white', 'yellow'], get labels() { return [I18n.t('picture.white'), I18n.t('picture.yellow')]; }, prefix: 'sub-colour-' },
-        { get label() { return I18n.t('picture.background'); }, key: 'subtitleBackground', choices: ['off', 'shadow', 'box'], get labels() { return [I18n.t('common.off'), I18n.t('picture.shadow'), I18n.t('picture.box')]; }, prefix: 'sub-bg-' },
+        { get label() { return I18n.t('picture.background'); }, key: 'subtitleBackground', choices: ['off', 'shadow', 'box', 'cover'], get labels() { return [I18n.t('common.off'), I18n.t('picture.shadow'), I18n.t('picture.box'), I18n.t('picture.cover')]; }, prefix: 'sub-bg-' },
         { get label() { return I18n.t('picture.position'); }, key: 'subtitlePosition', choices: ['bottom', 'high'], get labels() { return [I18n.t('picture.bottom'), I18n.t('picture.higher')]; }, prefix: 'sub-pos-' },
         { get group() { return I18n.t('picture.picture'); }, get label() { return I18n.t('picture.aspect'); }, key: 'pictureAspect', choices: ['auto', 'fit', 'fill', '16:9', '4:3'], get labels() { return [I18n.t('picture.auto'), I18n.t('picture.fit'), I18n.t('picture.fill'), '16:9', '4:3']; } },
     ];
@@ -56,7 +56,7 @@ window.PlayerPicture = (function () {
 
     function positionCues() {
         var tracks = target.video.textTracks;
-        var line = Prefs.get('subtitlePosition') === 'high' ? 75 : 90;
+        var line = Prefs.get('subtitleBackground') === 'cover' ? (Prefs.get('subtitlePosition') === 'high' ? 70 : 86) : Prefs.get('subtitlePosition') === 'high' ? 75 : 90;
         for (var i = 0; i < tracks.length; i++) {
             var track = tracks[i];
             if (track.mode !== 'showing' || (track.kind !== 'subtitles' && track.kind !== 'captions')) continue;

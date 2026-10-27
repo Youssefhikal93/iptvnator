@@ -75,8 +75,9 @@ window.SubtitleDownload = function (hooks) {
     }
 
     function label(match) {
-        return match.language + ' · ' + match.release + ' · ' + match.downloads +
-            (match.hearing ? ' · ' + I18n.t('opensubs.hearing') : '');
+        return (match.recommended ? '★ ' + I18n.t('opensubs.recommended') + ' · ' : '') + match.language + ' · ' + match.release +
+            ' · ⬇ ' + SubtitleRank.count(match.downloads) + match.marks.map(function (mark) { return ' · ' + mark; }).join('') +
+            (match.hearing ? ' · ' + I18n.t('opensubs.hearing') : '') + (match.machine ? ' · ' + I18n.t('opensubs.machine') : '');
     }
 
     function search() {
@@ -87,11 +88,15 @@ window.SubtitleDownload = function (hooks) {
         var mine = ++generation;
         var secret = Prefs.get('opensubtitlesApiKey');
         var alive = openPicker(I18n.t('opensubs.searching'), [{ label: I18n.t('common.cancel') }]);
+        var video = null;
         var lookup = current.subtitleLookup ? current.subtitleLookup() : Promise.resolve({ title: current.title });
         return lookup.then(function (info) {
             if (mine !== generation || !alive() || secret !== Prefs.get('opensubtitlesApiKey')) return null;
-            return OpenSubs.search(info, Prefs.get('subtitleLanguages'));
-        }).then(function (matches) {
+            video = info.video;
+            if (current.movieHash) info = Object.assign({}, info, { moviehash: current.movieHash });
+            return OpenSubs.search(info, Prefs.get('subtitleLanguages'), 60);
+        }).then(function (found) {
+            var matches = found && SubtitleRank.rank(found, video).slice(0, 10);
             if (mine !== generation || !alive() || secret !== Prefs.get('opensubtitlesApiKey')) return;
             if (!matches || !matches.length) {
                 closePicker();

@@ -18,6 +18,10 @@ test('subtitle preferences map to complete classes, with defaults for missing or
             'sub-size-' + size + ' sub-colour-yellow sub-bg-box sub-pos-high');
     });
     assert.ok(controls.classes({ subtitleBackground: 'off' }).indexOf('sub-bg-off') >= 0);
+    assert.ok(controls.classes({ subtitleBackground: 'cover' }).indexOf('sub-bg-cover') >= 0);
+    var row = controls.rows.find(function (entry) { return entry.key === 'subtitleBackground'; });
+    assert.equal(row.choices.join(','), 'off,shadow,box,cover');
+    assert.equal(row.labels.join(','), 'Off,Shadow,Box,Cover');
 });
 
 test('aspect modes fit the screen or centre a forced ratio without exceeding wide or tall screens', function () {

@@ -10,7 +10,7 @@ test('Settings subtitle and picture rows cycle choices and survive a reload', as
     const scenarios = [
         ['Size', 'Medium', ['Large', 'Extra large', 'Small', 'Medium', 'Large']],
         ['Text colour', 'White', ['Yellow']],
-        ['Background', 'Shadow', ['Box', 'Off', 'Shadow', 'Box']],
+        ['Background', 'Shadow', ['Box', 'Cover', 'Off', 'Shadow', 'Box']],
         ['Position', 'Bottom', ['Higher']],
         ['Aspect', 'Auto', ['Fit', 'Fill', '16:9', '4:3', 'Auto', 'Fit', 'Fill']],
     ];

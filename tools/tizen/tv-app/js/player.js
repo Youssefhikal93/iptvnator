@@ -17,7 +17,7 @@ window.Player = (function () {
     var HIDE_AFTER_MS = 5000;
     var TICK_MS = 500;
     var SAVE_EVERY_MS = 10000;
-    var SEEK_COMMIT_MS = 700;
+    var SEEK_COMMIT_MS = 400;
     var SEEK_STEPS_S = [10, 30, 60]; // repeated presses accelerate
     var SPEEDS_HTML = [0.5, 1, 1.25, 1.5, 2];
     var SPEEDS_AV = [1, 2];
@@ -78,7 +78,7 @@ window.Player = (function () {
     var menu = { open: false, focus: 0, actions: [] };
     var subtitles = SubtitleDownload({
         position: position,
-        draw: function (text) { clearSubs(); ui.subs.textContent = text; },
+        draw: function (text) { clearSubs(); ui.subs.textContent = text; refreshCover(); },
         embeddedOff: function () { var tracks = getTracks(); if (tracks.text.length) tracks.text[0].select(); },
         closeMenu: closeMenu,
         toast: function (text) { document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: text })); },
@@ -782,6 +782,7 @@ window.Player = (function () {
                 } catch (e) {
                     Log.error('TRACK select failed ' + (e && e.message));
                 }
+                refreshCover();
                 if (menu.open) renderMenu();
             }
         }
@@ -868,6 +869,19 @@ window.Player = (function () {
         ui.subs.textContent = '';
     }
 
+    // The Cover background shows while any subtitle is switched on, even between cues.
+    function embeddedOn() {
+        try {
+            return getTracks().text.some(function (track, n) { return n > 0 && track.active; });
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function refreshCover() {
+        playerEl.classList.toggle('sub-on', !!current && ready && (subtitles.active() || embeddedOn()));
+    }
+
     function showSub(durationMs, text) {
         if (subtitles.active()) return;
         clearTimeout(subsTimer);
@@ -886,6 +900,7 @@ window.Player = (function () {
         avSeekPending = false;
         started = false;
         ready = false;
+        playerEl.classList.remove('sub-on');
         ended = false;
         clearInterval(tickTimer);
         reconnect.unwatch();
@@ -1001,9 +1016,13 @@ window.Player = (function () {
             var mine = session;
             var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
             target.then(function (address) {
-                if (mine !== session) return;
+                if (mine !== session) return null;
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
+                // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
+                return MovieHash.prepare(current, address.url || address).then(function () { return address; });
+            }).then(function (address) {
+                if (!address || mine !== session || address.error) return;
                 try {
                     open(av, address.url || address, finish);
                 } catch (e) {
@@ -1054,8 +1073,12 @@ window.Player = (function () {
             video.onerror = function () {
                 finish('media error ' + (video.error ? video.error.code : '?'));
             };
-            video.src = url;
-            video.play().catch(function () {});
+            var mine = session;
+            MovieHash.prepare(current, url).then(function () {
+                if (mine !== session) return;
+                video.src = url;
+                video.play().catch(function () {});
+            });
         };
     }
 
@@ -1095,6 +1118,8 @@ window.Player = (function () {
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
         subtitles.start(current);
+        video.textTracks.addEventListener('change', refreshCover);
+        refreshCover();
         renderHint();
         video.ontimeupdate = restoration.onTime;
         maybePrompt();

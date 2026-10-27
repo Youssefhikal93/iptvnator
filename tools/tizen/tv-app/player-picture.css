@@ -55,3 +55,33 @@
 #player.sub-pos-high.controls-on #pl-subs {
     bottom: 380px;
 }
+/* Cover hides subtitles burned into the picture: a nearly solid band behind
+   the subtitle text, shown whenever a subtitle track is on, even between cues. */
+#pl-cover {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 16%;
+    background: rgba(0, 0, 0, 0.92);
+}
+#player.sub-bg-cover.sub-on #pl-cover {
+    display: block;
+}
+#player.sub-bg-cover.sub-on.sub-pos-high #pl-cover {
+    bottom: 150px;
+}
+#player.sub-bg-cover #pl-subs,
+#player.sub-bg-cover video::cue {
+    background-color: transparent;
+    text-shadow: none;
+}
+/* Our text is centred inside the band; with the controls open it rises above them as usual. */
+#player.sub-bg-cover.sub-on:not(.controls-on) #pl-subs {
+    bottom: 8%;
+    transform: translate(-50%, 50%);
+}
+#player.sub-bg-cover.sub-on.sub-pos-high:not(.controls-on) #pl-subs {
+    bottom: calc(150px + 8%);
+}

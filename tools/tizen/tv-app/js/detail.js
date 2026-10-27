@@ -1,11 +1,13 @@
 // Full-screen detail page for a movie (and a show, see detail-episodes.js):
-// backdrop, poster, title, facts, plot, cast and a row of buttons.
+// full-bleed backdrop, poster, eyebrow, title, fact chips, plot, cast and a
+// row of pill buttons (#46). A show's episodes are a strip under the buttons.
 //
 // open(page) takes:
 //   item       the list item (name and artwork until the details arrive)
 //   load()     Promise of the adapter's details (see xtream.js `details`)
 //   actions(d) the buttons for details d: [{ label, run, progress? }]
 //   episodes   optional DetailEpisodes section under the buttons
+//   badges     optional extra chips, e.g. [I18n.t('home.newEpisodes')]
 window.Detail = function () {
     'use strict';
 
@@ -56,6 +58,24 @@ window.Detail = function () {
         ];
     }
 
+    function genres(d) {
+        return String(d.genre || '').split(/\s*[,/|]\s*/).filter(Boolean).slice(0, 3);
+    }
+
+    // Year, length, rating and genres as chips, then the page's badges.
+    function chips(d) {
+        var list = [
+            d.year && { label: d.year },
+            d.seconds && { label: runtime(d.seconds) },
+            d.rating && { label: '★ ' + d.rating.toFixed(1), cls: 'rating' },
+        ].concat(genres(d).map(function (genre) { return { label: genre }; }))
+            .concat((s.page.badges || []).map(function (badge) { return { label: badge, cls: 'badge' }; }))
+            .filter(Boolean);
+        return list.map(function (chip) {
+            return html`<span class=${'dt-chip' + (chip.cls ? ' ' + chip.cls : '')}>${chip.label}</span>`;
+        });
+    }
+
     function buttonsView() {
         var list = buttons();
         s.focus = Math.max(0, Math.min(s.focus, list.length - 1));
@@ -77,30 +97,28 @@ window.Detail = function () {
     function view() {
         var d = details();
         var provider = s.provider || {};
-        var facts = [d.year, d.rating ? '★ ' + d.rating.toFixed(1) : '', d.genre, runtime(d.seconds)].filter(Boolean);
+        var eyebrow = [I18n.t(s.page.episodes ? 'rail.series' : 'rail.movies'), genres(d)[0]].filter(Boolean).join('  ·  ');
         return html`
             <${Kit.Backdrop} src=${d.backdrop} fallback=${provider.backdrop || provider.poster} />
             <div class="dt-body">
                 ${UI.img('dt-poster', d.poster, provider.poster)}
                 <div class="dt-info">
+                    <div class="dt-eyebrow">${eyebrow}</div>
                     <h1 class="dt-title">${d.title}</h1>
-                    <div class="dt-meta">${s.loading ? I18n.t('detail.loading') : facts.join('  ·  ')}</div>
+                    <div class="dt-meta">${s.loading ? I18n.t('detail.loading') : chips(d)}</div>
                     <div class="dt-plot">${d.plot}</div>
-                    ${credits(d)}
+                    <div class="dt-credits">${credits(d)}</div>
                     ${buttonsView()}
                 </div>
             </div>
-            ${s.page.episodes ? html`<div class="dt-ep-head">${d.title}</div>` : null}
-            ${s.page.episodes ? s.page.episodes.view(s.zone === 'episodes') : null}
+            ${s.page.episodes ? s.page.episodes.view(s.zone === 'episodes', d.backdrop || d.poster) : null}
             ${s.tmdb ? s.tmdb.view(s.zone === 'tmdb') : null}
             ${s.more ? moreView(d) : null}`;
     }
 
     function render() {
         var started = performance.now();
-        // A show's page scrolls up to its episodes while they have the focus.
         root.classList.toggle('dt-show', !!s.page.episodes);
-        root.classList.toggle('dt-scrolled', s.zone === 'episodes');
         root.classList.toggle('dt-tmdb', !!s.tmdb && s.tmdb.hasRows());
         root.classList.toggle('dt-tmdb-focus', s.zone === 'tmdb');
         UI.render(view(), root);
@@ -139,11 +157,11 @@ window.Detail = function () {
             var moved = Focus.step(s.focus, list.length, code, 'row');
             if (moved.index !== undefined) s.focus = moved.index;
         }
-        else if (code === KEY.DOWN && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
         else if (code === KEY.DOWN && s.page.episodes && s.page.episodes.hasRows()) {
             s.zone = 'episodes';
             s.page.episodes.enter();
         }
+        else if (code === KEY.DOWN && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
         else if (code === KEY.ENTER && list[s.focus]) return list[s.focus].run(), true;
         render();
         return true;
@@ -158,18 +176,15 @@ window.Detail = function () {
             return true;
         }
         if (s.zone === 'tmdb') {
-            var direction = s.tmdb.key(code);
-            if (direction === 'up') s.zone = 'buttons';
-            if (direction === 'down' && s.page.episodes && s.page.episodes.hasRows()) {
-                s.zone = 'episodes';
-                s.page.episodes.enter();
-            }
+            // The TMDB rows come after a show's episodes.
+            if (s.tmdb.key(code) === 'up') s.zone = s.page.episodes && s.page.episodes.hasRows() ? 'episodes' : 'buttons';
         }
         else if (Keys.isBack(code) && s.zone === 'episodes') s.zone = 'buttons';
         else if (Keys.isBack(code)) return close(), true;
         else if (s.zone === 'episodes') {
             var result = s.page.episodes.key(code);
             if (result === 'up') s.zone = 'buttons';
+            if (result === 'down' && s.tmdb && s.tmdb.hasRows()) s.zone = 'tmdb';
         } else return buttonsKey(code);
         render();
         return true;

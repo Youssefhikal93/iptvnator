@@ -45,6 +45,8 @@ test('new episodes badge and Home row appear for a show added to since it was wa
     await expect(page.locator('#items .new-badge')).toHaveCount(1);
     await section(page, 'Home');
     await openFromHome(page);
+    // The page it was opened for still names the new episodes (#46).
+    await expect(page.locator('#detail .dt-chip.badge')).toHaveText('New episodes');
     await back(page);
     await expect(page.locator('#detail')).toBeHidden();
     await expect(newRow(page)).toHaveCount(0);

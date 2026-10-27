@@ -41,7 +41,6 @@ I18n.tables.ja = {
     'empty.recent.title': '視聴履歴はまだありません',
     'epg.now': '現在',
     'episodes.loading': 'エピソードを読み込み中…',
-    'episodes.percentWatched': '{percent}% 視聴済み',
     'episodes.season': 'シーズン{n}',
     'form.addM3u': 'M3U プレイリストを追加',
     'form.password': 'パスワード',

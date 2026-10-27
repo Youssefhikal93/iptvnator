@@ -1,5 +1,6 @@
 // Episodes section of a show's detail page: season pills with "N of M
-// watched" and episode rows (thumbnail, title, length, plot, progress).
+// watched" and a strip of 16:9 episode tiles (number, length, watched tick
+// and progress on the picture; title and plot under it), #46.
 // It also picks the episode for the page's main button (nextUp).
 //
 // opts: progressOf(episode) -> Progress.of shape or null
@@ -9,7 +10,8 @@ window.DetailEpisodes = function (opts) {
 
     var KEY = Keys;
     var html = UI.html;
-    var ROWS = 5;
+    // Four tiles fit across the page; the fifth peeks in from the edge.
+    var TILES = 5;
     var s = { list: [], seasons: [], season: 0, focus: 0, zone: 'pills', loaded: false };
 
     function code(ep) {
@@ -86,33 +88,32 @@ window.DetailEpisodes = function (opts) {
         return secs ? I18n.t('unit.minutesOnly', { m: Math.round(secs / 60) }) : '';
     }
 
-    function rowView(index, focused) {
+    // An episode without its own picture shows the show's artwork, dimmed.
+    function tileView(index, focused, art) {
         var ep = s.list[index];
         var p = opts.progressOf(ep);
-        var meta = [runtime(ep.seconds), p && p.status === 'watched' ? I18n.t('browser.watched') : p ? I18n.t('episodes.percentWatched', { percent: Math.round(p.ratio * 100) }) : ''].filter(Boolean);
+        var length = runtime(ep.seconds);
         return html`<div key=${ep.id} class=${'dt-ep' + (focused ? ' focus' : '')}>
-            <div class="dt-ep-thumb">
-                ${ep.image ? UI.img(undefined, ep.image) : null}
+            <div class=${'dt-ep-thumb' + (ep.image ? '' : ' fallback')}>
+                ${ep.image || art ? UI.img(undefined, ep.image || art) : null}
                 <span class="dt-ep-num">${ep.num}</span>
+                ${length ? html`<span class="dt-ep-length">${length}</span>` : null}
                 ${watched(ep) ? html`<span class="watched-tick" aria-label=${I18n.t('browser.watched')}>✓</span>` : null}
-                ${p ? html`<div class="dt-ep-bar"><div class="dt-ep-fill" style=${'width: ' + Progress.bar(p.ratio)}></div></div>` : null}
+                ${p && !watched(ep) ? html`<div class="dt-ep-bar"><div class="dt-ep-fill" style=${'width: ' + Progress.bar(p.ratio)}></div></div>` : null}
             </div>
-            <div class="dt-ep-text">
-                <div class="dt-ep-title">${ep.num + '. ' + (ep.title || code(ep))}</div>
-                ${meta.length ? html`<div class="dt-ep-meta">${meta.join('  ·  ')}</div>` : null}
-                ${ep.plot ? html`<div class="dt-ep-plot">${ep.plot}</div>` : null}
-            </div>
+            <div class="dt-ep-title">${ep.num + '. ' + (ep.title || code(ep))}</div>
+            ${ep.plot ? html`<div class="dt-ep-plot">${ep.plot}</div>` : null}
         </div>`;
     }
 
-    function view(active) {
+    function view(active, art) {
         var cls = 'dt-episodes' + (active ? ' active' : '');
         if (!s.list.length) return html`<div class=${cls}><div class="dt-ep-empty">${I18n.t(s.loaded ? 'episodes.none' : 'episodes.loading')}</div></div>`;
         var shown = inSeason();
         var done = shown.filter(function (index) {
             return watched(s.list[index]);
         }).length;
-        var start = Math.max(0, Math.min(s.focus - 1, shown.length - ROWS));
+        var start = Math.max(0, Math.min(s.focus - 1, shown.length - TILES + 1));
         return html`<div class=${cls}>
             <div class="dt-ep-pills">
                 ${s.seasons.map(function (season, i) {
@@ -120,13 +121,13 @@ window.DetailEpisodes = function (opts) {
                 })}
                 <span class="dt-ep-count">${I18n.t('episodes.doneOf', { done: done, total: shown.length })}</span>
             </div>
-            ${shown.slice(start, start + ROWS).map(function (index, i) {
-                return rowView(index, active && s.zone === 'rows' && start + i === s.focus);
-            })}
+            <div class="dt-ep-strip">${shown.slice(start, start + TILES).map(function (index, i) {
+                return tileView(index, active && s.zone === 'rows' && start + i === s.focus, art);
+            })}</div>
         </div>`;
     }
 
-    // Returns 'up' when the focus leaves the section upwards.
+    // Returns 'up' or 'down' when the focus leaves the section.
     function key(code) {
         var shown = inSeason();
         if (s.zone === 'pills') {
@@ -147,8 +148,9 @@ window.DetailEpisodes = function (opts) {
             opts.play(s.list, index, p && p.status === 'continue' ? true : undefined);
             return undefined;
         }
-        var moved = Focus.step(s.focus, shown.length, code, 'column');
-        if (moved.exit === 'up' && code === KEY.UP) s.zone = 'pills';
+        var moved = Focus.step(s.focus, shown.length, code, 'row');
+        if (moved.exit === 'up') s.zone = 'pills';
+        else if (moved.exit === 'down') return 'down';
         else if (moved.index !== undefined) s.focus = moved.index;
         return undefined;
     }

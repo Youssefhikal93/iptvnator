@@ -41,7 +41,6 @@ I18n.tables.hu = {
     'empty.recent.title': 'Még nincs megtekintett tartalom',
     'epg.now': 'Most',
     'episodes.loading': 'Epizódok betöltése…',
-    'episodes.percentWatched': '{percent}% megtekintve',
     'episodes.season': '{n}. évad',
     'form.addM3u': 'M3U-lejátszási lista hozzáadása',
     'form.password': 'Jelszó',

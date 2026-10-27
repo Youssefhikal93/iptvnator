@@ -149,7 +149,6 @@ I18n.tables.en = {
     'episodes.doneOf': '{done} of {total} watched',
     'episodes.loading': 'Loading episodes…',
     'episodes.none': 'No episodes',
-    'episodes.percentWatched': '{percent}% watched',
     'episodes.play': 'Play {code}',
     'episodes.season': 'Season {n}',
     'episodes.watchAgain': 'Watch again {code}',

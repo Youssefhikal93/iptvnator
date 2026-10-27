@@ -6,6 +6,10 @@ test('OK opens movie plot, cast and actions; Return restores the selected movie'
     await expect(page.locator('.dt-title')).toHaveText('Movie 25: The Long Title');
     await expect(page.locator('.dt-plot')).toContainText('A retired detective returns');
     await expect(page.locator('.dt-credit').first()).toContainText('Ana Lindqvist, Omar Haddad, Lena Berg');
+    // #46: an eyebrow and the facts as chips; the rating chip stands out.
+    await expect(page.locator('.dt-eyebrow')).toHaveText('Movies  ·  Crime');
+    await expect(page.locator('.dt-chip')).toHaveText(['2021', '1 h 52 min', '★ 7.4', 'Crime', 'Drama']);
+    await expect(page.locator('.dt-chip.rating')).toHaveText('★ 7.4');
     await expect(page.locator('.dt-btn.primary')).toContainText('Play');
     await expect(page.locator('.dt-buttons')).toContainText('Add to Favorites');
     await back(page);
@@ -18,6 +22,11 @@ test('saved progress offers Resume from X and Start over; Start over starts at z
     await openFirst(page, 'Movies');
     await expect(page.locator('#detail .dt-btn.primary')).toContainText('Resume from 3:20');
     await expect(page.locator('#detail .dt-btn').nth(1)).toHaveText('Start over');
+    // The resume line sits under the Resume pill, not inside it.
+    expect(await page.locator('#detail .dt-btn.primary').evaluate(node => node.offsetHeight)).toBe(88);
+    const pill = await page.locator('#detail .dt-btn.primary').boundingBox();
+    const line = await page.locator('#detail .dt-btn.primary .dt-btn-bar').boundingBox();
+    expect(line.y).toBeGreaterThanOrEqual(pill.y + pill.height - 1);
     await press(page, 'ArrowRight');
     await press(page, 'Enter');
     await playing(page);

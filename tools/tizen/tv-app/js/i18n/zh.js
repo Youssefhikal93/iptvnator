@@ -41,7 +41,6 @@ I18n.tables.zh = {
     'empty.recent.title': '还没有观看记录',
     'epg.now': '现在',
     'episodes.loading': '正在加载剧集…',
-    'episodes.percentWatched': '已观看 {percent}%',
     'episodes.season': '第 {n} 季',
     'form.addM3u': '添加 M3U 播放列表',
     'form.password': '密码',

@@ -41,7 +41,6 @@ I18n.tables.uk = {
     'empty.recent.title': 'Поки що переглядів немає',
     'epg.now': 'Зараз',
     'episodes.loading': 'Завантаження серій…',
-    'episodes.percentWatched': 'Переглянуто {percent}%',
     'episodes.season': 'Сезон {n}',
     'form.addM3u': 'Додати плейлист M3U',
     'form.password': 'Пароль',

@@ -41,7 +41,6 @@ I18n.tables.ru = {
     'empty.recent.title': 'Пока ничего не просмотрено',
     'epg.now': 'Сейчас',
     'episodes.loading': 'Загрузка серий…',
-    'episodes.percentWatched': 'Просмотрено {percent}%',
     'episodes.season': 'Сезон {n}',
     'form.addM3u': 'Добавить плейлист M3U',
     'form.password': 'Пароль',

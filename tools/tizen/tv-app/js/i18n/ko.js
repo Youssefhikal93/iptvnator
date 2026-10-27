@@ -41,7 +41,6 @@ I18n.tables.ko = {
     'empty.recent.title': '아직 시청 기록이 없습니다',
     'epg.now': '지금',
     'episodes.loading': '에피소드를 불러오는 중…',
-    'episodes.percentWatched': '{percent}% 시청함',
     'episodes.season': '시즌 {n}',
     'form.addM3u': 'M3U 플레이리스트 추가',
     'form.password': '비밀번호',

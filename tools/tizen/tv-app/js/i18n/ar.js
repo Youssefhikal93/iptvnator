@@ -41,7 +41,6 @@ I18n.tables.ar = {
     'empty.recent.title': 'لا توجد مشاهدات بعد',
     'epg.now': 'الآن',
     'episodes.loading': 'جارٍ تحميل الحلقات…',
-    'episodes.percentWatched': 'تمت مشاهدة {percent}%',
     'episodes.season': 'الموسم {n}',
     'form.addM3u': 'إضافة قائمة تشغيل M3U',
     'form.password': 'كلمة المرور',

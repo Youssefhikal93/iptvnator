@@ -41,7 +41,6 @@ I18n.tables.ary = {
     'empty.recent.title': 'ما تشاف حتى شي حاجة دابا',
     'epg.now': 'دابا',
     'episodes.loading': 'جاري تشريج الحلقات…',
-    'episodes.percentWatched': 'تشاهد {percent}%',
     'episodes.season': 'الموسم {n}',
     'form.addM3u': 'زيد قائمة تشغيل M3U',
     'form.password': 'كلمة المرور',

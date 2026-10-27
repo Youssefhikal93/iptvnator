@@ -483,98 +483,38 @@ window.Player = (function () {
 
     // ---- Tracks, speed and stream info ------------------------------------
 
-    function languageName(code) {
-        if (!code) return '';
+    // Which engine plays: 'avplay', 'hls', 'mpegts' or 'video'.
+    function engineKind() {
+        if (usingAv) return 'avplay';
+        if (!lib) return 'video';
+        return window.Hls && lib instanceof Hls ? 'hls' : 'mpegts';
+    }
+
+    // An AVPlay list (getTotalTrackInfo, getCurrentStreamInfo); empty when not prepared.
+    function avRead(method) {
         try {
-            return new Intl.DisplayNames([I18n.locale()], { type: 'language' }).of(code) || code;
+            return avplay()[method]() || [];
         } catch (e) {
-            return String(code).toUpperCase();
+            return [];
         }
     }
 
-    function avTracks(type) {
-        var out = [];
-        try {
-            avplay()
-                .getTotalTrackInfo()
-                .forEach(function (track) {
-                    if (track.type !== type) return;
-                    var extra = {};
-                    try {
-                        extra = JSON.parse(track.extra_info) || {};
-                    } catch (e) {
-                        // No details.
-                    }
-                    out.push({ index: track.index, label: languageName(extra.language), extra: extra });
-                });
-        } catch (e) {
-            // Not prepared.
-        }
-        out.forEach(function (track, i) {
-            if (!track.label) track.label = I18n.t('player.track', { n: i + 1 });
-        });
-        return out;
-    }
-
-    function avCurrentIndex(type) {
-        try {
-            var found = avplay()
-                .getCurrentStreamInfo()
-                .filter(function (info) {
-                    return info.type === type;
-                })[0];
-            return found ? found.index : -1;
-        } catch (e) {
-            return -1;
-        }
-    }
-
-    function nativeTracks(list, kinds) {
-        var out = [];
-        if (!list) return out;
-        for (var i = 0; i < list.length; i++) {
-            if (kinds && kinds.indexOf(list[i].kind) === -1) continue;
-            out.push(list[i]);
-        }
-        return out;
-    }
-
-    // Returns { audio: [{label, active, select}], text: [...] }.
+    // Returns { audio: [{label, active, select}], text: [...] }. The lists come
+    // from player-tracks.js; the switching is each engine's own.
     function getTracks() {
-        var audio = [];
-        var text = [];
-        var i;
-        if (usingAv) {
-            if (avAudio < 0) avAudio = avCurrentIndex('AUDIO');
-            avTracks('AUDIO').forEach(function (track) {
-                audio.push({
-                    label: track.label,
-                    active: track.index === avAudio,
-                    select: function () {
-                        avplay().setSelectTrack('AUDIO', track.index);
-                        avAudio = track.index;
-                    },
-                });
-            });
-            avTracks('TEXT').forEach(function (track) {
-                text.push({
-                    label: track.label,
-                    active: track.index === avText,
-                    select: function () {
-                        avplay().setSelectTrack('TEXT', track.index);
-                        try {
-                            avplay().setSilentSubtitle(false);
-                        } catch (e) {
-                            // Older firmware.
-                        }
-                        avText = track.index;
-                    },
-                });
-            });
-            text.unshift({
-                label: I18n.t('common.off'),
-                active: avText < 0,
-                select: function () {
+        var kind = engineKind();
+        var tracks;
+        var selectAudio;
+        var selectText;
+        if (kind === 'avplay') {
+            if (avAudio < 0) avAudio = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
+            tracks = PlayerTracks.av(avRead('getTotalTrackInfo'), avAudio, avText);
+            selectAudio = function (index) {
+                avplay().setSelectTrack('AUDIO', index);
+                avAudio = index;
+            };
+            selectText = function (index) {
+                if (index < 0) {
                     try {
                         avplay().setSilentSubtitle(true);
                     } catch (e) {
@@ -582,136 +522,66 @@ window.Player = (function () {
                     }
                     avText = -1;
                     clearSubs();
-                },
-            });
-        } else if (lib && window.Hls && lib instanceof Hls) {
-            (lib.audioTracks || []).forEach(function (track, n) {
-                audio.push({
-                    label: track.name || languageName(track.lang) || I18n.t('player.track', { n: n + 1 }),
-                    active: lib.audioTrack === n,
-                    select: function () {
-                        lib.audioTrack = n;
-                    },
-                });
-            });
-            text.push({
-                label: I18n.t('common.off'),
-                active: lib.subtitleTrack < 0,
-                select: function () {
-                    lib.subtitleTrack = -1;
-                },
-            });
-            (lib.subtitleTracks || []).forEach(function (track, n) {
-                text.push({
-                    label: track.name || languageName(track.lang) || I18n.t('player.subtitle', { n: n + 1 }),
-                    active: lib.subtitleTrack === n,
-                    select: function () {
-                        lib.subtitleDisplay = true;
-                        lib.subtitleTrack = n;
-                    },
-                });
-            });
+                    return;
+                }
+                avplay().setSelectTrack('TEXT', index);
+                try {
+                    avplay().setSilentSubtitle(false);
+                } catch (e) {
+                    // Older firmware.
+                }
+                avText = index;
+            };
+        } else if (kind === 'hls') {
+            var hls = lib;
+            tracks = PlayerTracks.hls(hls);
+            selectAudio = function (n) {
+                hls.audioTrack = n;
+            };
+            selectText = function (n) {
+                if (n < 0) {
+                    hls.subtitleTrack = -1;
+                    return;
+                }
+                hls.subtitleDisplay = true;
+                hls.subtitleTrack = n;
+            };
         } else {
-            nativeTracks(video.audioTracks).forEach(function (track, n) {
-                audio.push({
-                    label: track.label || languageName(track.language) || I18n.t('player.track', { n: n + 1 }),
-                    active: track.enabled,
-                    select: function () {
-                        nativeTracks(video.audioTracks).forEach(function (other) {
-                            other.enabled = other === track;
-                        });
-                    },
+            tracks = PlayerTracks.native(video.audioTracks, video.textTracks);
+            selectAudio = function (track) {
+                PlayerTracks.nativeList(video.audioTracks).forEach(function (other) {
+                    other.enabled = other === track;
                 });
+            };
+            selectText = function (track) {
+                PlayerTracks.nativeSubtitles(video.textTracks).forEach(function (t) {
+                    t.mode = t === track ? 'showing' : 'disabled';
+                });
+            };
+        }
+        function bind(list, select) {
+            return list.map(function (entry) {
+                return {
+                    label: entry.label,
+                    active: entry.active,
+                    select: function () {
+                        select(entry.ref);
+                    },
+                };
             });
-            var subs = nativeTracks(video.textTracks, ['subtitles', 'captions']);
-            if (subs.length) {
-                text.push({
-                    label: I18n.t('common.off'),
-                    active: subs.every(function (t) {
-                        return t.mode !== 'showing';
-                    }),
-                    select: function () {
-                        subs.forEach(function (t) {
-                            t.mode = 'disabled';
-                        });
-                    },
-                });
-            }
-            for (i = 0; i < subs.length; i++) {
-                (function (track, n) {
-                    text.push({
-                        label: track.label || languageName(track.language) || I18n.t('player.subtitle', { n: n + 1 }),
-                        active: track.mode === 'showing',
-                        select: function () {
-                            subs.forEach(function (t) {
-                                t.mode = t === track ? 'showing' : 'disabled';
-                            });
-                        },
-                    });
-                })(subs[i], i);
-            }
         }
-        return { audio: audio, text: text };
-    }
-
-    function pick(obj, names) {
-        for (var i = 0; i < names.length; i++) {
-            for (var key in obj) {
-                if (key.toLowerCase() === names[i] && obj[key]) return obj[key];
-            }
-        }
-        return '';
-    }
-
-    function bitrate(bps) {
-        bps = Number(bps);
-        if (!bps) return '';
-        return bps >= 1e6 ? (bps / 1e6).toFixed(1) + ' Mbps' : Math.round(bps / 1000) + ' kbps';
+        return { audio: bind(tracks.audio, selectAudio), text: bind(tracks.text, selectText) };
     }
 
     function streamInfoLines() {
-        var lines = [];
-        if (usingAv) {
-            try {
-                avplay()
-                    .getCurrentStreamInfo()
-                    .forEach(function (info) {
-                        var extra = {};
-                        try {
-                            extra = JSON.parse(info.extra_info) || {};
-                        } catch (e) {
-                            return;
-                        }
-                        var parts = [];
-                        if (info.type === 'VIDEO') {
-                            var w = pick(extra, ['width']);
-                            var h = pick(extra, ['height']);
-                            if (w && h) parts.push(w + '×' + h);
-                            parts.push(pick(extra, ['codec', 'fourcc']));
-                            parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                            lines.push(I18n.t('player.info.video') + '  ' + parts.filter(Boolean).join(' · '));
-                        } else if (info.type === 'AUDIO') {
-                            parts.push(languageName(pick(extra, ['language'])));
-                            parts.push(pick(extra, ['codec']));
-                            var ch = pick(extra, ['channels']);
-                            if (ch) parts.push(ch + ' ch');
-                            var rate = pick(extra, ['sample_rate']);
-                            if (rate) parts.push(rate + ' Hz');
-                            parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                            lines.push(I18n.t('player.audio') + '  ' + parts.filter(Boolean).join(' · '));
-                        }
-                    });
-            } catch (e) {
-                // Not available.
-            }
-        } else {
-            if (video.videoWidth) lines.push(I18n.t('player.info.video') + '  ' + video.videoWidth + '×' + video.videoHeight);
-            if (lib && window.Hls && lib instanceof Hls && lib.levels && lib.levels[lib.currentLevel]) {
-                lines.push(I18n.t('player.info.bitrate') + '  ' + bitrate(lib.levels[lib.currentLevel].bitrate));
-            }
-        }
-        lines.push(I18n.t('player.info.player') + '  ' + (usingAv ? 'Samsung AVPlay' : lib ? (window.Hls && lib instanceof Hls ? 'hls.js' : 'mpegts.js') : 'HTML5 video'));
-        return lines;
+        var kind = engineKind();
+        return PlayerTracks.infoLines({
+            engine: kind,
+            streams: kind === 'avplay' ? avRead('getCurrentStreamInfo') : null,
+            width: video.videoWidth,
+            height: video.videoHeight,
+            level: kind === 'hls' && lib.levels ? lib.levels[lib.currentLevel] : null,
+        });
     }
 
     // ---- Menu -------------------------------------------------------------

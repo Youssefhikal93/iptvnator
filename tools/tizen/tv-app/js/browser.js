@@ -815,7 +815,6 @@ window.Browser = function (hooks) {
             if (state.showingSearch) loadItems();
             return Promise.resolve(0);
         }
-        var needle = query.toLowerCase();
         var token = ++state.token;
         state.search = { section: section, query: query, results: [] };
         state.showingSearch = true;
@@ -824,10 +823,8 @@ window.Browser = function (hooks) {
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
                 if (token !== state.token) return 0;
-                // A title matches by name, or by a genre the query names.
-                state.search.results = visibility.items(section, all).filter(function (it) {
-                    return String(it.name).toLowerCase().indexOf(needle) !== -1 || Genres.matches(it, section, query);
-                });
+                // Best matches first, like Home's search; no cap here.
+                state.search.results = Find.rank(visibility.items(section, all), section, query);
                 setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('empty.search.hint')]);
                 renderChrome();
                 return state.search.results.length;

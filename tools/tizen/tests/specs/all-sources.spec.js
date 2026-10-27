@@ -15,10 +15,10 @@ async function twoSources(page, options = {}) {
         localStorage.setItem('iptvnator-tv:sources', JSON.stringify(sources));
     });
     await page.reload();
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 }
 
-const homeRow = (page, title) => page.locator('.hm-row').filter({ has: page.locator('.hm-row-title', { hasText: title }) });
+const homeRow = (page, title) => page.locator('.hm-row').filter({ has: page.locator('h2', { hasText: title }) });
 
 async function mergedFavorites(page) {
     await category(page, 'Favorites');
@@ -54,7 +54,7 @@ test('This source stays isolated; the Display choice merges categories and Home 
     await expect(homeRow(page, 'Live now').locator('.source-chip')).toHaveText('Second TV');
     await expect(homeRow(page, 'Favorite movies').locator('.hm-card')).toHaveCount(2);
     // Move down until the later recent row is drawn by Home's window.
-    await moveTo(page, '.hm-row:has(.hm-card.focus) .hm-row-title', 'Recently watched channels');
+    await moveTo(page, '.hm-row:has(.hm-card.focus) > h2', 'Recently watched channels');
     await expect(homeRow(page, 'Recently watched channels').locator('.hm-card')).toHaveCount(2);
     await expect(homeRow(page, 'Recently watched channels').locator('.source-chip')).toHaveText('Second TV');
     await page.reload();
@@ -77,7 +77,7 @@ test('OK on another source channel switches quietly, plays its stream and Return
     await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await playing(page);
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     await expect(page.locator('#rail .active')).toHaveText('Live TV');
     expect(await page.evaluate(() => Sources.current().id)).toBe('s2');
     expect(streams.length).toBeGreaterThan(0);
@@ -114,7 +114,7 @@ test('hold OK removes favorites and recents from the tagged source even with ide
     await expect(page.locator('#items .row')).toHaveCount(1);
     expect(await page.evaluate(() => Library.recent('s1', 'live').length)).toBe(1);
     expect(await page.evaluate(() => Library.recent('s2', 'live').length)).toBe(0);
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });
 
 test('movie grid chips open the other source detail page and preserve its Favorites after playback', async ({ page }) => {
@@ -128,7 +128,7 @@ test('movie grid chips open the other source detail page and preserve its Favori
     await press(page, 'Enter');
     await expect(page.locator('#detail')).toBeVisible();
     await expect(page.locator('#detail .dt-meta')).not.toContainText('Loading');
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     await expect(page.locator('#detail')).toContainText('Movie 2');
     await press(page, 'Enter');
     await playing(page);
@@ -158,7 +158,7 @@ test('a cross-source pick stops the live preview before checking the new account
     await expect(page.locator('#content')).toHaveClass(/previewing/);
     await press(page, 'ArrowDown');
     await press(page, 'Enter');
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     await playing(page);
     expect(stoppedBeforeAccount).toBe(true);
     await expect(page.locator('#content')).not.toHaveClass(/previewing/);
@@ -168,14 +168,14 @@ test('a cross-source pick stops the live preview before checking the new account
 test('Home card OK switches source and returns to the same Home row with chips reversed', async ({ page }) => {
     await twoSources(page);
     await section(page, 'Home');
-    await moveTo(page, '.hm-row:has(.hm-card.focus) .hm-row-title', 'Recently watched channels');
+    await moveTo(page, '.hm-row:has(.hm-card.focus) > h2', 'Recently watched channels');
     await expect(page.locator('.hm-card.focus .source-chip')).toHaveText('Second TV');
     await press(page, 'Enter');
     await playing(page);
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     await back(page);
     await expect(page.locator('#rail .active')).toHaveText('Home');
-    await expect(page.locator('.hm-row:has(.hm-card.focus) .hm-row-title')).toHaveText('Recently watched channels');
+    await expect(page.locator('.hm-row:has(.hm-card.focus) > h2')).toHaveText('Recently watched channels');
     await expect(homeRow(page, 'Recently watched channels').locator('.source-chip')).toHaveText('Regression TV');
 });
 
@@ -193,7 +193,7 @@ test('other-source shows open details and saved episodes play directly from Rece
     await press(page, 'Enter');
     await expect(page.locator('#detail')).toBeVisible();
     await expect(page.locator('#detail')).toContainText('Pilot 1');
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     await page.evaluate(() => Sources.setCurrent('s1'));
     await page.reload();
     await section(page, 'Series');
@@ -202,7 +202,7 @@ test('other-source shows open details and saved episodes play directly from Rece
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#detail')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     expect(await page.locator('#video').evaluate(video => new URL(video.currentSrc).pathname)).toContain('/series/second/');
     await back(page);
     await expect(page.locator('#items .list-header')).toContainText('Recently watched');
@@ -233,7 +233,7 @@ test('a failed source switch waits about a second before LoadScreen and Retry fi
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#load-error')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
 });
 
 test('an M3U movie pick waits for the playlist to discover its sections before restoring Favorites', async ({ page }) => {
@@ -253,7 +253,7 @@ test('an M3U movie pick waits for the playlist to discover its sections before r
     await press(page, 'Enter');
     await expect(page.locator('#detail')).toBeVisible();
     await expect(page.locator('#detail .dt-title')).toHaveText('Heist Night (2019)');
-    await expect(page.locator('#source-name')).toHaveText('Second TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second TV');
     await press(page, 'Enter');
     await playing(page);
     await back(page);

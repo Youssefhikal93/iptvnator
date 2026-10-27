@@ -16,14 +16,14 @@ test('add form validates Xtream fields, saves an account, and restores it after 
     await page.locator('#form-pass').fill('password');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Second account');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second account');
     await page.reload();
-    await expect(page.locator('#source-name')).toHaveText('Second account');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Second account');
     await section(page, 'Sources');
     await expect(page.locator('#items')).toContainText('Switch to this source');
     await enterItems(page);
     await press(page, 'Enter');
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });
 
 test('M3U import preserves comma-containing group names and exposes only Live TV; removal needs two OKs', async ({ page }) => {
@@ -50,9 +50,9 @@ test('M3U import preserves comma-containing group names and exposes only Live TV
     await moveTo(page, '#items .focused .label', 'Remove');
     await press(page, 'Enter');
     await expect(page.locator('#items .focused')).toHaveText('Press OK again to remove');
-    await expect(page.locator('#source-name')).toHaveText('Test playlist');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Test playlist');
     await press(page, 'Enter');
-    await expect(page.locator('#source-name')).toHaveText('No source yet');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'No source yet');
     await expect(page.locator('#categories')).not.toContainText('Test playlist');
 });
 
@@ -73,5 +73,5 @@ test('refresh source refetches catalogues and Return cancels an add form', async
     await press(page, 'Enter');
     await back(page);
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });

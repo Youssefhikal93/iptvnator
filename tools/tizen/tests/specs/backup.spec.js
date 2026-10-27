@@ -31,7 +31,7 @@ test('Replace previews counts with Cancel focused, then restores sources, favori
     await press(page, 'ArrowLeft');
     await press(page, 'ArrowLeft');
     await press(page, 'Enter');
-    await expect(page.locator('#source-name')).toHaveText('Desktop TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Desktop TV');
     const restored = await page.evaluate(() => ({
         sources: Sources.all().length,
         favorites: Library.favorites(Sources.current().id, 'movies').length,
@@ -63,7 +63,7 @@ test('Merge keeps an existing source and library, adds missing sources, and reta
     await press(page, 'ArrowLeft');
     await press(page, 'Enter');
     await expect(page.locator('#backup-screen')).toHaveCount(0);
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
     const restored = await page.evaluate(() => ({
         sources: Sources.all().length,
         favorites: Library.favorites('s1', 'movies').map(item => item.stream_id).sort(),

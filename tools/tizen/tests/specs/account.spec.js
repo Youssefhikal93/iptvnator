@@ -161,7 +161,7 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     await page.locator('#form-name').fill('Living room');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Living room');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Living room');
     await expect(page.locator('#categories .row').first()).toContainText('Living room');
     await page.waitForTimeout(500);
     expect(calls.length).toBe(before);
@@ -198,7 +198,7 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     expect(now.current).toBe(now.sources[0].id);
     expect(now.recent).not.toBeNull();
     expect(now.currentRecent).toBeNull();
-    await expect(page.locator('#source-name')).toHaveText('Living room');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Living room');
     await section(page, 'Live TV');
     await expect.poll(() => calls.some(c => c.user === 'newuser' && c.action === 'get_live_categories')).toBe(true);
     await expect(page.locator('#items .row').first()).toBeVisible();
@@ -221,7 +221,7 @@ test('editing another source drops its saved catalogue only when the login chang
     await page.locator('#form-name').fill('Bedroom');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
     await expect(page.locator('#categories .row').nth(1)).toContainText('Bedroom');
     await expect(page.locator('#categories .row').nth(1)).toContainText('4 channels');
     await enterItems(page);
@@ -232,7 +232,7 @@ test('editing another source drops its saved catalogue only when the login chang
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('#categories .row').nth(1)).toContainText('Bedroom');
     await expect(page.locator('#categories .row').nth(1)).not.toContainText('4 channels');
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });
 
 test('Return cancels Edit source and keeps the saved source', async ({ page }) => {
@@ -243,5 +243,5 @@ test('Return cancels Edit source and keeps the saved source', async ({ page }) =
     await page.locator('#form-name').fill('Nope');
     await page.locator('#form-cancel').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('Regression TV');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
 });

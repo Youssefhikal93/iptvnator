@@ -155,7 +155,7 @@ svg {
     margin-bottom: 0;
 }
 
-/* Header: source switcher pill and a search bar and view toggle */
+/* Header: search bar and view toggle (the source is switched in Settings) */
 #header {
     position: absolute;
     left: 168px;
@@ -169,47 +169,18 @@ svg {
     box-sizing: border-box;
     background: var(--rail-bg);
 }
-#source-pill {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    min-width: 460px;
-    padding: 10px 18px 10px 12px;
-    border-radius: 16px;
-    background: var(--widget-bg);
+/* Home, Settings and Sources have no search or view choice: no bar (#45). */
+body.no-bar #header {
+    display: none;
 }
-.pill-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    background: var(--overlay);
-    color: var(--on-surface);
+body.no-bar #content,
+body.bar-off #content {
+    top: 0;
 }
-.pill-icon svg {
-    width: 34px;
-    height: 34px;
-}
-.pill-text {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    line-height: 1.2;
-}
-.pill-chevron {
-    width: 36px;
-    height: 36px;
-    color: var(--muted);
-}
-#source-name {
-    font-weight: 600;
-    color: var(--heading);
-}
-#source-type {
-    color: var(--muted);
-    font-size: 24px;
+/* Top bar Off: the bar comes up over the list while the remote is on it. */
+body.bar-off #header {
+    z-index: 5;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 #searchbar {
     flex: 1;
@@ -1141,198 +1112,6 @@ svg {
     flex: 1;
     overflow: hidden;
     background: var(--content-bg);
-}
-.hm-empty {
-    padding: 80px 64px;
-    text-align: center;
-    font-size: 32px;
-    color: var(--muted);
-}
-.hm-hero {
-    position: relative;
-    height: 470px;
-    overflow: hidden;
-}
-.hm-hero-art {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.hm-hero-shade {
-    position: absolute;
-    inset: 0;
-    background:
-        linear-gradient(to right, var(--content-bg) 28%, color-mix(in srgb, var(--content-bg) 70%, transparent) 55%, color-mix(in srgb, var(--content-bg) 0%, transparent) 85%),
-        linear-gradient(to top, var(--content-bg) 0%, color-mix(in srgb, var(--content-bg) 0%, transparent) 40%);
-}
-.hm-hero-text {
-    position: absolute;
-    left: 56px;
-    top: 40px;
-    width: 900px;
-}
-.hm-eyebrow {
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--selection);
-}
-.hm-hero-title {
-    margin-top: 10px;
-    font-size: 56px;
-    font-weight: 700;
-    line-height: 1.1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.hm-hero-sub {
-    margin-top: 10px;
-    font-size: 28px;
-    color: var(--muted);
-}
-.hm-hero-plot {
-    margin-top: 14px;
-    font-size: 26px;
-    line-height: 1.4;
-    max-height: 73px; /* 2 lines */
-    overflow: hidden;
-}
-.hm-hero-bar {
-    width: 420px;
-    height: 6px;
-    margin-top: 18px;
-    border-radius: 3px;
-    background: var(--track);
-    overflow: hidden;
-}
-.hm-hero-fill {
-    height: 100%;
-    background: #e53935;
-}
-.hm-hero-buttons {
-    display: flex;
-    gap: 18px;
-    margin-top: 24px;
-}
-#home.showcase .hm-hero {
-    height: 320px;
-}
-#home.showcase .hm-hero-text {
-    top: 18px;
-}
-#home.showcase .hm-hero-title {
-    font-size: 48px;
-    margin-top: 6px;
-}
-#home.showcase .hm-hero-sub,
-#home.showcase .hm-hero-plot {
-    margin-top: 6px;
-}
-#home.showcase .hm-hero-sub {
-    font-size: 24px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-#home.showcase .hm-hero-plot {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    font-size: 24px;
-    line-height: 1.25;
-    max-height: 60px;
-}
-#home.showcase .hm-hero-bar {
-    margin-top: 10px;
-}
-#home.showcase .hm-hero-buttons {
-    margin-top: 12px;
-}
-#home.showcase .dt-btn {
-    padding: 12px 26px;
-    font-size: 26px;
-}
-.dt-btn.small {
-    padding: 16px 26px;
-}
-.hm-row {
-    padding: 14px 0 0 56px;
-    height: 440px;
-    box-sizing: border-box;
-}
-.hm-row-title {
-    margin-bottom: 14px;
-    font-size: 30px;
-    font-weight: 600;
-    color: var(--heading);
-}
-.hm-strip {
-    display: flex;
-    gap: 22px;
-}
-.hm-card {
-    flex: none;
-    width: 200px;
-    padding: 6px;
-    border-radius: 14px;
-    border: 3px solid transparent;
-}
-.hm-card.focus {
-    border-color: var(--selection-border);
-    background: linear-gradient(135deg, var(--selection-surface-strong), var(--selection-surface));
-    box-shadow: 0 0 18px var(--selection-glow);
-}
-.hm-poster {
-    position: relative;
-    height: 290px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--poster-bg);
-}
-.hm-poster img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.hm-initials {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    font-size: 56px;
-    font-weight: 700;
-    color: var(--muted);
-}
-.hm-bar {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 8px;
-    background: var(--track);
-}
-.hm-fill {
-    height: 100%;
-    background: #e53935;
-}
-.hm-card-title {
-    margin-top: 8px;
-    font-size: 24px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.hm-card-sub {
-    font-size: 21px;
-    color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* Guide coordinates match the fixed 1920 x 1080 TV canvas. */

@@ -127,6 +127,7 @@ I18n.tables.ja = {
     'settings.dark': 'ダーク',
     'settings.density': '表示密度',
     'settings.motion': 'アニメーション',
+    'settings.topBar': '上部バー',
     'settings.off': 'オフ',
     'settings.on': 'オン',
     'settings.export': 'エクスポート',

@@ -127,6 +127,7 @@ I18n.tables.el = {
     'settings.dark': 'Σκούρο',
     'settings.density': 'Πυκνότητα',
     'settings.motion': 'Κινούμενα εφέ',
+    'settings.topBar': 'Επάνω γραμμή',
     'settings.off': 'Ανενεργά',
     'settings.on': 'Ενεργά',
     'settings.export': 'Εξαγωγή',

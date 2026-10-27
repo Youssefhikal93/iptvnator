@@ -130,7 +130,7 @@ test('Home rows leave out favorites of hidden categories', async ({ page }) => {
         'hidden-categories:s1': { live: ['5'] },
     } });
     const row = page.locator('.hm-row').filter({ hasText: 'Live now on your favorite channels' });
-    await expect(row.locator('.hm-card-title')).toHaveText(['Channel 1 (cat all)']);
+    await expect(row.locator('.hm-card > span')).toHaveText(['Channel 1 (cat all)']);
 });
 
 test('the channel list while watching skips hidden categories', async ({ page }) => {

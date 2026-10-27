@@ -127,6 +127,7 @@ I18n.tables.by = {
     'settings.dark': 'Цёмная',
     'settings.density': 'Шчыльнасць',
     'settings.motion': 'Анімацыі',
+    'settings.topBar': 'Верхняя панэль',
     'settings.off': 'Выкл.',
     'settings.on': 'Укл.',
     'settings.export': 'Экспартаваць',

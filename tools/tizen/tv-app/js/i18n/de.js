@@ -127,6 +127,7 @@ I18n.tables.de = {
     'settings.dark': 'Dunkel',
     'settings.density': 'Dichte',
     'settings.motion': 'Animationen',
+    'settings.topBar': 'Obere Leiste',
     'settings.off': 'Aus',
     'settings.on': 'An',
     'settings.export': 'Exportieren',

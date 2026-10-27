@@ -8,14 +8,17 @@ window.Kit = (() => {
     const { html, img } = UI;
     const classes = (base, flags) => [base].concat(Object.keys(flags).filter((flag) => flags[flag])).join(' ');
 
-    // A card with artwork and a name: { image, name }.
-    const Tile = ({ cls = 'tm-card', image, name, focused }) =>
-        html`<div class=${classes(cls, { focus: focused })}>${image ? img('', image) : null}<span>${name}</span></div>`;
+    // A card with artwork and a name: { image, name }. `poster` replaces the
+    // plain image with a richer box (badges, progress), `sub` adds a second line.
+    const Tile = ({ cls = 'tm-card', image, poster, name, sub, focused }) =>
+        html`<div class=${classes(cls, { focus: focused })}>${poster || (image ? img('', image) : null)}<span>${name}</span>${sub ? html`<small>${sub}</small>` : null}</div>`;
 
-    // A titled strip of tiles; focus is the focused tile's index or -1.
-    const Row = ({ label, tiles, focus = -1 }) => html`<section class="tm-row">
+    // A titled strip of tiles; focus is the focused tile's index or -1. `cls`
+    // names the family ('tm' gives tm-row, tm-cards, tm-card); a tile may
+    // bring its own cls and a key that keeps it across renders.
+    const Row = ({ cls = 'tm', kind, label, tiles, focus = -1 }) => html`<section class=${cls + '-row' + (kind ? ' ' + kind : '')}>
         <h2>${label}</h2>
-        <div class="tm-cards">${tiles.map((tile, i) => html`<${Tile} ...${tile} focused=${i === focus} />`)}</div>
+        <div class=${cls + '-cards'}>${tiles.map((tile, i) => html`<${Tile} key=${tile.key === undefined ? i : tile.key} cls=${cls + '-card'} ...${tile} focused=${i === focus} />`)}</div>
     </section>`;
 
     // A choice in a line of choices: active is the one shown, selected the
@@ -49,7 +52,8 @@ window.Kit = (() => {
     // lists that rebuild on every key press do not repeat dead requests.
     const hue = (name) => Array.from(String(name)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
     const dead = new Set();
-    const Plate = ({ cls, name, logo, onFail }) => {
+    // Children (badges, a progress bar) sit on top of the plate.
+    const Plate = ({ cls, name, logo, onFail, children }) => {
         const shown = logo && !dead.has(logo);
         const fail = (event) => {
             if (dead.size >= 400) dead.delete(dead.values().next().value);
@@ -59,7 +63,7 @@ window.Kit = (() => {
         };
         return html`<div class=${classes('plate' + (cls ? ' ' + cls : ''), { nologo: !shown })} style=${{ '--h': hue(name) }}>
             ${shown ? html`<img class=${classes('plate-logo art', { 'art-in': Art.seen(logo) })} src=${logo} alt="" onError=${fail} />` : null}
-            <span class="plate-name">${name}</span>
+            <span class="plate-name">${name}</span>${children}
         </div>`;
     };
 

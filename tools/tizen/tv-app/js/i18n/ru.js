@@ -127,6 +127,7 @@ I18n.tables.ru = {
     'settings.dark': 'Тёмная',
     'settings.density': 'Плотность',
     'settings.motion': 'Анимация',
+    'settings.topBar': 'Верхняя панель',
     'settings.off': 'Выкл.',
     'settings.on': 'Вкл.',
     'settings.export': 'Экспорт',

@@ -127,6 +127,7 @@ I18n.tables.nl = {
     'settings.dark': 'Donker',
     'settings.density': 'Dichtheid',
     'settings.motion': 'Animaties',
+    'settings.topBar': 'Bovenbalk',
     'settings.off': 'Uit',
     'settings.on': 'Aan',
     'settings.export': 'Exporteren',

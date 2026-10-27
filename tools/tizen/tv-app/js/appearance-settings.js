@@ -28,6 +28,8 @@ window.AppearanceSettings = (function () {
             { get label() { return I18n.t('settings.density'); }, key: 'density', pills: true, choices: ['comfortable', 'compact'], get labels() { return [I18n.t('settings.comfortable'), I18n.t('settings.compact')]; } },
             // Off for older TVs where fades and growing tiles stutter.
             { get label() { return I18n.t('settings.motion'); }, key: 'motion', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
+            // Search and the view buttons; Off hides them until ▲ at the top of a list (#45).
+            { get label() { return I18n.t('settings.topBar'); }, key: 'topBar', pills: true, choices: ['on', 'off'], get labels() { return [I18n.t('settings.on'), I18n.t('settings.off')]; } },
         ],
     };
 })();

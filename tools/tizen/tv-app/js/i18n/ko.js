@@ -127,6 +127,7 @@ I18n.tables.ko = {
     'settings.dark': '어둡게',
     'settings.density': '표시 밀도',
     'settings.motion': '애니메이션',
+    'settings.topBar': '상단 바',
     'settings.off': '끄기',
     'settings.on': '켜기',
     'settings.export': '내보내기',

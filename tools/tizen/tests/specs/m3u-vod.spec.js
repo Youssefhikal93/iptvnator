@@ -10,7 +10,7 @@ async function addPlaylist(page, file) {
     await page.locator('#form-url').fill(new URL(page.url()).origin + file);
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#source-name')).toHaveText('VOD playlist');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'VOD playlist');
 }
 
 const railItem = (page, name) => page.locator('#rail .rail-item').filter({ hasText: name });
@@ -120,7 +120,7 @@ test('the plain playlist still has only Live TV', async ({ page }) => {
 test('Movies and Series come back after a restart once the playlist has loaded', async ({ page }) => {
     await addPlaylist(page, '/playlist-vod.m3u');
     await page.reload();
-    await expect(page.locator('#source-name')).toHaveText('VOD playlist');
+    await expect(page.locator('body')).toHaveAttribute('data-source', 'VOD playlist');
     await expect(railItem(page, 'Series')).not.toHaveClass(/disabled/);
     await openFirst(page, 'Movies');
     await expect(page.locator('.dt-title')).toHaveText('Heist Night (2019)');

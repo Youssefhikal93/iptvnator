@@ -127,6 +127,7 @@ I18n.tables.it = {
     'settings.dark': 'Scuro',
     'settings.density': 'Densità',
     'settings.motion': 'Animazioni',
+    'settings.topBar': 'Barra superiore',
     'settings.off': 'Disattivate',
     'settings.on': 'Attivate',
     'settings.export': 'Esporta',

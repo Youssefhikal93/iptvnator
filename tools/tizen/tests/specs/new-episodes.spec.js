@@ -18,11 +18,11 @@ function watchedSeed() {
 }
 
 // The badge on the poster in the New episodes row (favorite series repeat it further down).
-const newBadge = page => page.locator('.hm-row').filter({ has: page.locator('.hm-row-title', { hasText: 'New episodes' }) }).locator('.new-badge');
-const newRow = page => page.locator('.hm-row-title', { hasText: 'New episodes' });
+const newBadge = page => page.locator('.hm-row').filter({ has: page.locator('h2', { hasText: 'New episodes' }) }).locator('.new-badge');
+const newRow = page => page.locator('.hm-row > h2', { hasText: 'New episodes' });
 
 async function openFromHome(page) {
-    const focused = page.locator('.hm-row').filter({ has: page.locator('.hm-row-title', { hasText: 'New episodes' }) }).locator('.hm-card.focus');
+    const focused = page.locator('.hm-row').filter({ has: page.locator('h2', { hasText: 'New episodes' }) }).locator('.hm-card.focus');
     for (let i = 0; i < 6 && !await focused.count(); i++) await press(page, 'ArrowDown');
     await expect(focused.locator('.new-badge')).toHaveText('New episodes');
     await press(page, 'Enter');

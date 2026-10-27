@@ -204,18 +204,40 @@
     top: 56px;
     width: 1120px;
 }
+/* The rows start at a fixed height, so the text above never meets them
+   and the next row is cut off by the bottom edge. */
 .hm-stage-rows {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 16px;
+    top: 480px;
 }
-.hm-stage-next {
-    padding-left: 56px;
-    font-size: 30px;
+/* ▲ and the name of the row above. */
+.hm-stage-above {
+    position: absolute;
+    bottom: 100%;
+    left: 56px;
+    margin-bottom: 4px;
+    font-size: 26px;
     font-weight: 700;
-    line-height: 50px;
     color: var(--muted);
+}
+.hm-stage-above::before {
+    content: '▲';
+    margin-right: 12px;
+    font-size: 20px;
+}
+/* The next row peeks in and fades out at the bottom edge. */
+.hm-stage-below {
+    opacity: 0.75;
+    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+}
+.hm-stage-below .hm-row > h2::before {
+    content: '▼';
+    margin-right: 12px;
+    font-size: 22px;
+    vertical-align: 4px;
 }
 
 .hm-row {

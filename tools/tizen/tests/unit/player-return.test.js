@@ -60,7 +60,7 @@ function scene() {
     video.load = function () {};
     var env = load([
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'menu.js',
-        'subtitle-file.js', 'subtitle-store.js', 'subtitle-download.js',
+        'subtitle-file.js', 'subtitle-rank.js', 'movie-hash.js', 'subtitle-store.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'player-reconnect.js',
         'sleep-timer.js', 'player-sleep.js', 'player-series.js', 'player-picture.js', 'player.js',
     ], {}, {

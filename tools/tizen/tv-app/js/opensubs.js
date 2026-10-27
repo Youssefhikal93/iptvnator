@@ -60,6 +60,8 @@ window.OpenSubs = (function () {
 
     function query(info, language) {
         var params = { languages: languages(language) };
+        // The hash comes from the first and last 64 KiB; only these 16 digits leave the TV.
+        if (/^[0-9a-f]{16}$/i.test(String(info.moviehash || ''))) params.moviehash = String(info.moviehash);
         var episode = info.episode !== undefined;
         var tmdb = numeric(info.tmdb_id);
         var imdb = numeric(String(info.imdb_id || '').replace(/^tt/i, ''));
@@ -84,7 +86,7 @@ window.OpenSubs = (function () {
         }).join('&');
     }
 
-    function search(info, language) {
+    function search(info, language, limit) {
         return request('/subtitles?' + query(info, language)).then(function (body) {
             var matches = [];
             (Array.isArray(body.data) ? body.data : []).forEach(function (entry) {
@@ -93,11 +95,12 @@ window.OpenSubs = (function () {
                     if (!numeric(file.file_id)) return;
                     matches.push({ file_id: Number(file.file_id), language: String(attributes.language || ''),
                         release: String(attributes.release || file.file_name || ''), downloads: Number(attributes.download_count) || 0,
-                        hearing: !!attributes.hearing_impaired });
+                        hearing: !!attributes.hearing_impaired, fps: Number(attributes.fps) || 0, hashMatch: attributes.moviehash_match === true,
+                        trusted: !!attributes.from_trusted, machine: !!(attributes.ai_translated || attributes.machine_translated) });
                 });
             });
             Log.info('opensubtitles search ok n=' + matches.length);
-            return matches.slice(0, 10);
+            return matches.slice(0, limit || 10);
         });
     }
 

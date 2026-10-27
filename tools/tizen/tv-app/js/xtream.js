@@ -74,6 +74,14 @@ window.XtreamSource = function (source, options) {
         return parts[0] * 3600 + parts[1] * 60 + parts[2];
     }
 
+    // The few video facts subtitle ranking uses; providers send [] or nothing when unknown.
+    function videoFacts(info) {
+        var video = info && info.video;
+        if (!video || typeof video !== 'object' || Array.isArray(video)) return undefined;
+        return { width: video.width, height: video.height, codec_name: video.codec_name,
+            r_frame_rate: video.r_frame_rate, avg_frame_rate: video.avg_frame_rate };
+    }
+
     // Shared shape of get_vod_info / get_series_info `info` for the detail page.
     function details(info, item) {
         return {
@@ -86,6 +94,7 @@ window.XtreamSource = function (source, options) {
             rating: Number(info.rating) > 0 ? Number(info.rating) : 0,
             genre: info.genre || '',
             seconds: seconds(info),
+            video: videoFacts(info),
             plot: info.plot || info.description || '',
             cast: info.cast || info.actors || '',
             director: info.director || '',
@@ -173,6 +182,7 @@ window.XtreamSource = function (source, options) {
                                 image: info.movie_image || info.cover_big || '',
                                 plot: info.plot || '',
                                 seconds: seconds(info),
+                                video: videoFacts(info),
                             });
                         });
                     });

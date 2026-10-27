@@ -7,7 +7,8 @@ window.SubtitleContext = (function () {
         var year = details.year || item.year || (/\b(19\d{2}|20\d{2})\b/.exec(title) || [])[1];
         var info = { title: title.replace(/\s*\((19|20)\d{2}\)\s*$/, ''), year: year,
             tmdb_id: details.tmdb_id || item.tmdb_id || item.tmdb,
-            imdb_id: details.imdb_id || details.imdb || item.imdb_id || item.imdb };
+            imdb_id: details.imdb_id || details.imdb || item.imdb_id || item.imdb,
+            video: (context.episode || {}).video || details.video };
         if (context.episode) {
             info.season = context.episode.season;
             info.episode = context.episode.num;

@@ -200,7 +200,10 @@ from step 8 must already be downloaded.
   Download subtitles…**, then **UP/DOWN → OK** on a match. **Return** cancels;
   the player menu's **Off** hides subtitles. **Subtitle delay −0.5 s / +0.5 s**
   adjusts timing and remembers it for the title. Reopening restores a cached
-  subtitle without another download. The key is shared; language and title
+  subtitle without another download. Results are ranked: the best fit is
+  labelled **★ Recommended** and focused first (it is never chosen for you);
+  rows show downloads as **⬇ 48,213** and ✓ marks for a file-hash, frame-rate,
+  resolution or codec match, and machine translations sit last. The key is shared; language and title
   choices belong to each profile. See [OpenSubtitles](docs/opensubtitles.md)
   for quota, storage and privacy details.
 - **Backup** (Settings, before About): **Import from link…** downloads a desktop
@@ -422,7 +425,7 @@ from step 8 must already be downloaded.
   Return behaviour.
 - **Subtitle style and picture**: in **Settings**, the **Subtitles** group
   offers Size (Small, Medium, Large, Extra large), Text colour (White, Yellow),
-  Background (Off, Shadow, Box) and Position (Bottom, Higher). **Picture**
+  Background (Off, Shadow, Box, Cover) and Position (Bottom, Higher). **Picture**
   offers Aspect (Auto, Fit, Fill, 16:9, 4:3). Defaults are Medium, White,
   Shadow, Bottom and Auto. While watching, press **UP** (movies or episodes)
   or **Yellow** (Live TV), then select a **Subtitle style** or **Picture**
@@ -431,6 +434,10 @@ from step 8 must already be downloaded.
   Fit keeps the whole picture; Fill fills the screen; 16:9 and 4:3 stretch
   into a centred box of that shape. Live preview always uses Fit, restoring
   the saved aspect in full screen. Styles apply wherever subtitles appear.
+  **Cover** hides subtitles burned into a provider's picture: a nearly solid
+  band across the bottom 16 % of the screen appears while any subtitle (a
+  downloaded or embedded track) is on, with our text centred inside it; with
+  Position **Higher** the band moves up. It never shows with subtitles Off.
   Most movies currently use HTML video because of AVPlay issue #29, so
   embedded MKV subtitles do not appear there.
 - **Resume**: saved progress is kept until playback confirms the jump, including

@@ -4,7 +4,7 @@ var test = require('node:test');
 var assert = require('node:assert/strict');
 var load = require('./sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'subtitle-file.js', 'subtitle-store.js', 'subtitle-context.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-store.js', 'subtitle-context.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -58,6 +58,8 @@ test('movie and episode searches prefer identifiers and always sort lower-case q
     [
         [{ tmdb_id: 615457, imdb_id: 'tt9', title: 'Other' }, 'en,AR,en', 'languages=ar%2Cen&tmdb_id=615457'],
         [{ imdb_id: 'tt1234567' }, 'en', 'imdb_id=1234567&languages=en'],
+        [{ tmdb_id: 5, moviehash: '8E245D9679D31E12' }, 'en', 'languages=en&moviehash=8e245d9679d31e12&tmdb_id=5'],
+        [{ tmdb_id: 5, moviehash: 'xyz' }, 'en', 'languages=en&tmdb_id=5'],
         [{ title: 'Nobody', year: 2021 }, 'EN', 'languages=en&query=nobody&year=2021'],
         [{ title: 'Two Words' }, 'ar,en', 'languages=ar%2Cen&query=two+words'],
         [{ tmdb_id: 1234, season: 1, episode: 3 }, 'en', 'episode_number=3&languages=en&parent_tmdb_id=1234&season_number=1'],
@@ -86,6 +88,8 @@ test('search sends the app headers and limits file choices to ten with language,
     assert.equal(matches[0].release, 'Fixture');
     assert.equal(matches[0].downloads, 42);
     assert.equal(matches[0].hearing, true);
+    assert.equal(matches[0].hashMatch, false);
+    assert.equal(matches[0].machine, false);
     assert.ok(!env.logs.join(' ').includes('test-key'));
 });
 
@@ -204,7 +208,7 @@ test('picking a search result renders downloaded cues and low quota; reopening u
     var request = { id: 'movie:1', title: 'Fixture' };
     v.player.start(request);
     await v.player.search();
-    assert.ok(env.menu.children[1].textContent.includes('en · Fixture · 42 · Hearing impaired'));
+    assert.ok(env.menu.children[1].textContent.includes('★ Recommended · en · Fixture · ⬇ 42 · Hearing impaired'));
     env.globals.Menu.onKey(env.globals.Keys.ENTER);
     await new Promise(setImmediate);
     assert.equal(v.text, 'Hello');

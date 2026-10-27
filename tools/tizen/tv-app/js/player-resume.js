@@ -29,6 +29,9 @@ window.PlayerResume = function (api) {
             return;
         }
         if (api.pending() || !api.ready(target)) return;
+        // A settled seek that already reports the target is done; seeking again restarts AVPlay's buffering.
+        var pos = api.position();
+        if (attempted && isFinite(pos) && Math.abs(pos - target) <= TOLERANCE_MS) return cancel();
         if (lastAttempt !== null && now - lastAttempt < RETRY_MS) return;
         lastAttempt = now;
         attempted = false;

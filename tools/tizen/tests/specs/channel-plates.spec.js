@@ -40,6 +40,9 @@ test('live rows and grid tiles show 16:9 plates: the logo, or the channel name w
     await expect(tiles.nth(0).locator('.poster.plate .plate-logo')).toBeVisible();
     await expect(tiles.nth(1).locator('.poster.plate')).toHaveClass(/nologo/);
     await expect(tiles.nth(1).locator('.plate-name')).toHaveText('Channel 2 (cat all)');
+    // The focus stays on the toolbar after picking Grid; DOWN goes back to the channels.
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#items .card.focused .card-title')).toHaveText('1. Channel 1 (cat all)');
     // Four columns: DOWN moves four channels on.
     await press(page, 'ArrowDown');
     await expect(page.locator('#items .card.focused .card-title')).toHaveText('5. Channel 5 (cat all)');

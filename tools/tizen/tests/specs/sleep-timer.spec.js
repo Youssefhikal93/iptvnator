@@ -117,6 +117,8 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await expect(page.locator('#pl-sleep-badge')).toBeHidden();
     await choose(page, '15 min');
     await page.reload();
+    // Provider requests are paced with timers: let the page clock run again.
+    await page.clock.resume();
     await expect(page.locator('#player')).toBeHidden();
     await openFirst(page, 'Movies');
     await press(page, 'Enter');

@@ -61,10 +61,11 @@ test('fast channel paging replaces queued schedules with the newest screen', asy
         await boot(page);
         await section(page, 'Live TV');
         await sendKeyCode(page, 458);
-        await expect.poll(() => ids.length).toBe(3);
+        // Provider requests go two at a time (SourceRequest); the third waits its turn.
+        await expect.poll(() => ids.length).toBe(2);
         for (let i = 0; i < 10; i++) await sendKeyCode(page, 428);
         await expect(page.locator('.gd-row.selected')).toHaveAttribute('data-channel', '1091');
-        expect(ids).toEqual([1001, 1002, 1003]);
+        expect(ids).toEqual([1001, 1002]);
         release();
         await expect.poll(() => ids.length).toBe(21);
         await expect(page.locator('#guide .gd-loading')).toHaveCount(0);

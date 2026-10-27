@@ -85,6 +85,12 @@ body.menu-top .hm-stage-text {
 body.menu-top .hm-stage-text .hm-hero-title {
     font-size: 64px;
 }
+body.menu-top .hm-stage-text .hm-hero-plot {
+    -webkit-line-clamp: 1;
+}
+body.menu-top .hm-stage-rows {
+    top: 360px;
+}
 
 /* Settings groups fit under the bar (#49). */
 body.menu-top .st-groups .st-title { margin-bottom: 14px; }

@@ -222,8 +222,9 @@ window.Home = (api) => {
 
     // ---- Backdrop ---------------------------------------------------------
 
-    // The focused title fills the screen behind one row of tiles; the rows
-    // below it show only their names. A channel shows its logo on a colour.
+    // The focused title fills the screen behind one row of tiles. The row
+    // above is named over it and the next row peeks in below, so the way
+    // up and down shows. A channel shows its logo on a colour.
     const Stage = ({ list }) => {
         const row = list[s.block].row;
         const entry = row.loading ? null : row.entries[rowState(row).focus];
@@ -231,6 +232,8 @@ window.Home = (api) => {
         const d = entry && !live ? heroDetails(entry) : {};
         const now = live && api.programme(entry.item);
         const plot = live ? now && now.title : d.plot;
+        const above = s.block > 0 ? list[s.block - 1].row : null;
+        const below = list[s.block + 1] ? list[s.block + 1].row : null;
         return html`<div class=${'hm-stage' + (live ? ' live' : '')}>
             ${entry ? UI.img('hm-stage-art', live ? art(entry.item) : d.backdrop || d.poster || art(entry.item)) : null}
             <div class="hm-stage-shade"></div>
@@ -242,8 +245,9 @@ window.Home = (api) => {
             </div>` : null}
         </div>
         <div class="hm-stage-rows">
+            ${above ? html`<div class="hm-stage-above">${above.title}</div>` : null}
             <${HomeRow} key=${row.id} row=${row} focused=${s.active} />
-            ${list.slice(s.block + 1, s.block + 4).map((block) => html`<div class="hm-stage-next" key=${block.row.id}>${block.row.title}</div>`)}
+            ${below ? html`<div class="hm-stage-below"><${HomeRow} key=${below.id} row=${below} focused=${false} /></div>` : null}
         </div>`;
     };
 

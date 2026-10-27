@@ -8,8 +8,19 @@ window.List = function (el, options) {
         if (name === 'density') render();
     });
 
+    // Read from the list itself: channel lists set their own sizes in CSS.
     function gridSize() {
-        return { cols: AppearanceLayout.count('--grid-cols'), rows: AppearanceLayout.count('--grid-rows') };
+        return { cols: AppearanceLayout.count('--grid-cols', el), rows: AppearanceLayout.count('--grid-rows', el) };
+    }
+
+    // Channels show wide logo plates (#44) instead of square icons and posters.
+    function plates() {
+        return !!(options.plate && options.plate());
+    }
+
+    function plate(item, cls) {
+        var src = options.icon && options.icon(item);
+        return Kit.plateNode({ cls: cls, name: item.name, logo: src || '' });
     }
 
     function visibleRows() {
@@ -37,6 +48,7 @@ window.List = function (el, options) {
     }
 
     function render() {
+        el.classList.toggle('channels', plates());
         var grid = gridSize();
         var rows = state.grid ? grid.rows : visibleRows();
         var count = state.items.length;
@@ -95,7 +107,10 @@ window.List = function (el, options) {
             row.className = 'row';
             if (i === state.index) row.className += state.active ? ' focused' : ' selected';
             var src = options.icon && options.icon(item);
-            if (src) {
+            if (plates()) {
+                row.className += ' channel';
+                row.appendChild(plate(item, 'row-plate'));
+            } else if (src) {
                 row.appendChild(logo(src, item));
             } else if (options.icon && item.name) {
                 row.appendChild(placeholder(item));
@@ -122,7 +137,7 @@ window.List = function (el, options) {
         strip.setAttribute('aria-label', I18n.t('common.loading'));
         for (var i = 0; i < (state.grid ? grid.cols * grid.rows : rows); i++) {
             var tile = document.createElement('div');
-            tile.className = state.grid ? 'card skeleton' : 'row skeleton';
+            tile.className = (state.grid ? 'card skeleton' : 'row skeleton') + (plates() ? ' channel' : '');
             tile.setAttribute('aria-hidden', 'true');
             if (state.grid) {
                 var poster = document.createElement('div');
@@ -141,12 +156,17 @@ window.List = function (el, options) {
         for (var i = start; i < Math.min(count, start + size.cols * size.rows); i++) {
             var item = state.items[i];
             var card = document.createElement('div');
-            card.className = 'card';
+            card.className = plates() ? 'card channel' : 'card';
             if (i === state.index) card.className += state.active ? ' focused' : ' selected';
-            var poster = document.createElement('div');
-            poster.className = 'poster';
-            var src = options.icon && options.icon(item);
-            poster.appendChild(src ? logo(src, item) : placeholder(item));
+            var poster;
+            if (plates()) {
+                poster = plate(item, 'poster');
+            } else {
+                poster = document.createElement('div');
+                poster.className = 'poster';
+                var src = options.icon && options.icon(item);
+                poster.appendChild(src ? logo(src, item) : placeholder(item));
+            }
             if (options.decorate) options.decorate(poster, item);
             card.appendChild(poster);
             var title = document.createElement('div');
@@ -185,7 +205,7 @@ window.List = function (el, options) {
             render();
         },
         cols: function () {
-            return state.grid ? AppearanceLayout.count('--grid-cols') : 1;
+            return state.grid ? AppearanceLayout.count('--grid-cols', el) : 1;
         },
         pageSize: function () {
             var grid = gridSize();

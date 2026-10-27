@@ -47,15 +47,7 @@ window.ChannelList = function (hooks) {
 
     function row(channel, index) {
         var node = element('div', 'pl-channel' + (index === focus ? ' focused' : ''));
-        var logo = element('div', 'pl-channel-logo', String(channel.name || '?').slice(0, 2).toUpperCase());
-        var url = channel.stream_icon || channel.logo;
-        if (url) {
-            var image = element('img', '');
-            Art.prepare(image, url).src = url;
-            image.onerror = function () { image.remove(); };
-            logo.appendChild(image);
-        }
-        node.appendChild(logo);
+        node.appendChild(Kit.plateNode({ cls: 'pl-channel-logo', name: channel.name || '?', logo: channel.stream_icon || channel.logo || '' }));
         var label = element('div', 'pl-channel-label');
         label.appendChild(element('div', 'pl-channel-name', channel.name || I18n.t('player.hint.channel')));
         programme(label, channel);

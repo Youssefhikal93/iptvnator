@@ -42,5 +42,29 @@ window.Kit = (() => {
     const SideMenu = ({ title, options, index }) => html`<div class="menu-title">${title}</div>
         ${options.map((option, i) => html`<${MenuRow} option=${option} focused=${i === index} />`)}`;
 
-    return { Tile, Row, Pill, Avatar, Backdrop, SideMenu };
+    // A channel's 16:9 plate (#44): its logo on a light plate, or, without a
+    // logo or once the logo fails, its name on a colour taken from the name.
+    // Logos are mostly transparent PNGs, so they need a plate of their own.
+    // A logo that failed once is not asked for again while the app runs, so
+    // lists that rebuild on every key press do not repeat dead requests.
+    const hue = (name) => Array.from(String(name)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+    const dead = new Set();
+    const Plate = ({ cls, name, logo, onFail }) => {
+        const shown = logo && !dead.has(logo);
+        const fail = (event) => {
+            if (dead.size >= 400) dead.delete(dead.values().next().value);
+            dead.add(logo);
+            event.currentTarget.parentNode.classList.add('nologo');
+            if (onFail) onFail(logo);
+        };
+        return html`<div class=${classes('plate' + (cls ? ' ' + cls : ''), { nologo: !shown })} style=${{ '--h': hue(name) }}>
+            ${shown ? html`<img class=${classes('plate-logo art', { 'art-in': Art.seen(logo) })} src=${logo} alt="" onError=${fail} />` : null}
+            <span class="plate-name">${name}</span>
+        </div>`;
+    };
+
+    // The plate as a node, for screens not yet in Preact.
+    const plateNode = (props) => UI.node(html`<${Plate} ...${props} />`);
+
+    return { Tile, Row, Pill, Avatar, Backdrop, SideMenu, Plate, plateNode };
 })();

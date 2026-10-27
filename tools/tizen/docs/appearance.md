@@ -67,3 +67,16 @@ On by default) sets `data-motion="off"`, which removes every transition and
 animation for TVs where they stutter. Vanilla screens rebuild their tiles on
 each key press, so the focus growth animates only on Preact screens until
 Home and the lists move to Preact (#44, #45).
+
+## Profile avatars (#43)
+
+`js/avatars.js` holds twelve drawn avatars (animals and fairy-tale
+characters) made for this app as SVG; `Kit.Avatar` draws a profile's
+`avatar` on its colour, or its initial when it has none. Settings > Profiles >
+Avatar and ▲ on Who's watching open `AvatarPicker`; `ProfileStore.setAvatar`
+saves the choice in the profile list. Who's watching follows design review
+13: 220 px avatars that grow 10% inside a ring, a bold name for the focused
+profile, a PIN chip on protected profiles and an accent glow. The rail's
+profile menu lists every profile with its avatar, its name and a check on the
+active one. The new strings are English until a person checks translations
+(see the table builder).

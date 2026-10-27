@@ -116,6 +116,7 @@
             return;
         }
         if (ProfileDialog.isOpen()) return ProfileDialog.onKey(event);
+        if (AvatarPicker.isOpen()) return AvatarPicker.onKey(event);
         if (ProfileScreen.isOpen()) return ProfileScreen.onKey(event);
         if (BackupScreen.isOpen()) return BackupScreen.onKey(event);
         if (TmdbSettings.isOpen()) return TmdbSettings.onKey(event);

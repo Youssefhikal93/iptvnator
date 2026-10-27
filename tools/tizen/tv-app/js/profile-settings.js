@@ -58,6 +58,7 @@ window.ProfileSettings = (function () {
 
         return [
             { get group() { return I18n.t('profile.group'); }, get label() { return I18n.t('profile.current'); }, run: function () { ProfileScreen.open(changed); }, text: function () { return ProfileStore.active().name; } },
+            { get label() { return I18n.t('profile.avatar'); }, run: function () { AvatarPicker.open(ProfileStore.active(), function () { changed(false); }); }, text: '' },
             { get label() { return I18n.t('profile.addMenu'); }, run: add, text: function () { return ProfileStore.list().length >= ProfileStore.max ? I18n.t('profile.upToShort', { n: ProfileStore.max }) : ''; } },
             { get label() { return I18n.t('profile.renameMenu'); }, run: rename, text: '' },
             { get label() { return I18n.t('profile.delete'); }, run: remove, text: function () { return ProfileStore.list().length < 2 ? I18n.t('profile.needsAnother') : ''; } },

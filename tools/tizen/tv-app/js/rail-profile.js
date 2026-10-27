@@ -21,7 +21,9 @@ window.RailProfile = (() => {
         const options = ProfileStore.list().map((profile, index) => {
             if (profile.id === active) at = index;
             return {
-                label: (profile.id === active ? '✓ ' : '') + profile.name,
+                icon: html`<${Kit.Avatar} cls="menu-avatar" profile=${profile} />`,
+                label: profile.name,
+                check: profile.id === active,
                 run: () => { if (ProfileStore.setActive(profile.id)) changed(); },
             };
         });

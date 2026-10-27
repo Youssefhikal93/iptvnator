@@ -22,10 +22,11 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, token: 0, timer: null, catalogue: null, base: null, search: null, showingSearch: false, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, genres: {}, genre: {}, genreToken: 0, genreProgress: null, genreMore: 0, genreTried: [], epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, timer: null, catalogue: null, base: null, search: null, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
+    var visibility = Visibility(sourceId);
     var libraryNavigation = LibraryNavigation({
         current: sourceId,
         capture: function () { return { section: state.section, category: categories.item() }; },
@@ -37,15 +38,16 @@ window.Browser = function (hooks) {
     var live = LiveChannels({
         categories: function () {
             return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
-                return HiddenCategories.visible(sourceId(), 'live', list);
+                return visibility.categories('live', list);
             });
         },
+        // Zapping and last-channel lists apply the lock only, not hidden categories.
         channels: function (categoryId) {
             return loadCatalogue({ section: 'live', kind: 'items', id: categoryId }).then(function (list) {
-                return ParentalLock.filterItems(sourceId(), 'live', list);
+                return visibility.items('live', list, { withHidden: true });
             });
         },
-        allows: function (channel) { return ParentalLock.allows(sourceId(), 'live', channel); },
+        allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },
         request: liveRequest,
         record: function (channel) {
             record(channel, null, null, 'live');
@@ -89,6 +91,31 @@ window.Browser = function (hooks) {
         else if (state.section === 'home') home.render();
     });
     var visible = { list: [], empty: '' };
+    var currentList = CurrentList(function () {
+        return { section: state.section, base: !!state.base, category: categories.item(), loading: homeLoading };
+    });
+    var libraryRows = CategoryRows({
+        ready: function () { return !!state.source; },
+        section: function () { return state.section; },
+        sortable: sortableSection,
+        everySource: function () { return Prefs.get('librarySources') === 'all'; },
+        chosenSort: function () { return Library.sort(sourceId(), state.section); },
+        favorites: function () { return libraryList('favorites', state.section); },
+        favoriteItems: function () { return Library.favoriteItems(sourceId(), state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []); },
+        recent: function () { return libraryList('recent', state.section); },
+        continued: function () { return Library.continueWatching(sourceId(), state.section); },
+        added: function () { return addedOf(state.section); },
+    });
+    var genres = GenreFilter({
+        section: function () { return state.section; },
+        ready: hasTools,
+        candidates: function () { return visible.list; },
+        tmdb: Tmdb,
+        changed: function (listChanged) {
+            if (listChanged) drawItems(items.index(), true);
+            renderChrome();
+        },
+    });
 
     var categories = List($('categories'), {
         rows: 11,
@@ -135,7 +162,7 @@ window.Browser = function (hooks) {
         },
         items: function (section) {
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
-                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all));
+                return visibility.items(section, all);
             });
         },
     });
@@ -176,7 +203,7 @@ window.Browser = function (hooks) {
     var items = List($('items'), {
         rows: 9,
         title: function () {
-            if (state.showingSearch) return I18n.t('browser.searchTitle', { query: state.search.query });
+            if (currentList.showingSearch()) return I18n.t('browser.searchTitle', { query: state.search.query });
             var category = categories.item();
             return category ? I18n.categoryName(category) : '';
         },
@@ -220,12 +247,12 @@ window.Browser = function (hooks) {
         var category = categories.item();
         // Category focus moves before the list debounce; Favorites must never
         // open the previous category's channels when Guide is pressed quickly.
-        if (category && category.virtual && !state.showingSearch) {
+        if (category && category.virtual && !currentList.showingSearch()) {
             clearTimeout(state.timer);
             showVirtual(category, items.index());
         }
         guide.open({ guide: state.guide, channels: items.items().slice(), index: items.index(),
-            title: state.showingSearch ? I18n.t('browser.searchResults') : category ? I18n.categoryName(category) : I18n.t('browser.allChannels') });
+            title: currentList.showingSearch() ? I18n.t('browser.searchResults') : category ? I18n.categoryName(category) : I18n.t('browser.allChannels') });
         return true;
     }
 
@@ -295,7 +322,12 @@ window.Browser = function (hooks) {
     // Star for favorites and a thin progress bar for unfinished movies and episodes.
     function decorate(el, item) {
         if (!state.source) return;
-        LibraryChip(el, item, sourceId());
+        if (otherSource(item)) {
+            var chip = document.createElement('span');
+            chip.className = 'source-chip';
+            chip.textContent = item.sourceName;
+            el.appendChild(chip);
+        }
         if (isFavorite(item)) {
             var star = document.createElement('span');
             star.className = 'star';
@@ -415,29 +447,9 @@ window.Browser = function (hooks) {
         }, 300);
     }
 
-    function virtualRows() {
-        if (!state.source) return [];
-        var id = sourceId();
-        var section = state.section;
-        var rows = [
-            { category_id: '__fav', category_name: I18n.t('browser.favorites'), virtual: 'favorites', count: libraryList('favorites', section).length },
-            { category_id: '__recent', category_name: I18n.t('browser.recentlyWatched'), virtual: 'recent', count: libraryList('recent', section).length },
-        ];
-        if (section !== 'live') {
-            rows.push({ category_id: '__continue', category_name: I18n.t('browser.continueWatching'), virtual: 'continue', count: Library.continueWatching(id, section).length });
-        }
-        if (sortableSection() && addedOf(section).length) {
-            rows.unshift({ category_id: '__added', category_name: I18n.t('browser.recentlyAdded'), virtual: 'added', count: addedOf(section).length });
-        }
-        // All movies / All series comes first: the whole section, without
-        // hidden categories (a category with no id loads all of it).
-        if (section === 'movies' || section === 'series') rows.unshift({ category_id: '', category_name: I18n.t(section === 'movies' ? 'browser.allMovies' : 'browser.allSeries'), all: section });
-        return rows;
-    }
-
     // The catalogue's categories minus the hidden ones, after the virtual rows.
     function categoryRows(list) {
-        return virtualRows().concat(HiddenCategories.visible(sourceId(), state.section, list || state.base || []));
+        return libraryRows.build().concat(visibility.categories(state.section, list || state.base || []));
     }
 
     function showCategories(index) {
@@ -446,32 +458,16 @@ window.Browser = function (hooks) {
 
     // Recently added, without items of hidden categories.
     function addedOf(section) {
-        return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, state.added[section] || []));
+        return visibility.items(section, state.added[section] || []);
     }
-
-    function virtualList(kind) {
-        var id = sourceId();
-        if (kind === 'added') return addedOf(state.section);
-        if (Prefs.get('librarySources') === 'all' && (kind === 'favorites' || kind === 'recent')) return libraryList(kind, state.section);
-        if (kind === 'favorites') return sortableSection() ? Library.favoriteItems(id, state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []) : Library.favorites(id, state.section);
-        if (kind === 'recent') return Library.recent(id, state.section);
-        return Library.continueWatching(id, state.section);
-    }
-
-    var EMPTY = {
-        get favorites() { return [I18n.t('empty.favorites.title'), I18n.t('empty.favorites.hint')]; },
-        get recent() { return [I18n.t('empty.recent.title'), I18n.t('empty.recent.hint')]; },
-        get continue() { return [I18n.t('empty.continue.title'), I18n.t('empty.continue.hint')]; },
-        get added() { return [I18n.t('empty.added.title'), I18n.t('empty.added.hint')]; },
-    };
 
     function showVirtual(category, index) {
-        state.token++;
-        state.showingSearch = false;
+        currentList.begin();
         applyView();
-        setItems(virtualList(category.virtual).filter(function (item) {
-            return ParentalLock.allows(item.sourceId || sourceId(), state.section, item);
-        }), index || 0, EMPTY[category.virtual]);
+        // Library lists keep items of hidden categories; only the lock applies.
+        setItems(category.list().filter(function (item) {
+            return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
+        }), index || 0, category.empty);
         renderChrome();
     }
 
@@ -491,7 +487,7 @@ window.Browser = function (hooks) {
         state.favKeys = null;
         showCategories(categories.index());
         var category = categories.item();
-        if (category && category.virtual && !state.showingSearch) showVirtual(category, items.index());
+        if (category && category.virtual && !currentList.showingSearch()) showVirtual(category, items.index());
         else if (items.items().length) items.select(items.index());
         renderChrome();
     }
@@ -596,13 +592,13 @@ window.Browser = function (hooks) {
         return state.source && state.source.type === 'xtream' && (state.section === 'movies' || state.section === 'series');
     }
 
+    // The category under the cursor, unless search results are showing.
+    function shownCategory() {
+        return !currentList.showingSearch() && categories.item();
+    }
+
     function sortMode() {
-        if (!sortableSection()) return null;
-        var category = !state.showingSearch && categories.item();
-        if (category && category.virtual === 'favorites' && Prefs.get('librarySources') === 'all') return null;
-        if (category && category.virtual === 'added') return 'newest';
-        if (category && category.virtual && category.virtual !== 'favorites') return null;
-        return Library.sort(sourceId(), state.section);
+        return libraryRows.sortMode(shownCategory());
     }
 
     function sortSubtitle() {
@@ -615,90 +611,16 @@ window.Browser = function (hooks) {
 
     function setItems(list, index, empty) {
         visible = { list: list, empty: empty };
-        lookUpGenre();
+        genres.look();
         drawItems(index);
     }
 
     // The list with the genre pill applied; keep holds the focused title.
     function drawItems(index, keep) {
         var mode = sortMode();
-        var genre = genreFilter();
-        var section = state.section;
-        var list = visible.list;
-        var empty = visible.empty;
-        var shown = genre ? list.filter(function (item) { return Genres.has(item, section, genre); }) : list;
-        if (genre && !shown.length && list.length) {
-            empty = state.genreProgress
-                ? [I18n.t('find.looking', { genre: genre }), I18n.t('find.lookingHint')]
-                : state.genreMore
-                ? [I18n.t('find.noneYet', { genre: genre }), I18n.t('find.moreHint', { n: state.genreMore })]
-                : [I18n.t('find.noGenre', { genre: genre }), I18n.t('find.noGenreHint')];
-        }
-        shown = mode ? Sort.order(shown, section, mode) : shown.slice();
-        items.set(shown, keep ? Math.max(0, indexIn(shown, items.item(), index)) : index, empty);
-    }
-
-    // A picked genre matches what the provider's list or TMDB says (#31).
-    // Only the list showing is checked, GENRE_PAGE titles at a time, and
-    // only with TMDB: the provider is never asked, so filtering cannot add
-    // to its request limit. ▼ at the end of the list or CH▼ checks the next
-    // ones; nothing found yet keeps going a few batches by itself.
-    var GENRE_PAGE = 20;
-    function lookUpGenre(more) {
-        var mine = ++state.genreToken;
-        var genre = genreFilter();
-        var section = state.section;
-        state.genreProgress = null;
-        state.genreMore = 0;
-        if (!more) {
-            state.genreTried = [];
-            state.genreRuns = 0;
-        }
-        state.genreRuns++;
-        if (!genre || !Tmdb.enabled()) return;
-        var type = section === 'movies' ? 'movie' : 'tv';
-        var tried = state.genreTried;
-        var open = function (item) { return !Genres.has(item, section, genre); };
-        var waiting = function () {
-            return visible.list.filter(function (item) {
-                return open(item) && tried.indexOf(item) === -1 && !Tmdb.cached(item, type);
-            });
-        };
-        var batch = waiting().slice(0, GENRE_PAGE);
-        if (!batch.length) return;
-        var progress = state.genreProgress = { done: 0, total: batch.length };
-        var current = function () { return mine === state.genreToken; };
-        var step = function () {
-            if (!current() || !batch.length) return Promise.resolve();
-            var item = batch.shift();
-            tried.push(item);
-            return Tmdb.match(item, type, current).catch(function () {}).then(function () {
-                if (!current()) return;
-                progress.done++;
-                if (!open(item)) drawItems(items.index(), true);
-                renderHints();
-                return step();
-            });
-        };
-        Promise.all([step(), step()]).then(function () {
-            if (!current()) return;
-            state.genreProgress = null;
-            state.genreMore = waiting().length;
-            drawItems(items.index(), true);
-            renderChrome();
-            // Nothing found yet: keep going a few batches before asking.
-            var none = !visible.list.some(function (item) { return !open(item); });
-            if (none && state.genreMore && state.genreRuns < 5) moreGenre();
-        });
-    }
-
-    // ▼ at the end of the list or CH▼: the next titles for the genre.
-    function moreGenre() {
-        if (!state.genreMore || state.genreProgress) return false;
-        lookUpGenre(true);
-        drawItems(items.index(), true);
-        renderChrome();
-        return true;
+        var view = genres.apply(visible.list, visible.empty);
+        var shown = mode ? Sort.order(view.list, state.section, mode) : view.list.slice();
+        items.set(shown, keep ? Math.max(0, indexIn(shown, items.item(), index)) : index, view.empty);
     }
 
     // A movie's own page carries its genre; pages already opened count.
@@ -711,52 +633,40 @@ window.Browser = function (hooks) {
 
     // The filter button beside the search bar in Movies and Series opens a
     // menu: All and the section's most common genres. A genre narrows
-    // whatever list is showing.
-    function genreNames() {
-        var names = (state.section === 'movies' || state.section === 'series') && hasTools() && state.genres[state.section];
-        return names && names.length ? names : [];
-    }
-
-    function genreFilter() {
-        return genreNames().length ? state.genre[state.section] || null : null;
-    }
-
+    // whatever list is showing. ▼ at the end of the list or CH▼ checks the
+    // next titles for it.
     function loadGenres(section) {
-        if (state.genres[section]) return;
-        // With TMDB every standard genre can be found; without it only the
-        // genres the provider's list carries.
-        var offer = Tmdb.enabled() ? Genres.pills : Genres.common;
-        state.genres[section] = offer([], section, 20);
         var adapter = state.adapter;
-        state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
-            if (adapter !== state.adapter) return;
-            state.genres[section] = offer(ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)), section, 20);
-        }).catch(function () {});
+        genres.offer(section, function () {
+            return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
+                return adapter === state.adapter ? visibility.items(section, all) : null;
+            });
+        });
     }
 
     function pickGenre(name) {
-        state.genre[state.section] = name;
-        if (visible) setItems(visible.list, 0, visible.empty);
+        genres.pick(name);
+        setItems(visible.list, 0, visible.empty);
         setZone(items.items().length ? 'items' : 'categories');
     }
 
     function openGenreMenu() {
-        var chosen = genreFilter();
-        var mark = function (name) { return (name === chosen ? '\u2713 ' : '') + (name || I18n.t('find.all')); };
-        var options = [null].concat(genreNames()).map(function (name) {
+        var chosen = genres.current();
+        var names = genres.names();
+        var mark = function (name) { return (name === chosen ? '✓ ' : '') + (name || I18n.t('find.all')); };
+        var options = [null].concat(names).map(function (name) {
             return { label: mark(name), run: function () { pickGenre(name); } };
         });
-        if (chosen && state.genreMore && !state.genreProgress) {
-            options.push({ label: I18n.t('find.checkMore', { n: state.genreMore }), run: function () { moreGenre(); setZone(items.items().length ? 'items' : 'categories'); } });
+        var left = genres.pending();
+        if (left) {
+            options.push({ label: I18n.t('find.checkMore', { n: left }), run: function () { genres.more(); setZone(items.items().length ? 'items' : 'categories'); } });
         }
-        Menu.open(I18n.t('find.genre'), options, Math.max(0, genreNames().indexOf(chosen) + 1));
+        Menu.open(I18n.t('find.genre'), options, Math.max(0, names.indexOf(chosen) + 1));
     }
 
     function toolbarTools() {
-        var category = !state.showingSearch && categories.item();
-        var canSort = sortableSection() && (!category || !category.virtual || (category.virtual === 'favorites' && Prefs.get('librarySources') !== 'all'));
-        var tools = canSort ? TOOLS : TOOLS.slice(0, 3);
-        if (genreNames().length) tools = ['search', 'genre'].concat(tools.slice(1));
+        var tools = libraryRows.canSort(shownCategory()) ? TOOLS : TOOLS.slice(0, 3);
+        if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
         return guideAvailable() ? tools.concat(['guide']) : tools;
     }
 
@@ -809,28 +719,24 @@ window.Browser = function (hooks) {
         var query = $('search-input').value.trim();
         var section = state.section;
         if (!query) {
-            if (state.showingSearch) loadItems();
+            if (currentList.showingSearch()) loadItems();
             return Promise.resolve(0);
         }
-        var needle = query.toLowerCase();
-        var token = ++state.token;
+        var token = currentList.beginSearch();
         state.search = { section: section, query: query, results: [] };
-        state.showingSearch = true;
         applyView();
         items.loading();
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
-                if (token !== state.token) return 0;
-                // A title matches by name, or by a genre the query names.
-                state.search.results = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, all)).filter(function (it) {
-                    return String(it.name).toLowerCase().indexOf(needle) !== -1 || Genres.matches(it, section, query);
-                });
+                if (!currentList.isActive(token)) return 0;
+                // Best matches first, like Home's search; no cap here.
+                state.search.results = Find.rank(visibility.items(section, all), section, query);
                 setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('empty.search.hint')]);
                 renderChrome();
                 return state.search.results.length;
             })
             .catch(function (err) {
-                if (token === state.token) fail(items, 'SEARCH')(err);
+                if (currentList.isActive(token)) fail(items, 'SEARCH')(err);
                 return 0;
             });
     }
@@ -894,22 +800,9 @@ window.Browser = function (hooks) {
     function loadCatalogue(what, onFresh) {
         return state.catalogue.load(what, {
             screen: !Player.isOpen() || hooks.preview.active(),
-            active: function () { return catalogueActive(what); },
+            active: function () { return currentList.wants(what); },
             onFresh: onFresh,
         });
-    }
-
-    function catalogueActive(what) {
-        var section = what.section;
-        var wholeSection = what.kind === 'items' && (what.id === undefined || what.id === '');
-        if (state.section === 'home') return !!homeLoading[section] && wholeSection;
-        if (state.section !== section) return false;
-        if (what.kind === 'categories') return !state.base;
-        if (state.showingSearch) return wholeSection;
-        var category = categories.item();
-        if (!category) return false;
-        if (category.virtual) return wholeSection && (category.virtual === 'added' || category.virtual === 'favorites');
-        return what.kind === 'items' && String(what.id === undefined ? '' : what.id) === String(category.category_id);
     }
 
     // Position of `item` in a refreshed list, matched by provider id.
@@ -956,8 +849,8 @@ window.Browser = function (hooks) {
                 : I18n.t('hints.default');
         // With the source pill gone (#45), a catalogue refresh shows here.
         if (state.updating) $('hints').textContent += '  ·  ' + I18n.t('browser.updating');
-        if (state.genreProgress) $('hints').textContent += '  ·  ' + I18n.t('find.progress', state.genreProgress);
-        else if (state.genreMore && genreFilter()) $('hints').textContent += '  ·  ' + I18n.t('find.moreHint', { n: state.genreMore });
+        var genreHint = genres.hint();
+        if (genreHint) $('hints').textContent += '  ·  ' + genreHint;
     }
 
     function renderToolbar() {
@@ -974,7 +867,7 @@ window.Browser = function (hooks) {
         $('searchbar').classList.toggle('focused', focus === 'search');
         var input = $('search-input');
         input.placeholder = on ? I18n.t('browser.searchIn', { section: sectionOf(state.section).label }) : I18n.t('browser.search');
-        if (!state.searching) input.value = state.showingSearch ? state.search.query : '';
+        if (!state.searching) input.value = currentList.showingSearch() ? state.search.query : '';
         Array.prototype.forEach.call(document.querySelectorAll('.view-btn'), function (btn) {
             var mode = btn.getAttribute('data-mode');
             if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
@@ -982,8 +875,9 @@ window.Browser = function (hooks) {
             if (mode === 'genre') {
                 // The genre in use shows on the button.
                 btn.classList.toggle('hidden', tools.indexOf('genre') === -1);
-                btn.classList.toggle('chosen', !!genreFilter());
-                btn.lastChild.textContent = genreFilter() || '';
+                var picked = genres.current();
+                btn.classList.toggle('chosen', !!picked);
+                btn.lastChild.textContent = picked || '';
             }
             btn.classList.toggle('active', on && viewMode() === mode);
             btn.classList.toggle('focused', focus === mode);
@@ -1096,7 +990,7 @@ window.Browser = function (hooks) {
         if (state.catalogue) state.catalogue.dispose();
         state.catalogue = null;
         LoadScreen.reset();
-        state.token++;
+        currentList.begin();
         live.reset();
         restoring = false;
         state.source = source;
@@ -1105,11 +999,9 @@ window.Browser = function (hooks) {
         state.info = null;
         state.base = null;
         state.search = null;
-        state.showingSearch = false;
         state.favKeys = null;
         state.added = {};
-        state.genres = {};
-        state.genre = {};
+        genres.reset();
         homeLoading = {};
         home.reset(!!screenReady);
         if (!source) return renderChrome();
@@ -1177,12 +1069,10 @@ window.Browser = function (hooks) {
         clearTimeout(state.searchTimer);
         $('content').classList.toggle('home', id === 'home');
         $('content').classList.toggle('settings', id === 'settings');
-        state.showingSearch = false;
         state.base = null;
-        state.genreToken++;
-        state.genreProgress = null;
+        genres.cancel();
         state.favKeys = null;
-        var token = ++state.token;
+        var token = currentList.begin();
         applyView();
         items.set([], 0, '');
         if (id === 'home') return showHome();
@@ -1206,22 +1096,21 @@ window.Browser = function (hooks) {
             }
         )
             .then(function (list) {
-                if (token !== state.token) return;
+                if (!currentList.isActive(token)) return;
                 state.base = list;
-                showCategories(virtualRows().length);
+                showCategories(libraryRows.build().length);
                 loadItems();
                 if (sortableSection()) loadRecentlyAdded(id);
                 if (id === 'movies' || id === 'series') loadGenres(id);
             })
             .catch(function (err) {
-                if (token === state.token) fail(categories, 'CATEGORIES')(err);
+                if (currentList.isActive(token)) fail(categories, 'CATEGORIES')(err);
             });
     }
 
     // "All channels" spans categories; any other list is just its own category.
     function shownItems(category, list) {
-        list = String(category.category_id) === '' ? HiddenCategories.filterItems(sourceId(), state.section, list) : list;
-        return ParentalLock.filterItems(sourceId(), state.section, list);
+        return visibility.items(state.section, list, { withHidden: String(category.category_id) !== '' });
     }
 
     function loadItems() {
@@ -1229,21 +1118,19 @@ window.Browser = function (hooks) {
         if (!category) return;
         if (category.virtual) return showVirtual(category);
         if (ParentalLock.isLocked(sourceId(), state.section, category.category_id) && !ParentalLock.isUnlocked()) {
-            state.token++;
-            state.showingSearch = false;
+            currentList.begin();
             setItems([], 0, [I18n.t('empty.locked.title'), I18n.t('empty.locked.hint')]);
             return renderChrome();
         }
         var section = state.section;
-        var token = ++state.token;
-        state.showingSearch = false;
+        var token = currentList.begin();
         applyView();
         items.loading();
         renderChrome();
         loadCatalogue(
             { section: section, kind: 'items', id: category.category_id },
             function (list) {
-                if (token !== state.token) return;
+                if (!currentList.isActive(token)) return;
                 var item = items.item();
                 var index = items.index();
                 setItems(shownItems(category, list), 0, I18n.t('empty.category.title'));
@@ -1251,10 +1138,10 @@ window.Browser = function (hooks) {
             }
         )
             .then(function (list) {
-                if (token === state.token) setItems(shownItems(category, list), 0, [I18n.t('empty.category.title'), I18n.t('empty.category.hint')]);
+                if (currentList.isActive(token)) setItems(shownItems(category, list), 0, [I18n.t('empty.category.title'), I18n.t('empty.category.hint')]);
             })
             .catch(function (err) {
-                if (token === state.token) fail(items, 'ITEMS')(err);
+                if (currentList.isActive(token)) fail(items, 'ITEMS')(err);
             });
     }
 
@@ -1331,7 +1218,7 @@ window.Browser = function (hooks) {
             });
         }
         return list.filter(function (entry) {
-            return ParentalLock.allows(id, entry.section, entry.item);
+            return visibility.allows(entry.section, entry.item, { withHidden: true });
         }).sort(function (a, b) {
             return progressOf(b).updatedAt - progressOf(a).updatedAt;
         });
@@ -1340,8 +1227,7 @@ window.Browser = function (hooks) {
     // Home rows leave out items of hidden categories (Continue watching stays).
     function shownEntries(section, list) {
         return entriesOf(section, list.filter(function (item) {
-            var id = item.sourceId || sourceId();
-            return HiddenCategories.allows(id, section, item) && ParentalLock.allows(id, section, item);
+            return visibility.allows(section, item, { sourceId: item.sourceId });
         }));
     }
 
@@ -1397,7 +1283,7 @@ window.Browser = function (hooks) {
         if (state.section !== section || !state.base) return;
         var category = categories.item();
         showCategories(indexIn(categoryRows(), category, categories.index()));
-        if (category && !state.showingSearch && (category.virtual === 'added' || category.virtual === 'favorites')) {
+        if (category && !currentList.showingSearch() && category.fromCatalogue) {
             showVirtual(categories.item(), items.index());
         }
         // Badges follow the refreshed dates in every list of shows.
@@ -1443,7 +1329,7 @@ window.Browser = function (hooks) {
         return Promise.all([load('categories'), load('items')]).then(function (lists) {
             var category = lists[0].filter(function (row) { return String(row.category_id) === String(id); })[0];
             if (!category) return null;
-            var shown = ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, lists[1]));
+            var shown = visibility.items(section, lists[1]);
             var others = shown.filter(function (entry) { return String(entry.category_id) === String(id) && key(entry) !== key(item); });
             return { label: I18n.t('detail.moreIn', { category: I18n.categoryName(category) }), items: others.slice(0, 20) };
         }).catch(function () { return null; });
@@ -1550,7 +1436,7 @@ window.Browser = function (hooks) {
         return Promise.all(['movies', 'series'].map(function (section) {
             if (state.adapter.sections.indexOf(section) === -1) return [];
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (list) {
-                return ParentalLock.filterItems(sourceId(), section, HiddenCategories.filterItems(sourceId(), section, list)).map(function (item) {
+                return visibility.items(section, list).map(function (item) {
                     return { item: item, type: section === 'movies' ? 'movie' : 'tv' };
                 });
             }).catch(function () { return []; });
@@ -1642,7 +1528,7 @@ window.Browser = function (hooks) {
         if (state.section === 'settings') return settings.render();
         if (state.section !== section || !state.base) return;
         showCategories(indexIn(categoryRows(), categories.item(), categories.index()));
-        if (state.showingSearch) runSearch();
+        if (currentList.showingSearch()) runSearch();
         else loadItems();
         renderChrome();
     }
@@ -1778,7 +1664,7 @@ window.Browser = function (hooks) {
             if (STEPS[code]) {
                 var moved = moveItems(code);
                 if (!moved && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
-                else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) moreGenre();
+                else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) genres.more();
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
             else if (code === KEY.ENTER) {
@@ -1829,7 +1715,7 @@ window.Browser = function (hooks) {
             state.played = false;
             refreshLibrary();
             // Zapping does not move the list; land on the channel watched last.
-            var at = state.section === 'live' && !state.showingSearch ? live.indexOf(items.items(), live.current()) : -1;
+            var at = state.section === 'live' && !currentList.showingSearch() ? live.indexOf(items.items(), live.current()) : -1;
             if (at >= 0) items.select(at);
             detail.refresh();
             guide.resume(live.current());

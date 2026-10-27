@@ -73,6 +73,7 @@ I18n.tables.es = {
     'pin.unlockCategory': 'Desbloquear categoría',
     'player.audio': 'Audio',
     'player.episodes': 'Episodios',
+    'player.hide': 'Ocultar',
     'player.hint.channel': 'Canal',
     'player.hint.channelList': 'Lista de canales',
     'player.hint.close': 'Cerrar',

@@ -73,6 +73,7 @@ I18n.tables.ar = {
     'pin.unlockCategory': 'إلغاء قفل الفئة',
     'player.audio': 'الصوت',
     'player.episodes': 'الحلقات',
+    'player.hide': 'إخفاء',
     'player.hint.channel': 'قناة',
     'player.hint.channelList': 'قائمة القنوات',
     'player.hint.close': 'إغلاق',

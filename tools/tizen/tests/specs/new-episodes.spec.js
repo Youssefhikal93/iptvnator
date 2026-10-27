@@ -120,6 +120,7 @@ test('resuming an episode of the show clears the badge too', async ({ page }) =>
     await press(page, 'Enter'); // the hero's Continue watching button
     await playing(page);
     expect(await seen()).toBeGreaterThan(WATCHED);
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect(newRow(page)).toHaveCount(0);

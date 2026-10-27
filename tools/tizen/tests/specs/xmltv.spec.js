@@ -44,6 +44,7 @@ test('own gzip guide, provider-first fallback, player, saved reload and removal'
     await playing(page);
     await expect(page.locator('#pl-epg')).toContainText('XMLTV show');
     await expect(page.locator('#pl-epg')).toContainText('Next');
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
 
     await page.reload();
@@ -90,6 +91,7 @@ test('M3U add form accepts a guide and exposes XMLTV now/next on live rows and p
     await playing(page);
     await expect(page.locator('#pl-epg')).toContainText('m3u1.se');
     await expect(page.locator('#pl-epg')).toContainText('Next');
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await section(page, 'Sources');
     await expect(page.locator('#categories')).toContainText('Active · Guide: updated');

@@ -73,6 +73,7 @@ I18n.tables.ru = {
     'pin.unlockCategory': 'Разблокировать категорию',
     'player.audio': 'Аудио',
     'player.episodes': 'Серии',
+    'player.hide': 'Скрыть',
     'player.hint.channel': 'Канал',
     'player.hint.channelList': 'Список каналов',
     'player.hint.close': 'Закрыть',

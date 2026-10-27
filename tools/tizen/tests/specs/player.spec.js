@@ -7,6 +7,11 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await playing(page);
     await press(page, 'Enter');
     await expect.poll(() => page.locator('#video').evaluate(v => v.paused)).toBe(true);
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await page.waitForTimeout(1000); // Cross player ticks while paused.
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    expect(await page.locator('#video').evaluate(v => v.paused)).toBe(true);
     await sendKeyCode(page, 415);
     await playing(page);
     await press(page, 'ArrowRight');
@@ -27,6 +32,8 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await back(page);
     await expect(page.locator('#pl-menu')).toBeHidden();
     await expect(page.locator('#player')).toBeVisible();
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect(page.locator('#detail')).toBeVisible();
@@ -61,6 +68,8 @@ test('episode controls skip intro, select another season and play next', async (
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-subtitle')).toContainText('S2 E2');
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
 });

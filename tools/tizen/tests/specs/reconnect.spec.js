@@ -77,6 +77,7 @@ test('a live stream that stalls shows Reconnecting, keeps the last frame and res
     await expect.poll(() => page.locator('#video').evaluate((v) => v.currentTime)).toBeGreaterThan(resumedAt);
     expect(live.urls.length).toBeGreaterThanOrEqual(2);
     expect(live.max).toBe(1);
+    await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await expect(page.locator('#player')).toBeHidden();
 });

@@ -310,6 +310,7 @@ window.Player = (function () {
         ui.controls.classList.add('hidden');
         playerEl.classList.remove('controls-on');
         series.onHide();
+        if (current) renderHint();
     }
 
     // The tick hides the overlay once the deadline passes; while paused (or a
@@ -322,7 +323,7 @@ window.Player = (function () {
         var parts = current.live
             ? [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / Green', I18n.t('player.hint.previous')], ['Yellow', I18n.t('player.hint.audioSubs')]]
             : [['OK', I18n.t('player.hint.pause')], ['◀ ▶', I18n.t('player.hint.seek')], ['▲', I18n.t('player.hint.audioSubsSpeed')], ['▼', I18n.t(current.episodes ? 'player.hint.episodesMore' : 'detail.more')]];
-        parts.push(['Return', I18n.t('player.hint.close')]);
+        parts.push(['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]);
         return parts;
     }
 
@@ -370,6 +371,7 @@ window.Player = (function () {
         if (!current || !ready || resume.open || channelListOpen) return;
         ui.controls.classList.remove('hidden');
         playerEl.classList.add('controls-on');
+        renderHint();
         render();
         scheduleHide();
         series.render(true);
@@ -1196,7 +1198,7 @@ window.Player = (function () {
     }
 
     // Returns true when consumed, or 'back' for OK on the error's Back button.
-    // Return/Stop and live channel zapping are left to the caller.
+    // Return with hidden controls, Stop and live zapping are left to the caller.
     function key(code, live) {
         if (!current) return false;
         if (playbackError) return errorKey(code);
@@ -1209,7 +1211,11 @@ window.Player = (function () {
             openMenu();
             return true;
         }
-        if (Keys.isBack(code)) return false;
+        if (Keys.isBack(code)) {
+            if (box || ui.controls.classList.contains('hidden')) return false;
+            hideControls();
+            return true;
+        }
         showControls();
         if (live || ended) return code === KEY.ENTER;
         if (code === KEY.ENTER) {

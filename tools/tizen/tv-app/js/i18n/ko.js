@@ -73,6 +73,7 @@ I18n.tables.ko = {
     'pin.unlockCategory': '카테고리 잠금 해제',
     'player.audio': '오디오',
     'player.episodes': '에피소드',
+    'player.hide': '숨기기',
     'player.hint.channel': '채널',
     'player.hint.channelList': '채널 목록',
     'player.hint.close': '닫기',

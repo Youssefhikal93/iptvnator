@@ -73,6 +73,7 @@ I18n.tables.uk = {
     'pin.unlockCategory': 'Розблокувати категорію',
     'player.audio': 'Аудіо',
     'player.episodes': 'Серії',
+    'player.hide': 'Приховати',
     'player.hint.channel': 'Канал',
     'player.hint.channelList': 'Список каналів',
     'player.hint.close': 'Закрити',

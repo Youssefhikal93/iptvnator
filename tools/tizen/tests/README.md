@@ -47,7 +47,7 @@ Coverage is grouped by viewer journey:
 | `i18n-theme` | Language list (Deutsch and back, reload), English fallback for a missing key, Light theme background, focus colour and persistence, dark player |
 | `account` | Expiry warning and badges, expired/inactive/wrong-login screens and Go to Sources, health badges, saved channel counts, Edit source |
 | `reconnect` | Live stall and error reconnect with Reconnecting status and kept frame, give-up Retry screen, Return and zapping cancel, one live connection at a time, movies unchanged |
-| `player` | Pause/play/seek/speed, track availability and stream info, intro skip, episode/season selection, next episode and autoplay/cancel |
+| `player` | Pause/play/seek/speed, the ▲ menu's groups and values (#48), track availability and stream info, intro skip, episode/season selection, next episode and autoplay/cancel |
 
 Each test gets an empty browser context, seeds its own source/library state,
 and resets the server failure switch before and after running. Remote actions

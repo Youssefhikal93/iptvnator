@@ -203,3 +203,29 @@ rows are placed at a fixed height, so arriving rows never move the page.
 open(index) }` and `TmdbDetail.rows()` returns its rows in that shape. ▼ from
 the buttons enters the rows, ▲ from the first row or Return goes back, and OK
 opens the title or the actor page.
+
+## Player controls and side panels (#48)
+
+Movie and episode controls have a transport row: -10, play/pause and +10
+circles, with the ▼ buttons (Skip intro, Next episode, Episodes, Audio &
+subtitles) on its right. The keys are unchanged: OK pauses, so the middle
+circle shows what OK does next and carries the focus ring until the ▼
+buttons take it; ◀ ▶ seek and light the circle on their side. The bar is
+16 px with the time left on its right, and the top right shows the clock and
+"Ends HH:MM" at the current speed. Live channels keep their guide instead.
+
+The ▲ menu (`js/player-menu.js`) is a panel down the right edge. The player
+hands it entries on every render (`head` starts a group, `item` adds a
+choice, `note` and `info` add lines); its groups show their current value,
+OK or ▶ opens a group, ◀ or Return goes back and Return on the groups closes
+it. Specs open a group with `playerGroup(page, name)`.
+
+Hold-OK options (`Menu`) are a sheet down the right that dims the rest of
+the screen. An item's options show its artwork, title and section; rows can
+carry a `glyph` that CSS draws before the label, so a row's text is still
+its label; Return closes the sheet, so there is no Cancel row. The profile
+switcher keeps its small list under the avatar.
+
+Up next sits at the top right on the 96 px edge with the next episode's
+still, moves under the clock while the controls are up, and runs a bar down
+with the autoplay countdown.

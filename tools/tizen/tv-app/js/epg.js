@@ -36,14 +36,18 @@ window.Epg = function (adapter, source) {
         return channel.stream_id !== undefined ? 'id:' + channel.stream_id : 'url:' + channel.url;
     }
 
+    // When a guide lists programmes on top of each other, the one that
+    // started last is what is on now: providers often keep a long block (a
+    // replay slot) over the short programmes inside it. Next is the first
+    // programme after it ends.
     function pick(list, now) {
         var current = null;
         var next = null;
         list.forEach(function (p) {
-            if (!current && p.start <= now && now < p.end) current = p;
+            if (p.start <= now && now < p.end && (!current || p.start > current.start)) current = p;
         });
         list.forEach(function (p) {
-            if (!next && current && p.start >= current.end) next = p;
+            if (current && p.start >= current.end && (!next || p.start < next.start)) next = p;
         });
         return { now: current, next: next };
     }

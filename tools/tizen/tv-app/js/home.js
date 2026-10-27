@@ -113,18 +113,34 @@ window.Home = (api) => {
         return list;
     };
 
-    const heroDetails = (entry) => {
-        const key = entryKey(entry);
-        if (!s.details[key]) {
+    // Details (the provider's movie or show info) are asked for only for
+    // titles still on screen DETAIL_WAIT_MS after the last render, so moving
+    // through a row does not send a request per key press.
+    const DETAIL_WAIT_MS = 500;
+    const wanted = {};
+    let renders = 0;
+    let detailTimer = 0;
+    const askDetails = () => {
+        Object.keys(wanted).forEach((key) => {
+            const want = wanted[key];
+            delete wanted[key];
+            if (want.render !== renders || s.details[key]) return;
             s.details[key] = { value: null };
-            api.details(entry)
+            api.details(want.entry)
                 .then((d) => {
                     s.details[key].value = d;
                     render();
                 })
                 .catch(() => {});
-        }
-        return s.details[key].value || {};
+        });
+    };
+    const heroDetails = (entry) => {
+        const key = entryKey(entry);
+        if (s.details[key]) return s.details[key].value || {};
+        wanted[key] = { entry, render: renders };
+        clearTimeout(detailTimer);
+        detailTimer = setTimeout(askDetails, DETAIL_WAIT_MS);
+        return {};
     };
 
     const runtime = (seconds) => {
@@ -352,6 +368,7 @@ window.Home = (api) => {
     };
 
     function render() {
+        renders++;
         const mode = s.q.open ? 'cinema' : layout();
         root.classList.toggle('bigrow', mode === 'bigrow');
         root.classList.toggle('backdrop', mode === 'backdrop');

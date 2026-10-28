@@ -157,7 +157,14 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     await expect(page.locator('#form-pass')).toHaveAttribute('type', 'password');
     await expect(page.locator('#form-name')).toBeFocused();
 
-    // A new name alone neither asks the provider nor reloads anything.
+    // A new name alone neither asks the provider nor reloads anything; start-up's
+    // own downloads finish first so they are not counted.
+    let settled = -1;
+    await expect.poll(async () => {
+        const same = calls.length === settled;
+        settled = calls.length;
+        return same;
+    }, { intervals: [700] }).toBe(true);
     const before = calls.length;
     await page.locator('#form-name').fill('Living room');
     await page.locator('#form-save').click();

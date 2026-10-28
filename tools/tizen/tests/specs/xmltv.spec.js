@@ -103,7 +103,7 @@ test('404 guide reports failure while catalogue and provider guide remain usable
     await playing(page);
 });
 
-test('a truncated refresh preserves the previous guide; stale startup retries it', async ({ page }) => {
+test('a truncated refresh preserves the previous guide; startup retries it 12 hours later', async ({ page }) => {
     await boot(page);
     await guideLink(page, '/epg.xml');
     await expect(page.locator('#settings')).toContainText('Guide: updated');
@@ -120,7 +120,9 @@ test('a truncated refresh preserves the previous guide; stale startup retries it
     await page.evaluate(() => {
         const key = 'iptvnator-tv:guide:s1';
         const status = JSON.parse(localStorage.getItem(key));
+        // A failed download waits 12 hours like a good one.
         status.updatedAt = Date.now() - 13 * 3600000;
+        status.failedAt = Date.now() - 13 * 3600000;
         localStorage.setItem(key, JSON.stringify(status));
     });
     await page.reload();

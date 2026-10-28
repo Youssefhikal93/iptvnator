@@ -216,30 +216,48 @@ window.SubtitleDownload = function (hooks) {
     }
 
     // "Translate from العربية": the only row when no provider has the language.
+    // The languages DeepL translates from, beyond English and Arabic.
+    var DEEPL_SOURCES = ['fr', 'es', 'de', 'it', 'pt', 'tr', 'nl', 'pl', 'ru', 'uk', 'ko', 'ja', 'zh', 'id', 'sv', 'da',
+        'nb', 'fi', 'cs', 'sk', 'sl', 'ro', 'hu', 'bg', 'el', 'et', 'lv', 'lt', 'he', 'th', 'vi'];
+
     function offerTranslation(info, language) {
-        var from = language === 'ar' ? 'en' : 'ar';
-        var row = { from: from };
-        row.label = I18n.t('opensubs.translateFrom', { language: languageName(from) });
+        var row = { from: 'any' };
+        row.label = I18n.t('opensubs.translateAny');
         row.view = UI.html`<div class="sp-release">${row.label}</div>
             <div class="sp-badges"><span class="sp-src deepl">DeepL</span><span class="sp-tag sp-warn">AI</span></div>`;
-        row.run = function () { translateFrom(info, from, language); };
+        row.run = function () { translateFrom(info, language); };
         openPicker(I18n.t('opensubs.listTitle', { language: languageName(language) }), [row, { label: I18n.t('common.cancel') }], 0,
             { sub: I18n.t('opensubs.noneIn', { language: languageName(language) }) });
     }
 
     // Finds the best subtitle in from, then translates it into language.
-    function translateFrom(info, from, language) {
+    // The subtitle to translate: English, then Arabic (every provider), then
+    // any language DeepL reads (the providers that search many at once).
+    function translateFrom(info, language) {
         var mine = ++generation;
         var secret = keys();
         var alive = openPicker(I18n.t('opensubs.searching'), [{ label: I18n.t('common.cancel') }]);
-        return ask(providers(false).concat(providers(true)), info, from).then(function (outcomes) {
+        var all = providers(false).concat(providers(true));
+        var many = all.filter(function (provider) { return provider.id !== 'subsource'; });
+        var steps = ['en', 'ar'].filter(function (code) { return code !== language; }).map(function (code) { return { list: all, lang: code }; });
+        steps.push({ list: many, lang: DEEPL_SOURCES.filter(function (code) { return code !== language; }).join(',') });
+        var source = function (at) {
+            if (at >= steps.length || !steps[at].list.length) return Promise.resolve(null);
+            return ask(steps[at].list, info, steps[at].lang).then(function (outcomes) {
+                if (mine !== generation || !alive() || secret !== keys()) return null;
+                var results = [].concat.apply([], outcomes.map(function (outcome) { return outcome.results; }));
+                var best = SubtitleRank.rank(results, info && info.video).filter(function (match) { return !match.machine && !match.forced; })[0];
+                return best || source(at + 1);
+            });
+        };
+        return source(0).then(function (best) {
             if (mine !== generation || !alive() || secret !== keys()) return;
-            var results = [].concat.apply([], outcomes.map(function (outcome) { return outcome.results; }));
-            var best = SubtitleRank.rank(results, info && info.video).filter(function (match) { return !match.machine; })[0];
             if (!best) {
                 closePicker();
                 return toast('noResults');
             }
+            var from = String(best.language || '').toLowerCase().split(/[-_]/)[0] || 'en';
+            Log.info('SUBS translating from ' + from);
             return choose({ file_id: SubtitleTranslate.id(best.file_id, language), source: best, from: from, to: language,
                 language: language, release: best.release, fps: best.fps, machine: true, marks: [],
                 title: languageName(language) + ' · ' + I18n.t('opensubs.translatedFrom', { language: languageName(from) }) });

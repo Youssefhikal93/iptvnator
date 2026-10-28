@@ -189,7 +189,7 @@ test('#52 with nothing in English anywhere, DeepL translates the best Arabic sub
     v.player.start({ id: 'movie:1', title: 'Fixture' });
     await v.player.search();
     assert.equal(env.menu.children[0].textContent, 'Subtitles · EnglishNo English subtitles found');
-    assert.equal(env.menu.children[1].textContent, 'Translate from ARDeepLAI');
+    assert.equal(env.menu.children[1].textContent, 'Translate from another languageDeepLAI');
     env.globals.Menu.onKey(env.globals.Keys.ENTER);
     await settle(function () { return v.text; });
     assert.equal(v.text, '[EN] Hello');
@@ -284,4 +284,56 @@ test('#52 a refused download moves on to another provider and says why, and the 
     v.player.start({ id: 'movie:1', title: 'Fixture' });
     await v.player.search();
     assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · OpenSubtitles: key not accepted · SubDL 1');
+});
+
+test('with only a French subtitle anywhere, DeepL translates it after English and Arabic come up empty', async function () {
+    var asked = [];
+    var sent = [];
+    var env = fixture(function (address, options) {
+        var url = decodeURIComponent(address);
+        if (url.indexOf('api.opensubtitles.com') >= 0) {
+            if (url.indexOf('/download') >= 0) return json({ link: 'https://files.test/fr', remaining: 50 });
+            var langs = /languages=([a-z,-]+)/.exec(url)[1];
+            asked.push('os ' + (langs.length > 8 ? 'many' : langs));
+            var french = langs.split(',').indexOf('fr') >= 0;
+            return json({ data: french ? [{ attributes: { language: 'fr', release: 'Film.FR', download_count: 5, files: [{ file_id: 7 }] } }] : [] });
+        }
+        if (url.indexOf('api.subdl.com') >= 0) {
+            asked.push('subdl ' + (/languages=([A-Z,]+)/.exec(url)[1].length > 8 ? 'many' : /languages=([A-Z,]+)/.exec(url)[1]));
+            return json({ status: true, subtitles: [] });
+        }
+        if (url.indexOf('files.test') >= 0) {
+            return Promise.resolve({ ok: true, status: 200, text: function () { return Promise.resolve(FILE.replace('Hello', 'Bonjour')); } });
+        }
+        var body = JSON.parse(options.body);
+        sent.push(body.source_lang + '>' + body.target_lang);
+        return json({ translations: body.text.map(function (text) { return { text: '[EN] ' + text }; }) });
+    });
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    env.globals.Prefs.set('subdlApiKey', 'subdl-key');
+    env.globals.Prefs.set('deeplApiKey', 'dl-key:fx');
+    var v = viewer(env);
+    v.player.start({ id: 'movie:2', title: 'Film' });
+    await v.player.search();
+    assert.equal(env.menu.children[1].textContent, 'Translate from another languageDeepLAI');
+    env.globals.Menu.onKey(env.globals.Keys.ENTER);
+    await settle(function () { return v.text; });
+    assert.equal(v.text, '[EN] Bonjour');
+    // English, then Arabic, then many languages in one search.
+    assert.ok(asked.join('|').indexOf('os ar|') > 0 || asked.join('|').indexOf('os ar') >= 0);
+    assert.ok(asked.indexOf('os many') > asked.indexOf('os ar'));
+    assert.equal(sent.join(), 'FR>EN-US');
+});
+
+test('DeepL is sent the source language without its region, and none when it is unknown', async function () {
+    var bodies = [];
+    var env = fixture(function (url, options) {
+        bodies.push(JSON.parse(options.body));
+        return json({ translations: [{ text: 'x' }] });
+    });
+    env.globals.Prefs.set('deeplApiKey', 'dl-key:fx');
+    await env.globals.SubtitleTranslate.translate(['a'], 'pt-br', 'en');
+    await env.globals.SubtitleTranslate.translate(['a'], undefined, 'en');
+    assert.equal(bodies[0].source_lang, 'PT');
+    assert.equal(bodies[1].source_lang, undefined);
 });

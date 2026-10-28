@@ -131,7 +131,7 @@ test('#52 with no English anywhere the Arabic subtitle is translated with DeepL,
     await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'test-key', subdlApiKey: 'subdl-key', deeplApiKey: 'dl-key:fx' } } });
     await findOnline(page);
     await expect(page.locator('#menu .menu-sub')).toHaveText('No English subtitles found');
-    await expect(page.locator('#menu .menu-row.rich .sp-release')).toHaveText('Translate from العربية');
+    await expect(page.locator('#menu .menu-row.rich .sp-release')).toHaveText('Translate from another language');
     await press(page, 'Enter');
     await expect(page.locator('#menu .menu-title')).toHaveText(/Translating… \d+%/);
     await expect(page.locator('#pl-subs')).toHaveText('Welcome');

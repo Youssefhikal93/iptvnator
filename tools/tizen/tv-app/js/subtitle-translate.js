@@ -26,7 +26,7 @@ window.SubtitleTranslate = (function () {
         var timer = setTimeout(function () { controller.abort(); }, 30000);
         return fetch(host + '/v2/translate', { method: 'POST', signal: controller.signal, credentials: 'omit',
             headers: { Authorization: 'DeepL-Auth-Key ' + key, 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ text: texts, source_lang: from.toUpperCase(), target_lang: target(to) }) }).then(function (response) {
+            body: JSON.stringify(request(texts, from, to)) }).then(function (response) {
             if (!response.ok) throw failure(response.status);
             return response.json();
         }).then(function (body) {
@@ -38,6 +38,15 @@ window.SubtitleTranslate = (function () {
             Log.error('deepl failed ' + safe.status);
             throw safe;
         }).finally(function () { clearTimeout(timer); });
+    }
+
+    // The source language without its region ("pt-br" -> "PT"); left out when
+    // unknown (a saved choice reopened), so DeepL detects it.
+    function request(texts, from, to) {
+        var body = { text: texts, target_lang: target(to) };
+        var source = String(from || '').split(/[-_]/)[0].toUpperCase();
+        if (/^[A-Z]{2}$/.test(source)) body.source_lang = source;
+        return body;
     }
 
     // DeepL wants a regional English and Portuguese.

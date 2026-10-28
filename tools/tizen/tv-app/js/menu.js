@@ -1,6 +1,7 @@
 // The options sheet down the right (#48), opened by holding OK on an item.
-// open(title, options, index, header) where header { image, sub } shows the
-// item's artwork beside the title.
+// open(title, options, index, header, onBack) where header { image, sub }
+// shows the item's artwork beside the title, and onBack runs when Return
+// closes the menu.
 // Options are { label, run, view }; view, when given, is drawn instead of
 // the label (which still names the row for tests and logs). An option
 // without run just closes the menu,
@@ -10,7 +11,7 @@ window.Menu = (() => {
 
     const { html } = UI;
     const el = document.getElementById('menu');
-    let state = { options: [], index: 0, title: '', header: null, open: false };
+    let state = { options: [], index: 0, title: '', header: null, open: false, onBack: null };
 
     const render = () => {
         UI.render(html`<${Kit.SideMenu} title=${state.title} options=${state.options} index=${state.index} header=${state.header} />`, el);
@@ -26,8 +27,8 @@ window.Menu = (() => {
 
     return {
         close,
-        open: (title, options, index, header) => {
-            state = { options, index: index || 0, title, header: header || null, open: true };
+        open: (title, options, index, header, onBack) => {
+            state = { options, index: index || 0, title, header: header || null, open: true, onBack: onBack || null };
             el.classList.remove('profile-menu');
             render();
             el.classList.remove('hidden');
@@ -58,6 +59,7 @@ window.Menu = (() => {
                 if (option && option.run) option.run();
             } else if (Keys.isBack(code)) {
                 close();
+                if (state.onBack) state.onBack();
             }
             // Everything else is swallowed while the menu is open.
             return true;

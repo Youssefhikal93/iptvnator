@@ -46,8 +46,6 @@ window.Player = (function () {
         jump: $('pl-jump'),
         transport: $('pl-transport'),
         play: $('pl-play'),
-        back10: $('pl-back10'),
-        fwd10: $('pl-fwd10'),
         now: $('pl-now'),
         ends: $('pl-ends'),
         hint: $('pl-hint'),
@@ -327,12 +325,11 @@ window.Player = (function () {
         hideAt = Date.now() + HIDE_AFTER_MS;
     }
 
+    // Live channels list their keys; movies and shows keep a plain bar.
     function hintHtml() {
-        var parts = current.live
-            ? [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / Green', I18n.t('player.hint.previous')], ['Yellow', I18n.t('player.hint.audioSubs')]]
-            : [['OK', I18n.t('player.hint.pause')], ['◀ ▶', I18n.t('player.hint.seek')], ['▲', I18n.t('player.hint.audioSubsSpeed')], ['▼', I18n.t(current.episodes ? 'player.hint.episodesMore' : 'detail.more')]];
-        parts.push(['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]);
-        return parts;
+        if (!current.live) return [];
+        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / Green', I18n.t('player.hint.previous')], ['Yellow', I18n.t('player.hint.audioSubs')],
+            ['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]];
     }
 
     function renderHint() {
@@ -352,13 +349,11 @@ window.Player = (function () {
         ui.live.classList.toggle('hidden', !live);
         var paused = isPaused();
         ui.state.textContent = ended ? '■' : paused ? '❚❚' : '▶';
-        // The transport row (#48): OK acts on the circle in the middle, so it
-        // shows what OK does next; ◀ ▶ light the -10 / +10 circles.
+        // The transport row (#48): OK acts on the play/pause circle, so it
+        // shows what OK does next; ▼ moves to the buttons beside it.
         ui.transport.classList.toggle('hidden', live);
         ui.transport.classList.toggle('on-buttons', series.busy());
         ui.play.textContent = ended ? '■' : paused ? '▶' : '❚❚';
-        ui.back10.classList.toggle('active', seek.target !== null && seek.dir < 0);
-        ui.fwd10.classList.toggle('active', seek.target !== null && seek.dir > 0);
         ui.now.textContent = I18n.time(Date.now());
         ui.ends.textContent = '';
         if (live) return epg.render();
@@ -586,8 +581,26 @@ window.Player = (function () {
 
     // ---- Menu -------------------------------------------------------------
 
+    // The groups each part of the menu keeps: Audio & subtitles has the
+    // tracks and subtitle style; Settings has the rest.
+    function menuPart(m) {
+        if (!menu.part) return m;
+        var tracks = [I18n.t('player.audio'), I18n.t('picture.subtitles'), I18n.t('picture.subtitleStyle')];
+        var keep = false;
+        return {
+            head: function (label) {
+                keep = (tracks.indexOf(label) >= 0) === (menu.part === 'tracks');
+                if (keep) m.head(label);
+            },
+            item: function (label, active, action) { if (keep) m.item(label, active, action); },
+            note: function (text) { if (keep) m.note(text); },
+            info: function (text) { if (keep) m.info(text); },
+        };
+    }
+
     // What the ▲ menu shows (see player-menu.js), asked again on every render.
-    function menuEntries(m) {
+    function menuEntries(whole) {
+        var m = menuPart(whole);
         var tracks = getTracks();
         var watch = epg.watchFromStart();
         if (watch) m.item(I18n.t('player.watchFromStart'), false, watch);
@@ -618,6 +631,7 @@ window.Player = (function () {
 
     var playerMenu = PlayerMenu(ui.menu, {
         build: menuEntries,
+        title: function () { return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs'); },
         run: function (action) {
             try {
                 action();
@@ -632,8 +646,10 @@ window.Player = (function () {
         playerMenu.render();
     }
 
-    function openMenu() {
+    // part: 'tracks' or 'settings' for a part of the menu, else all of it.
+    function openMenu(part) {
         menu.open = true;
+        menu.part = typeof part === 'string' ? part : null;
         playerMenu.reset();
         ui.menu.classList.remove('hidden');
         renderMenu();

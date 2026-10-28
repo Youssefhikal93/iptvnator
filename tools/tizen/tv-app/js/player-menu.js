@@ -12,7 +12,7 @@ window.PlayerMenu = (root, hooks) => {
     'use strict';
 
     const { html } = UI;
-    const { build, run } = hooks;
+    const { build, run, title } = hooks;
     // group is -1 on the list of groups, else the open group's row.
     let state = { group: -1, focus: 0 };
     let rows = [];
@@ -51,7 +51,7 @@ window.PlayerMenu = (root, hooks) => {
         <span class="label">${group.label}</span><span class="value">${valueOf(group)}</span><span class="chev">›</span>
     </div>`;
 
-    const groupsView = () => html`<div class="pl-menu-title">${I18n.t('player.hint.audioSubs')}</div>
+    const groupsView = () => html`<div class="pl-menu-title">${title ? title() : I18n.t('player.hint.audioSubs')}</div>
         <div class="pl-menu-rows">${rows.map((row, i) => (isGroup(row)
             ? html`<${Group} group=${row} focused=${i === state.focus} />`
             : html`<${Choice} entry=${row} focused=${i === state.focus} />`))}</div>

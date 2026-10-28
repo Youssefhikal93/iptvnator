@@ -5,7 +5,7 @@ var assert = require('node:assert/strict');
 var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -211,7 +211,9 @@ test('picking a search result renders downloaded cues and low quota; reopening u
     var request = { id: 'movie:1', title: 'Fixture' };
     v.player.start(request);
     await v.player.search();
-    assert.ok(env.menu.children[1].textContent.includes('★ Recommended · English · Fixture · ⬇ 42 · Hearing impaired'));
+    // The language moves to the title; the row is the release over its badges.
+    assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · OpenSubtitles 1');
+    assert.equal(env.menu.children[1].textContent, 'FixtureOpenSubtitles★⬇ 42CC');
     env.globals.Menu.onKey(env.globals.Keys.ENTER);
     await new Promise(setImmediate);
     assert.equal(v.text, 'Hello');
@@ -326,7 +328,7 @@ test('title queries use + for spaces, the form the API does not redirect', funct
 
 test('subtitle language choices map app locales and retain a saved language when the UI language changes', function () {
     var api = fixture().globals;
-    var row = api.OpenSubsSettings.rows[3];
+    var row = api.OpenSubsSettings.rows.filter(function (entry) { return entry.key === 'subtitleLanguages'; })[0];
     [['en', 'en,ar'], ['ary', 'en,ar'], ['by', 'en,ar,be'],
         ['zhtw', 'en,ar,zh-tw'], ['de', 'en,ar,de']].forEach(function (scenario) {
         api.Prefs.set('language', scenario[0]);

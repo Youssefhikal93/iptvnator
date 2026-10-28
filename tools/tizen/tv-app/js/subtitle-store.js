@@ -35,10 +35,11 @@ window.SubtitleStore = (function () {
         while (!write(CACHE, saved) && oldest.length) delete saved[oldest.shift()];
     }
 
-    function obtain(fileId) {
+    // match is the search result, which tells SubDL which file of a zip to take.
+    function obtain(fileId, match) {
         var hit = read(CACHE)[fileId];
         if (hit && typeof hit.text === 'string' && SubtitleFile.parse(hit.text).length) return Promise.resolve({ text: hit.text, remaining: null });
-        if (!pending[fileId]) pending[fileId] = OpenSubs.download(fileId).then(function (result) {
+        if (!pending[fileId]) pending[fileId] = (SubDL.owns(fileId) ? SubDL.download(fileId, match) : OpenSubs.download(fileId)).then(function (result) {
             if (!SubtitleFile.parse(result.text).length) throw new Error('Invalid subtitle file');
             cache(fileId, result.text);
             return result;

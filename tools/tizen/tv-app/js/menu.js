@@ -1,7 +1,9 @@
 // The options sheet down the right (#48), opened by holding OK on an item.
 // open(title, options, index, header) where header { image, sub } shows the
 // item's artwork beside the title.
-// Options are { label, run }; an option without run just closes the menu,
+// Options are { label, run, view }; view, when given, is drawn instead of
+// the label (which still names the row for tests and logs). An option
+// without run just closes the menu,
 // and a { label, note: true } line is passed over by the focus.
 window.Menu = (() => {
     'use strict';

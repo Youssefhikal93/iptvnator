@@ -43,7 +43,7 @@ window.Kit = (() => {
         ? html`<div class=${classes('menu-row with-icon', { focused })}>
             ${option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
         </div>`
-        : html`<div class=${classes('menu-row', { focused, note: option.note })} data-glyph=${option.glyph}>${option.label}</div>`);
+        : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view })} data-glyph=${option.glyph}>${option.view || option.label}</div>`);
 
     // header { image, sub } puts the item's artwork and a line beside the title (#48).
     const MenuHead = ({ title, header }) => (header

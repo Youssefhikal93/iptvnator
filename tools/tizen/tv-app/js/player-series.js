@@ -1,6 +1,6 @@
-// Extras for the player: a button row beside play/pause (Skip intro during
-// the intro, Start over, Audio & subtitles, Episodes for shows, and the
-// settings gear on the right), an Up next card that plays the next episode when one ends, and an
+// Extras for the player: a button row beside play/pause (Start over, Audio &
+// subtitles, Episodes for shows, and the settings gear on the right), Skip
+// intro floating above the bar during an episode's intro, an Up next card that plays the next episode when one ends, and an
 // episodes panel with season pills.
 //
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
@@ -58,7 +58,7 @@ window.PlayerSeries = function (api) {
         var req = api.current();
         if (!req || req.live) return [];
         var list = [];
-        if (inIntro()) list.push({ label: I18n.t('player.skipIntro'), run: skipIntro });
+        if (inIntro()) list.push({ label: I18n.t('player.skipIntro'), skip: true, run: skipIntro });
         list.push({ label: I18n.t('detail.startOver'), icon: 'restart', run: startOver });
         list.push({ label: I18n.t('player.hint.audioSubs'), icon: 'subs', run: function () { api.openMenu('tracks'); } });
         if (episodes()) list.push({ label: I18n.t('player.episodes'), icon: 'episodes', run: openPanel });
@@ -228,6 +228,8 @@ window.PlayerSeries = function (api) {
         if (s.focus >= list.length) s.focus = list.length - 1;
         ui.buttons.textContent = '';
         list.forEach(function (button, i) {
+            // Skip intro is not in the row: it floats above the bar.
+            if (button.skip) return;
             var node = el('span', 'pl-btn' + (button.gear ? ' pl-gear' : '') + (i === s.focus ? ' focus' : ''));
             if (button.icon) node.appendChild(el('span', 'pl-icon pl-icon-' + button.icon));
             // The gear shows only its icon; its name is for screen readers.
@@ -239,7 +241,11 @@ window.PlayerSeries = function (api) {
 
     function buttonsKey(code) {
         var list = buttons();
-        if (code === KEY.LEFT && s.focus > 0) s.focus--;
+        var first = list.length && list[0].skip ? 1 : 0;
+        if (first && s.focus === 0 && (code === KEY.LEFT || code === KEY.RIGHT)) return api.showControls(), true;
+        if (first && s.focus === 0 && code === KEY.DOWN) s.focus = 1;
+        else if (first && s.focus > 0 && code === KEY.UP) s.focus = 0;
+        else if (code === KEY.LEFT && s.focus > first) s.focus--;
         else if (code === KEY.RIGHT && s.focus < list.length - 1) s.focus++;
         else if (code === KEY.ENTER) {
             var button = list[s.focus];
@@ -270,7 +276,8 @@ window.PlayerSeries = function (api) {
         // Called on every player tick and render.
         render: function (controlsOn) {
             renderButtons();
-            ui.skip.classList.toggle('hidden', controlsOn || !inIntro());
+            ui.skip.classList.toggle('hidden', !inIntro());
+            ui.skip.classList.toggle('focus', s.focus === 0 && buttons().length > 0 && !!buttons()[0].skip);
             renderUpNext();
         },
         onHide: function () {

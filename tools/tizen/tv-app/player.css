@@ -216,10 +216,20 @@
     color: #fff;
     box-shadow: 0 0 0 4px #000, 0 0 0 8px #fff;
 }
-/* The focus is on the ▼ buttons, not on play/pause. */
+/* The focus is on a button or the timeline, not on play/pause. */
 #pl-transport.on-buttons .pl-play {
     background: rgba(255, 255, 255, 0.14);
     box-shadow: none;
+}
+/* ▲ from the buttons: ◀ ▶ now seek, so the knob grows and takes a ring. */
+#pl-seekbox.focus #pl-bar {
+    height: 12px;
+}
+#pl-seekbox.focus #pl-bar::after {
+    width: 34px;
+    height: 34px;
+    margin: -17px 0 0 -17px;
+    box-shadow: 0 0 0 4px #000, 0 0 0 8px #fff;
 }
 #pl-bar {
     position: relative;

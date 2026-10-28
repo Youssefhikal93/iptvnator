@@ -66,3 +66,25 @@ test('a settled seek that reports the target is not sent again', function () {
     playback.advance(800);
     assert.equal(playback.seeks, 1);
 });
+
+test('a resume that lands on a key frame short of the target is not sent again', function () {
+    var playback = engine();
+    playback.position = 60000;
+    playback.resume.start(610000);
+    assert.equal(playback.seeks, 1);
+    // The TV lands on 10:00, ten seconds short of 10:10.
+    playback.position = 600000;
+    playback.advance(800);
+    assert.equal(playback.resume.blocked(), false);
+    playback.advance(800);
+    assert.equal(playback.seeks, 1);
+});
+
+test('a resume the player ignored is sent again', function () {
+    var playback = engine();
+    playback.resume.start(610000);
+    playback.advance(800);
+    playback.advance(800);
+    assert.equal(playback.seeks, 3);
+    assert.equal(playback.resume.blocked(), true);
+});

@@ -177,6 +177,12 @@ async function menuChoice(page, label) {
     await expect(page.locator('#menu')).toBeHidden();
 }
 
+// ▲ from the player's buttons goes to the timeline, ▲ again opens the menu.
+async function playerMenu(page) {
+    for (let i = 0; i < 3 && !await page.locator('#pl-menu').isVisible(); i++) await press(page, 'ArrowUp');
+    await expect(page.locator('#pl-menu')).toBeVisible();
+}
+
 async function toolbar(page, name) {
     // Call from the first item (or the top category).
     await press(page, 'ArrowUp');
@@ -206,4 +212,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, playerGroup, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, playerGroup, playerMenu, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };

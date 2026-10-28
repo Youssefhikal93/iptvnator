@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting, playerGroup } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting, playerGroup, playerMenu } = require('./helpers');
 
 const setting = (page, label) => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.st-value');
 const menuLabel = '#pl-menu .pl-menu-item.focus span:last-child';
@@ -39,7 +39,7 @@ test('player menu updates subtitle classes, native cues and the same Settings va
         track.addCue(new VTTCue(video.currentTime, video.currentTime + 100, 'Visible subtitle'));
     });
     await expect.poll(() => page.locator('#video').evaluate(video => video.textTracks[0].activeCues[0]?.line)).toBe(90);
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     expect((await page.locator('#pl-menu .pl-menu-group .label').allTextContents()).slice(0, 4)).toEqual(['Audio', 'Subtitles', 'Subtitle style', 'Picture']);
     await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Subtitle style' }).locator('.value')).toHaveText('Medium · White');
     const cycle = async (group, steps) => {

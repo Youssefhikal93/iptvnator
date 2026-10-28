@@ -1,4 +1,4 @@
-const { test, expect, boot, openFirst, press, playing, sendKeyCode, back, moveTo, playerGroup } = require('./helpers');
+const { test, expect, playerMenu, boot, openFirst, press, playing, sendKeyCode, back, moveTo, playerGroup } = require('./helpers');
 
 test('movie controls pause, play, seek and change speed; track menu and stream info close before player', async ({ page }) => {
     await boot(page);
@@ -14,10 +14,14 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     expect(await page.locator('#video').evaluate(v => v.paused)).toBe(true);
     await sendKeyCode(page, 415);
     await playing(page);
+    // ◀ ▶ walk the buttons; ▲ puts the focus on the timeline, where they seek.
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#pl-buttons .focus')).toHaveText('Start over');
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#pl-seekbox')).toHaveClass(/focus/);
     await press(page, 'ArrowRight');
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(10);
-    await press(page, 'ArrowUp');
-    await expect(page.locator('#pl-menu')).toBeVisible();
+    await playerMenu(page);
     // Groups with their values first; OK opens one, Return goes back (#48).
     await expect(page.locator('#pl-menu .pl-menu-group .label').first()).toHaveText('Audio');
     await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Playback speed' }).locator('.value')).toHaveText('1×');
@@ -52,7 +56,7 @@ test('the movie bar has play/pause, Start over, Audio & subtitles and a settings
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-hint')).toBeEmpty();
-    await press(page, 'ArrowDown');
+    await press(page, 'ArrowRight');
     // A movie has no Episodes button.
     await expect(page.locator('#pl-buttons .pl-btn')).toHaveCount(3);
     await expect(page.locator('#pl-buttons .focus')).toHaveText('Start over');
@@ -76,8 +80,8 @@ test('the movie bar has play/pause, Start over, Audio & subtitles and a settings
     await expect(page.locator('#pl-menu')).toContainText('Playback speed');
     await expect(page.locator('#pl-menu .pl-menu-group .label', { hasText: /^Audio$/ })).toHaveCount(0);
     await back(page);
-    // ▲ still opens the whole menu.
-    await press(page, 'ArrowUp');
+    // ▲ ▲ still opens the whole menu.
+    await playerMenu(page);
     await expect(page.locator('#pl-menu .pl-menu-group .label').first()).toHaveText('Audio');
     await expect(page.locator('#pl-menu')).toContainText('Playback speed');
 });
@@ -91,12 +95,17 @@ test('episode controls skip intro, select another season and play next', async (
     // Seek via the real media API to reach intro/up-next windows without
     // spending several minutes watching the fixture in each regression run.
     await page.locator('#video').evaluate(v => { v.currentTime = 15; });
-    await press(page, 'ArrowDown');
-    // Skip intro floats above the bar, not in the row; ▼ focuses it first.
+    // Skip intro floats above the timeline, not in the row: ▲ ▲ reach it.
+    await press(page, 'ArrowUp');
+    await press(page, 'ArrowUp');
     await expect(page.locator('#pl-buttons')).not.toContainText('Skip intro');
     await expect(page.locator('#pl-skip')).toHaveClass(/focus/);
     await press(page, 'ArrowDown');
+    await expect(page.locator('#pl-seekbox')).toHaveClass(/focus/);
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowRight');
     await expect(page.locator('#pl-buttons .focus')).toHaveText('Start over');
+    await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
     await expect(page.locator('#pl-skip')).toHaveClass(/focus/);
     await press(page, 'Enter');

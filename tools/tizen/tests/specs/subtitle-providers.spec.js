@@ -1,5 +1,5 @@
 const zlib = require('node:zlib');
-const { test, expect, boot, openFirst, press, playing, playerGroup, moveTo } = require('./helpers');
+const { test, expect, boot, openFirst, press, playing, playerGroup, playerMenu, moveTo } = require('./helpers');
 
 const FILE = (line) => `1\n00:00:00,000 --> 00:59:00,000\n${line}\n`;
 
@@ -53,7 +53,7 @@ async function findOnline(page) {
     await openFirst(page, 'Movies');
     await press(page, 'Enter');
     await playing(page);
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     await playerGroup(page, 'Subtitles');
     await moveTo(page, '#pl-menu .pl-menu-item.focus span:last-child', 'Find subtitles online…');
     await press(page, 'Enter');
@@ -137,7 +137,7 @@ test('#52 with no English anywhere the Arabic subtitle is translated with DeepL,
     expect(sent).toEqual(['AR>EN-US']);
 
     // Off in the Subtitles group of the player: the search stops after the first round.
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     await playerGroup(page, 'Subtitles');
     await expect(page.locator('#pl-menu')).toContainText('English · translated from العربية');
     await moveTo(page, '#pl-menu .pl-menu-item.focus span:last-child', 'Backup search: On');

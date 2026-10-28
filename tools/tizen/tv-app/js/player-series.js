@@ -17,6 +17,7 @@ window.PlayerSeries = function (api) {
     var INTRO = { from: 10000, until: 300000 };
     var UP_NEXT_BEFORE_MS = 30000;
     var LEARN_MS = 60000;
+    var SKIP_SHOWN_MS = 5000;
     var PANEL_ROWS = 7;
     var KEY = Keys;
 
@@ -35,7 +36,7 @@ window.PlayerSeries = function (api) {
     var s = fresh();
 
     function fresh() {
-        return { focus: 'play', introDone: false, learnUntil: 0, dismissed: false, autoplayAt: 0, panel: null, art: '' };
+        return { focus: 'play', introDone: false, learnUntil: 0, skipUntil: 0, controlsOn: false, dismissed: false, autoplayAt: 0, panel: null, art: '' };
     }
 
     function el(tag, cls, text) {
@@ -48,6 +49,14 @@ window.PlayerSeries = function (api) {
     function episodes() {
         var req = api.current();
         return req && req.episodes;
+    }
+
+    // Skip intro is on screen for 5 s from when the intro starts, and again for
+    // 5 s each time the controls come up during it; focused, it stays.
+    function skipShown() {
+        if (!inIntro()) return false;
+        if (!s.skipUntil) s.skipUntil = Date.now() + SKIP_SHOWN_MS;
+        return s.focus === 'skip' || Date.now() < s.skipUntil;
     }
 
     function showKey() {
@@ -268,7 +277,7 @@ window.PlayerSeries = function (api) {
     function renderButtons() {
         var list = buttons();
         // Skip intro left the screen while focused: back to the timeline.
-        if (s.focus === 'skip' && !inIntro()) s.focus = 'bar';
+        if (s.focus === 'skip' && !skipShown()) s.focus = 'bar';
         if (s.focus !== 'bar' && s.focus !== 'skip' && !list.some(function (button) { return button.id === s.focus; })) s.focus = 'play';
         ui.buttons.textContent = '';
         list.forEach(function (button) {
@@ -296,7 +305,7 @@ window.PlayerSeries = function (api) {
             return true;
         }
         if (code === KEY.DOWN) s.focus = 'play';
-        else if (code === KEY.UP && inIntro()) s.focus = 'skip';
+        else if (code === KEY.UP && skipShown()) s.focus = 'skip';
         else return false;
         api.showControls();
         return true;
@@ -335,7 +344,9 @@ window.PlayerSeries = function (api) {
         // Called on every player tick and render.
         render: function (controlsOn) {
             renderButtons();
-            ui.skip.classList.toggle('hidden', !inIntro());
+            if (controlsOn && !s.controlsOn && inIntro()) s.skipUntil = Date.now() + SKIP_SHOWN_MS;
+            s.controlsOn = !!controlsOn;
+            ui.skip.classList.toggle('hidden', !skipShown());
             ui.skip.classList.toggle('focus', s.focus === 'skip');
             renderUpNext();
         },

@@ -91,8 +91,15 @@ test('episode controls skip intro, select another season and play next', async (
     // spending several minutes watching the fixture in each regression run.
     await page.locator('#video').evaluate(v => { v.currentTime = 15; });
     await press(page, 'ArrowDown');
-    await expect(page.locator('#pl-buttons .focus')).toHaveText('Skip intro');
+    // Skip intro floats above the bar, not in the row; ▼ focuses it first.
+    await expect(page.locator('#pl-buttons')).not.toContainText('Skip intro');
+    await expect(page.locator('#pl-skip')).toHaveClass(/focus/);
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#pl-buttons .focus')).toHaveText('Start over');
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#pl-skip')).toHaveClass(/focus/);
     await press(page, 'Enter');
+    await expect(page.locator('#pl-skip')).toBeHidden();
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(100);
     await press(page, 'ArrowDown');
     await moveTo(page, '#pl-buttons .focus', 'Episodes', 'ArrowRight');

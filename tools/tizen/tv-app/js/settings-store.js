@@ -7,7 +7,6 @@ window.Prefs = (function () {
     var listeners = [];
     var DEFAULTS = {
         autoplayMs: 8000,
-        skipIntroSeconds: 90,
         programmeGuide: true,
         livePreview: true,
         subtitleSize: 'm',

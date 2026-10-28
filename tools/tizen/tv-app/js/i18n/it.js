@@ -42,7 +42,6 @@ I18n.tables.it = {
     'describe.pin': 'Blocca le categorie scelte con un PIN',
     'describe.programmeGuide': 'Mostra cosa va in onda ora e dopo negli elenchi e nel player',
     'describe.relock': 'Per quanto tempo le categorie sbloccate restano aperte',
-    'describe.skipIntro': 'Di quanto salta «Salta intro» all’inizio di un episodio',
     'describe.topBar': 'Ricerca e pulsanti di visualizzazione sopra gli elenchi',
     'detail.more': 'Altro',
     'detail.moreIn': 'Altro in {category}',

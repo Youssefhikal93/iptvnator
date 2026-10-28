@@ -42,7 +42,6 @@ I18n.tables.zhtw = {
     'describe.pin': '用 PIN 鎖定所選分類',
     'describe.programmeGuide': '在清單和播放器中顯示正在播出和下一個節目',
     'describe.relock': '解鎖的分類保持開啟的時間',
-    'describe.skipIntro': '在一集開頭「跳過片頭」跳過的時長',
     'describe.topBar': '清單上方的搜尋和檢視按鈕',
     'detail.more': '更多',
     'detail.moreIn': '{category}中的更多內容',

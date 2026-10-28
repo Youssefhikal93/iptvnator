@@ -42,7 +42,6 @@ I18n.tables.fr = {
     'describe.pin': 'Verrouille les catégories choisies avec un code PIN',
     'describe.programmeGuide': 'Affiche le programme en cours et suivant dans les listes et le lecteur',
     'describe.relock': 'Combien de temps les catégories déverrouillées restent ouvertes',
-    'describe.skipIntro': 'La durée sautée par « Passer l’intro » au début d’un épisode',
     'describe.topBar': 'Recherche et boutons d’affichage au-dessus des listes',
     'detail.more': 'Plus',
     'detail.moreIn': 'Plus dans {category}',

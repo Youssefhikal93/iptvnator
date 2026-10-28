@@ -42,7 +42,6 @@ I18n.tables.zh = {
     'describe.pin': '用 PIN 锁定所选分类',
     'describe.programmeGuide': '在列表和播放器中显示正在播出和下一个节目',
     'describe.relock': '解锁的分类保持打开的时间',
-    'describe.skipIntro': '在一集开头“跳过片头”跳过的时长',
     'describe.topBar': '列表上方的搜索和视图按钮',
     'detail.more': '更多',
     'detail.moreIn': '{category}中的更多内容',

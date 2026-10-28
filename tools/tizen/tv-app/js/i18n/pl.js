@@ -42,7 +42,6 @@ I18n.tables.pl = {
     'describe.pin': 'Blokuje wybrane kategorie kodem PIN',
     'describe.programmeGuide': 'Pokazuje na listach i w odtwarzaczu, co jest teraz i potem',
     'describe.relock': 'Jak długo odblokowane kategorie pozostają otwarte',
-    'describe.skipIntro': 'Jak daleko przeskakuje „Pomiń intro” na początku odcinka',
     'describe.topBar': 'Wyszukiwanie i przyciski widoku nad listami',
     'detail.more': 'Więcej',
     'detail.moreIn': 'Więcej w kategorii {category}',

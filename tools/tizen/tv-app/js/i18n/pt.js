@@ -42,7 +42,6 @@ I18n.tables.pt = {
     'describe.pin': 'Bloqueia as categorias que escolher com um PIN',
     'describe.programmeGuide': 'Mostra o que está a dar agora e a seguir nas listas e no leitor',
     'describe.relock': 'Quanto tempo as categorias desbloqueadas ficam abertas',
-    'describe.skipIntro': 'Quanto salta «Saltar intro» no início de um episódio',
     'describe.topBar': 'Pesquisa e botões de vista acima das listas',
     'detail.more': 'Mais',
     'detail.moreIn': 'Mais em {category}',

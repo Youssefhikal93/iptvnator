@@ -5,19 +5,24 @@
 //
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
 // browser); open(i) returns the request for episode i. Xtream has no intro
-// markers, so Skip intro jumps the chosen length during an episode's first
-// minutes; where the viewer lands is remembered for the show (intro-marks.js),
-// and a jump within a minute of skipping corrects it.
+// markers: Skip intro appears only once the viewer has skipped an intro by
+// hand. A forward jump of 20 s or more that starts in an episode's first five
+// minutes teaches the show's intro (intro-marks.js): it starts where the jump
+// began and ends where it landed. The button then shows from 5 s before that
+// start, for 7 s, and jumps to the end; a jump soon after it corrects the end.
 //
 // The focus is on play/pause when the controls appear; ◀ ▶ move along the
 // row, ▲ goes to the timeline (where ◀ ▶ seek) and from there to Skip intro.
 window.PlayerSeries = function (api) {
     'use strict';
 
-    var INTRO = { from: 10000, until: 300000 };
+    var LEARN_BEFORE_MS = 300000;
+    var LEARN_MIN_MS = 20000;
+    var CHAIN_MS = 4000;
+    var EARLY_MS = 5000;
     var UP_NEXT_BEFORE_MS = 30000;
     var LEARN_MS = 60000;
-    var SKIP_SHOWN_MS = 5000;
+    var SKIP_SHOWN_MS = 7000;
     var PANEL_ROWS = 7;
     var KEY = Keys;
 
@@ -36,7 +41,7 @@ window.PlayerSeries = function (api) {
     var s = fresh();
 
     function fresh() {
-        return { focus: 'play', introDone: false, learnUntil: 0, skipUntil: 0, controlsOn: false, dismissed: false, autoplayAt: 0, panel: null, art: '' };
+        return { focus: 'play', introDone: false, learnUntil: 0, skipUntil: 0, controlsOn: false, manual: null, dismissed: false, autoplayAt: 0, panel: null, art: '' };
     }
 
     function el(tag, cls, text) {
@@ -51,8 +56,8 @@ window.PlayerSeries = function (api) {
         return req && req.episodes;
     }
 
-    // Skip intro is on screen for 5 s from when the intro starts, and again for
-    // 5 s each time the controls come up during it; focused, it stays.
+    // Skip intro is on screen for 7 s from when the intro starts, and again for
+    // 7 s each time the controls come up during it; focused, it stays.
     function skipShown() {
         if (!inIntro()) return false;
         if (!s.skipUntil) s.skipUntil = Date.now() + SKIP_SHOWN_MS;
@@ -75,9 +80,10 @@ window.PlayerSeries = function (api) {
     }
 
     function inIntro() {
+        var mark = IntroMarks.get(showKey());
+        if (!mark || !episodes() || s.introDone || api.isEnded()) return false;
         var pos = api.position();
-        var end = IntroMarks.get(showKey()) || INTRO.until;
-        return !!episodes() && !s.introDone && !api.isEnded() && pos >= INTRO.from && pos < end;
+        return pos >= Math.max(0, mark.from - EARLY_MS) && pos < mark.to;
     }
 
     function buttons() {
@@ -94,29 +100,46 @@ window.PlayerSeries = function (api) {
         return list;
     }
 
-    // The show's learnt end, else the chosen length; the first skip is learnt.
+    // To the end of the show's learnt intro.
     function skipIntro() {
-        var learnt = IntroMarks.get(showKey());
-        var target = learnt || api.position() + Prefs.get('skipIntroSeconds') * 1000;
-        if (!learnt) IntroMarks.set(showKey(), target);
+        var mark = IntroMarks.get(showKey());
+        if (!mark) return;
         s.introDone = true;
         s.learnUntil = Date.now() + LEARN_MS;
-        api.seekTo(target);
+        api.seekTo(mark.to);
         api.showControls();
     }
 
-    // A jump soon after Skip intro is the viewer fixing where the intro ends.
-    function onJump(ms) {
-        if (!s.learnUntil || Date.now() > s.learnUntil || !showKey()) return;
-        IntroMarks.set(showKey(), ms);
-        s.learnUntil = Date.now() + LEARN_MS;
+    // Every committed jump (from where it started to where it landed). Soon
+    // after Skip intro it corrects the end; otherwise quick forward jumps in a
+    // row count as one, and one of 20 s or more that began in the first five
+    // minutes teaches the intro. The latest such jump wins.
+    function onJump(from, to) {
+        var show = showKey();
+        if (!show) return;
+        var now = Date.now();
+        var mark = IntroMarks.get(show);
+        if (s.learnUntil && now <= s.learnUntil && mark) {
+            if (to > mark.from) IntroMarks.set(show, mark.from, to);
+            s.learnUntil = now + LEARN_MS;
+            return;
+        }
+        if (!(to > from)) {
+            s.manual = null;
+            return;
+        }
+        var chained = s.manual && now - s.manual.at <= CHAIN_MS && Math.abs(from - s.manual.to) <= 3000;
+        s.manual = chained ? { from: s.manual.from, to: to, at: now } : { from: from, to: to, at: now };
+        if (s.manual.to - s.manual.from >= LEARN_MIN_MS && s.manual.from <= LEARN_BEFORE_MS) {
+            IntroMarks.set(show, s.manual.from, s.manual.to);
+        }
     }
 
-    // The Intro group of the ▲ menu, once the show has a learnt end.
+    // The Intro group of the ▲ menu, once the show has a learnt intro.
     function introEntries(head, item) {
-        var learnt = IntroMarks.get(showKey());
-        if (!learnt) return;
-        head(I18n.t('player.intro'), I18n.t('player.introEnds', { time: api.clock(learnt) }));
+        var mark = IntroMarks.get(showKey());
+        if (!mark) return;
+        head(I18n.t('player.intro'), I18n.t('player.introRange', { from: api.clock(mark.from), to: api.clock(mark.to) }));
         item(I18n.t('player.introForget'), false, function () {
             IntroMarks.clear(showKey());
             api.toast(I18n.t('player.introForgotten'));

@@ -456,7 +456,7 @@ window.Player = (function () {
         seek.timer = null;
         if (seek.target === null) return;
         jumpTo(seek.target);
-        series.onJump(seek.target);
+        series.onJump(seek.origin, seek.target);
         seek.holdPos = seek.target;
         seek.holdUntil = Date.now() + 1200;
         seek.target = null;

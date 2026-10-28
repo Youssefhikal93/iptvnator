@@ -1,4 +1,4 @@
-// Where each show's intro ends, learnt from the viewer's own Skip intro:
+// Where each show's intro starts and ends, learnt from the viewer's own skip:
 // Xtream has no intro markers. Kept per profile, one small map for all shows.
 window.IntroMarks = (function () {
     'use strict';
@@ -20,20 +20,23 @@ window.IntroMarks = (function () {
         try {
             localStorage.setItem(storageKey(), JSON.stringify(marks));
         } catch (e) {
-            // Storage full: the show falls back to the fixed skip length.
+            // Storage full: the show is learnt again on the next skip.
         }
     }
 
     return {
-        // The intro's end in ms, or 0 when the show has none yet.
+        // { from, to } in ms, or null when the show has none yet. An end alone
+        // (saved before starts were learnt) counts from 0:10.
         get: function (show) {
-            var ms = show ? Number(all()[show]) : 0;
-            return ms > 0 ? ms : 0;
+            var mark = show ? all()[show] : null;
+            if (typeof mark === 'number') mark = { from: 10000, to: mark };
+            if (!mark || !(Number(mark.to) > Number(mark.from))) return null;
+            return { from: Math.max(0, Number(mark.from) || 0), to: Number(mark.to) };
         },
-        set: function (show, ms) {
-            if (!show || !(ms > 0)) return;
+        set: function (show, from, to) {
+            if (!show || !(to > from) || !(from >= 0)) return;
             var marks = all();
-            marks[show] = Math.round(ms);
+            marks[show] = { from: Math.round(from), to: Math.round(to) };
             write(marks);
         },
         clear: function (show) {

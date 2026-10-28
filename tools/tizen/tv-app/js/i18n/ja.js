@@ -42,7 +42,6 @@ I18n.tables.ja = {
     'describe.pin': '選んだカテゴリーをPINでロックします',
     'describe.programmeGuide': 'リストとプレーヤーに現在と次の番組を表示します',
     'describe.relock': 'ロック解除したカテゴリーが開いたままの時間',
-    'describe.skipIntro': 'エピソード冒頭で「イントロをスキップ」が飛ばす長さ',
     'describe.topBar': 'リストの上の検索と表示ボタン',
     'detail.more': 'もっと見る',
     'detail.moreIn': '{category}のその他',

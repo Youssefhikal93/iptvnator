@@ -42,7 +42,6 @@ I18n.tables.ko = {
     'describe.pin': '선택한 카테고리를 PIN으로 잠급니다',
     'describe.programmeGuide': '목록과 플레이어에 지금과 다음 프로그램을 표시합니다',
     'describe.relock': '잠금 해제한 카테고리가 열려 있는 시간',
-    'describe.skipIntro': '에피소드 시작 부분에서 인트로 건너뛰기가 건너뛰는 길이',
     'describe.topBar': '목록 위의 검색 및 보기 버튼',
     'detail.more': '더 보기',
     'detail.moreIn': '{category}의 다른 작품',

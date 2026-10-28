@@ -42,7 +42,6 @@ I18n.tables.es = {
     'describe.pin': 'Bloquea las categorías que elijas con un PIN',
     'describe.programmeGuide': 'Muestra lo que se emite ahora y después en las listas y el reproductor',
     'describe.relock': 'Cuánto tiempo siguen abiertas las categorías desbloqueadas',
-    'describe.skipIntro': 'Cuánto salta «Saltar intro» al inicio de un episodio',
     'describe.topBar': 'Búsqueda y botones de vista sobre las listas',
     'detail.more': 'Más',
     'detail.moreIn': 'Más en {category}',

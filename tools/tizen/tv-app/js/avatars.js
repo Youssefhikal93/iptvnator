@@ -1,16 +1,19 @@
-// Local 3D animal artwork keeps the profile colour visible through transparency.
+// Local 3D artwork keeps the profile colour visible through transparency.
 window.Avatars = (() => {
     'use strict';
 
     const { html } = UI;
     const ids = [
-        'fox', 'penguin', 'cat', 'frog', 'lion', 'sloth', 'bear', 'owl',
-        'unicorn', 'rabbit', 'koala', 'dragon', 'monkey', 'panda', 'octopus',
-        // Illustrated characters from the Klar website, backgrounds cut out.
-        'accounting', 'cfo', 'coo', 'cto', 'nurse', 'physician', 'psychiatrist', 'psychologist', 'social-worker',
+        'fox', 'penguin', 'frog', 'lion', 'sloth', 'unicorn',
+        'rabbit', 'dragon', 'panda', 'octopus', 'cto', 'nurse-hijab',
     ];
     // Retired choices still render without rewriting saved profiles.
-    const aliases = { princess: 'unicorn', wizard: 'owl', pig: 'monkey' };
+    const aliases = {
+        princess: 'unicorn', wizard: 'penguin', pig: 'sloth',
+        cat: 'fox', bear: 'panda', owl: 'penguin', koala: 'panda', monkey: 'sloth',
+        accounting: 'cto', cfo: 'cto', coo: 'penguin', psychiatrist: 'cto', psychologist: 'fox',
+        nurse: 'nurse-hijab', physician: 'nurse-hijab', 'social-worker': 'nurse-hijab',
+    };
     const resolve = (id) => Object.prototype.hasOwnProperty.call(aliases, id) ? aliases[id] : id;
 
     return {

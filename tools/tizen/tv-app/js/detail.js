@@ -1,7 +1,7 @@
 // Full-screen detail page for a movie (and a show, see detail-episodes.js):
 // full-bleed backdrop, poster, eyebrow, title, fact chips, plot, cast and a
 // row of pill buttons (#46). A show's episodes are a strip under the buttons,
-// then rows of related titles and cast (#47, detail-rows.js).
+// then rows of cast and related titles (#47, detail-rows.js).
 //
 // open(page) takes:
 //   item       the list item (name and artwork until the details arrive)
@@ -51,9 +51,10 @@ window.Detail = function () {
         return list;
     }
 
-    // "More in <category>", then the TMDB rows once they arrive.
+    // The TMDB rows (cast first, then similar titles) once they arrive, then
+    // "More in <category>": the cast is what a viewer looks for first.
     function rows() {
-        return (s.related ? [s.related] : []).concat(s.tmdb ? s.tmdb.rows() : []);
+        return (s.tmdb ? s.tmdb.rows() : []).concat(s.related ? [s.related] : []);
     }
 
     function relatedRow(found) {

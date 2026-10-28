@@ -126,3 +126,36 @@ test('the account screen names the problem and its date', function () {
     assert.match(inactive[1], /as disabled/);
     assert.equal(account.screen({ reason: 'login' })[0], 'Wrong login');
 });
+
+test('Settings asks a source for its account at most every 30 minutes, also across restarts, and never saves the login', async function () {
+    var calls = 0;
+    var overrides = {
+        Catalogue: { get: function () { return Promise.resolve(undefined); } },
+        XtreamSource: function () { return { account: function () { calls++; return Promise.resolve(info({ username: 'viewer', password: 'secret' })); } }; },
+    };
+    var env = load(['source-account.js'], {}, Object.assign({ Log: { error: function () {} } }, overrides));
+    var source = { id: 's1', type: 'xtream' };
+    env.globals.SourceAccount.refresh([source], function () {});
+    await new Promise(function (resolve) { setTimeout(resolve, 20); });
+    env.globals.SourceAccount.refresh([source], function () {});
+    await new Promise(function (resolve) { setTimeout(resolve, 20); });
+    assert.equal(calls, 1);
+    var saved = env.stored['iptvnator-tv:account-health'];
+    assert.ok(saved.includes('max_connections'));
+    assert.ok(!saved.includes('secret') && !saved.includes('viewer'));
+
+    // A restart within 30 minutes shows the saved account without asking.
+    var again = load(['source-account.js'], env.stored, Object.assign({ Log: { error: function () {} } }, overrides));
+    again.globals.SourceAccount.refresh([source], function () {});
+    await new Promise(function (resolve) { setTimeout(resolve, 20); });
+    assert.equal(calls, 1);
+    assert.equal(again.globals.SourceAccount.detailRows(source, null)[2].label, 'Connections: 0 / 2');
+
+    // Older than 30 minutes: asked again.
+    var old = JSON.parse(env.stored['iptvnator-tv:account-health']);
+    old.s1.at = Date.now() - 31 * 60000;
+    var later = load(['source-account.js'], { 'iptvnator-tv:account-health': JSON.stringify(old) }, Object.assign({ Log: { error: function () {} } }, overrides));
+    later.globals.SourceAccount.refresh([source], function () {});
+    await new Promise(function (resolve) { setTimeout(resolve, 20); });
+    assert.equal(calls, 2);
+});

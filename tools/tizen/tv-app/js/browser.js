@@ -696,8 +696,11 @@ window.Browser = function (hooks) {
         return true;
     }
 
+    // ▼ from the toolbar: search results take the focus whenever there are
+    // any; otherwise back where the toolbar was entered from.
     function leaveToolbar() {
-        var back = state.toolFrom === 'items' && items.items().length ? 'items' : 'categories';
+        var results = currentList.showingSearch() && items.items().length;
+        var back = (results || state.toolFrom === 'items') && items.items().length ? 'items' : 'categories';
         setZone(back);
     }
 

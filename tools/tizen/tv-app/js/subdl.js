@@ -78,12 +78,19 @@ window.SubDL = (function () {
 
     function search(info, lang, limit) {
         if (!Prefs.get('subdlApiKey')) return Promise.reject(failure(401));
-        return ask(info, lang, limit).then(function (matches) {
-            // A title SubDL doesn't know by its id may still be there by name.
-            var byId = numeric(info.tmdb_id) || numeric(String(info.imdb_id || '').replace(/^tt/i, ''));
-            if (matches.length || !byId || !name(info.title)) return matches;
-            return ask({ title: info.title, year: info.year, season: info.season, episode: info.episode }, lang, limit);
+        // A title SubDL doesn't know by its id may still be there by name:
+        // TMDB's name first, then the provider's own title.
+        var byId = numeric(info.tmdb_id) || numeric(String(info.imdb_id || '').replace(/^tt/i, ''));
+        var names = [];
+        [byId && info.title, info.providerTitle].forEach(function (title) {
+            if (name(title) && names.indexOf(name(title)) < 0) names.push(name(title));
         });
+        return names.reduce(function (found, title) {
+            return found.then(function (matches) {
+                if (matches.length) return matches;
+                return ask({ title: title, year: info.year, season: info.season, episode: info.episode }, lang, limit);
+            });
+        }, ask(info, lang, limit));
     }
 
     function ask(info, lang, limit) {

@@ -257,3 +257,20 @@ test('SubDL "can\'t find" is no results, and a title unknown by id is asked agai
     assert.equal((await env.globals.SubDL.search({ title: 'Nothing Here' }, 'en')).length, 0);
     assert.equal(env.globals.SubDL.name('AR - Love Is Blind, Habibi'), 'Love Is Blind, Habibi');
 });
+
+test('SubDL asks by id, then by TMDB\'s name, then by the provider\'s own title', async function () {
+    var asked = [];
+    var env = fixture(function (url) {
+        var query = url.split('&').slice(1).join('&');
+        asked.push(query);
+        if (/film_name=Habibi%20Love&/.test(query)) return json({ status: true, subtitles: [{ release_name: 'Habibi.Love.S01E01', url: '/subtitle/1-2.zip', episode: 1 }] });
+        return json({ status: false, error: "can't find movie or tv" });
+    });
+    env.globals.Prefs.set('subdlApiKey', 'subdl-key');
+    var matches = await env.globals.SubDL.search({ tmdb_id: 99, title: 'Love Is Blind, Habibi', providerTitle: 'AR - Habibi Love- حبيبي', season: 1, episode: 1 }, 'en');
+    assert.equal(asked.length, 3);
+    assert.ok(/tmdb_id=99/.test(asked[0]));
+    assert.ok(/film_name=Love%20Is%20Blind%2C%20Habibi/.test(asked[1]));
+    assert.ok(/film_name=Habibi%20Love&/.test(asked[2]));
+    assert.equal(matches[0].file_id, 'subdl:1-2');
+});

@@ -26,7 +26,7 @@ window.SubtitleContext = (function () {
             var named = [body.title, body.name, body.original_title, body.original_name].filter(function (name) {
                 return /[a-z]/i.test(name || '');
             })[0];
-            return Object.assign({}, info, { tmdb_id: body.id || info.tmdb_id, title: named || info.title,
+            return Object.assign({}, info, { tmdb_id: body.id || info.tmdb_id, title: named || info.title, providerTitle: info.title,
                 imdb_id: info.imdb_id || body.imdb_id });
         }).catch(function () { return info; });
     }

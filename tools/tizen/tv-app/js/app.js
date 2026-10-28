@@ -19,6 +19,22 @@
         }
     }
 
+    // Return on the menu, the loading screen or "Who's watching?" would close
+    // the app: it asks first, with Cancel focused. The sleep timer still exits
+    // at once.
+    // stay runs on Cancel or Return, where the screen asking was closed first.
+    function askExit(stay) {
+        var back = typeof stay === 'function' ? stay : null;
+        Menu.open(I18n.t('app.exitTitle'), [
+            { label: I18n.t('app.exit'), run: exitApp },
+            { label: I18n.t('common.cancel'), run: back },
+        ], 1, null, back);
+    }
+
+    function whoIsWatching() {
+        ProfileScreen.open(function () { browser.start(); }, function () { askExit(whoIsWatching); });
+    }
+
     function play(request) {
         if (!request) return;
         screen = 'player';
@@ -50,7 +66,7 @@
     var preview = null;
     var browser = Browser({
         play: play,
-        exit: exitApp,
+        exit: function () { askExit(); },
         preview: {
             open: function (item, list) {
                 return preview.open(item, list);
@@ -178,7 +194,7 @@
 
     LoadScreen.pause(document.hidden);
     // With two or more profiles, ask who is watching before anything loads.
-    if (ProfileScreen.shouldAsk()) ProfileScreen.open(function () { browser.start(); }, exitApp);
+    if (ProfileScreen.shouldAsk()) whoIsWatching();
     else browser.start();
     Log.info('IPTVnator TV started');
 })();

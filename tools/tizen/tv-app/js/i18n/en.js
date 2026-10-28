@@ -101,6 +101,8 @@ I18n.tables.en = {
     'channels.hint': 'OK: watch · ◀ ▶: category · Return: close',
     'channels.loadFailed': 'Could not load channels',
     'common.back': 'Back',
+    'app.exit': 'Exit',
+    'app.exitTitle': 'Exit IPTVnator?',
     'common.cancel': 'Cancel',
     'common.loading': 'Loading',
     'common.loadingEllipsis': 'Loading…',

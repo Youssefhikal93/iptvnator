@@ -23,6 +23,8 @@ I18n.tables.ar = {
     'browser.searchResults': 'نتائج البحث',
     'browser.watched': 'تمت المشاهدة',
     'common.back': 'رجوع',
+    'app.exit': 'خروج',
+    'app.exitTitle': 'الخروج من IPTVnator؟',
     'common.cancel': 'إلغاء',
     'common.loading': 'جارٍ التحميل',
     'common.loadingEllipsis': 'جارٍ التحميل…',

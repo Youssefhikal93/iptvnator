@@ -201,27 +201,39 @@ test('#52 one search asks both providers, merges them into one ranked list and s
     v.player.stop();
 });
 
-test('#52 Settings keep a SubDL key next to OpenSubtitles, test it and remove it', async function () {
+test('#52 a SubDL key is one row: OK opens Test, Change and Remove, and the row shows the test result', async function () {
     var calls = [];
     var env = fixture(function (url) {
         calls.push(url);
         return json({}, 403);
     });
     var api = env.globals;
-    var row = function (action) { return api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === action; })[0]; };
-    assert.equal(row('opensubs-subdl-key').text(), 'Not set');
+    var row = api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === 'opensubs-subdl-key'; })[0];
+    var opensubs = api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === 'opensubs-key'; })[0];
+    assert.equal(row.text(), 'Not set');
+    assert.equal(row.hint, '');
     api.Prefs.set('subdlApiKey', 'subdl-key');
-    assert.equal(row('opensubs-subdl-key').text(), '••••');
+    assert.equal(row.text(), '••••');
+    assert.equal(row.hint, 'OK: test, change or remove');
     var toasts = [];
     var hooks = { toast: function (text) { toasts.push(text); } };
-    api.OpenSubsSettings.act('opensubs-subdl-test', hooks, function () {});
-    assert.equal(row('opensubs-subdl-test').text(), 'Checking…');
+    // OK on the set key opens its choices; Test is first.
+    api.OpenSubsSettings.act('opensubs-subdl-key', hooks, function () {});
+    assert.equal(env.menu.children.map(function (child) { return child.textContent; }).join('|'), 'SubDL API key|Test key|Change key…|Remove key|Cancel');
+    api.Menu.onKey(api.Keys.ENTER);
+    assert.equal(row.text(), '•••• · Checking…');
     await new Promise(setImmediate);
     await new Promise(setImmediate);
-    assert.equal(row('opensubs-subdl-test').text(), 'Bad SubDL key');
-    assert.equal(row('opensubs-test').text(), 'OK to test');
+    assert.equal(row.text(), '•••• · Bad SubDL key');
+    assert.equal(toasts[toasts.length - 1], 'Bad SubDL key');
+    assert.equal(opensubs.text(), 'Not set');
     assert.ok(calls[0].startsWith('https://api.subdl.com/'));
-    api.OpenSubsSettings.act('opensubs-subdl-remove', hooks, function () {});
+    // Remove is the third choice.
+    api.OpenSubsSettings.act('opensubs-subdl-key', hooks, function () {});
+    api.Menu.onKey(api.Keys.DOWN);
+    api.Menu.onKey(api.Keys.DOWN);
+    api.Menu.onKey(api.Keys.ENTER);
     assert.equal(api.Prefs.get('subdlApiKey'), '');
-    assert.equal(toasts.at(-1), 'Key removed');
+    assert.equal(toasts[toasts.length - 1], 'Key removed');
+    assert.equal(row.text(), 'Not set');
 });

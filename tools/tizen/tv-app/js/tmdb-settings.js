@@ -30,8 +30,19 @@ window.TmdbSettings = (function () {
         input.focus();
     }
 
+    // OK on a set key: Test, Change or Remove; on an empty one, the key entry.
+    function choose(hooks, changed) {
+        if (!Prefs.get('tmdbApiKey')) return edit(changed);
+        Menu.open(I18n.t('tmdb.keyTitle'), [
+            { label: I18n.t('tmdb.testKey'), run: function () { act('tmdb-test', hooks, changed); } },
+            { label: I18n.t('keys.change'), run: function () { edit(changed); } },
+            { label: I18n.t('tmdb.removeKey'), run: function () { act('tmdb-remove', hooks, changed); } },
+            { label: I18n.t('common.cancel') },
+        ]);
+    }
+
     function act(action, hooks, changed) {
-        if (action === 'tmdb-key') return edit(changed);
+        if (action === 'tmdb-key') return choose(hooks, changed);
         if (action === 'tmdb-remove') {
             Prefs.set('tmdbApiKey', '');
             status = '';
@@ -52,12 +63,13 @@ window.TmdbSettings = (function () {
 
     return {
         rows: [
-            { group: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key', text: function () {
-                var secret = Prefs.get('tmdbApiKey');
-                return secret ? I18n.t('tmdb.keySet', { last: secret.slice(-4) }) : I18n.t('tmdb.notSet');
-            } },
-            { get label() { return I18n.t('tmdb.testKey'); }, action: 'tmdb-test', text: function () { return status || I18n.t('tmdb.okToTest'); } },
-            { get label() { return I18n.t('tmdb.removeKey'); }, action: 'tmdb-remove', text: '' },
+            // One row: the value shows the key's end and its last test; OK offers Test, Change, Remove.
+            { group: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key',
+                get hint() { return Prefs.get('tmdbApiKey') ? I18n.t('keys.hint') : ''; },
+                text: function () {
+                    var secret = Prefs.get('tmdbApiKey');
+                    return secret ? I18n.t('tmdb.keySet', { last: secret.slice(-4) }) + (status ? ' · ' + status : '') : I18n.t('tmdb.notSet');
+                } },
             { label: 'The Movie Database', text: I18n.t('tmdb.attribution') },
         ],
         act: act,

@@ -61,7 +61,7 @@ test('Settings language list switches the app to Deutsch, survives a reload and 
     // Static HTML (the add-source form) follows too, and values such as Off.
     await expect(page.locator('#form-save')).toHaveText('Speichern');
     await expect(page.locator('#form-user').locator('xpath=preceding-sibling::label')).toHaveText('Nutzername');
-    await expect(page.locator('.st-group', { hasText: 'Darstellung' })).toBeVisible();
+    await expect(page.locator('.st-part', { hasText: 'Darstellung' })).toBeAttached();
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:settings')).language);
     expect(stored).toBe('de');
 

@@ -36,6 +36,12 @@ window.Menu = (() => {
             return () => state === current && state.open;
         },
         isOpen: () => state.open,
+        // A new title for the open menu (progress), keeping its options and focus.
+        retitle: (title) => {
+            if (!state.open) return;
+            state.title = title;
+            render();
+        },
         onKey: (code) => {
             if (code === Keys.UP || code === Keys.DOWN) {
                 let at = state.index;

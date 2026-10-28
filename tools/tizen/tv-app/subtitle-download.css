@@ -41,3 +41,5 @@ body.subtitles-open #toast {
 .sp-badges .sp-exact { background: #1d5a33; color: #8af0ad; }
 .sp-badges .sp-fit { color: #8af0ad; }
 .sp-badges .sp-warn { background: #6b2a1f; color: #ffb4a6; }
+.sp-badges .sp-src.subsource { background: #1d5a5a; color: #b8f5f0; }
+.sp-badges .sp-src.deepl { background: #0f2b46; color: #a8d4ff; }

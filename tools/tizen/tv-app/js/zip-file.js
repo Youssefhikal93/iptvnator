@@ -61,11 +61,46 @@ window.ZipFile = (function () {
         };
     }
 
-    return { entries: function (buffer) {
+    function decode(bytes) {
+        var text;
+        try {
+            text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        } catch (e) {
+            // Older Arabic subtitles are often Windows-1256 rather than UTF-8.
+            var arabic = new TextDecoder('windows-1256').decode(bytes);
+            text = /[\u0600-\u06ff]{3}/.test(arabic) ? arabic : new TextDecoder('windows-1252').decode(bytes);
+        }
+        return text.replace(/^\uFEFF/, '');
+    }
+
+    // The subtitle file in the zip; with several, the one naming the episode.
+    function pick(list, match) {
+        var files = list.filter(function (entry) { return /\.(srt|vtt)$/i.test(entry.name); });
+        var season = Number(match && match.season);
+        var episode = Number(match && match.episode);
+        if (files.length > 1 && episode) {
+            var tag = new RegExp('s0*' + season + '\\W?e0*' + episode + '(?!\\d)|\\b0*' + season + 'x0*' + episode + '(?!\\d)', 'i');
+            var named = files.filter(function (entry) { return tag.test(entry.name); })[0];
+            if (named) return named;
+        }
+        return files[0];
+    }
+
+    function safeEntries(buffer) {
         try {
             return entries(buffer);
         } catch (error) {
             throw error && error.code ? error : failure();
         }
-    } };
+    }
+
+    return {
+        entries: safeEntries,
+        // The text of the subtitle a provider's zip holds for match.
+        subtitle: function (buffer, match) {
+            var file = pick(safeEntries(buffer), match);
+            if (!file) return Promise.reject(failure());
+            return file.read().then(decode);
+        },
+    };
 })();

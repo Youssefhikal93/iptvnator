@@ -87,3 +87,66 @@ test('#52 a failing SubDL still leaves the OpenSubtitles results and says so und
     await press(page, 'Enter');
     await expect(page.locator('#pl-subs')).toHaveText('From OpenSubtitles');
 });
+
+// The first round finds nothing: OpenSubtitles has only Arabic, SubDL nothing.
+async function emptyFirstRound(page) {
+    await page.route('https://api.opensubtitles.com/**', (route) => {
+        const url = route.request().url();
+        if (url.includes('/download')) return route.fulfill({ json: { link: 'https://files.test/ar.srt', remaining: 90 } });
+        if (url.includes('languages=ar')) {
+            return route.fulfill({ json: { data: [{ attributes: { language: 'ar', release: 'Fixture.AR', download_count: 50, files: [{ file_id: 21 }] } }] } });
+        }
+        return route.fulfill({ json: { data: [] } });
+    });
+    await page.route('https://files.test/**', (route) => route.fulfill({ body: FILE('مرحبا بكم') }));
+    await page.route('https://api.subdl.com/**', (route) => route.fulfill({ json: { status: true, subtitles: [] } }));
+}
+
+test('#52 when OpenSubtitles and SubDL find nothing, Subsource is asked as a backup', async ({ page }) => {
+    await emptyFirstRound(page);
+    await page.route('https://api.subsource.net/**', (route) => {
+        const url = route.request().url();
+        if (url.includes('/movies/search')) return route.fulfill({ json: { data: [{ movieId: 5 }] } });
+        if (url.includes('/download')) return route.fulfill({ contentType: 'application/zip', body: zip('fixture.srt', FILE('From Subsource')) });
+        return route.fulfill({ json: { data: [{ subtitleId: 70, releaseInfo: ['Fixture.2021.WEB-DL'], downloads: 1300 }] } });
+    });
+    await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'test-key', subdlApiKey: 'subdl-key', subsourceApiKey: 'ss-key' } } });
+    await findOnline(page);
+    await expect(page.locator('#menu .menu-sub')).toHaveText('Backup · 1 found · Subsource 1');
+    await expect(page.locator('#menu .menu-row.rich .sp-badges span')).toHaveText(['Subsource', '★', '⬇ 1.3k']);
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-subs')).toHaveText('From Subsource');
+});
+
+test('#52 with no English anywhere the Arabic subtitle is translated with DeepL, and Backup search off skips it', async ({ page }) => {
+    await emptyFirstRound(page);
+    const sent = [];
+    await page.route('https://api-free.deepl.com/**', async (route) => {
+        const body = route.request().postDataJSON();
+        sent.push(body.source_lang + '>' + body.target_lang);
+        await new Promise((done) => setTimeout(done, 400));
+        return route.fulfill({ json: { translations: body.text.map(() => ({ text: 'Welcome' })) } });
+    });
+    await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'test-key', subdlApiKey: 'subdl-key', deeplApiKey: 'dl-key:fx' } } });
+    await findOnline(page);
+    await expect(page.locator('#menu .menu-sub')).toHaveText('No English subtitles found');
+    await expect(page.locator('#menu .menu-row.rich .sp-release')).toHaveText('Translate from العربية');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu .menu-title')).toHaveText(/Translating… \d+%/);
+    await expect(page.locator('#pl-subs')).toHaveText('Welcome');
+    expect(sent).toEqual(['AR>EN-US']);
+
+    // Off in the Subtitles group of the player: the search stops after the first round.
+    await press(page, 'ArrowUp');
+    await playerGroup(page, 'Subtitles');
+    await expect(page.locator('#pl-menu')).toContainText('English · translated from العربية');
+    await moveTo(page, '#pl-menu .pl-menu-item.focus span:last-child', 'Backup search: On');
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-menu')).toContainText('Backup search: Off');
+    // Find subtitles online… is the row just above the switch.
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#pl-menu .pl-menu-item.focus')).toContainText('Find subtitles online…');
+    await press(page, 'Enter');
+    await expect(page.locator('#toast')).toContainText('No subtitles found');
+    expect(sent).toEqual(['AR>EN-US']);
+});

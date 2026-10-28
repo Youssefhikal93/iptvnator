@@ -1,6 +1,8 @@
 // Downloaded subtitles for movies and episodes (#30, #39, #52): search
 // OpenSubtitles and SubDL together and pick from one ranked list, then keep
-// them in time with the voice. A subtitle
+// them in time with the voice. Only when both find nothing, and the Backup
+// search switch is on, Subsource is asked, and then a subtitle in another
+// language can be translated with DeepL. A subtitle
 // timed for another frame rate is stretched to the video's (scale); the
 // delay moves by 0.5 s or 5 s, or is set from the line being spoken; and
 // the next result can be tried without searching again.
@@ -24,21 +26,28 @@ window.SubtitleDownload = function (hooks) {
     function toast(key, params) { hooks.toast(I18n.t('opensubs.' + key, params)); }
 
     function report(error) {
-        var key = (error && error.provider === 'subdl' ? 'subdl.' : 'opensubs.') + (error && error.code || 'connection');
+        var provider = error && error.provider;
+        var key = (/^(subdl|subsource|deepl)$/.test(provider) ? provider + '.' : 'opensubs.') + (error && error.code || 'connection');
         hooks.toast(I18n.t(key, { reset: error && error.reset || '' }));
     }
 
-    // The providers with a key set, in the order their results are shown on a tie.
+    // The providers with a key set, in the order their results are shown on a
+    // tie; a backup one is asked only when the others find nothing.
     var PROVIDERS = [{ id: 'opensubtitles', name: 'OpenSubtitles', pref: 'opensubtitlesApiKey', api: function () { return OpenSubs; } },
-        { id: 'subdl', name: 'SubDL', pref: 'subdlApiKey', api: function () { return SubDL; } }];
+        { id: 'subdl', name: 'SubDL', pref: 'subdlApiKey', api: function () { return SubDL; } },
+        { id: 'subsource', name: 'Subsource', pref: 'subsourceApiKey', backup: true, api: function () { return SubSource; } }];
 
-    function providers() {
-        return PROVIDERS.filter(function (provider) { return !!Prefs.get(provider.pref); });
+    function backupOn() { return Prefs.get('subtitleFallback') !== false; }
+
+    function providers(backup) {
+        return PROVIDERS.filter(function (provider) { return !!provider.backup === !!backup && !!Prefs.get(provider.pref); });
     }
+
+    function translator() { return backupOn() && !!Prefs.get('deeplApiKey'); }
 
     // A changed or removed key makes an open search stale.
     function keys() {
-        return PROVIDERS.map(function (provider) { return Prefs.get(provider.pref) || ''; }).join('\n');
+        return PROVIDERS.map(function (provider) { return Prefs.get(provider.pref) || ''; }).concat([Prefs.get('deeplApiKey') || '']).join('\n');
     }
 
     function remember() {
@@ -98,11 +107,16 @@ window.SubtitleDownload = function (hooks) {
 
     function choose(match) {
         var mine = ++generation;
-        var alive = openPicker(I18n.t('opensubs.downloading'), [{ label: I18n.t('common.cancel') }]);
+        var alive = openPicker(I18n.t(match.from ? 'opensubs.translating' : 'opensubs.downloading', { p: 0 }), [{ label: I18n.t('common.cancel') }]);
+        if (match.from) {
+            match.progress = function (done, total) {
+                if (mine === generation && alive()) Menu.retitle(I18n.t('opensubs.translating', { p: Math.round(done / total * 100) }));
+            };
+        }
         return SubtitleStore.obtain(match.file_id, match).then(function (result) {
             if (mine !== generation || !alive()) return;
             var stretch = ratio(match);
-            apply(result.text, match.file_id, stretch, languageName(match.language) + ' · ' + match.release);
+            apply(result.text, match.file_id, stretch, match.title || languageName(match.language) + ' · ' + match.release);
             closePicker();
             Log.info('SUBS picked fps ' + (SubtitleRank.rate(match.fps) || '?') + ' scale ' + stretch.toFixed(4));
             if (stretch !== 1) toast('retimed', { from: +SubtitleRank.rate(match.fps).toFixed(3), to: +video.fps.toFixed(3) });
@@ -130,7 +144,7 @@ window.SubtitleDownload = function (hooks) {
     }
 
     function sourceName(match) {
-        return match.source === 'subdl' ? 'SubDL' : 'OpenSubtitles';
+        return { subdl: 'SubDL', subsource: 'Subsource' }[match.source] || 'OpenSubtitles';
     }
 
     // The badges after the release: [text, class, spoken name].
@@ -174,9 +188,51 @@ window.SubtitleDownload = function (hooks) {
         }));
     }
 
+    function showList(matches, outcomes, language, backup) {
+        openPicker(I18n.t('opensubs.listTitle', { language: languageName(language) }), matches.map(function (match) {
+            return { label: label(match), view: view(match), run: function () { choose(match); } };
+        }).concat([{ label: I18n.t('common.cancel') }]), 0, { sub: (backup ? I18n.t('opensubs.fromBackup') + ' · ' : '') + summary(matches, outcomes) });
+    }
+
+    // "Translate from العربية": the only row when no provider has the language.
+    function offerTranslation(info, language) {
+        var from = language === 'ar' ? 'en' : 'ar';
+        var row = { from: from };
+        row.label = I18n.t('opensubs.translateFrom', { language: languageName(from) });
+        row.view = UI.html`<div class="sp-release">${row.label}</div>
+            <div class="sp-badges"><span class="sp-src deepl">DeepL</span><span class="sp-tag sp-warn">AI</span></div>`;
+        row.run = function () { translateFrom(info, from, language); };
+        openPicker(I18n.t('opensubs.listTitle', { language: languageName(language) }), [row, { label: I18n.t('common.cancel') }], 0,
+            { sub: I18n.t('opensubs.noneIn', { language: languageName(language) }) });
+    }
+
+    // Finds the best subtitle in from, then translates it into language.
+    function translateFrom(info, from, language) {
+        var mine = ++generation;
+        var secret = keys();
+        var alive = openPicker(I18n.t('opensubs.searching'), [{ label: I18n.t('common.cancel') }]);
+        return ask(providers(false).concat(providers(true)), info, from).then(function (outcomes) {
+            if (mine !== generation || !alive() || secret !== keys()) return;
+            var results = [].concat.apply([], outcomes.map(function (outcome) { return outcome.results; }));
+            var best = SubtitleRank.rank(results, info && info.video).filter(function (match) { return !match.machine; })[0];
+            if (!best) {
+                closePicker();
+                return toast('noResults');
+            }
+            return choose({ file_id: SubtitleTranslate.id(best.file_id, language), source: best, from: from, to: language,
+                language: language, release: best.release, fps: best.fps, machine: true, marks: [],
+                title: languageName(language) + ' · ' + I18n.t('opensubs.translatedFrom', { language: languageName(from) }) });
+        }).catch(function (error) {
+            if (mine !== generation || !alive()) return;
+            closePicker();
+            report(error);
+        });
+    }
+
     function search() {
-        var list = providers();
-        if (!list.length) {
+        var list = providers(false);
+        var backup = backupOn() ? providers(true) : [];
+        if (!list.length && !backup.length) {
             toast('setFirst');
             return Promise.resolve();
         }
@@ -186,25 +242,29 @@ window.SubtitleDownload = function (hooks) {
         var alive = openPicker(I18n.t('opensubs.searching'), [{ label: I18n.t('common.cancel') }]);
         var info = null;
         var lookup = current.subtitleLookup ? current.subtitleLookup() : Promise.resolve({ title: current.title });
+        var rounds = [list, backup].filter(function (round) { return round.length; });
+        // Each round only runs when the ones before it found nothing.
+        var next = function (at, earlier) {
+            return ask(rounds[at], info, language).then(function (outcomes) {
+                if (mine !== generation || !alive() || secret !== keys()) return;
+                var results = [].concat.apply([], outcomes.map(function (outcome) { return outcome.results; }));
+                video = SubtitleRank.facts(info && info.video);
+                var matches = SubtitleRank.rank(results, info && info.video).slice(0, 12);
+                logFacts(results, outcomes);
+                found = matches;
+                if (matches.length) return showList(matches, outcomes, language, rounds[at] === backup);
+                var all = earlier.concat(outcomes);
+                if (at + 1 < rounds.length) return next(at + 1, all);
+                if (translator()) return offerTranslation(info, language);
+                closePicker();
+                var failed = all.filter(function (outcome) { return outcome.error && outcome.error.code !== 'noResults'; })[0];
+                return failed ? report(failed.error) : toast('noResults');
+            });
+        };
         return lookup.then(function (known) {
             if (mine !== generation || !alive() || secret !== keys()) return null;
             info = known;
-            return ask(list, known, language);
-        }).then(function (outcomes) {
-            if (!outcomes || mine !== generation || !alive() || secret !== keys()) return;
-            var results = [].concat.apply([], outcomes.map(function (outcome) { return outcome.results; }));
-            video = SubtitleRank.facts(info && info.video);
-            var matches = SubtitleRank.rank(results, info && info.video).slice(0, 12);
-            logFacts(results, outcomes);
-            found = matches;
-            if (!matches.length) {
-                closePicker();
-                var failed = outcomes.filter(function (outcome) { return outcome.error && outcome.error.code !== 'noResults'; })[0];
-                return failed ? report(failed.error) : toast('noResults');
-            }
-            openPicker(I18n.t('opensubs.listTitle', { language: languageName(language) }), matches.map(function (match) {
-                return { label: label(match), view: view(match), run: function () { choose(match); } };
-            }).concat([{ label: I18n.t('common.cancel') }]), 0, { sub: summary(matches, outcomes) });
+            return next(0, []);
         }).catch(function (error) {
             if (mine !== generation || !alive()) return;
             closePicker();
@@ -310,6 +370,10 @@ window.SubtitleDownload = function (hooks) {
         if (!embeddedChoices) item(I18n.t('common.off'), !cues.length, off);
         if (cues.length) item(name || I18n.t('opensubs.downloaded'), true, function () {});
         item(I18n.t('opensubs.download'), false, function () { hooks.closeMenu(); search(); });
+        // Subsource and translation, used only when the first search finds nothing.
+        item(I18n.t('opensubs.backup', { state: I18n.t(backupOn() ? 'common.on' : 'common.off') }), false, function () {
+            Prefs.set('subtitleFallback', !backupOn());
+        });
         if (cues.length && found.length > 1) item(I18n.t('opensubs.next'), false, function () { hooks.closeMenu(); tryNext(); });
         if (!cues.length) return;
         if (head) head(I18n.t('opensubs.timing'), offset ? seconds(offset) : I18n.t('opensubs.inSync'));

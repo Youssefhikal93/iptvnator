@@ -5,7 +5,7 @@ var assert = require('node:assert/strict');
 var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'subtitle-download.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -455,7 +455,7 @@ test('#39 the timing group shows the delay and moves it by 0.5 s or 5 s', functi
             function (label, value) { heads.push(label + ': ' + value); items.push({ label: '# ' + label }); });
         return items;
     };
-    assert.deepEqual(labels().map(function (item) { return item.label; }), ['Off', 'Downloaded subtitles', 'Find subtitles online…',
+    assert.deepEqual(labels().map(function (item) { return item.label; }), ['Off', 'Downloaded subtitles', 'Find subtitles online…', 'Backup search: On',
         '# Subtitle timing', 'Sync to the line being spoken…', 'Show earlier by 5 s', 'Show earlier by 0.5 s', 'Show later by 0.5 s', 'Show later by 5 s']);
     assert.deepEqual(heads, ['Subtitle timing: No delay']);
     labels().find(function (item) { return item.label === 'Show later by 5 s'; }).run();

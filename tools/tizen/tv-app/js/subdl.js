@@ -89,41 +89,14 @@ window.SubDL = (function () {
         });
     }
 
-    function decode(bytes) {
-        var text;
-        try {
-            text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-        } catch (e) {
-            // Older Arabic subtitles are often Windows-1256 rather than UTF-8.
-            var arabic = new TextDecoder('windows-1256').decode(bytes);
-            text = /[؀-ۿ]{3}/.test(arabic) ? arabic : new TextDecoder('windows-1252').decode(bytes);
-        }
-        return text.replace(/^﻿/, '');
-    }
-
-    // The subtitle file in the zip; with several, the one naming the episode.
-    function pick(entries, match) {
-        var files = entries.filter(function (entry) { return /\.(srt|vtt)$/i.test(entry.name); });
-        var season = Number(match && match.season);
-        var episode = Number(match && match.episode);
-        if (files.length > 1 && episode) {
-            var tag = new RegExp('s0*' + season + '\\W?e0*' + episode + '(?!\\d)|\\b0*' + season + 'x0*' + episode + '(?!\\d)', 'i');
-            var named = files.filter(function (entry) { return tag.test(entry.name); })[0];
-            if (named) return named;
-        }
-        return files[0];
-    }
-
     function download(fileId, match) {
         var id = String(fileId || '').indexOf(PREFIX) === 0 ? String(fileId).slice(PREFIX.length) : '';
         if (!/^[\w-]+$/.test(id)) return Promise.reject(failure(0));
         return fetchBody(FILES + id + '.zip', 'binary').then(function (buffer) {
-            var file = pick(ZipFile.entries(buffer), match);
-            if (!file) throw failure(0);
-            return file.read();
-        }).then(function (bytes) {
+            return ZipFile.subtitle(buffer, match);
+        }).then(function (text) {
             Log.info('subdl download ok');
-            return { text: decode(bytes), remaining: null };
+            return { text: text, remaining: null };
         });
     }
 

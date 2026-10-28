@@ -1,5 +1,5 @@
-// The rows under a detail page (#47): "More in <category>" from the
-// library, then TMDB's cast and similar titles. A row is
+// The rows under a detail page (#47): TMDB's cast and similar titles,
+// then "More in <category>" from the library. A row is
 // { label, cards, open(index) }; this keeps the focus across the rows.
 window.DetailRows = () => {
     'use strict';

@@ -114,7 +114,10 @@ test('series enrichment preserves provider plot and episodes, with cast and libr
     await openFirst(page, 'Series');
     await expect(page.locator('#detail .tm-row', { hasText: 'Cast' })).toContainText('Alex Example');
     await expect(page.locator('#detail .dt-plot')).toHaveText('A small town hides a big secret.');
-    await expect(page.locator('#detail .tm-row').last()).toContainText('Similar in your library');
+    // Cast first, then similar titles, then "More in <category>".
+    await expect(page.locator('#detail .tm-row h2').first()).toHaveText('Cast');
+    await expect(page.locator('#detail .tm-row h2').nth(1)).toHaveText('Similar in your library');
+    await expect(page.locator('#detail .tm-row').last()).toHaveClass(/related/);
     // A show's episodes come first, then the TMDB rows (#46).
     await press(page, 'ArrowDown');
     await expect(page.locator('#detail .dt-ep.focus')).toBeVisible();

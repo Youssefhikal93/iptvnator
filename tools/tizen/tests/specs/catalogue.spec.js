@@ -70,3 +70,29 @@ test('search filters titles and list/grid choice survives reload', async ({ page
     await expect(page.locator('#items .row').first()).toBeVisible();
     await expect(page.locator('#items .card')).toHaveCount(0);
 });
+
+test('▼ from the search bar lands on the results even when the search started from the categories', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Series');
+    // The focus is on the category list; ▲ past the top category reaches the search bar.
+    await expect(page.locator('#categories .focused')).toBeVisible();
+    for (let i = 0; i < 8 && !(await page.locator('#searchbar.focused').count()); i++) await press(page, 'ArrowUp');
+    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
+    await press(page, 'Enter');
+    await page.locator('#search-input').fill('Show 7');
+    await expect(page.locator('#items .list-header')).toContainText('Show 7');
+    // Return stops typing and leaves the focus on the search bar with the results showing.
+    await press(page, 'Escape');
+    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#items .focused')).toContainText('Show 7');
+    await expect(page.locator('#categories .focused')).toHaveCount(0);
+    // With no results, ▼ goes back to the categories.
+    await press(page, 'ArrowUp');
+    await press(page, 'Enter');
+    await page.locator('#search-input').fill('No such show');
+    await expect(page.locator('#items .list-empty')).toContainText('No results');
+    await press(page, 'Escape');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#categories .focused')).toBeVisible();
+});

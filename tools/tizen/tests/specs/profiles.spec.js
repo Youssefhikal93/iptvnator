@@ -265,7 +265,7 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await addProfile(page, 'Anna');
     await settingsRow(page, 'Avatar');
     await press(page, 'Enter');
-    await expect(page.locator('#avatar-picker .ap-choice')).toHaveCount(25);
+    await expect(page.locator('#avatar-picker .ap-choice')).toHaveCount(13);
     await expect(page.locator('#avatar-picker .ap-choice.focused')).toContainText('Letter');
     await press(page, 'ArrowRight');
     await press(page, 'Enter');

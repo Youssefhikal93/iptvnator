@@ -73,14 +73,47 @@ window.ZipFile = (function () {
         return text.replace(/^\uFEFF/, '');
     }
 
+    // Whether a file or release name says it is this episode (S01E02, 1x02).
+    function tagged(text, season, episode) {
+        var tag = new RegExp('s0*' + season + '\\W?e0*' + episode + '(?!\\d)|\\b0*' + season + 'x0*' + episode + '(?!\\d)', 'i');
+        return tag.test(String(text || ''));
+    }
+
+    // A pack file named by its episode number without an SxxEyy tag:
+    // "03 Title.srt", "E03.srt", "Episode 3.srt", "One Piece - 05 720p.ass", or
+    // season and episode run together, "Paranormal 102 Title.srt" (S1 E2).
+    function numbered(text, episode, season) {
+        var base = String(text || '').split('/').pop();
+        if (anyTag(base)) return false;
+        if (new RegExp('^(?:e|ep|episode)?[\\s._-]*0*' + episode + '(?!\\d)', 'i').test(base)) return true;
+        if (new RegExp('\\s-\\s*(?:e|ep)?0*' + episode + '(?![\\dpx])', 'i').test(base)) return true;
+        var compact = season > 0 && season < 10 && episode < 100 ? String(season) + (episode < 10 ? '0' : '') + episode : '';
+        return !!compact && new RegExp('(?:^|[\\s._-])' + compact + '(?![\\dpx])', 'i').test(base);
+    }
+
+    // Whether a name says the file is forced: only signs and foreign lines.
+    function forced(text) {
+        return /(^|[^a-z0-9])(forced|foreign[\s._-]?parts?)([^a-z0-9]|$)/i.test(String(text || ''));
+    }
+
+    // Whether a name says it is some episode at all.
+    function anyTag(text) {
+        return /s\d+\W?e\d+|\b\d+x\d+\b/i.test(String(text || ''));
+    }
+
     // The subtitle file in the zip; with several, the one naming the episode.
     function pick(list, match) {
-        var files = list.filter(function (entry) { return /\.(srt|vtt)$/i.test(entry.name); });
+        // .srt first: with both, the plain file is the one to show.
+        // Full files before forced ones, then .srt before .ass.
+        var files = list.filter(function (entry) { return /\.(srt|vtt|ass|ssa)$/i.test(entry.name); })
+            .sort(function (a, b) {
+                return forced(a.name) - forced(b.name) || /\.(ass|ssa)$/i.test(a.name) - /\.(ass|ssa)$/i.test(b.name);
+            });
         var season = Number(match && match.season);
         var episode = Number(match && match.episode);
         if (files.length > 1 && episode) {
-            var tag = new RegExp('s0*' + season + '\\W?e0*' + episode + '(?!\\d)|\\b0*' + season + 'x0*' + episode + '(?!\\d)', 'i');
-            var named = files.filter(function (entry) { return tag.test(entry.name); })[0];
+            var named = files.filter(function (entry) { return tagged(entry.name, season, episode); })[0]
+                || files.filter(function (entry) { return numbered(entry.name, episode, season); })[0];
             if (named) return named;
         }
         // A season pack without this episode's file must not play another episode.
@@ -98,6 +131,12 @@ window.ZipFile = (function () {
 
     return {
         entries: safeEntries,
+        tagged: tagged,
+        anyTag: anyTag,
+        numbered: numbered,
+        forced: forced,
+        // A subtitle file served as is, not zipped.
+        text: function (buffer) { return decode(new Uint8Array(buffer)); },
         // The text of the subtitle a provider's zip holds for match.
         subtitle: function (buffer, match) {
             var file = pick(safeEntries(buffer), match);

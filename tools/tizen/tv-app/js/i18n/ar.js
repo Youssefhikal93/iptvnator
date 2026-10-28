@@ -85,6 +85,7 @@ I18n.tables.ar = {
     'opensubs.found': 'تم العثور على {n}',
     'opensubs.listTitle': 'الترجمات · {language}',
     'opensubs.switched': '{from}: {why}. نستخدم {to} بدلًا منه.',
+    'opensubs.nextFile': '{from}: {why}. تجربة الترجمة التالية.',
     'opensubs.why.badFile': 'ملف الترجمة غير صالح',
     'opensubs.why.badKey': 'المفتاح غير مقبول',
     'opensubs.why.connection': 'لا اتصال',

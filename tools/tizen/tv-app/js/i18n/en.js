@@ -294,6 +294,7 @@ I18n.tables.en = {
     'opensubs.quota': 'OpenSubtitles quota exceeded. Reset: {reset}',
     'opensubs.recommended': 'Recommended',
     'opensubs.next': 'Try another match',
+    'opensubs.nextFile': '{from}: {why}. Trying the next one.',
     'opensubs.noneIn': 'No {language} subtitles found',
     'opensubs.remaining': 'Subtitle downloads remaining: {n}',
     'opensubs.resetTiming': 'Reset timing',

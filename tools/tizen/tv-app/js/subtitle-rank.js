@@ -3,7 +3,9 @@
 window.SubtitleRank = (function () {
     'use strict';
 
-    var WEIGHT = { hash: 1000, fps: 100, resolution: 30, codec: 20, trusted: 8, machine: -100000 };
+    // A forced subtitle only translates signs and foreign-language lines: below
+    // everything but a machine translation.
+    var WEIGHT = { hash: 1000, fps: 100, resolution: 30, codec: 20, trusted: 8, forced: -50000, machine: -100000 };
     var RESOLUTION_PATTERN = { '2160p': '2160p|4k|uhd', '1080p': '1080p', '720p': '720p', '480p': '480p' };
     var CODEC_PATTERN = { x264: 'x264|h\\.?264|avc', x265: 'x265|h\\.?265|hevc' };
 
@@ -66,6 +68,7 @@ window.SubtitleRank = (function () {
         // Popularity breaks ties between equal fits but never outweighs a fit.
         points += Math.min(Math.log(1 + number(match.downloads)) / Math.LN10, 6) * 2;
         if (match.trusted) points += WEIGHT.trusted;
+        if (match.forced) points += WEIGHT.forced;
         if (match.machine) points += WEIGHT.machine;
         return { score: points, marks: marks };
     }

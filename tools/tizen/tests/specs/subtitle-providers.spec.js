@@ -171,3 +171,15 @@ test('#52 an expired OpenSubtitles key is named under the list title while SubDL
     await findOnline(page);
     await expect(page.locator('#menu .menu-sub')).toHaveText('1 found · OpenSubtitles: key not accepted · SubDL 1');
 });
+
+test('an unusable SubDL file moves on to the next SubDL subtitle, not to another provider', async ({ page }) => {
+    await providers(page);
+    // The first SubDL file is not a subtitle; the second is.
+    await page.route('https://dl.subdl.com/subtitle/100-200.zip', (route) => route.fulfill({ contentType: 'application/zip', body: 'not a zip' }));
+    await boot(page, { storage: { 'shared-settings': { subdlApiKey: 'subdl-key' } } });
+    await findOnline(page);
+    await expect(page.locator('#menu .menu-row.rich')).toHaveCount(2);
+    await press(page, 'Enter');
+    await expect(page.locator('#toast')).toContainText('SubDL: subtitle file not usable. Trying the next one.');
+    await expect(page.locator('#pl-subs')).toHaveText('From SubDL');
+});

@@ -112,11 +112,16 @@ window.SubtitleDownload = function (hooks) {
 
     // A download refused by one provider (expired key, used-up limit, no
     // connection) moves on to the best result from another, and says so.
+    // An unusable file only rules out that file; a refused key, a used-up
+    // limit or no connection rules out its provider.
     function moveOn(match, error, failed) {
-        failed[match.source || 'opensubtitles'] = true;
-        var next = match.from ? null : found.filter(function (other) { return !failed[other.source || 'opensubtitles']; })[0];
+        failed[error && error.code === 'badFile' ? match.file_id : match.source || 'opensubtitles'] = true;
+        var next = match.from ? null : found.filter(function (other) {
+            return !failed[other.source || 'opensubtitles'] && !failed[other.file_id];
+        })[0];
         if (!next) return report(error);
-        hooks.toast(I18n.t('opensubs.switched', { from: sourceName(match), why: reason(error), to: sourceName(next) }));
+        var same = (next.source || 'opensubtitles') === (match.source || 'opensubtitles');
+        hooks.toast(I18n.t(same ? 'opensubs.nextFile' : 'opensubs.switched', { from: sourceName(match), why: reason(error), to: sourceName(next) }));
         Log.info('SUBS download failed ' + (match.source || 'opensubtitles') + ' ' + (error && error.status) + ', trying ' + next.source);
         return choose(next, failed);
     }

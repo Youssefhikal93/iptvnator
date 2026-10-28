@@ -50,9 +50,12 @@ test('without a viewer key movie and show browsing sends no TMDB requests', asyn
     await openFirst(page, 'Series');
     await expect(page.locator('#detail .dt-plot')).toContainText('small town');
     await back(page);
-    await setting(page, 'Test key');
+    // With no key, OK on the key row goes straight to the key entry; Return leaves it unset.
+    await setting(page, 'TMDB API key');
     await press(page, 'Enter');
-    await expect(page.locator('#toast')).toHaveText('Set a TMDB API key first');
+    await expect(page.locator('#tmdb-key-entry')).toBeVisible();
+    await back(page);
+    await expect(page.locator('#tmdb-key-entry')).toHaveCount(0);
     await page.waitForTimeout(600);
     expect(seen).toHaveLength(0);
 });
@@ -70,9 +73,11 @@ for (const status of [200, 401]) {
         await expect(page.locator('#tmdb-key-entry')).toHaveCount(0);
         await expect(page.locator('.st-row.focused .st-value')).toHaveText('Set ••••1234');
         expect(seen).toHaveLength(0);
-        await press(page, 'ArrowDown');
+        // OK on the set key opens Test, Change and Remove; Test is first.
         await press(page, 'Enter');
-        await expect(page.locator('.st-row.focused .st-value')).toHaveText(status === 200 ? 'Key works' : 'Key refused');
+        await expect(page.locator('#menu .menu-row')).toHaveText(['Test key', 'Change key…', 'Remove key', 'Cancel']);
+        await press(page, 'Enter');
+        await expect(page.locator('.st-row.focused .st-value')).toHaveText('Set ••••1234 · ' + (status === 200 ? 'Key works' : 'Key refused'));
         expect(seen).toEqual(['/3/configuration']);
         await page.reload();
         await setting(page, 'TMDB API key');
@@ -147,8 +152,13 @@ test('removing a key stops enrichment, including after reload', async ({ page })
     await openFirst(page, 'Movies');
     await expect(page.locator('#detail .tm-row:not(.related) .tm-card').first()).toBeVisible();
     await back(page);
-    await setting(page, 'Remove key');
+    await setting(page, 'TMDB API key');
     await press(page, 'Enter');
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#menu .menu-row.focused')).toHaveText('Remove key');
+    await press(page, 'Enter');
+    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Not set');
     const count = seen.length;
     await page.reload();
     await openFirst(page, 'Movies');

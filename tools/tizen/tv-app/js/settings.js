@@ -1,6 +1,7 @@
 // App-wide choices live beside the library, independent of the active source.
 // The groups run down the left and the chosen group's rows fill the right
 // (#49): ▲▼ pick a group, ▶ or OK opens its rows, Return goes back to the groups.
+// Related settings share one group under part headings (#52).
 window.Settings = function (hooks) {
     'use strict';
 
@@ -20,12 +21,24 @@ window.Settings = function (hooks) {
     const sortId = (option) => option.id;
     const sortLabel = (option) => option.label;
 
+    // The same row under another heading (#52): group starts a group down the
+    // left, part a heading inside one. The player menu keeps the row's own.
+    const placed = (source, group, part) => Object.create(source, {
+        group: { get: () => (group ? I18n.t(group) : undefined) },
+        part: { get: () => (part ? I18n.t(part) : undefined) },
+    });
+    const picture = PlayerPicture.rows;
+
     const rows = [
         { get group() { return I18n.t('settings.playback'); }, get label() { return I18n.t('settings.autoplay'); }, get hint() { return I18n.t('describe.autoplay'); }, key: 'autoplayMs', choices: [0, 5000, 8000, 15000], get labels() { return [I18n.t('common.off'), I18n.t('unit.seconds', { n: 5 }), I18n.t('unit.seconds', { n: 8 }), I18n.t('unit.seconds', { n: 15 })]; } },
         { get label() { return I18n.t('settings.skipIntro'); }, get hint() { return I18n.t('describe.skipIntro'); }, key: 'skipIntroSeconds', choices: [60, 75, 90, 120], get labels() { return [60, 75, 90, 120].map((n) => I18n.t('unit.seconds', { n })); } },
         { get label() { return I18n.t('settings.programmeGuide'); }, get hint() { return I18n.t('describe.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return onOff(); } },
         { get label() { return I18n.t('settings.livePreview'); }, get hint() { return I18n.t('describe.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return onOff(); } },
-        ...PlayerPicture.rows,
+        placed(picture[4], null, 'picture.picture'),
+        { get part() { return I18n.t('settings.startUp'); }, get label() { return I18n.t('settings.onStart'); }, get hint() { return I18n.t('describe.onStart'); }, key: 'onStart', choices: ['last-channel', 'home'], get labels() { return [I18n.t('settings.lastChannel'), I18n.t('rail.home')]; } },
+        placed(picture[0], 'picture.subtitles', 'picture.subtitleStyle'),
+        ...picture.slice(1, 4).map((source) => placed(source)),
+        ...OpenSubsSettings.rows,
         { get group() { return I18n.t('settings.display'); }, get label() { return I18n.t('settings.homeLayout'); }, get hint() { return I18n.t('describe.homeLayout'); }, key: 'homeLayout', choices: ['cinema', 'bigrow', 'backdrop'], get labels() { return [I18n.t('settings.cinema'), I18n.t('settings.bigRow'), I18n.t('settings.backdrop')]; } },
         { get label() { return I18n.t('settings.libraryFrom'); }, get hint() { return I18n.t('describe.libraryFrom'); }, key: 'librarySources', choices: ['current', 'all'], get labels() { return [I18n.t('settings.thisSource'), I18n.t('settings.allSources')]; } },
         { get label() { return I18n.t('settings.viewMovies'); }, key: 'view:movies', choices: ['list', 'grid'], get labels() { return views(); } },
@@ -33,17 +46,15 @@ window.Settings = function (hooks) {
         { get label() { return I18n.t('settings.viewLive'); }, key: 'view:live', choices: ['list', 'grid'], get labels() { return views(); } },
         { get label() { return I18n.t('settings.sortMovies'); }, key: 'sort:movies', choices: Sort.options.map(sortId), get labels() { return Sort.options.map(sortLabel); } },
         { get label() { return I18n.t('settings.sortSeries'); }, key: 'sort:series', choices: Sort.options.map(sortId), get labels() { return Sort.options.map(sortLabel); } },
-        { get group() { return I18n.t('settings.startUp'); }, get label() { return I18n.t('settings.onStart'); }, get hint() { return I18n.t('describe.onStart'); }, key: 'onStart', choices: ['last-channel', 'home'], get labels() { return [I18n.t('settings.lastChannel'), I18n.t('rail.home')]; } },
-        { get group() { return I18n.t('settings.parentalLock'); }, get label() { return I18n.t('settings.pin'); }, get hint() { return I18n.t('describe.pin'); }, run: () => ParentalMenu.settings(render), text: () => (ParentalLock.hasPin() ? I18n.t('settings.changePin') : I18n.t('settings.setPin')) },
-        { get label() { return I18n.t('settings.relock'); }, get hint() { return I18n.t('describe.relock'); }, key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], get labels() { return [I18n.t('unit.minutes', { n: 5 }), I18n.t('unit.minutes', { n: 15 }), I18n.t('unit.hour'), I18n.t('settings.relockClose')]; } },
-        { get group() { return I18n.t('settings.categories'); }, get label() { return I18n.t('settings.manageLive'); }, action: 'live', text: hiddenText('live') },
+        { get part() { return I18n.t('settings.categories'); }, get label() { return I18n.t('settings.manageLive'); }, action: 'live', text: hiddenText('live') },
         { get label() { return I18n.t('settings.manageMovies'); }, action: 'movies', text: hiddenText('movies') },
         { get label() { return I18n.t('settings.manageSeries'); }, action: 'series', text: hiddenText('series') },
+        ...AppearanceSettings.rows,
+        { get group() { return I18n.t('settings.parentalLock'); }, get label() { return I18n.t('settings.pin'); }, get hint() { return I18n.t('describe.pin'); }, run: () => ParentalMenu.settings(render), text: () => (ParentalLock.hasPin() ? I18n.t('settings.changePin') : I18n.t('settings.setPin')) },
+        { get label() { return I18n.t('settings.relock'); }, get hint() { return I18n.t('describe.relock'); }, key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], get labels() { return [I18n.t('unit.minutes', { n: 5 }), I18n.t('unit.minutes', { n: 15 }), I18n.t('unit.hour'), I18n.t('settings.relockClose')]; } },
         { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },
         { get label() { return I18n.t('settings.export'); }, backup: 'export', text: '' },
         ...TmdbSettings.rows,
-        ...OpenSubsSettings.rows,
-        ...AppearanceSettings.rows,
         { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('settings.version'); }, text: VERSION },
         { get label() { return I18n.t('settings.installGuide'); }, text: 'tools/tizen/INSTALLATION-TO-TV.md' },
     ];
@@ -105,7 +116,8 @@ window.Settings = function (hooks) {
         <div class="st-panes">
             ${list.map((entry, index) => html`<section class=${classes('st-section', { hidden: index !== group })}>
                 <h2 class="st-group">${entry.name}</h2>
-                ${entry.rows.map((row, at) => html`<${Row} row=${row} focused=${active && zone === 'rows' && index === group && at === focus} />`)}
+                ${entry.rows.map((row, at) => [row.part ? html`<h3 class="st-part">${row.part}</h3>` : null,
+                    html`<${Row} row=${row} focused=${active && zone === 'rows' && index === group && at === focus} />`])}
             </section>`)}
         </div>`;
 

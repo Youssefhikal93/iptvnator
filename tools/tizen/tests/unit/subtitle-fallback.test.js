@@ -238,12 +238,12 @@ test('#52 DeepL uses the paid host for a paid key, translates in batches of 50 a
     }
 });
 
-test('#52 Settings list the backup switch and the Subsource and DeepL key rows', function () {
+test('#52 Settings list the download and backup parts with the switch and the Subsource and DeepL key rows', function () {
     var api = fixture().globals;
     var rows = api.OpenSubsSettings.rows;
-    var labels = rows.map(function (row) { return (row.group ? '[' + row.group + '] ' : '') + row.label; });
-    assert.equal(labels.join(' | '), '[Subtitles download] OpenSubtitles API key | Test key | Remove key | SubDL API key | Test SubDL key | Remove SubDL key | ' +
-        'Subtitle language | [Backup subtitles] Backup search | Subsource API key | Test Subsource key | Remove Subsource key | DeepL API key | Test DeepL key | Remove DeepL key');
+    var labels = rows.map(function (row) { return (row.part ? '[' + row.part + '] ' : '') + row.label; });
+    assert.equal(labels.join(' | '), '[Subtitles download] OpenSubtitles API key | SubDL API key | Subtitle language | ' +
+        '[Backup subtitles] Backup search | Subsource API key | DeepL API key');
     var toggle = rows.filter(function (row) { return row.key === 'subtitleFallback'; })[0];
     assert.equal(toggle.labels.join(','), 'On,Off');
     assert.equal(api.Prefs.get('subtitleFallback'), true);

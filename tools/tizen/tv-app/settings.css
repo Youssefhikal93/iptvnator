@@ -188,3 +188,16 @@
 }
 .st-add .st-label { font-weight: 500; }
 .st-add.focused { border-style: solid; }
+
+/* A heading inside a group (#52): Picture under Playback, Backup subtitles under Subtitles. */
+.st-part {
+    margin: 30px 32px 10px;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+.st-group + .st-part {
+    margin-top: 0;
+}

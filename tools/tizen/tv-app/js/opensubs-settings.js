@@ -1,6 +1,6 @@
-// Settings → Subtitles download: a key for each provider (OpenSubtitles and,
-// since #52, SubDL) and the language searched; Backup subtitles: the keys
-// used only when those find nothing (Subsource, DeepL) and their switch.
+// Settings → Subtitles, parts Subtitles download (a key for each provider,
+// OpenSubtitles and since #52 SubDL, and the language searched) and Backup
+// subtitles (the switch and the keys used only when those find nothing).
 window.OpenSubsSettings = (function () {
     'use strict';
 
@@ -17,16 +17,35 @@ window.OpenSubsSettings = (function () {
     var dialog = null;
     var status = { opensubs: '', subdl: '', subsource: '', deepl: '' };
 
-    // Key, Test and Remove rows for one provider; group starts a settings group.
-    function keyRows(id, group) {
+    // One row per key; part, when given, puts a heading above it. The value
+    // shows whether a key is set and what its last test said.
+    function keyRows(id, part) {
         var provider = PROVIDERS[id];
-        var keyRow = { get label() { return I18n.t(provider.key); }, action: 'opensubs-' + id + '-key', text: function () {
-            return Prefs.get(provider.pref) ? '••••' : I18n.t('tmdb.notSet');
-        } };
-        if (group) Object.defineProperty(keyRow, 'group', { get: function () { return I18n.t(group); }, enumerable: true });
-        return [keyRow,
-            { get label() { return I18n.t(id + '.testKey'); }, action: 'opensubs-' + id + '-test', text: function () { return status[id] || I18n.t('tmdb.okToTest'); } },
-            { get label() { return I18n.t(id + '.removeKey'); }, action: 'opensubs-' + id + '-remove', text: '' }];
+        var row = { get label() { return I18n.t(provider.key); }, action: action(id, 'key'),
+            get hint() { return Prefs.get(provider.pref) ? I18n.t('keys.hint') : ''; },
+            text: function () {
+                if (!Prefs.get(provider.pref)) return I18n.t('tmdb.notSet');
+                return '••••' + (status[id] ? ' · ' + status[id] : '');
+            } };
+        if (part) Object.defineProperty(row, 'part', { get: function () { return I18n.t(part); }, enumerable: true });
+        return [row];
+    }
+
+    // "opensubs-key" for OpenSubtitles, "opensubs-subdl-test" for the others.
+    function action(id, verb) {
+        return 'opensubs-' + (id === 'opensubs' ? '' : id + '-') + verb;
+    }
+
+    // OK on a set key: Test, Change or Remove; on an empty one, the key entry.
+    function choose(id, hooks, changed) {
+        var provider = PROVIDERS[id];
+        if (!Prefs.get(provider.pref)) return edit(id, changed);
+        Menu.open(I18n.t(provider.key), [
+            { label: I18n.t('tmdb.testKey'), run: function () { act(action(id, 'test'), hooks, changed); } },
+            { label: I18n.t('keys.change'), run: function () { edit(id, changed); } },
+            { label: I18n.t('tmdb.removeKey'), run: function () { act(action(id, 'remove'), hooks, changed); } },
+            { label: I18n.t('common.cancel') },
+        ]);
     }
 
     function close() {
@@ -62,7 +81,7 @@ window.OpenSubsSettings = (function () {
         var id = parts.length > 2 ? parts[1] : 'opensubs';
         var provider = PROVIDERS[id];
         var verb = parts[parts.length - 1];
-        if (verb === 'key') return edit(id, changed);
+        if (verb === 'key') return choose(id, hooks, changed);
         if (verb === 'remove') {
             Prefs.set(provider.pref, '');
             status[id] = '';
@@ -112,15 +131,9 @@ window.OpenSubsSettings = (function () {
     }
 
     return {
-        rows: [
-            { get group() { return I18n.t('opensubs.group'); }, get label() { return I18n.t('opensubs.key'); }, action: 'opensubs-key', text: function () {
-                return Prefs.get('opensubtitlesApiKey') ? '••••' : I18n.t('tmdb.notSet');
-            } },
-            { get label() { return I18n.t('tmdb.testKey'); }, action: 'opensubs-test', text: function () { return status.opensubs || I18n.t('tmdb.okToTest'); } },
-            { get label() { return I18n.t('tmdb.removeKey'); }, action: 'opensubs-remove', text: '' },
-        ].concat(keyRows('subdl'), [
+        rows: keyRows('opensubs', 'opensubs.group').concat(keyRows('subdl'), [
             { get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
-            { get group() { return I18n.t('opensubs.backupGroup'); }, get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
+            { get part() { return I18n.t('opensubs.backupGroup'); }, get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
                 key: 'subtitleFallback', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
         ], keyRows('subsource'), keyRows('deepl')),
         act: act,

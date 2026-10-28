@@ -43,7 +43,6 @@ window.Player = (function () {
         state: $('pl-state'),
         cur: $('pl-cur'),
         total: $('pl-total'),
-        jump: $('pl-jump'),
         transport: $('pl-transport'),
         play: $('pl-play'),
         now: $('pl-now'),
@@ -372,12 +371,8 @@ window.Player = (function () {
             var basePct = dur > 0 ? Math.min(100, (seek.origin / dur) * 100) : 0;
             ui.target.style.left = Math.min(basePct, pct) + '%';
             ui.target.style.width = Math.abs(pct - basePct) + '%';
-            var delta = seek.target - seek.origin;
-            ui.jump.textContent = (delta < 0 ? '−' : '+') + fmt(Math.abs(delta)) + '  →  ' +
-                (current.catchUp ? CatchUp.clock(current.catchUp.start + seek.target) : fmt(seek.target));
         } else {
             ui.target.style.width = '0';
-            ui.jump.textContent = '';
         }
     }
 

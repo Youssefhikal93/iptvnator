@@ -275,22 +275,6 @@
     text-align: right;
     color: var(--pc-text-secondary);
 }
-/* The seek jump floats over the knob while ◀ ▶ choose a time. */
-#pl-jump {
-    position: absolute;
-    left: var(--pl-knob, 0%);
-    bottom: 30px;
-    transform: translateX(-50%);
-    white-space: nowrap;
-    padding: 2px 16px;
-    border-radius: 8px;
-    background: rgba(92, 214, 255, 0.18);
-    color: var(--pc-cyan);
-    font-weight: 700;
-}
-#pl-jump:empty {
-    display: none;
-}
 #pl-hint {
     margin-top: 26px;
     font-size: 22px;

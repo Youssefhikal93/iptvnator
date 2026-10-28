@@ -43,6 +43,12 @@ window.SubDL = (function () {
         return /^\d+$/.test(digits) && Number(digits) > 0 ? digits : '';
     }
 
+    // "en,fr" -> "EN,FR" for a search in several languages.
+    function languages(codes) {
+        var list = String(codes || 'en').split(',').map(language).filter(function (code, i, all) { return all.indexOf(code) === i; });
+        return list.join(',') || 'EN';
+    }
+
     // "en" -> "EN"; SubDL has one code for both Chinese scripts.
     function language(code) {
         var base = String(code || 'en').split(',')[0].trim().toLowerCase();
@@ -69,7 +75,7 @@ window.SubDL = (function () {
     // scope: 'episode' (the default), 'season' (every episode of the season)
     // or 'show' (no season: some shows are filed under season 0 or by arc).
     function query(info, lang, scope) {
-        var params = { languages: language(lang), subs_per_page: 30, unpack: 1 };
+        var params = { languages: languages(lang), subs_per_page: 30, unpack: 1 };
         var episode = info.episode !== undefined;
         var tmdb = numeric(info.tmdb_id);
         var imdb = imdbDigits(info.imdb_id);

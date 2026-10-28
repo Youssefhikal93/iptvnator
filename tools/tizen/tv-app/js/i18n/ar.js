@@ -116,7 +116,7 @@ I18n.tables.ar = {
     'opensubs.backupSearch': 'البحث الاحتياطي',
     'opensubs.fromBackup': 'احتياطي',
     'opensubs.noneIn': 'لا توجد ترجمات {language}',
-    'opensubs.translateFrom': 'ترجمة من {language}',
+    'opensubs.translateAny': 'ترجمة من لغة أخرى',
     'opensubs.translatedFrom': 'مترجمة من {language}',
     'opensubs.translating': 'جارٍ الترجمة… {p}%',
     'deepl.badKey': 'مفتاح DeepL غير صالح',

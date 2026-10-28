@@ -309,7 +309,7 @@ I18n.tables.en = {
     'opensubs.why.badKey': 'key not accepted',
     'opensubs.why.connection': 'no connection',
     'opensubs.why.quota': 'limit reached',
-    'opensubs.translateFrom': 'Translate from {language}',
+    'opensubs.translateAny': 'Translate from another language',
     'opensubs.translatedFrom': 'translated from {language}',
     'opensubs.translating': 'Translating… {p}%',
     'deepl.badKey': 'Bad DeepL key',

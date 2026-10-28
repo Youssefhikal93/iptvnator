@@ -74,7 +74,6 @@ I18n.tables.ko = {
     'menu.watch': '시청',
     'opensubs.badKey': '잘못된 OpenSubtitles 키',
     'opensubs.connection': 'OpenSubtitles에 연결할 수 없습니다',
-    'opensubs.delay': '자막 지연 {step}초 (현재 {offset}초)',
     'opensubs.download': '자막 다운로드…',
     'opensubs.downloaded': '다운로드한 자막',
     'opensubs.downloading': '자막 다운로드 중…',

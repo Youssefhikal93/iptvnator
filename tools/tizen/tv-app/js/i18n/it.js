@@ -74,7 +74,6 @@ I18n.tables.it = {
     'menu.watch': 'Guarda',
     'opensubs.badKey': 'Chiave OpenSubtitles non valida',
     'opensubs.connection': 'Nessuna connessione a OpenSubtitles',
-    'opensubs.delay': 'Ritardo sottotitoli {step} s (attuale: {offset} s)',
     'opensubs.download': 'Scarica sottotitoli…',
     'opensubs.downloaded': 'Sottotitoli scaricati',
     'opensubs.downloading': 'Download dei sottotitoli…',

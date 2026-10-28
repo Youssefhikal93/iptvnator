@@ -74,7 +74,6 @@ I18n.tables.el = {
     'menu.watch': 'Παρακολούθηση',
     'opensubs.badKey': 'Μη έγκυρο κλειδί OpenSubtitles',
     'opensubs.connection': 'Χωρίς σύνδεση στο OpenSubtitles',
-    'opensubs.delay': 'Καθυστέρηση υποτίτλων {step} δ (τώρα {offset} δ)',
     'opensubs.download': 'Λήψη υποτίτλων…',
     'opensubs.downloaded': 'Ληφθέντες υπότιτλοι',
     'opensubs.downloading': 'Γίνεται λήψη υποτίτλων…',

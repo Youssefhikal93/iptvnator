@@ -10,7 +10,7 @@ test('Settings subtitle and picture rows cycle choices and survive a reload', as
     const scenarios = [
         ['Size', 'Medium', ['Large', 'Extra large', 'Small', 'Medium', 'Large']],
         ['Text colour', 'White', ['Yellow']],
-        ['Background', 'Shadow', ['Box', 'Cover', 'Off', 'Shadow', 'Box']],
+        ['Background', 'Shadow', ['Dark box', 'Dark band (hides burned-in text)', 'Off', 'Shadow', 'Dark box']],
         ['Position', 'Bottom', ['Higher']],
         ['Aspect', 'Auto', ['Fit', 'Fill', '16:9', '4:3', 'Auto', 'Fit', 'Fill']],
     ];
@@ -51,7 +51,7 @@ test('player menu updates subtitle classes, native cues and the same Settings va
         }
         await back(page);
     };
-    await cycle('Subtitle style', [['Size: Medium', 'Size: Large'], ['Colour: White', 'Colour: Yellow'], ['Background: Shadow', 'Background: Box'], ['Position: Bottom', 'Position: Higher']]);
+    await cycle('Subtitle style', [['Size: Medium', 'Size: Large'], ['Colour: White', 'Colour: Yellow'], ['Background: Shadow', 'Background: Dark box'], ['Position: Bottom', 'Position: Higher']]);
     await cycle('Picture', [['Aspect: Auto', 'Aspect: Fit'], ['Aspect: Fit', 'Aspect: Fill']]);
     await expect(page.locator('#player')).toHaveClass(/sub-size-l sub-colour-yellow sub-bg-box sub-pos-high/);
     await expect(page.locator('#video')).toHaveCSS('object-fit', 'cover');
@@ -74,7 +74,7 @@ test('player menu updates subtitle classes, native cues and the same Settings va
     await expect(page.locator('#pl-controls')).toBeHidden();
     await back(page);
     await section(page, 'Settings');
-    for (const [label, value] of [['Size', 'Large'], ['Text colour', 'Yellow'], ['Background', 'Box'], ['Position', 'Bottom'], ['Aspect', 'Fill']]) {
+    for (const [label, value] of [['Size', 'Large'], ['Text colour', 'Yellow'], ['Background', 'Dark box'], ['Position', 'Bottom'], ['Aspect', 'Fill']]) {
         await expect(setting(page, label)).toHaveText(value);
     }
 });
@@ -145,7 +145,7 @@ test('AVPlay applies picture choices on start and preview transitions, and style
     await expect(page.locator('#pl-subs')).toHaveText('AV subtitle');
     await expect(page.locator('#pl-subs')).toHaveCSS('font-size', '56px');
     await expect(page.locator('#pl-subs')).toHaveCSS('color', 'rgb(255, 255, 0)');
-    await expect(page.locator('#pl-subs')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.8)');
+    await expect(page.locator('#pl-subs')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.88)');
     await expect(page.locator('#pl-subs')).toHaveCSS('bottom', '380px');
     await page.evaluate(() => Player.preview({ x: 1100, y: 180, w: 640, h: 360 }));
     expect(await page.evaluate(() => webapis.avplay.rect)).toEqual([1100, 180, 640, 360]);

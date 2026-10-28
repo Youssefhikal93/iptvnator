@@ -74,7 +74,6 @@ I18n.tables.pt = {
     'menu.watch': 'Assistir',
     'opensubs.badKey': 'Chave OpenSubtitles inválida',
     'opensubs.connection': 'Sem ligação ao OpenSubtitles',
-    'opensubs.delay': 'Atraso das legendas {step} s (atual: {offset} s)',
     'opensubs.download': 'Transferir legendas…',
     'opensubs.downloaded': 'Legendas transferidas',
     'opensubs.downloading': 'A transferir legendas…',

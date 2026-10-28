@@ -13,6 +13,7 @@ window.SubtitleDownload = function (hooks) {
     var scale = 1;
     var found = []; // The last search's ranked results, for "Try the next subtitle".
     var video = {};
+    var name = ''; // The language and release of the downloaded file, for the menu.
     var fileId = null;
     var generation = 0;
     var timer = null;
@@ -26,7 +27,7 @@ window.SubtitleDownload = function (hooks) {
     }
 
     function remember() {
-        if (current && current.id) SubtitleStore.save(current.subtitleId || current.id, fileId, offset, scale);
+        if (current && current.id) SubtitleStore.save(current.subtitleId || current.id, fileId, offset, scale, name);
     }
 
     function sync() {
@@ -67,13 +68,14 @@ window.SubtitleDownload = function (hooks) {
         return r > 0.9 && r < 1.1 ? r : 1;
     }
 
-    function apply(text, id, stretch) {
+    function apply(text, id, stretch, title) {
         var parsed = SubtitleFile.parse(text);
         if (!parsed.length) throw new Error('Invalid subtitle file');
         hooks.embeddedOff();
         cues = parsed;
         fileId = id;
         scale = stretch || 1;
+        name = title || '';
         lastText = null;
         remember();
         sync();
@@ -85,7 +87,7 @@ window.SubtitleDownload = function (hooks) {
         return SubtitleStore.obtain(match.file_id).then(function (result) {
             if (mine !== generation || !alive()) return;
             var stretch = ratio(match);
-            apply(result.text, match.file_id, stretch);
+            apply(result.text, match.file_id, stretch, languageName(match.language) + ' · ' + match.release);
             closePicker();
             Log.info('SUBS picked fps ' + (SubtitleRank.rate(match.fps) || '?') + ' scale ' + stretch.toFixed(4));
             if (stretch !== 1) toast('retimed', { from: +SubtitleRank.rate(match.fps).toFixed(3), to: +video.fps.toFixed(3) });
@@ -97,8 +99,15 @@ window.SubtitleDownload = function (hooks) {
         });
     }
 
+    // "ar" -> "العربية", in the language's own name when the app knows it.
+    function languageName(code) {
+        var app = { be: 'by', 'zh-cn': 'zh', 'zh-tw': 'zhtw' }[code] || code;
+        var known = I18n.languages().filter(function (entry) { return entry.code === app; })[0];
+        return known ? known.name : String(code || '').toUpperCase();
+    }
+
     function label(match) {
-        return (match.recommended ? '★ ' + I18n.t('opensubs.recommended') + ' · ' : '') + match.language + ' · ' + match.release +
+        return (match.recommended ? '★ ' + I18n.t('opensubs.recommended') + ' · ' : '') + languageName(match.language) + ' · ' + match.release +
             ' · ⬇ ' + SubtitleRank.count(match.downloads) + match.marks.map(function (mark) { return ' · ' + mark; }).join('') +
             (match.hearing ? ' · ' + I18n.t('opensubs.hearing') : '') + (match.machine ? ' · ' + I18n.t('opensubs.machine') : '');
     }
@@ -117,7 +126,7 @@ window.SubtitleDownload = function (hooks) {
             if (mine !== generation || !alive() || secret !== Prefs.get('opensubtitlesApiKey')) return null;
             info = known;
             if (current.movieHash) known = Object.assign({}, known, { moviehash: current.movieHash });
-            return OpenSubs.search(known, Prefs.get('subtitleLanguages'), 60);
+            return OpenSubs.search(known, String(Prefs.get('subtitleLanguages')).split(',')[0], 60);
         }).then(function (results) {
             if (mine !== generation || !alive() || secret !== Prefs.get('opensubtitlesApiKey')) return;
             video = SubtitleRank.facts(info && info.video);
@@ -193,6 +202,7 @@ window.SubtitleDownload = function (hooks) {
         found = [];
         video = {};
         scale = 1;
+        name = '';
         document.body.classList.remove('subtitles-open');
         fileId = null;
         lastText = null;
@@ -209,7 +219,7 @@ window.SubtitleDownload = function (hooks) {
         if (saved.file_id) {
             var text = SubtitleStore.cached(saved.file_id);
             var stretch = Number(saved.scale);
-            if (SubtitleFile.parse(text).length) apply(text, saved.file_id, stretch > 0.9 && stretch < 1.1 ? stretch : 1);
+            if (SubtitleFile.parse(text).length) apply(text, saved.file_id, stretch > 0.9 && stretch < 1.1 ? stretch : 1, saved.name);
         }
         timer = setInterval(sync, 100);
     }
@@ -220,17 +230,27 @@ window.SubtitleDownload = function (hooks) {
         sync();
     }
 
-    function menuEntries(item, embeddedChoices) {
+    function seconds(ms) {
+        return (ms > 0 ? '+' : ms < 0 ? '−' : '') + (Math.abs(ms) / 1000).toFixed(1) + ' s';
+    }
+
+    // The Subtitles group gets Off, the downloaded file and the online search;
+    // with a downloaded file on, a Subtitle timing group follows, showing the
+    // delay as its value (head is the menu's group starter).
+    function menuEntries(item, embeddedChoices, head) {
         if (!current || current.live) return;
         if (!embeddedChoices) item(I18n.t('common.off'), !cues.length, off);
-        if (cues.length) item(I18n.t('opensubs.downloaded'), true, function () {});
+        if (cues.length) item(name || I18n.t('opensubs.downloaded'), true, function () {});
         item(I18n.t('opensubs.download'), false, function () { hooks.closeMenu(); search(); });
         if (cues.length && found.length > 1) item(I18n.t('opensubs.next'), false, function () { hooks.closeMenu(); tryNext(); });
-        if (cues.length) item(I18n.t('opensubs.syncLine'), false, syncToLine);
+        if (!cues.length) return;
+        if (head) head(I18n.t('opensubs.timing'), offset ? seconds(offset) : I18n.t('opensubs.inSync'));
+        item(I18n.t('opensubs.syncLine'), false, syncToLine);
         [-5000, -500, 500, 5000].forEach(function (step) {
             var size = Math.abs(step) >= 1000 ? '5' : '0.5';
-            item(I18n.t('opensubs.delay', { step: (step < 0 ? '−' : '+') + size, offset: (offset / 1000).toFixed(1) }), false, function () { shift(step); });
+            item(I18n.t(step < 0 ? 'opensubs.earlier' : 'opensubs.later', { s: size }), false, function () { shift(step); });
         });
+        if (offset) item(I18n.t('opensubs.resetTiming'), false, function () { shift(-offset); });
     }
 
     return { start: start, stop: stop, active: function () { return cues.length > 0; }, off: off,

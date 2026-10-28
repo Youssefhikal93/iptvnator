@@ -74,7 +74,6 @@ I18n.tables.ja = {
     'menu.watch': '視聴',
     'opensubs.badKey': 'OpenSubtitlesキーが無効です',
     'opensubs.connection': 'OpenSubtitlesに接続できません',
-    'opensubs.delay': '字幕遅延 {step} 秒（現在 {offset} 秒）',
     'opensubs.download': '字幕をダウンロード…',
     'opensubs.downloaded': 'ダウンロードした字幕',
     'opensubs.downloading': '字幕をダウンロード中…',

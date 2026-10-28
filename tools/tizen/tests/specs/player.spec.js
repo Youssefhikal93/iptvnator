@@ -22,7 +22,8 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await expect(page.locator('#pl-menu .pl-menu-group .label').first()).toHaveText('Audio');
     await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Playback speed' }).locator('.value')).toHaveText('1×');
     await playerGroup(page, 'Subtitles');
-    await expect(page.locator('#pl-menu')).toContainText('No subtitles available');
+    // A movie can always look online, so the group offers that instead of "none".
+    await expect(page.locator('#pl-menu')).toContainText('Find subtitles online…');
     await back(page);
     await playerGroup(page, 'Stream info');
     await expect(page.locator('#pl-menu')).toContainText('HTML5 video');

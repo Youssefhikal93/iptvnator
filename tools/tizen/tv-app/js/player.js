@@ -581,12 +581,12 @@ window.Player = (function () {
     // tracks and subtitle style; Settings has the rest.
     function menuPart(m) {
         if (!menu.part) return m;
-        var tracks = [I18n.t('player.audio'), I18n.t('picture.subtitles'), I18n.t('picture.subtitleStyle')];
+        var tracks = [I18n.t('player.audio'), I18n.t('picture.subtitles'), I18n.t('opensubs.timing'), I18n.t('picture.subtitleStyle')];
         var keep = false;
         return {
-            head: function (label) {
+            head: function (label, value) {
                 keep = (tracks.indexOf(label) >= 0) === (menu.part === 'tracks');
-                if (keep) m.head(label);
+                if (keep) m.head(label, value);
             },
             item: function (label, active, action) { if (keep) m.item(label, active, action); },
             note: function (text) { if (keep) m.note(text); },
@@ -608,8 +608,8 @@ window.Player = (function () {
         if (tracks.text.length > 1) tracks.text.forEach(function (t) {
             m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
         });
-        else m.note(I18n.t('player.noSubtitles'));
-        subtitles.menuEntries(m.item, tracks.text.length > 1);
+        else if (current.live) m.note(I18n.t('player.noSubtitles'));
+        subtitles.menuEntries(m.item, tracks.text.length > 1, m.head);
         PlayerPicture.menuEntries(m.head, m.item);
         if (!current.live) {
             m.head(I18n.t('player.speed'));

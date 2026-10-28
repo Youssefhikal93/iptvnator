@@ -74,7 +74,6 @@ I18n.tables.uk = {
     'menu.watch': 'Дивитися',
     'opensubs.badKey': 'Неправильний ключ OpenSubtitles',
     'opensubs.connection': 'Немає з’єднання з OpenSubtitles',
-    'opensubs.delay': 'Затримка субтитрів {step} с (зараз {offset} с)',
     'opensubs.download': 'Завантажити субтитри…',
     'opensubs.downloaded': 'Завантажені субтитри',
     'opensubs.downloading': 'Завантаження субтитрів…',

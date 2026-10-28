@@ -74,7 +74,6 @@ I18n.tables.ary = {
     'menu.watch': 'تفرج',
     'opensubs.badKey': 'مفتاح OpenSubtitles ما صالحش',
     'opensubs.connection': 'ما كاينش اتصال بـ OpenSubtitles',
-    'opensubs.delay': 'تأخير الترجمة {step} ث (دابا {offset} ث)',
     'opensubs.download': 'نزّل الترجمة…',
     'opensubs.downloaded': 'الترجمات اللي تنزلو',
     'opensubs.downloading': 'الترجمة كتتنزّل…',

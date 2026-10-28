@@ -74,7 +74,6 @@ I18n.tables.tr = {
     'menu.watch': 'İzle',
     'opensubs.badKey': 'Geçersiz OpenSubtitles anahtarı',
     'opensubs.connection': 'OpenSubtitles bağlantısı yok',
-    'opensubs.delay': 'Altyazı gecikmesi {step} sn (şimdi {offset} sn)',
     'opensubs.download': 'Altyazı indir…',
     'opensubs.downloaded': 'İndirilen altyazılar',
     'opensubs.downloading': 'Altyazılar indiriliyor…',

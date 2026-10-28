@@ -58,8 +58,13 @@ window.OpenSubsSettings = (function () {
         var ui = Prefs.get('language');
         var codes = { ary: 'ar', by: 'be', zh: 'zh-cn', zhtw: 'zh-tw' };
         var language = codes[ui] || ui;
-        var choices = ['en', 'ar', 'ar,en'].concat(language && language !== 'en' && language !== 'ar' ? [language] : []);
+        var choices = ['en', 'ar'].concat(language && language !== 'en' && language !== 'ar' ? [language] : []);
         var saved = Prefs.get('subtitleLanguages');
+        // One language per search: a pair saved before keeps its first language.
+        if (String(saved).indexOf(',') >= 0) {
+            saved = String(saved).split(',')[0].trim();
+            Prefs.set('subtitleLanguages', saved);
+        }
         // A later UI language change must not mislabel an existing subtitle choice.
         if (choices.indexOf(saved) < 0 && OpenSubs.languages(saved) === saved) choices.push(saved);
         return choices;

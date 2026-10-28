@@ -67,6 +67,6 @@ window.SubtitleStore = (function () {
             return hit && typeof hit.text === 'string' ? hit.text : '';
         },
         title: function (id) { return read(titleKey())[id] || {}; },
-        save: function (id, fileId, offset) { save(id, { file_id: fileId, offset: offset, at: Date.now() }); },
+        save: function (id, fileId, offset, scale) { save(id, { file_id: fileId, offset: offset, scale: scale || 1, at: Date.now() }); },
     };
 })();

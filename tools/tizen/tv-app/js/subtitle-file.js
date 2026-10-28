@@ -32,8 +32,10 @@ window.SubtitleFile = (function () {
         return cues.sort(function (a, b) { return a.start - b.start; });
     }
 
-    function at(cues, time, offset) {
-        var now = time - (offset || 0);
+    // scale stretches the cue clock when the subtitle was timed for another
+    // frame rate: a cue at s shows at s * scale + offset on the video.
+    function at(cues, time, offset, scale) {
+        var now = (time - (offset || 0)) / (scale || 1);
         var text = [];
         // End is exclusive: adjacent cues must not flash together at their boundary.
         for (var i = 0; i < cues.length && cues[i].start <= now; i++) {

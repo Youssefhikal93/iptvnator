@@ -82,6 +82,7 @@ window.Player = (function () {
         draw: function (text) { clearSubs(); ui.subs.textContent = text; refreshCover(); },
         embeddedOff: function () { var tracks = getTracks(); if (tracks.text.length) tracks.text[0].select(); },
         closeMenu: closeMenu,
+        pause: function () { if (!isPaused()) togglePause(true); },
         toast: function (text) { document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: text })); },
     });
     var resume = { open: false, focus: 0, position: 0, failed: false };

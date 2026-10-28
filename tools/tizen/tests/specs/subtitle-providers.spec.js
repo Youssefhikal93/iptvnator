@@ -43,8 +43,9 @@ async function providers(page, { subdlFails = false } = {}) {
     await page.route('https://api.subdl.com/**', (route) => (subdlFails
         ? route.fulfill({ status: 500, json: { status: false } })
         : route.fulfill({ json: { status: true, subtitles: [
-            { release_name: 'Fixture.2021.1080p.NF.WEB-DL.DDP5.1.H.264', url: '/subtitle/100-200.zip', hi: false },
-            { release_name: 'Fixture.2021.2160p.NF.WEB-DL.HDR', url: '/subtitle/100-201.zip', hi: true },
+            // SubDL's links carry the key, as in production.
+            { release_name: 'Fixture.2021.1080p.NF.WEB-DL.DDP5.1.H.264', url: '/subtitle/100-200.zip?api_key=test-key', hi: false },
+            { release_name: 'Fixture.2021.2160p.NF.WEB-DL.HDR', url: '/subtitle/100-201.zip?api_key=test-key', hi: true },
         ] } })));
     await page.route('https://dl.subdl.com/**', (route) => route.fulfill({ contentType: 'application/zip', body: zip('fixture.srt', FILE('From SubDL')) }));
 }
@@ -165,7 +166,7 @@ test('#52 an OpenSubtitles download over its limit switches to SubDL with a noti
 test('#52 an expired OpenSubtitles key is named under the list title while SubDL results show', async ({ page }) => {
     await page.route('https://api.opensubtitles.com/**', (route) => route.fulfill({ status: 401, json: { message: 'expired' } }));
     await page.route('https://api.subdl.com/**', (route) => route.fulfill({ json: { status: true, subtitles: [
-        { release_name: 'Fixture.2021.1080p.NF.WEB-DL', url: '/subtitle/100-200.zip' }] } }));
+        { release_name: 'Fixture.2021.1080p.NF.WEB-DL', url: '/subtitle/100-200.zip?api_key=test-key' }] } }));
     await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'expired', subdlApiKey: 'subdl-key' } } });
     await findOnline(page);
     await expect(page.locator('#menu .menu-sub')).toHaveText('1 found · OpenSubtitles: key not accepted · SubDL 1');

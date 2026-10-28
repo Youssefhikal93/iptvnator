@@ -98,12 +98,13 @@ test('#52 SubDL queries prefer ids, name the type and send one upper-case langua
     assert.throws(function () { api.query({ season: 1, episode: 0 }, 'en'); }, function (error) { return error.code === 'noResults'; });
 });
 
-test('#52 SubDL search keeps the episode\'s own subtitles, skips season packs and never logs the key', async function () {
+test('#52 SubDL search keeps the episode\'s own subtitles and season packs, drops the key from links and never logs it', async function () {
     var asked = '';
     var env = fixture(function (url) {
         asked = url;
         return json({ status: true, results: [{ name: 'Love Is Blind' }], subtitles: [
-            { release_name: 'Love.Is.Blind.S08E01.1080p.NF.WEB-DL', url: '/subtitle/111-222.zip', episode: 1, hi: true, fps: '23.976' },
+            // Production links carry the key: "/subtitle/<id>.zip?api_key=…".
+            { release_name: 'Love.Is.Blind.S08E01.1080p.NF.WEB-DL', url: '/subtitle/111-222.zip?api_key=subdl-key', episode: 1, hi: true, fps: '23.976' },
             { release_name: 'Season Pack', url: '/subtitle/333-444.zip', episode: 1, full_season: true },
             { release_name: 'Love.Is.Blind.S08E02', url: '/subtitle/555-666.zip', episode: 2 },
             { release_name: 'Broken', url: 'https://elsewhere.test/x.zip' },
@@ -112,7 +113,12 @@ test('#52 SubDL search keeps the episode\'s own subtitles, skips season packs an
     env.globals.Prefs.set('subdlApiKey', 'subdl-key');
     var matches = await env.globals.SubDL.search({ tmdb_id: 1234, season: 8, episode: 1 }, 'en');
     assert.ok(asked.startsWith('https://api.subdl.com/api/v1/subtitles?api_key=subdl-key&'));
-    assert.equal(matches.length, 1);
+    assert.equal(matches.length, 2);
+    // The season pack's id names the episode, so the cache keeps episodes apart.
+    assert.equal(matches[1].file_id, 'subdl:333-444#s8e1');
+    assert.equal(matches[1].pack, true);
+    assert.equal(matches[0].pack, false);
+    assert.ok(!JSON.stringify(matches).includes('subdl-key'));
     assert.equal(matches[0].source, 'subdl');
     assert.equal(matches[0].file_id, 'subdl:111-222');
     assert.equal(matches[0].release, 'Love.Is.Blind.S08E01.1080p.NF.WEB-DL');
@@ -273,4 +279,16 @@ test('SubDL asks by id, then by TMDB\'s name, then by the provider\'s own title'
     assert.ok(/film_name=Love%20Is%20Blind%2C%20Habibi/.test(asked[1]));
     assert.ok(/film_name=Habibi%20Love&/.test(asked[2]));
     assert.equal(matches[0].file_id, 'subdl:1-2');
+});
+
+test('a season pack plays the episode\'s own file, and never another episode when it has none', async function () {
+    var pack = zip([
+        { name: 'Love.Is.Blind.Habibi.S01E01.srt', data: FILE.replace('Hello', 'One') },
+        { name: 'Love.Is.Blind.Habibi.S01E02.srt', data: FILE.replace('Hello', 'Two') },
+    ]);
+    var env = fixture(function () { return binary(pack); });
+    // The id alone is enough: a saved choice reopens without the search's match.
+    var two = await env.globals.SubDL.download('subdl:333-444#s1e2');
+    assert.ok(two.text.includes('Two'));
+    await assert.rejects(env.globals.SubDL.download('subdl:333-444#s1e3'), function (error) { return error.code === 'badFile'; });
 });

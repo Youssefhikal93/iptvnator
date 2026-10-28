@@ -304,6 +304,7 @@ I18n.tables.en = {
     'opensubs.switched': '{from}: {why}. Using {to} instead.',
     'opensubs.syncTitle': 'Pick the spoken line',
     'opensubs.timing': 'Subtitle timing',
+    'opensubs.why.badFile': 'subtitle file not usable',
     'opensubs.why.badKey': 'key not accepted',
     'opensubs.why.connection': 'no connection',
     'opensubs.why.quota': 'limit reached',

@@ -107,13 +107,17 @@ window.SubDL = (function () {
             }
             var matches = [];
             (Array.isArray(body.subtitles) ? body.subtitles : []).forEach(function (entry) {
-                var id = /^\/subtitle\/([\w-]+)\.zip$/.exec(String(entry.url || ''));
-                // A season pack needs a file picked from inside; the episode's own subtitle is enough.
-                if (!id || entry.full_season || (episode && Number(entry.episode) && Number(entry.episode) !== episode)) return;
-                matches.push({ source: 'subdl', file_id: PREFIX + id[1], language: language(entry.language || lang).toLowerCase(),
+                // SubDL appends "?api_key=…" to its links; only the id is kept.
+                var id = /^\/subtitle\/([\w-]+)\.zip(?:\?.*)?$/.exec(String(entry.url || ''));
+                if (!id || (episode && Number(entry.episode) && Number(entry.episode) !== episode)) return;
+                // A season pack: the episode's file is picked from inside the zip.
+                var pack = !!entry.full_season && !!episode;
+                // Saved and cached by id: a pack's id names the episode it is for.
+                var fileId = PREFIX + id[1] + (pack ? '#s' + Number(info.season) + 'e' + episode : '');
+                matches.push({ source: 'subdl', file_id: fileId, language: language(entry.language || lang).toLowerCase(),
                     release: String(entry.release_name || entry.name || ''), downloads: 0, hearing: !!entry.hi,
                     fps: Number(entry.fps) || 0, hashMatch: false, trusted: false, machine: false,
-                    season: info.season, episode: info.episode });
+                    season: info.season, episode: info.episode, pack: pack });
             });
             Log.info('subdl search ok n=' + matches.length);
             return matches.slice(0, limit || 10);
@@ -121,8 +125,11 @@ window.SubDL = (function () {
     }
 
     function download(fileId, match) {
-        var id = String(fileId || '').indexOf(PREFIX) === 0 ? String(fileId).slice(PREFIX.length) : '';
+        var parts = String(fileId || '').indexOf(PREFIX) === 0 ? String(fileId).slice(PREFIX.length).split('#') : [''];
+        var id = parts[0];
         if (!/^[\w-]+$/.test(id)) return Promise.reject(failure(0));
+        var episode = /^s(\d+)e(\d+)$/.exec(parts[1] || '');
+        if (episode) match = Object.assign({}, match, { season: Number(episode[1]), episode: Number(episode[2]), pack: true });
         return fetchBody(FILES + id + '.zip', 'binary').then(function (buffer) {
             return ZipFile.subtitle(buffer, match);
         }).then(function (text) {

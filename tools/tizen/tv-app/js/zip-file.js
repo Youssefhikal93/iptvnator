@@ -9,7 +9,7 @@ window.ZipFile = (function () {
 
     function failure() {
         var error = new Error('Invalid zip file');
-        error.code = 'connection';
+        error.code = 'badFile';
         error.status = 0;
         return error;
     }
@@ -83,6 +83,8 @@ window.ZipFile = (function () {
             var named = files.filter(function (entry) { return tag.test(entry.name); })[0];
             if (named) return named;
         }
+        // A season pack without this episode's file must not play another episode.
+        if (match && match.pack && files.length > 1) return null;
         return files[0];
     }
 

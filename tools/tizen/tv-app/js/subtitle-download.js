@@ -107,7 +107,7 @@ window.SubtitleDownload = function (hooks) {
 
     // "limit reached", "key not accepted" or "no connection".
     function reason(error) {
-        return I18n.t('opensubs.why.' + ({ badKey: 'badKey', quota: 'quota' }[error && error.code] || 'connection'));
+        return I18n.t('opensubs.why.' + ({ badKey: 'badKey', quota: 'quota', badFile: 'badFile' }[error && error.code] || 'connection'));
     }
 
     // A download refused by one provider (expired key, used-up limit, no

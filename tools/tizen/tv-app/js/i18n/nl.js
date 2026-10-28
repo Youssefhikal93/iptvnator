@@ -74,7 +74,6 @@ I18n.tables.nl = {
     'menu.watch': 'Bekijken',
     'opensubs.badKey': 'Ongeldige OpenSubtitles-sleutel',
     'opensubs.connection': 'Geen verbinding met OpenSubtitles',
-    'opensubs.delay': 'Ondertitelvertraging {step} s (nu {offset} s)',
     'opensubs.download': 'Ondertitels downloaden…',
     'opensubs.downloaded': 'Gedownloade ondertitels',
     'opensubs.downloading': 'Ondertitels downloaden…',

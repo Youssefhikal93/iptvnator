@@ -144,8 +144,9 @@ test('no key explains Settings without any HTTP, while cached titles restore tim
     assert.ok(v.toasts[0].includes('Settings'));
     var items = [];
     v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
-    assert.ok(items.some(function (item) { return item.label.includes('now 0.5 s'); }));
-    items.find(function (item) { return item.label.includes('+0.5'); }).run();
+    // Without a group starter the timing rows follow in the same list.
+    assert.ok(items.some(function (item) { return item.label === 'Reset timing'; }));
+    items.find(function (item) { return item.label === 'Show later by 0.5 s'; }).run();
     assert.equal(v.text, '');
     v.player.start(request);
     assert.equal(v.text, '');
@@ -210,7 +211,7 @@ test('picking a search result renders downloaded cues and low quota; reopening u
     var request = { id: 'movie:1', title: 'Fixture' };
     v.player.start(request);
     await v.player.search();
-    assert.ok(env.menu.children[1].textContent.includes('★ Recommended · en · Fixture · ⬇ 42 · Hearing impaired'));
+    assert.ok(env.menu.children[1].textContent.includes('★ Recommended · English · Fixture · ⬇ 42 · Hearing impaired'));
     env.globals.Menu.onKey(env.globals.Keys.ENTER);
     await new Promise(setImmediate);
     assert.equal(v.text, 'Hello');
@@ -326,15 +327,19 @@ test('title queries use + for spaces, the form the API does not redirect', funct
 test('subtitle language choices map app locales and retain a saved language when the UI language changes', function () {
     var api = fixture().globals;
     var row = api.OpenSubsSettings.rows[3];
-    [['en', 'en,ar,ar,en'], ['ary', 'en,ar,ar,en'], ['by', 'en,ar,ar,en,be'],
-        ['zhtw', 'en,ar,ar,en,zh-tw'], ['de', 'en,ar,ar,en,de']].forEach(function (scenario) {
+    [['en', 'en,ar'], ['ary', 'en,ar'], ['by', 'en,ar,be'],
+        ['zhtw', 'en,ar,zh-tw'], ['de', 'en,ar,de']].forEach(function (scenario) {
         api.Prefs.set('language', scenario[0]);
         assert.equal(row.choices.join(','), scenario[1]);
     });
     api.Prefs.set('subtitleLanguages', 'de');
     api.Prefs.set('language', 'fr');
-    assert.equal(row.choices.join('|'), 'en|ar|ar,en|fr|de');
+    assert.equal(row.choices.join('|'), 'en|ar|fr|de');
     assert.equal(row.labels.length, row.choices.length);
+    // One language per choice: a pair saved before keeps its first language.
+    api.Prefs.set('subtitleLanguages', 'ar,en');
+    assert.equal(row.choices.join('|'), 'en|ar|fr');
+    assert.equal(api.Prefs.get('subtitleLanguages'), 'ar');
 });
 
 test('Test key searches only, reports bad key or connection errors, and Remove key disables requests', async function () {
@@ -434,20 +439,27 @@ test('#39 matching or unknown frame rates leave the timing alone', async functio
     v.player.stop();
 });
 
-test('#39 the delay moves by 0.5 s or 5 s', function () {
+test('#39 the timing group shows the delay and moves it by 0.5 s or 5 s', function () {
     var env = fixture();
     env.stored['iptvnator-tv:subtitle-cache'] = JSON.stringify({ 7: { text: LINES, at: 1 } });
     env.globals.SubtitleStore.save('s1|movie:1', 7, 0);
     var v = viewer(env);
     v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    var heads = [];
     var labels = function () {
         var items = [];
-        v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
+        heads = [];
+        v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false,
+            function (label, value) { heads.push(label + ': ' + value); items.push({ label: '# ' + label }); });
         return items;
     };
-    assert.deepEqual(labels().filter(function (item) { return item.label.indexOf('Subtitle delay') === 0; }).map(function (item) { return item.label; }),
-        ['Subtitle delay −5 s (now 0.0 s)', 'Subtitle delay −0.5 s (now 0.0 s)', 'Subtitle delay +0.5 s (now 0.0 s)', 'Subtitle delay +5 s (now 0.0 s)']);
-    labels().find(function (item) { return item.label.includes('+5 s'); }).run();
+    assert.deepEqual(labels().map(function (item) { return item.label; }), ['Off', 'Downloaded subtitles', 'Find subtitles online…',
+        '# Subtitle timing', 'Sync to the line being spoken…', 'Show earlier by 5 s', 'Show earlier by 0.5 s', 'Show later by 0.5 s', 'Show later by 5 s']);
+    assert.deepEqual(heads, ['Subtitle timing: No delay']);
+    labels().find(function (item) { return item.label === 'Show later by 5 s'; }).run();
+    // The group's value shows the delay, and Reset timing appears.
+    assert.ok(labels().some(function (item) { return item.label === 'Reset timing'; }));
+    assert.deepEqual(heads, ['Subtitle timing: +5.0 s']);
     v.position = 6500;
     env.tick();
     assert.equal(v.text, 'Hello');
@@ -501,7 +513,9 @@ test('#39 Try the next subtitle downloads the following result without searching
     assert.equal(v.text, 'Hello');
     var items = [];
     v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
-    items.find(function (item) { return item.label === 'Try the next subtitle'; }).run();
+    // The downloaded row names the file's language and release.
+    assert.ok(items.some(function (item) { return item.label === 'English · One'; }));
+    items.find(function (item) { return item.label === 'Try another match'; }).run();
     await new Promise(setImmediate);
     await new Promise(setImmediate);
     assert.equal(v.text, 'Second file');

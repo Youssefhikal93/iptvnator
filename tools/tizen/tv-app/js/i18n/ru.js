@@ -74,7 +74,6 @@ I18n.tables.ru = {
     'menu.watch': 'Смотреть',
     'opensubs.badKey': 'Неверный ключ OpenSubtitles',
     'opensubs.connection': 'Нет соединения с OpenSubtitles',
-    'opensubs.delay': 'Задержка субтитров {step} с (сейчас {offset} с)',
     'opensubs.download': 'Скачать субтитры…',
     'opensubs.downloaded': 'Скачанные субтитры',
     'opensubs.downloading': 'Загрузка субтитров…',

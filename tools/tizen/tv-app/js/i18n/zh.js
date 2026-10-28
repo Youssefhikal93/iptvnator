@@ -74,7 +74,6 @@ I18n.tables.zh = {
     'menu.watch': '观看',
     'opensubs.badKey': 'OpenSubtitles 密钥无效',
     'opensubs.connection': '无法连接 OpenSubtitles',
-    'opensubs.delay': '字幕延迟 {step} 秒（当前 {offset} 秒）',
     'opensubs.download': '下载字幕…',
     'opensubs.downloaded': '已下载的字幕',
     'opensubs.downloading': '正在下载字幕…',

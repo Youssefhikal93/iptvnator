@@ -74,7 +74,6 @@ I18n.tables.hu = {
     'menu.watch': 'Lejátszás',
     'opensubs.badKey': 'Érvénytelen OpenSubtitles-kulcs',
     'opensubs.connection': 'Nincs kapcsolat az OpenSubtitles szolgáltatással',
-    'opensubs.delay': 'Felirat késleltetése {step} mp (most {offset} mp)',
     'opensubs.download': 'Feliratok letöltése…',
     'opensubs.downloaded': 'Letöltött feliratok',
     'opensubs.downloading': 'Feliratok letöltése…',

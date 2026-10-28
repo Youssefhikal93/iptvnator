@@ -74,7 +74,6 @@ I18n.tables.fr = {
     'menu.watch': 'Regarder',
     'opensubs.badKey': 'Clé OpenSubtitles incorrecte',
     'opensubs.connection': 'Aucune connexion à OpenSubtitles',
-    'opensubs.delay': 'Décalage des sous-titres {step} s (actuel : {offset} s)',
     'opensubs.download': 'Télécharger des sous-titres…',
     'opensubs.downloaded': 'Sous-titres téléchargés',
     'opensubs.downloading': 'Téléchargement des sous-titres…',

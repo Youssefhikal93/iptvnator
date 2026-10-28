@@ -4,7 +4,8 @@
 // Return or ◀ goes back to the groups, and Return there closes the menu.
 //
 // The player fills it on every render through build(entries), where
-// entries.head(label) starts a group, entries.item(label, active, run) adds
+// entries.head(label, value) starts a group (value, when given, is what its
+// row shows instead of the chosen choices), entries.item(label, active, run) adds
 // a choice (before the first group it is a row of its own, such as Back to
 // live), entries.note(text) says why a group has no choices and
 // entries.info(text) adds a line of stream information.
@@ -21,8 +22,8 @@ window.PlayerMenu = (root, hooks) => {
         const list = [];
         let group = null;
         build({
-            head: (label) => {
-                group = { label, items: [], notes: [], infos: [] };
+            head: (label, value) => {
+                group = { label, value, items: [], notes: [], infos: [] };
                 list.push(group);
             },
             item: (label, active, action) => (group ? group.items : list).push({ label, active, run: action }),
@@ -36,6 +37,7 @@ window.PlayerMenu = (root, hooks) => {
 
     // The chosen value(s), else the values of "Label: value" rows, else the note.
     const valueOf = (group) => {
+        if (typeof group.value === 'string') return group.value;
         const active = group.items.filter((entry) => entry.active).map((entry) => entry.label);
         if (active.length) return active.join(' · ');
         const values = group.items.map((entry) => entry.label.split(': ')[1]).filter(Boolean);

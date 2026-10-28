@@ -74,7 +74,6 @@ I18n.tables.by = {
     'menu.watch': 'Глядзець',
     'opensubs.badKey': 'Няправільны ключ OpenSubtitles',
     'opensubs.connection': 'Няма злучэння з OpenSubtitles',
-    'opensubs.delay': 'Затрымка субцітраў {step} с (цяпер {offset} с)',
     'opensubs.download': 'Спампаваць субцітры…',
     'opensubs.downloaded': 'Спампаваныя субцітры',
     'opensubs.downloading': 'Спампоўванне субцітраў…',

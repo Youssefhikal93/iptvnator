@@ -74,7 +74,6 @@ I18n.tables.de = {
     'menu.watch': 'Ansehen',
     'opensubs.badKey': 'Ungültiger OpenSubtitles-Schlüssel',
     'opensubs.connection': 'Keine Verbindung zu OpenSubtitles',
-    'opensubs.delay': 'Untertitelverzögerung {step} s (aktuell {offset} s)',
     'opensubs.download': 'Untertitel herunterladen…',
     'opensubs.downloaded': 'Heruntergeladene Untertitel',
     'opensubs.downloading': 'Untertitel werden heruntergeladen…',

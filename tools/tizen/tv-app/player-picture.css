@@ -46,8 +46,13 @@
 }
 #player.sub-bg-box #pl-subs,
 #player.sub-bg-box video::cue {
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.88);
     text-shadow: none;
+}
+/* The box is a rounded dark card around the text. */
+#player.sub-bg-box #pl-subs {
+    padding: 8px 22px;
+    border-radius: 12px;
 }
 #player.sub-pos-high #pl-subs {
     bottom: 270px;
@@ -63,8 +68,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 16%;
-    background: rgba(0, 0, 0, 0.92);
+    height: 18%;
+    /* Solid black hides burned-in text; the soft top edge keeps it from looking like a bar. */
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, #000 28px);
 }
 #player.sub-bg-cover.sub-on #pl-cover {
     display: block;

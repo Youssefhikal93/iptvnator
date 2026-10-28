@@ -74,7 +74,6 @@ I18n.tables.pl = {
     'menu.watch': 'Oglądaj',
     'opensubs.badKey': 'Nieprawidłowy klucz OpenSubtitles',
     'opensubs.connection': 'Brak połączenia z OpenSubtitles',
-    'opensubs.delay': 'Opóźnienie napisów {step} s (teraz {offset} s)',
     'opensubs.download': 'Pobierz napisy…',
     'opensubs.downloaded': 'Pobrane napisy',
     'opensubs.downloading': 'Pobieranie napisów…',

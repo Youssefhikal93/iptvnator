@@ -8,3 +8,38 @@ body.subtitles-open #toast {
     z-index: 45;
     white-space: normal;
 }
+/* A result (#52): the release on one line, then the source and small badges. */
+#menu.subtitle-picker .menu-row.rich {
+    padding: 12px 20px;
+    overflow-wrap: normal;
+}
+.sp-release {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 26px;
+    unicode-bidi: plaintext;
+}
+.sp-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1;
+}
+.sp-badges span {
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--muted);
+}
+.sp-badges .sp-src.opensubtitles { background: #1f4e79; color: #d6e9ff; }
+.sp-badges .sp-src.subdl { background: #5b2d82; color: #f0deff; }
+.sp-badges .sp-best { background: #6b5200; color: #ffd75e; }
+.sp-badges .sp-exact { background: #1d5a33; color: #8af0ad; }
+.sp-badges .sp-fit { color: #8af0ad; }
+.sp-badges .sp-warn { background: #6b2a1f; color: #ffb4a6; }
+.sp-badges .sp-src.subsource { background: #1d5a5a; color: #b8f5f0; }
+.sp-badges .sp-src.deepl { background: #0f2b46; color: #a8d4ff; }

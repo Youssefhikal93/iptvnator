@@ -3,7 +3,7 @@ window.Prefs = (function () {
     'use strict';
 
     // Read before a profile is chosen, or shared by every profile.
-    var SHARED = { tmdbApiKey: true, opensubtitlesApiKey: true, askProfile: true };
+    var SHARED = { tmdbApiKey: true, opensubtitlesApiKey: true, subdlApiKey: true, subsourceApiKey: true, deeplApiKey: true, askProfile: true };
     var listeners = [];
     var DEFAULTS = {
         autoplayMs: 8000,
@@ -12,6 +12,7 @@ window.Prefs = (function () {
         livePreview: true,
         subtitleSize: 'm',
         subtitleLanguages: 'en',
+        subtitleFallback: true,
         subtitleColour: 'white',
         subtitleBackground: 'shadow',
         subtitlePosition: 'bottom',

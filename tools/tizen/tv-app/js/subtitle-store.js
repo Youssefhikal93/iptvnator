@@ -35,10 +35,17 @@ window.SubtitleStore = (function () {
         while (!write(CACHE, saved) && oldest.length) delete saved[oldest.shift()];
     }
 
-    function obtain(fileId) {
+    // The provider an id belongs to; OpenSubtitles ids are plain numbers.
+    function provider(fileId) {
+        return [SubDL, SubSource, SubtitleTranslate].filter(function (api) { return api.owns(fileId); })[0] || OpenSubs;
+    }
+
+    // match is the search result, which tells a provider which file of a zip
+    // to take, or a translation what to translate.
+    function obtain(fileId, match) {
         var hit = read(CACHE)[fileId];
         if (hit && typeof hit.text === 'string' && SubtitleFile.parse(hit.text).length) return Promise.resolve({ text: hit.text, remaining: null });
-        if (!pending[fileId]) pending[fileId] = OpenSubs.download(fileId).then(function (result) {
+        if (!pending[fileId]) pending[fileId] = provider(fileId).download(fileId, match).then(function (result) {
             if (!SubtitleFile.parse(result.text).length) throw new Error('Invalid subtitle file');
             cache(fileId, result.text);
             return result;

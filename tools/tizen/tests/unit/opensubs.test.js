@@ -525,3 +525,27 @@ test('#39 Try the next subtitle downloads the following result without searching
     assert.equal(env.globals.SubtitleStore.title('s1|movie:1').file_id, 8);
     v.player.stop();
 });
+
+test('with a TMDB key the subtitle search uses TMDB\'s English name and IMDb id, not the provider\'s title', async function () {
+    var asked = [];
+    var env = load(['subtitle-context.js'], {}, {
+        Tmdb: {
+            enabled: function () { return true; },
+            match: function (item, type) {
+                asked.push(type + ' ' + item.tmdb_id);
+                return Promise.resolve({ id: 230000, name: 'Love Is Blind, Habibi', original_name: 'الحب أعمى حبيبي', imdb_id: 'tt32000000' });
+            },
+        },
+    });
+    var request = {};
+    env.globals.SubtitleContext.attach(request, { sourceId: 's', item: { name: 'Love is blind, Habibi- الحب أعمى حبيبي', tmdb_id: 230000 },
+        episode: { season: 1, num: 2 }, details: {} });
+    var info = await request.subtitleLookup();
+    assert.equal(asked.join(), 'tv 230000');
+    assert.equal(info.title, 'Love Is Blind, Habibi');
+    assert.equal(info.imdb_id, 'tt32000000');
+    assert.equal(info.season + 'x' + info.episode, '1x2');
+    // TMDB knows only the Arabic name: the provider's title stays.
+    env.globals.Tmdb.match = function () { return Promise.resolve({ id: 5, name: 'الحب أعمى حبيبي', original_name: 'الحب أعمى حبيبي' }); };
+    assert.equal((await request.subtitleLookup()).title, 'Love is blind, Habibi- الحب أعمى حبيبي');
+});

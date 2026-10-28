@@ -368,3 +368,144 @@ test('quota reset durations survive safely without exposing surrounding API mess
         return true;
     });
 });
+
+// #39: three lines, the second in Arabic, for alignment tests.
+var LINES = '1\n00:00:01,000 --> 00:00:03,000\nHello\n\n2\n00:00:05,000 --> 00:00:07,000\nمرحبا بك\n\n3\n00:00:09,000 --> 00:00:11,000\nBye';
+
+// A search with two results; each download returns its own text.
+function alignServer(results, texts) {
+    var asked = null;
+    return function (url, options) {
+        if (url.includes('/subtitles?')) return json({ data: results.map(function (attributes) { return { attributes: attributes }; }) });
+        if (url.indexOf('/download') >= 0) {
+            asked = JSON.parse(options.body).file_id;
+            return json({ link: 'https://files.test/temporary', file_name: 'fixture.srt', remaining: 50 });
+        }
+        return Promise.resolve({ ok: true, text: function () { return Promise.resolve(texts[asked]); } });
+    };
+}
+
+async function searchAndPick(env, v, request) {
+    v.player.start(request);
+    await v.player.search();
+    env.globals.Menu.onKey(env.globals.Keys.ENTER);
+    await new Promise(setImmediate);
+    await new Promise(setImmediate);
+}
+
+test('#39 a subtitle timed for 25 fps is stretched to a 23.976 fps video, and the stretch is remembered', async function () {
+    var env = fixture(alignServer([{ language: 'en', release: 'PAL', fps: 25, files: [{ file_id: 7 }] }], { 7: LINES }));
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    var v = viewer(env);
+    var request = { id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture',
+        subtitleLookup: function () { return Promise.resolve({ title: 'Fixture', video: { r_frame_rate: '24000/1001', width: 1920, height: 1080 } }); } };
+    await searchAndPick(env, v, request);
+    assert.ok(v.toasts.some(function (text) { return text.includes('25') && text.includes('23.976'); }), v.toasts.join(','));
+    // Unstretched, the third line starts at 9.000 s; at 25/23.976 it starts at about 9.384 s.
+    v.position = 9200;
+    env.tick();
+    assert.equal(v.text, '');
+    v.position = 9500;
+    env.tick();
+    assert.equal(v.text, 'Bye');
+    assert.ok(Math.abs(env.globals.SubtitleStore.title('s1|movie:1').scale - 25 / (24000 / 1001)) < 1e-9);
+    // The next start restores the stretch with no search.
+    v.player.start(request);
+    v.position = 9200;
+    env.tick();
+    assert.equal(v.text, '');
+    // The TV log names the facts, never the title or a link.
+    var facts = env.logs.filter(function (line) { return line.indexOf('SUBS facts') === 0; })[0];
+    assert.equal(facts, 'SUBS facts fps 23.976 res 1080p codec ? hash no results 1 hash matches 0 with fps 1');
+    assert.ok(!env.logs.join('\n').includes('Fixture') && !env.logs.join('\n').includes('https://'));
+    v.player.stop();
+});
+
+test('#39 matching or unknown frame rates leave the timing alone', async function () {
+    var env = fixture(alignServer([{ language: 'en', release: 'Same', fps: 23.976, files: [{ file_id: 7 }] }], { 7: LINES }));
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    var v = viewer(env);
+    await searchAndPick(env, v, { id: 'movie:1', title: 'Fixture',
+        subtitleLookup: function () { return Promise.resolve({ title: 'Fixture', video: { avg_frame_rate: '24000/1001' } }); } });
+    v.position = 9100;
+    env.tick();
+    assert.equal(v.text, 'Bye');
+    assert.equal(v.toasts.filter(function (text) { return text.includes('fps'); }).length, 0);
+    v.player.stop();
+});
+
+test('#39 the delay moves by 0.5 s or 5 s', function () {
+    var env = fixture();
+    env.stored['iptvnator-tv:subtitle-cache'] = JSON.stringify({ 7: { text: LINES, at: 1 } });
+    env.globals.SubtitleStore.save('s1|movie:1', 7, 0);
+    var v = viewer(env);
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    var labels = function () {
+        var items = [];
+        v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
+        return items;
+    };
+    assert.deepEqual(labels().filter(function (item) { return item.label.indexOf('Subtitle delay') === 0; }).map(function (item) { return item.label; }),
+        ['Subtitle delay −5 s (now 0.0 s)', 'Subtitle delay −0.5 s (now 0.0 s)', 'Subtitle delay +0.5 s (now 0.0 s)', 'Subtitle delay +5 s (now 0.0 s)']);
+    labels().find(function (item) { return item.label.includes('+5 s'); }).run();
+    v.position = 6500;
+    env.tick();
+    assert.equal(v.text, 'Hello');
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 5000);
+    v.player.stop();
+});
+
+test('#39 syncing to the spoken line pauses, starts on the nearest line and sets the delay from it', function () {
+    var env = fixture();
+    env.stored['iptvnator-tv:subtitle-cache'] = JSON.stringify({ 7: { text: LINES, at: 1 } });
+    env.globals.SubtitleStore.save('s1|movie:1', 7, 0);
+    var paused = 0;
+    var v = viewer(env);
+    v.player = env.globals.SubtitleDownload({ position: function () { return v.position; },
+        draw: function (text) { v.text = text; }, embeddedOff: function () {}, pause: function () { paused++; },
+        closeMenu: function () {}, toast: function (text) { v.toasts.push(text); } });
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    // The voice says the Arabic line at 25 s; the file has it at 5 s.
+    v.position = 25000;
+    var items = [];
+    v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
+    items.find(function (item) { return item.label.indexOf('Sync to the line') === 0; }).run();
+    assert.equal(paused, 1);
+    assert.ok(env.globals.Menu.isOpen());
+    // Lines are listed with where they show now; the focus starts on the last (nearest) line.
+    var text = env.menu.children.map(function (child) { return child.textContent; }).join('|');
+    assert.ok(text.includes('0:01  \u2068Hello\u2069') && text.includes('0:05  \u2068مرحبا بك\u2069') && text.includes('0:09  \u2068Bye'), text.slice(0, 400));
+    env.globals.Menu.onKey(env.globals.Keys.UP);
+    env.globals.Menu.onKey(env.globals.Keys.ENTER);
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 20000);
+    assert.equal(v.text, 'مرحبا بك');
+    v.position = 29500;
+    env.tick();
+    assert.equal(v.text, 'Bye');
+    v.player.stop();
+});
+
+test('#39 Try the next subtitle downloads the following result without searching again', async function () {
+    var calls = 0;
+    var server = alignServer([{ language: 'en', release: 'One', download_count: 900, files: [{ file_id: 7 }] },
+        { language: 'en', release: 'Two', download_count: 10, files: [{ file_id: 8 }] }], { 7: LINES, 8: '1\n00:00:01,000 --> 00:00:03,000\nSecond file' });
+    var env = fixture(function (url, options) {
+        if (url.includes('/subtitles?')) calls++;
+        return server(url, options);
+    });
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    var v = viewer(env);
+    await searchAndPick(env, v, { id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    v.position = 1500;
+    env.tick();
+    assert.equal(v.text, 'Hello');
+    var items = [];
+    v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
+    items.find(function (item) { return item.label === 'Try the next subtitle'; }).run();
+    await new Promise(setImmediate);
+    await new Promise(setImmediate);
+    assert.equal(v.text, 'Second file');
+    assert.equal(calls, 1);
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').file_id, 8);
+    v.player.stop();
+});

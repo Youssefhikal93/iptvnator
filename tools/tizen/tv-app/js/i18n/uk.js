@@ -42,7 +42,6 @@ I18n.tables.uk = {
     'describe.pin': 'Закриває вибрані категорії PIN-кодом',
     'describe.programmeGuide': 'Показує у списках і плеєрі, що йде зараз і далі',
     'describe.relock': 'Скільки розблоковані категорії лишаються відкритими',
-    'describe.skipIntro': 'На скільки «Пропустити заставку» перемотує на початку серії',
     'describe.topBar': 'Пошук і кнопки вигляду над списками',
     'detail.more': 'Більше',
     'detail.moreIn': 'Ще в «{category}»',

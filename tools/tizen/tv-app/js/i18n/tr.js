@@ -42,7 +42,6 @@ I18n.tables.tr = {
     'describe.pin': 'Seçtiğiniz kategorileri PIN ile kilitler',
     'describe.programmeGuide': 'Listelerde ve oynatıcıda şimdi ve sonra ne olduğunu gösterir',
     'describe.relock': 'Kilidi açılan kategorilerin ne kadar açık kalacağı',
-    'describe.skipIntro': 'Girişi atla’nın bölüm başında ne kadar atladığı',
     'describe.topBar': 'Listelerin üstündeki arama ve görünüm düğmeleri',
     'detail.more': 'Daha fazla',
     'detail.moreIn': '{category} içinde daha fazlası',

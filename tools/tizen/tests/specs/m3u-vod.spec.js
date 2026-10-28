@@ -1,4 +1,4 @@
-const { test, expect, boot, press, back, section, category, moveTo, sources, sourceMenu, openFirst, playing } = require('./helpers');
+const { test, expect, teachIntro, boot, press, back, section, category, moveTo, sources, sourceMenu, openFirst, playing } = require('./helpers');
 
 // Adds an M3U source through Settings > Sources, like a viewer would.
 async function addPlaylist(page, file) {
@@ -72,7 +72,9 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E1');
     await page.locator('#video').evaluate(v => { v.currentTime = 60; });
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(60);
-    // 1:00 is in the intro: ▲ ▲ reach Skip intro above the timeline, ▼ ▼ the row again.
+    // Skipping 0:15 -> 0:35 by hand teaches the intro; back at 0:15 ▲ reaches Skip intro, ▼ ▼ the row again.
+    await teachIntro(page, 15);
+    await page.locator('#video').evaluate(v => { v.currentTime = 15; });
     await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
     await expect(page.locator('#pl-skip')).toHaveClass(/focus/);

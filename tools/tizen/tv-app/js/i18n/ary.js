@@ -42,7 +42,6 @@ I18n.tables.ary = {
     'describe.pin': 'كيسد الفئات اللي اخترتي بـ PIN',
     'describe.programmeGuide': 'كيبين شنو داير دابا ومن بعد فاللوائح وفالمشغل',
     'describe.relock': 'شحال كيبقاو الفئات المحلولة مفتوحين',
-    'describe.skipIntro': 'شحال كيقفز تخطي المقدمة فبداية الحلقة',
     'describe.topBar': 'البحث وبوطونات العرض لفوق اللوائح',
     'detail.more': 'وري كثر',
     'detail.moreIn': 'كثر فـ {category}',

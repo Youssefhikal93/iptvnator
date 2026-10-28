@@ -183,6 +183,19 @@ async function playerMenu(page) {
     await expect(page.locator('#pl-menu')).toBeVisible();
 }
 
+// Teaches the playing show its intro the way a viewer does: from `from`
+// seconds, ▲ onto the timeline and ▶ ▶ (+20 s). Waits for the jump to land
+// unless the page clock is held (then the caller runs it).
+async function teachIntro(page, from = 15, { clock = false } = {}) {
+    await page.locator('#video').evaluate((v, at) => { v.currentTime = at; }, from);
+    if (!await page.locator('#pl-seekbox.focus').count()) await press(page, 'ArrowUp');
+    await expect(page.locator('#pl-seekbox')).toHaveClass(/focus/);
+    await press(page, 'ArrowRight');
+    await press(page, 'ArrowRight');
+    if (clock) await page.clock.runFor(600);
+    else await page.waitForTimeout(700);
+}
+
 async function toolbar(page, name) {
     // Call from the first item (or the top category).
     await press(page, 'ArrowUp');
@@ -212,4 +225,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, playerGroup, playerMenu, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };

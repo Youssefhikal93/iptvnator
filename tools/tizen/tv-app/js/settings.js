@@ -31,7 +31,6 @@ window.Settings = function (hooks) {
 
     const rows = [
         { get group() { return I18n.t('settings.playback'); }, get label() { return I18n.t('settings.autoplay'); }, get hint() { return I18n.t('describe.autoplay'); }, key: 'autoplayMs', choices: [0, 5000, 8000, 15000], get labels() { return [I18n.t('common.off'), I18n.t('unit.seconds', { n: 5 }), I18n.t('unit.seconds', { n: 8 }), I18n.t('unit.seconds', { n: 15 })]; } },
-        { get label() { return I18n.t('settings.skipIntro'); }, get hint() { return I18n.t('describe.skipIntro'); }, key: 'skipIntroSeconds', choices: [60, 75, 90, 120], get labels() { return [60, 75, 90, 120].map((n) => I18n.t('unit.seconds', { n })); } },
         { get label() { return I18n.t('settings.programmeGuide'); }, get hint() { return I18n.t('describe.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return onOff(); } },
         { get label() { return I18n.t('settings.livePreview'); }, get hint() { return I18n.t('describe.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return onOff(); } },
         placed(picture[4], null, 'picture.picture'),

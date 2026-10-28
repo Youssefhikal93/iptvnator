@@ -7,7 +7,8 @@ test('settings show current values; guide Off stops requests and On resumes them
     await section(page, 'Settings');
     const row = label => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: label }) });
     await expect(row('Autoplay next episode').locator('.st-value')).toHaveText('8 s');
-    await expect(row('Skip intro length').locator('.st-value')).toHaveText('90 s');
+    // Skip intro is learnt from the viewer's own skip: no length to choose.
+    await expect(row('Skip intro length')).toHaveCount(0);
     await expect(row('On start open').locator('.st-value')).toHaveText('Last channel');
     await setting(page, 'Programme guide (now and next)');
     await press(page, 'Enter');
@@ -77,7 +78,7 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await expect(groups.nth(2)).toContainText('Playback');
     await expect(page.locator('#settings .st-section:visible .st-group')).toHaveText('Playback');
     // Playback, then its Picture and Start-up parts (#52).
-    await expect(page.locator('#settings .st-section:visible .st-row')).toHaveCount(6);
+    await expect(page.locator('#settings .st-section:visible .st-row')).toHaveCount(5);
     await expect(page.locator('#settings .st-section:visible .st-part')).toHaveText(['Picture', 'Start-up']);
     // ▶ enters the rows; a row says what it does and on/off is a switch.
     await press(page, 'ArrowRight');
@@ -85,7 +86,6 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await expect(page.locator('#settings .st-row.focused .st-sub')).toHaveText('Counts down to the next episode when one ends');
     await expect(page.locator('#settings .st-row.focused .st-arrow')).toHaveCount(2);
     await expect(page.locator('#hints')).toContainText('Return: groups');
-    await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await expect(page.locator('#settings .st-row.focused .st-switch')).toHaveClass(/on/);
     await press(page, 'Enter');

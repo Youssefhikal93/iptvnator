@@ -1,4 +1,4 @@
-const { test, expect, playerMenu, boot, openFirst, press, playing, sendKeyCode, back, moveTo, playerGroup } = require('./helpers');
+const { test, expect, playerMenu, teachIntro, boot, openFirst, press, playing, sendKeyCode, back, moveTo, playerGroup } = require('./helpers');
 
 test('movie controls pause, play, seek and change speed; track menu and stream info close before player', async ({ page }) => {
     await boot(page);
@@ -92,10 +92,10 @@ test('episode controls skip intro, select another season and play next', async (
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E1');
-    // Seek via the real media API to reach intro/up-next windows without
-    // spending several minutes watching the fixture in each regression run.
+    // Skipping 0:15 -> 0:35 by hand teaches the intro; back at 0:15 Skip intro shows.
+    await teachIntro(page, 15);
     await page.locator('#video').evaluate(v => { v.currentTime = 15; });
-    // Skip intro floats above the timeline, not in the row: ▲ ▲ reach it.
+    // Skip intro floats above the timeline, not in the row: ▲ from the timeline reaches it.
     await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
     await expect(page.locator('#pl-buttons')).not.toContainText('Skip intro');
@@ -113,7 +113,7 @@ test('episode controls skip intro, select another season and play next', async (
     await expect(page.locator('#pl-skip')).toHaveClass(/focus/);
     await press(page, 'Enter');
     await expect(page.locator('#pl-skip')).toBeHidden();
-    await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(100);
+    await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(34);
     await press(page, 'ArrowDown');
     await moveTo(page, '#pl-buttons .focus', 'Episodes', 'ArrowRight');
     await press(page, 'Enter');

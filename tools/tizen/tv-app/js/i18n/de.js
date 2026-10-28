@@ -42,7 +42,6 @@ I18n.tables.de = {
     'describe.pin': 'Sperrt die gewählten Kategorien mit einer PIN',
     'describe.programmeGuide': 'Zeigt in Listen und im Player, was jetzt und danach läuft',
     'describe.relock': 'Wie lange entsperrte Kategorien offen bleiben',
-    'describe.skipIntro': 'Wie weit „Intro überspringen“ am Anfang einer Folge springt',
     'describe.topBar': 'Suche und Ansichtstasten über den Listen',
     'detail.more': 'Mehr',
     'detail.moreIn': 'Mehr in {category}',

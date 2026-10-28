@@ -248,3 +248,40 @@ test('#52 Settings list the backup switch and the Subsource and DeepL key rows',
     assert.equal(toggle.labels.join(','), 'On,Off');
     assert.equal(api.Prefs.get('subtitleFallback'), true);
 });
+
+test('#52 a refused download moves on to another provider and says why, and the list names each failure', async function () {
+    var env = fixture(function (url) {
+        if (url.indexOf('api.opensubtitles.com') >= 0 && url.indexOf('/download') >= 0) return json({ message: 'quota' }, 406);
+        if (url.indexOf('api.opensubtitles.com') >= 0) {
+            return json({ data: [{ attributes: { language: 'en', release: 'OS.best', download_count: 900, moviehash_match: true, files: [{ file_id: 7 }] } }] });
+        }
+        if (url.indexOf('api.subdl.com') >= 0) return json({ status: true, subtitles: [{ release_name: 'SubDL.one', url: '/subtitle/1-2.zip' }] });
+        if (url.indexOf('dl.subdl.com') >= 0) return binary(zip('x.srt', FILE));
+        throw new Error('Unexpected ' + url);
+    });
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    env.globals.Prefs.set('subdlApiKey', 'subdl-key');
+    var v = viewer(env);
+    v.player.start({ id: 'movie:1', title: 'Fixture' });
+    await v.player.search();
+    // The OpenSubtitles exact match leads, but its download limit is used up.
+    env.globals.Menu.onKey(env.globals.Keys.ENTER);
+    await settle(function () { return v.text; });
+    assert.equal(v.toasts.join('|'), 'OpenSubtitles: limit reached. Using SubDL instead.');
+    assert.equal(v.text, 'Hello');
+    var labels = [];
+    v.player.menuEntries(function (label) { labels.push(label); }, false);
+    assert.ok(labels.includes('English · SubDL.one'));
+
+    // In the list, a refused key reads as such under the title.
+    env = fixture(function (url) {
+        if (url.indexOf('api.opensubtitles.com') >= 0) return json({}, 401);
+        return json({ status: true, subtitles: [{ release_name: 'SubDL.one', url: '/subtitle/1-2.zip' }] });
+    });
+    env.globals.Prefs.set('opensubtitlesApiKey', 'expired');
+    env.globals.Prefs.set('subdlApiKey', 'subdl-key');
+    v = viewer(env);
+    v.player.start({ id: 'movie:1', title: 'Fixture' });
+    await v.player.search();
+    assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · OpenSubtitles: key not accepted · SubDL 1');
+});

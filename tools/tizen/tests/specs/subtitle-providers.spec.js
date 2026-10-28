@@ -83,7 +83,7 @@ test('#52 a failing SubDL still leaves the OpenSubtitles results and says so und
     await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'test-key', subdlApiKey: 'subdl-key' } } });
     await findOnline(page);
     await expect(page.locator('#menu .menu-row.rich')).toHaveCount(3);
-    await expect(page.locator('#menu .menu-sub')).toHaveText('3 found · OpenSubtitles 3 · SubDL: unavailable');
+    await expect(page.locator('#menu .menu-sub')).toHaveText('3 found · OpenSubtitles 3 · SubDL: no connection');
     await press(page, 'Enter');
     await expect(page.locator('#pl-subs')).toHaveText('From OpenSubtitles');
 });
@@ -149,4 +149,24 @@ test('#52 with no English anywhere the Arabic subtitle is translated with DeepL,
     await press(page, 'Enter');
     await expect(page.locator('#toast')).toContainText('No subtitles found');
     expect(sent).toEqual(['AR>EN-US']);
+});
+
+test('#52 an OpenSubtitles download over its limit switches to SubDL with a notice, and a refused key is named in the list', async ({ page }) => {
+    await providers(page);
+    // Searching still works, but the daily download limit is used up.
+    await page.route('https://api.opensubtitles.com/api/v1/download', (route) => route.fulfill({ status: 406, json: { message: 'quota' } }));
+    await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'test-key', subdlApiKey: 'subdl-key' } } });
+    await findOnline(page);
+    await press(page, 'Enter');
+    await expect(page.locator('#toast')).toHaveText('OpenSubtitles: limit reached. Using SubDL instead.');
+    await expect(page.locator('#pl-subs')).toHaveText('From SubDL');
+});
+
+test('#52 an expired OpenSubtitles key is named under the list title while SubDL results show', async ({ page }) => {
+    await page.route('https://api.opensubtitles.com/**', (route) => route.fulfill({ status: 401, json: { message: 'expired' } }));
+    await page.route('https://api.subdl.com/**', (route) => route.fulfill({ json: { status: true, subtitles: [
+        { release_name: 'Fixture.2021.1080p.NF.WEB-DL', url: '/subtitle/100-200.zip' }] } }));
+    await boot(page, { storage: { 'shared-settings': { opensubtitlesApiKey: 'expired', subdlApiKey: 'subdl-key' } } });
+    await findOnline(page);
+    await expect(page.locator('#menu .menu-sub')).toHaveText('1 found · OpenSubtitles: key not accepted · SubDL 1');
 });

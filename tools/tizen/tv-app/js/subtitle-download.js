@@ -105,7 +105,23 @@ window.SubtitleDownload = function (hooks) {
         sync();
     }
 
-    function choose(match) {
+    // "limit reached", "key not accepted" or "no connection".
+    function reason(error) {
+        return I18n.t('opensubs.why.' + ({ badKey: 'badKey', quota: 'quota' }[error && error.code] || 'connection'));
+    }
+
+    // A download refused by one provider (expired key, used-up limit, no
+    // connection) moves on to the best result from another, and says so.
+    function moveOn(match, error, failed) {
+        failed[match.source || 'opensubtitles'] = true;
+        var next = match.from ? null : found.filter(function (other) { return !failed[other.source || 'opensubtitles']; })[0];
+        if (!next) return report(error);
+        hooks.toast(I18n.t('opensubs.switched', { from: sourceName(match), why: reason(error), to: sourceName(next) }));
+        Log.info('SUBS download failed ' + (match.source || 'opensubtitles') + ' ' + (error && error.status) + ', trying ' + next.source);
+        return choose(next, failed);
+    }
+
+    function choose(match, failed) {
         var mine = ++generation;
         var alive = openPicker(I18n.t(match.from ? 'opensubs.translating' : 'opensubs.downloading', { p: 0 }), [{ label: I18n.t('common.cancel') }]);
         if (match.from) {
@@ -124,7 +140,7 @@ window.SubtitleDownload = function (hooks) {
         }).catch(function (error) {
             if (mine !== generation || !alive()) return;
             closePicker();
-            report(error);
+            return moveOn(match, error, failed || {});
         });
     }
 
@@ -172,7 +188,7 @@ window.SubtitleDownload = function (hooks) {
     // "8 found · OpenSubtitles 5 · SubDL 3", and which provider failed.
     function summary(matches, outcomes) {
         return [I18n.t('opensubs.found', { n: matches.length })].concat(outcomes.map(function (outcome) {
-            if (outcome.error) return outcome.provider.name + ': ' + I18n.t('opensubs.unavailable');
+            if (outcome.error) return outcome.provider.name + ': ' + reason(outcome.error);
             return outcome.provider.name + ' ' + matches.filter(function (match) { return (match.source || 'opensubtitles') === outcome.provider.id; }).length;
         })).join(' · ');
     }

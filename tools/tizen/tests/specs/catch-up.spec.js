@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, toolbar, press, sendKeyCode, back, playing } = require('./helpers');
+const { test, expect, boot, section, enterItems, toolbar, press, sendKeyCode, back, playing, playerMenu } = require('./helpers');
 
 async function pastProgramme(page) {
     await sendKeyCode(page, 458);
@@ -56,6 +56,8 @@ test('guide past programme plays a timeshift request, seeks, and returns without
     await page.screenshot({ path: testInfo.outputPath('catch-up-player.png') });
     await press(page, 'Enter');
     await expect.poll(() => page.locator('#video').evaluate(video => video.paused)).toBe(true);
+    // ▲ puts the focus on the timeline, where ◀ ▶ seek.
+    await press(page, 'ArrowUp');
     await press(page, 'ArrowRight');
     await expect.poll(() => page.locator('#video').evaluate(video => video.currentTime)).toBeGreaterThanOrEqual(10);
     await press(page, 'ArrowLeft');
@@ -120,7 +122,7 @@ test('now and next restarts the current programme, Return restores live and Back
     await sendKeyCode(page, 405);
     await press(page, 'Enter');
     await playing(page);
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     await expect(page.locator('.pl-menu-item.focus')).toHaveText('Back to live');
     await press(page, 'Enter');
     await playing(page);
@@ -173,6 +175,7 @@ test('seeking clamps at the programme end and finishing never marks catch-up wat
     await press(page, 'Enter');
     await playing(page);
     await press(page, 'Enter');
+    await press(page, 'ArrowUp');
     for (let i = 0; i < 4; i++) await press(page, 'ArrowRight');
     await expect.poll(() => page.locator('#video').evaluate(video => video.currentTime)).toBe(19);
     await sendKeyCode(page, 415);

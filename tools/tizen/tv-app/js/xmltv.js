@@ -84,6 +84,8 @@ window.XmltvGuide = (function () {
             if (job.cancelled) return;
             var old = status(source.id);
             old.state = 'failed';
+            // A failed download waits as long as a good one before the next automatic try.
+            old.failedAt = Date.now();
             notify(source.id, old);
             // Fetch errors may contain credentials; emit only the host.
             var host = '';
@@ -143,8 +145,12 @@ window.XmltvGuide = (function () {
         } };
     }
 
+    // Automatic downloads at most every 12 hours, counting failed ones;
+    // Settings > Refresh guide still downloads at once.
     guide.ensure = function (source) {
-        if (source.epgUrl && Date.now() - (status(source.id).updatedAt || 0) >= FRESH) refresh(source);
+        var saved = status(source.id);
+        var last = Math.max(saved.updatedAt || 0, saved.failedAt || 0);
+        if (source.epgUrl && Date.now() - last >= FRESH) refresh(source);
     };
     guide.refresh = refresh;
     guide.revision = function (id) { return revisions[id] || 0; };

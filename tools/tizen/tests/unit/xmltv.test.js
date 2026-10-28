@@ -99,3 +99,35 @@ test('M3U tvg-id survives import without changing channel names or groups', asyn
     assert.equal(channels[0].name, 'My channel');
     assert.equal(channels[0].group, 'Sports, HD');
 });
+
+test('a failed guide download waits 12 hours before the next automatic try, like a good one', async function () {
+    var fetches = 0;
+    function guideWith(stored) {
+        return load(['xmltv.js'], stored, {
+            AbortController: AbortController,
+            document: { getElementById: function () { return null; }, addEventListener: function () {} },
+            fetch: function () { fetches++; return Promise.reject(new Error('down')); },
+            XmltvParser: { create: function () { return { write: function () {}, end: function () {} }; } },
+            XmltvStore: { discard: function () { return Promise.resolve(); }, prune: function () { return Promise.resolve(); } },
+            Log: { error: function () {}, info: function () {} },
+        });
+    }
+    var source = { id: 's1', epgUrl: 'https://guide.test/epg.xml' };
+    var env = guideWith({});
+    await env.globals.XmltvGuide.refresh(source);
+    assert.equal(fetches, 1);
+    var status = JSON.parse(env.stored['iptvnator-tv:guide:s1']);
+    assert.equal(status.state, 'failed');
+    assert.ok(status.failedAt > 0);
+    // The next start, soon after: no download.
+    var restart = guideWith(env.stored);
+    restart.globals.XmltvGuide.ensure(source);
+    await new Promise(function (resolve) { setTimeout(resolve, 20); });
+    assert.equal(fetches, 1);
+    // Twelve hours later it tries again.
+    status.failedAt = Date.now() - 12 * 3600000 - 1000;
+    var later = guideWith({ 'iptvnator-tv:guide:s1': JSON.stringify(status) });
+    later.globals.XmltvGuide.ensure(source);
+    await new Promise(function (resolve) { setTimeout(resolve, 20); });
+    assert.equal(fetches, 2);
+});

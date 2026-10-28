@@ -6,7 +6,12 @@ window.SourceAccount = (function () {
 
     var DAY = 86400000;
     var WARN_DAYS = 7;
-    var FRESH_MS = 60000;
+    // Settings shows each source's account; asking the provider again sooner
+    // than this only adds calls (a provider may block an account for them).
+    var FRESH_MS = 30 * 60000;
+    var SAVED = 'iptvnator-tv:account-health';
+    // The account fields a row shows; the login itself is never saved.
+    var KEPT = ['auth', 'status', 'exp_date', 'active_cons', 'max_connections', 'allowed_output_formats'];
     var CHIPS = { get expired() { return I18n.t('account.expired'); }, get inactive() { return I18n.t('account.inactive'); }, get login() { return I18n.t('account.loginFailed'); }, get down() { return I18n.t('account.down'); } };
     var COUNTED = {
         get live() { return I18n.t('account.unitChannels'); },
@@ -17,12 +22,39 @@ window.SourceAccount = (function () {
 
     // The newest check per source id: { state, info, at }. State is 'ok', a
     // reason from problem(), or 'down' when the provider did not answer.
-    var health = {};
+    var health = load();
     // Counts read from the saved catalogue only; nothing is downloaded for them.
     var counts = {};
     var checking = {};
     var versions = {};
     var warned = {};
+
+    function load() {
+        try {
+            var saved = JSON.parse(localStorage.getItem(SAVED));
+            return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function save() {
+        var kept = {};
+        Object.keys(health).forEach(function (id) {
+            var known = health[id];
+            var info = null;
+            if (known.info) {
+                info = {};
+                KEPT.forEach(function (field) { if (known.info[field] !== undefined) info[field] = known.info[field]; });
+            }
+            kept[id] = { state: known.state, info: info, at: known.at };
+        });
+        try {
+            localStorage.setItem(SAVED, JSON.stringify(kept));
+        } catch (e) {
+            // Storage full: the checks still hold until the app closes.
+        }
+    }
 
     function expiry(info) {
         var seconds = Number(info && info.exp_date);
@@ -70,7 +102,9 @@ window.SourceAccount = (function () {
     function track(source, promise) {
         var version = versions[source.id] || 0;
         function set(state, info) {
-            if ((versions[source.id] || 0) === version) health[source.id] = { state: state, info: info || null, at: Date.now() };
+            if ((versions[source.id] || 0) !== version) return;
+            health[source.id] = { state: state, info: info || null, at: Date.now() };
+            save();
         }
         return promise.then(function (info) {
             set('ok', info);
@@ -135,6 +169,7 @@ window.SourceAccount = (function () {
     function forget(id) {
         versions[id] = (versions[id] || 0) + 1;
         delete health[id];
+        save();
         delete counts[id];
         delete checking[id];
         delete warned[id];

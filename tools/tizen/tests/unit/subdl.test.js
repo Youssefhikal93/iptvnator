@@ -237,3 +237,23 @@ test('#52 a SubDL key is one row: OK opens Test, Change and Remove, and the row 
     assert.equal(toasts[toasts.length - 1], 'Key removed');
     assert.equal(row.text(), 'Not set');
 });
+
+test('SubDL "can\'t find" is no results, and a title unknown by id is asked again by its Latin name', async function () {
+    var asked = [];
+    var env = fixture(function (url) {
+        asked.push(url.split('&').slice(1).join('&'));
+        if (/tmdb_id/.test(url)) return json({ status: false, error: "can't find movie or tv" });
+        return json({ status: true, subtitles: [{ release_name: 'Love.Is.Blind.Habibi.S01E01', url: '/subtitle/777-888.zip', episode: 1 }] });
+    });
+    env.globals.Prefs.set('subdlApiKey', 'subdl-key');
+    var matches = await env.globals.SubDL.search({ tmdb_id: 99, title: 'Love is blind, Habibi- الحب أعمى حبيبي', season: 1, episode: 1 }, 'en');
+    assert.equal(asked.length, 2);
+    assert.equal(asked[1], 'episode_number=1&film_name=Love%20is%20blind%2C%20Habibi&languages=EN&season_number=1&subs_per_page=30&type=tv');
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].file_id, 'subdl:777-888');
+    // Not found by name either: an empty list, not a connection error.
+    env = fixture(function () { return json({ status: false, error: "can't find movie or tv" }); });
+    env.globals.Prefs.set('subdlApiKey', 'subdl-key');
+    assert.equal((await env.globals.SubDL.search({ title: 'Nothing Here' }, 'en')).length, 0);
+    assert.equal(env.globals.SubDL.name('AR - Love Is Blind, Habibi'), 'Love Is Blind, Habibi');
+});

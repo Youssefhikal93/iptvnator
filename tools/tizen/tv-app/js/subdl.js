@@ -43,6 +43,15 @@ window.SubDL = (function () {
         return /^zh/.test(base) ? 'ZH' : /^[a-z]{2}$/.test(base) ? base.toUpperCase() : 'EN';
     }
 
+    // Providers name shows "AR - Love Is Blind, Habibi- الحب أعمى حبيبي"; SubDL
+    // knows the Latin name alone.
+    function name(title) {
+        var text = String(title || '').trim().replace(/^[A-Z]{2,3}\s*[-|:]\s+/, '');
+        var parts = text.split(/\s*[-|–]\s*/);
+        var latin = parts.filter(function (part) { return /[a-z]/i.test(part); });
+        return (latin.length && latin.length < parts.length ? latin.join(' - ') : text).trim();
+    }
+
     function query(info, lang) {
         var params = { languages: language(lang), subs_per_page: 30 };
         var episode = info.episode !== undefined;
@@ -61,19 +70,34 @@ window.SubDL = (function () {
         if (tmdb) params.tmdb_id = tmdb;
         else if (imdb) params.imdb_id = 'tt' + imdb;
         else {
-            params.film_name = String(info.title || '').trim();
+            params.film_name = name(info.title);
             if (!episode && /^\d{4}$/.test(String(info.year))) params.year = info.year;
         }
         return Object.keys(params).sort().map(function (key) { return key + '=' + encodeURIComponent(String(params[key])); }).join('&');
     }
 
     function search(info, lang, limit) {
+        if (!Prefs.get('subdlApiKey')) return Promise.reject(failure(401));
+        return ask(info, lang, limit).then(function (matches) {
+            // A title SubDL doesn't know by its id may still be there by name.
+            var byId = numeric(info.tmdb_id) || numeric(String(info.imdb_id || '').replace(/^tt/i, ''));
+            if (matches.length || !byId || !name(info.title)) return matches;
+            return ask({ title: info.title, year: info.year, season: info.season, episode: info.episode }, lang, limit);
+        });
+    }
+
+    function ask(info, lang, limit) {
         var key = Prefs.get('subdlApiKey');
-        if (!key) return Promise.reject(failure(401));
         var wanted = query(info, lang);
         var episode = info.episode !== undefined ? Number(info.episode) : 0;
         return fetchBody(BASE + '?api_key=' + encodeURIComponent(key) + '&' + wanted, 'json').then(function (body) {
-            if (!body || body.status === false) throw failure(/key/i.test(String(body && body.error)) ? 403 : 0);
+            if (!body) throw failure(0);
+            if (body.status === false) {
+                if (/key/i.test(String(body.error))) throw failure(403);
+                // SubDL answered: it has no such title ("can't find movie or tv").
+                Log.info('subdl search ok n=0 (title not found)');
+                return [];
+            }
             var matches = [];
             (Array.isArray(body.subtitles) ? body.subtitles : []).forEach(function (entry) {
                 var id = /^\/subtitle\/([\w-]+)\.zip$/.exec(String(entry.url || ''));
@@ -100,5 +124,5 @@ window.SubDL = (function () {
         });
     }
 
-    return { query: query, search: search, download: download, owns: function (fileId) { return String(fileId).indexOf(PREFIX) === 0; } };
+    return { query: query, name: name, search: search, download: download, owns: function (fileId) { return String(fileId).indexOf(PREFIX) === 0; } };
 })();

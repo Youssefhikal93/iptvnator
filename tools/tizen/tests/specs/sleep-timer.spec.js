@@ -100,7 +100,10 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await start(page, 'Series');
     await choose(page, '30 min');
     await press(page, 'ArrowDown');
-    await moveTo(page, '#pl-buttons .focus', 'Next episode', 'ArrowRight');
+    // The next episode, from the Episodes panel.
+    await moveTo(page, '#pl-buttons .focus', 'Episodes', 'ArrowRight');
+    await press(page, 'Enter');
+    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await playing(page);
     await page.clock.fastForward(60000);

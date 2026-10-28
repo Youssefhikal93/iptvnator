@@ -1,6 +1,7 @@
-// Series extras for the player: a button row under the timeline (Skip intro,
-// Next episode, Episodes, Audio & subtitles), an Up next card that plays the
-// next episode when one ends, and an episodes panel with season pills.
+// Extras for the player: a button row beside play/pause (Skip intro during
+// the intro, Start over, Audio & subtitles, Episodes for shows, and the
+// settings gear on the right), an Up next card that plays the next episode when one ends, and an
+// episodes panel with season pills.
 //
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
 // browser); open(i) returns the request for episode i. Xtream has no intro
@@ -58,15 +59,21 @@ window.PlayerSeries = function (api) {
         if (!req || req.live) return [];
         var list = [];
         if (inIntro()) list.push({ label: I18n.t('player.skipIntro'), run: skipIntro });
-        if (nextIndex() >= 0) list.push({ label: I18n.t('player.nextEpisode'), run: playNext });
-        if (episodes()) list.push({ label: I18n.t('player.episodes'), run: openPanel });
-        list.push({ label: I18n.t('player.hint.audioSubs'), run: api.openMenu });
+        list.push({ label: I18n.t('detail.startOver'), icon: 'restart', run: startOver });
+        list.push({ label: I18n.t('player.hint.audioSubs'), icon: 'subs', run: function () { api.openMenu('tracks'); } });
+        if (episodes()) list.push({ label: I18n.t('player.episodes'), icon: 'episodes', run: openPanel });
+        list.push({ label: I18n.t('rail.settings'), icon: 'gear', gear: true, run: function () { api.openMenu('settings'); } });
         return list;
     }
 
     function skipIntro() {
         s.introDone = true;
         api.seekTo(api.position() + Prefs.get('skipIntroSeconds') * 1000);
+        api.showControls();
+    }
+
+    function startOver() {
+        api.seekTo(0);
         api.showControls();
     }
 
@@ -221,7 +228,12 @@ window.PlayerSeries = function (api) {
         if (s.focus >= list.length) s.focus = list.length - 1;
         ui.buttons.textContent = '';
         list.forEach(function (button, i) {
-            ui.buttons.appendChild(el('span', 'pl-btn' + (i === s.focus ? ' focus' : ''), button.label));
+            var node = el('span', 'pl-btn' + (button.gear ? ' pl-gear' : '') + (i === s.focus ? ' focus' : ''));
+            if (button.icon) node.appendChild(el('span', 'pl-icon pl-icon-' + button.icon));
+            // The gear shows only its icon; its name is for screen readers.
+            if (button.gear) node.setAttribute('aria-label', button.label);
+            else node.appendChild(document.createTextNode(button.label));
+            ui.buttons.appendChild(node);
         });
     }
 

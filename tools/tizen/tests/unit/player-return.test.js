@@ -107,12 +107,13 @@ test('#37 Return hides movie, episode and live controls before allowing close, w
         if (kind === 'episode') request.episodes = { items: [{ label: 'Episode 1' }], index: 0 };
         await s.player.play(request, null);
         assert.equal(s.controls.classList.contains('hidden'), false);
-        assert.ok(s.hint.textContent.indexOf('ReturnHide') >= 0);
+        // Live lists its keys; movies and shows keep a plain bar.
+        assert.ok(kind === 'live' ? s.hint.textContent.indexOf('ReturnHide') >= 0 : s.hint.textContent === '');
         assert.equal(s.player.key(s.keys.RETURN, request.live), true);
         assert.equal(s.controls.classList.contains('hidden'), true);
         assert.equal(s.video.paused, false);
         assert.equal(s.player.isOpen(), true);
-        assert.ok(s.hint.textContent.indexOf('ReturnClose') >= 0);
+        assert.ok(kind === 'live' ? s.hint.textContent.indexOf('ReturnClose') >= 0 : s.hint.textContent === '');
         assert.equal(s.player.key(s.keys.RETURN, request.live), false);
         s.player.key(s.keys.ENTER, request.live);
         assert.equal(s.controls.classList.contains('hidden'), false);

@@ -73,7 +73,10 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await page.locator('#video').evaluate(v => { v.currentTime = 60; });
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(60);
     await press(page, 'ArrowDown');
-    await moveTo(page, '#pl-buttons .focus', 'Next episode', 'ArrowRight');
+    // The next episode, from the Episodes panel.
+    await moveTo(page, '#pl-buttons .focus', 'Episodes', 'ArrowRight');
+    await press(page, 'Enter');
+    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E2');

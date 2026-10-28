@@ -72,9 +72,11 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E1');
     await page.locator('#video').evaluate(v => { v.currentTime = 60; });
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(60);
-    // 1:00 is in the intro: ▼ reaches Skip intro first, ▼ again the row.
-    await press(page, 'ArrowDown');
+    // 1:00 is in the intro: ▲ ▲ reach Skip intro above the timeline, ▼ ▼ the row again.
+    await press(page, 'ArrowUp');
+    await press(page, 'ArrowUp');
     await expect(page.locator('#pl-skip')).toHaveClass(/focus/);
+    await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     // The next episode, from the Episodes panel.
     await moveTo(page, '#pl-buttons .focus', 'Episodes', 'ArrowRight');

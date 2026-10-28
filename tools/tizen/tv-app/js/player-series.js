@@ -1,4 +1,4 @@
-// Extras for the player: a button row beside play/pause (Start over, Audio &
+// Extras for the player: a button row after play/pause (Start over, Audio &
 // subtitles, Episodes for shows, and the settings gear on the right), Skip
 // intro floating above the bar during an episode's intro, an Up next card that plays the next episode when one ends, and an
 // episodes panel with season pills.
@@ -6,6 +6,9 @@
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
 // browser); open(i) returns the request for episode i. Xtream has no intro
 // markers, so Skip intro jumps the chosen length during an episode's first minutes.
+//
+// The focus is on play/pause when the controls appear; ◀ ▶ move along the
+// row, ▲ goes to the timeline (where ◀ ▶ seek) and from there to Skip intro.
 window.PlayerSeries = function (api) {
     'use strict';
 
@@ -29,7 +32,7 @@ window.PlayerSeries = function (api) {
     var s = fresh();
 
     function fresh() {
-        return { focus: -1, introDone: false, dismissed: false, autoplayAt: 0, panel: null, art: '' };
+        return { focus: 'play', introDone: false, dismissed: false, autoplayAt: 0, panel: null, art: '' };
     }
 
     function el(tag, cls, text) {
@@ -58,11 +61,11 @@ window.PlayerSeries = function (api) {
         var req = api.current();
         if (!req || req.live) return [];
         var list = [];
-        if (inIntro()) list.push({ label: I18n.t('player.skipIntro'), skip: true, run: skipIntro });
-        list.push({ label: I18n.t('detail.startOver'), icon: 'restart', run: startOver });
-        list.push({ label: I18n.t('player.hint.audioSubs'), icon: 'subs', run: function () { api.openMenu('tracks'); } });
-        if (episodes()) list.push({ label: I18n.t('player.episodes'), icon: 'episodes', run: openPanel });
-        list.push({ label: I18n.t('rail.settings'), icon: 'gear', gear: true, run: function () { api.openMenu('settings'); } });
+        list.push({ id: 'play', play: true, run: function () { api.togglePause(); } });
+        list.push({ id: 'startOver', label: I18n.t('detail.startOver'), icon: 'restart', run: startOver });
+        list.push({ id: 'tracks', label: I18n.t('player.hint.audioSubs'), icon: 'subs', run: function () { api.openMenu('tracks'); } });
+        if (episodes()) list.push({ id: 'episodes', label: I18n.t('player.episodes'), icon: 'episodes', run: openPanel });
+        list.push({ id: 'gear', label: I18n.t('rail.settings'), icon: 'gear', gear: true, run: function () { api.openMenu('settings'); } });
         return list;
     }
 
@@ -225,12 +228,14 @@ window.PlayerSeries = function (api) {
 
     function renderButtons() {
         var list = buttons();
-        if (s.focus >= list.length) s.focus = list.length - 1;
+        // Skip intro left the screen while focused: back to the timeline.
+        if (s.focus === 'skip' && !inIntro()) s.focus = 'bar';
+        if (s.focus !== 'bar' && s.focus !== 'skip' && !list.some(function (button) { return button.id === s.focus; })) s.focus = 'play';
         ui.buttons.textContent = '';
-        list.forEach(function (button, i) {
-            // Skip intro is not in the row: it floats above the bar.
-            if (button.skip) return;
-            var node = el('span', 'pl-btn' + (button.gear ? ' pl-gear' : '') + (i === s.focus ? ' focus' : ''));
+        list.forEach(function (button) {
+            // Play/pause is the circle before the row.
+            if (button.play) return;
+            var node = el('span', 'pl-btn' + (button.gear ? ' pl-gear' : '') + (button.id === s.focus ? ' focus' : ''));
             if (button.icon) node.appendChild(el('span', 'pl-icon pl-icon-' + button.icon));
             // The gear shows only its icon; its name is for screen readers.
             if (button.gear) node.setAttribute('aria-label', button.label);
@@ -239,23 +244,33 @@ window.PlayerSeries = function (api) {
         });
     }
 
+    // Keys on the timeline and Skip intro; false leaves the key to the player
+    // (◀ ▶ seek, OK confirms or pauses, ▲ opens the menu).
+    function barKey(code) {
+        if (s.focus === 'skip') {
+            if (code === KEY.ENTER) {
+                s.focus = 'bar';
+                skipIntro();
+            } else if (code === KEY.DOWN || Keys.isBack(code)) s.focus = 'bar';
+            else if (code !== KEY.UP && code !== KEY.LEFT && code !== KEY.RIGHT) return false;
+            api.showControls();
+            return true;
+        }
+        if (code === KEY.DOWN) s.focus = 'play';
+        else if (code === KEY.UP && inIntro()) s.focus = 'skip';
+        else return false;
+        api.showControls();
+        return true;
+    }
+
     function buttonsKey(code) {
         var list = buttons();
-        var first = list.length && list[0].skip ? 1 : 0;
-        if (first && s.focus === 0 && (code === KEY.LEFT || code === KEY.RIGHT)) return api.showControls(), true;
-        if (first && s.focus === 0 && code === KEY.DOWN) s.focus = 1;
-        else if (first && s.focus > 0 && code === KEY.UP) s.focus = 0;
-        else if (code === KEY.LEFT && s.focus > first) s.focus--;
-        else if (code === KEY.RIGHT && s.focus < list.length - 1) s.focus++;
-        else if (code === KEY.ENTER) {
-            var button = list[s.focus];
-            s.focus = -1;
-            if (button) button.run();
-        } else if (code === KEY.UP || Keys.isBack(code)) s.focus = -1;
-        else if (code !== KEY.LEFT && code !== KEY.RIGHT && code !== KEY.DOWN) {
-            s.focus = -1;
-            return false;
-        }
+        var at = Math.max(0, list.map(function (button) { return button.id; }).indexOf(s.focus));
+        if (code === KEY.LEFT && at > 0) s.focus = list[at - 1].id;
+        else if (code === KEY.RIGHT && at < list.length - 1) s.focus = list[at + 1].id;
+        else if (code === KEY.UP) s.focus = 'bar';
+        else if (code === KEY.ENTER) list[at].run();
+        else if (code !== KEY.LEFT && code !== KEY.RIGHT && code !== KEY.DOWN) return false;
         api.showControls();
         return true;
     }
@@ -269,38 +284,36 @@ window.PlayerSeries = function (api) {
 
     return {
         reset: reset,
-        // Keeps the overlay up while the user is on the buttons or the panel.
+        // Keeps the overlay up while the user is on a button or the panel.
         busy: function () {
-            return s.focus >= 0 || !!s.panel;
+            return !!s.panel || (s.focus !== 'play' && s.focus !== 'bar');
+        },
+        onBar: function () {
+            return s.focus === 'bar';
         },
         // Called on every player tick and render.
         render: function (controlsOn) {
             renderButtons();
             ui.skip.classList.toggle('hidden', !inIntro());
-            ui.skip.classList.toggle('focus', s.focus === 0 && buttons().length > 0 && !!buttons()[0].skip);
+            ui.skip.classList.toggle('focus', s.focus === 'skip');
             renderUpNext();
         },
         onHide: function () {
-            s.focus = -1;
+            s.focus = 'play';
         },
         // Returns true when the key was consumed.
         key: function (code) {
             var req = api.current();
             if (!req || req.live) return false;
             if (s.panel) return panelKey(code);
-            if (s.focus >= 0) return buttonsKey(code);
             if (upNextShown() && code === KEY.ENTER) return playNext(), true;
             if (upNextShown() && Keys.isBack(code)) {
                 s.dismissed = true;
                 renderUpNext();
                 return true;
             }
-            if (code === KEY.DOWN && buttons().length) {
-                s.focus = 0;
-                api.showControls();
-                return true;
-            }
-            return false;
+            if (s.focus === 'bar' || s.focus === 'skip') return barKey(code);
+            return buttonsKey(code);
         },
     };
 };

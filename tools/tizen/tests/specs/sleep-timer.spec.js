@@ -1,4 +1,4 @@
-const { test, expect, boot, openFirst, press, playing, sendKeyCode, back, moveTo, section, enterItems, savedProgress, playerGroup } = require('./helpers');
+const { test, expect, playerMenu, boot, openFirst, press, playing, sendKeyCode, back, moveTo, section, enterItems, savedProgress, playerGroup } = require('./helpers');
 
 async function start(page, name = 'Movies', seed) {
     await page.clock.install();
@@ -11,7 +11,7 @@ async function start(page, name = 'Movies', seed) {
 
 async function choose(page, label, live = false) {
     if (live) await sendKeyCode(page, 405);
-    else await press(page, 'ArrowUp');
+    else await playerMenu(page);
     await playerGroup(page, 'Sleep timer');
     await moveTo(page, '#pl-menu .focus span:last-child', label);
     await press(page, 'Enter');
@@ -46,7 +46,7 @@ test('#22 15 minutes warns after 14, Keep watching extends, expiry releases play
     await expect(page.locator('#pl-sleep-count')).toHaveText('Playback stops in 59 s');
     await press(page, 'Enter');
     await expect(page.locator('#pl-sleep-warning')).toBeHidden();
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     await expect(page.locator('#pl-menu .pl-menu-group .label', { hasText: 'Sleep timer' })).toHaveText('Sleep timer · 16 min left');
     await expect(page.locator('#pl-sleep-badge')).toHaveText('Sleep in 16 min');
     await back(page);
@@ -107,7 +107,7 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await press(page, 'Enter');
     await playing(page);
     await page.clock.fastForward(60000);
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     await expect(page.locator('#pl-menu .pl-menu-group .label', { hasText: 'Sleep timer' })).toHaveText('Sleep timer · 29 min left');
     await back(page);
     await back(page);
@@ -126,7 +126,7 @@ test('#22 a duration survives changing episodes but Return cancels it and reload
     await openFirst(page, 'Movies');
     await press(page, 'Enter');
     await playing(page);
-    await press(page, 'ArrowUp');
+    await playerMenu(page);
     // Downloaded subtitles and the sleep timer both start Off.
     await expect(page.locator('#pl-menu .pl-menu-group .value').filter({ hasText: /^Off$/ })).toHaveCount(2);
 });

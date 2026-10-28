@@ -139,6 +139,7 @@ window.Player = (function () {
             return ended;
         },
         autoplayBlocked: sleep.blocksAutoplay,
+        togglePause: function () { togglePause(); },
         play: play,
         openMenu: openMenu,
         showControls: showControls,
@@ -360,7 +361,8 @@ window.Player = (function () {
         // The transport row (#48): OK acts on the play/pause circle, so it
         // shows what OK does next; ▼ moves to the buttons beside it.
         ui.transport.classList.toggle('hidden', live);
-        ui.transport.classList.toggle('on-buttons', series.busy());
+        ui.transport.classList.toggle('on-buttons', series.busy() || series.onBar());
+        ui.seekbox.classList.toggle('focus', !live && series.onBar());
         ui.play.textContent = ended ? '■' : paused ? '▶' : '❚❚';
         ui.now.textContent = I18n.time(Date.now());
         ui.ends.textContent = '';
@@ -1093,6 +1095,12 @@ window.Player = (function () {
         if (resume.open) return resumeKey(code);
         if (!ready) return false;
         if (menu.open) return menuKey(code);
+        // The first ◀ ▶ ▼ only brings the controls up, with play/pause focused.
+        var arrow = code === KEY.LEFT || code === KEY.RIGHT || code === KEY.DOWN;
+        if (!live && arrow && ui.controls.classList.contains('hidden')) {
+            showControls();
+            return true;
+        }
         if (!live && series.key(code)) return true;
         var wantsMenu = code === KEY.YELLOW || code === KEY.INFO || (!live && code === KEY.UP);
         if (wantsMenu) {

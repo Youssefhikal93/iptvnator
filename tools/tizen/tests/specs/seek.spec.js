@@ -1,5 +1,11 @@
 const { test, expect, boot, openFirst, press } = require('./helpers');
 
+// ▲ from play/pause puts the focus on the timeline, where ◀ ▶ seek.
+async function onTimeline(page) {
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#pl-seekbox')).toHaveClass(/focus/);
+}
+
 // Samsung AVPlay lands near, not on, the asked time (the key frame before it),
 // and keeps reporting the old time until the seek has finished.
 async function samsungPlayer(page) {
@@ -42,6 +48,7 @@ const seeks = page => page.evaluate(() => nativePlayback.seeks.slice());
 
 test('a +10 jump is sent once even when the TV lands a few seconds before the target', async ({ page }) => {
     await samsungPlayer(page);
+    await onTimeline(page);
     await press(page, 'ArrowRight');
     await press(page, 'ArrowRight');
     await press(page, 'ArrowRight');
@@ -55,6 +62,7 @@ test('a +10 jump is sent once even when the TV lands a few seconds before the ta
 
 test('a press while the last jump still loads counts from where that jump went', async ({ page }) => {
     await samsungPlayer(page);
+    await onTimeline(page);
     await press(page, 'ArrowRight');
     await page.clock.runFor(400);
     expect(await seeks(page)).toEqual([50000]);
@@ -63,4 +71,23 @@ test('a press while the last jump still loads counts from where that jump went',
     await press(page, 'ArrowRight');
     await page.clock.runFor(400);
     expect(await seeks(page)).toEqual([50000, 60000]);
+});
+
+test('◀ ▶ walk the buttons and never seek; with the controls hidden the first press only shows them', async ({ page }) => {
+    await samsungPlayer(page);
+    await press(page, 'ArrowRight');
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#pl-buttons .focus')).toHaveText('Audio & subtitles');
+    await press(page, 'ArrowLeft');
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('#pl-transport')).not.toHaveClass(/on-buttons/);
+    await page.clock.runFor(1000);
+    expect(await seeks(page)).toEqual([]);
+    await page.clock.runFor(10000);
+    await expect(page.locator('#pl-controls')).toBeHidden();
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#pl-controls')).toBeVisible();
+    await expect(page.locator('#pl-buttons .focus')).toHaveCount(0);
+    await page.clock.runFor(1000);
+    expect(await seeks(page)).toEqual([]);
 });

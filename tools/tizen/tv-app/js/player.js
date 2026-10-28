@@ -134,7 +134,7 @@ window.Player = (function () {
         },
         position: position,
         duration: duration,
-        seekTo: seekTo,
+        seekTo: jumpTo,
         isEnded: function () {
             return ended;
         },
@@ -243,6 +243,14 @@ window.Player = (function () {
             restoration.cancel();
             engineSeekTo(0);
         }
+    }
+
+    // A jump the viewer asked for (+10, skip intro) is sent once: asking again
+    // only restarts the loading, and the TV may land a few seconds off.
+    function jumpTo(ms) {
+        if (!current || current.live) return;
+        restoration.cancel();
+        engineSeekTo(Math.max(0, ms));
     }
 
     function seekPending() {
@@ -443,7 +451,7 @@ window.Player = (function () {
         clearTimeout(seek.timer);
         seek.timer = null;
         if (seek.target === null) return;
-        seekTo(seek.target);
+        jumpTo(seek.target);
         seek.holdPos = seek.target;
         seek.holdUntil = Date.now() + 1200;
         seek.target = null;
@@ -457,7 +465,9 @@ window.Player = (function () {
         var now = Date.now();
         var dur = duration();
         if (seek.target === null) {
-            seek.origin = position();
+            // While the last jump still loads the TV reports the old time.
+            var loading = seek.holdPos !== null && (now < seek.holdUntil || seekPending());
+            seek.origin = loading ? seek.holdPos : position();
             seek.count = 0;
         } else if (dir !== seek.dir || now - seek.last > SEEK_COMMIT_MS) seek.count = 0;
         var tier = seek.count >= 6 ? 2 : seek.count >= 3 ? 1 : 0;
@@ -783,6 +793,7 @@ window.Player = (function () {
         seek.timer = null;
         seek.target = null;
         seek.holdUntil = 0;
+        seek.holdPos = null;
         menu.open = false;
         resume.open = false;
         resume.failed = false;

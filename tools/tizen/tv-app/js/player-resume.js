@@ -8,6 +8,7 @@ window.PlayerResume = function (api) {
     var TOLERANCE_MS = 5000;
     var timer = null;
     var target = null;
+    var from = 0;
     var deadline = 0;
     var lastAttempt = null;
     var attempted = false;
@@ -18,6 +19,15 @@ window.PlayerResume = function (api) {
         timer = null;
         target = null;
         blocked = false;
+    }
+
+    // Samsung's player lands on a key frame near the target, not on it: a
+    // position that moved most of the way there counts as arrived. A seek the
+    // player ignored leaves it where it was, and that one is sent again.
+    function arrived(pos) {
+        if (!isFinite(pos)) return false;
+        var off = Math.abs(pos - target);
+        return off <= TOLERANCE_MS || off < Math.abs(from - target) / 2;
     }
 
     function poll() {
@@ -31,7 +41,7 @@ window.PlayerResume = function (api) {
         if (api.pending() || !api.ready(target)) return;
         // A settled seek that already reports the target is done; seeking again restarts AVPlay's buffering.
         var pos = api.position();
-        if (attempted && isFinite(pos) && Math.abs(pos - target) <= TOLERANCE_MS) return cancel();
+        if (attempted && arrived(pos)) return cancel();
         if (lastAttempt !== null && now - lastAttempt < RETRY_MS) return;
         lastAttempt = now;
         attempted = false;
@@ -47,6 +57,7 @@ window.PlayerResume = function (api) {
         start: function (ms) {
             cancel();
             target = ms;
+            from = api.position();
             blocked = true;
             deadline = Date.now() + DEADLINE_MS;
             lastAttempt = null;
@@ -58,7 +69,7 @@ window.PlayerResume = function (api) {
             if (target === null || !attempted) return;
             if (Date.now() >= deadline) return poll();
             var pos = api.position();
-            if (api.pending() || !isFinite(pos) || Math.abs(pos - target) > TOLERANCE_MS) return;
+            if (api.pending() || !arrived(pos)) return;
             cancel();
         },
     };

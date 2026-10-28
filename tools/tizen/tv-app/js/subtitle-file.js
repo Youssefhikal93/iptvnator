@@ -15,9 +15,45 @@ window.SubtitleFile = (function () {
             }).trim();
     }
 
+    // Advanced SubStation (.ass/.ssa, common for anime): each "Dialogue:" line
+    // of [Events] is a cue; its text is the last field and may hold commas.
+    // Override tags go, \N is a line break and vector drawings never show.
+    function parseAss(text) {
+        var cues = [];
+        var fields = ['layer', 'start', 'end', 'style', 'name', 'marginl', 'marginr', 'marginv', 'effect', 'text'];
+        var events = false;
+        text.split('\n').forEach(function (line) {
+            var trimmed = line.trim();
+            if (/^\[.*\]$/.test(trimmed)) {
+                events = /^\[events\]$/i.test(trimmed);
+                return;
+            }
+            if (!events) return;
+            var format = /^format\s*:(.*)$/i.exec(trimmed);
+            if (format) {
+                fields = format[1].split(',').map(function (field) { return field.trim().toLowerCase(); });
+                return;
+            }
+            var dialogue = /^dialogue\s*:(.*)$/i.exec(trimmed);
+            if (!dialogue) return;
+            var parts = dialogue[1].split(',');
+            var values = parts.slice(0, fields.length - 1).concat(parts.slice(fields.length - 1).join(','));
+            var row = {};
+            fields.forEach(function (field, i) { row[field] = (values[i] || '').trim(); });
+            if (/\{[^}]*\\p[1-9]/.test(row.text)) return;
+            var start = timestamp(row.start);
+            var end = timestamp(row.end);
+            var content = plain(String(row.text || '').replace(/\\N/gi, '\n').replace(/\\h/g, ' '));
+            if (isFinite(start) && end > start && content) cues.push({ start: start, end: end, text: content });
+        });
+        return cues.sort(function (a, b) { return a.start - b.start; });
+    }
+
     function parse(text) {
         var cues = [];
-        String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split(/\n[ \t]*\n/).forEach(function (block) {
+        var source = String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+        if (/^\s*\[script info\]/i.test(source) || /^\[events\]/im.test(source)) return parseAss(source);
+        source.split(/\n[ \t]*\n/).forEach(function (block) {
             var lines = block.split('\n');
             // VTT metadata and styling blocks must never become visible cues.
             if (/^(WEBVTT|NOTE|STYLE|REGION)(\s|$)/.test(lines[0])) return;

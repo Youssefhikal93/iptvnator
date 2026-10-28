@@ -103,6 +103,9 @@ test('episode controls skip intro, select another season and play next', async (
     await press(page, 'ArrowDown');
     await expect(page.locator('#pl-seekbox')).toHaveClass(/focus/);
     await press(page, 'ArrowDown');
+    // Next comes first in a show, then Start over.
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#pl-buttons .focus')).toHaveText('Next');
     await press(page, 'ArrowRight');
     await expect(page.locator('#pl-buttons .focus')).toHaveText('Start over');
     await press(page, 'ArrowUp');

@@ -5,7 +5,9 @@
 //
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
 // browser); open(i) returns the request for episode i. Xtream has no intro
-// markers, so Skip intro jumps the chosen length during an episode's first minutes.
+// markers, so Skip intro jumps the chosen length during an episode's first
+// minutes; where the viewer lands is remembered for the show (intro-marks.js),
+// and a jump within a minute of skipping corrects it.
 //
 // The focus is on play/pause when the controls appear; ◀ ▶ move along the
 // row, ▲ goes to the timeline (where ◀ ▶ seek) and from there to Skip intro.
@@ -14,6 +16,7 @@ window.PlayerSeries = function (api) {
 
     var INTRO = { from: 10000, until: 300000 };
     var UP_NEXT_BEFORE_MS = 30000;
+    var LEARN_MS = 60000;
     var PANEL_ROWS = 7;
     var KEY = Keys;
 
@@ -32,7 +35,7 @@ window.PlayerSeries = function (api) {
     var s = fresh();
 
     function fresh() {
-        return { focus: 'play', introDone: false, dismissed: false, autoplayAt: 0, panel: null, art: '' };
+        return { focus: 'play', introDone: false, learnUntil: 0, dismissed: false, autoplayAt: 0, panel: null, art: '' };
     }
 
     function el(tag, cls, text) {
@@ -47,6 +50,16 @@ window.PlayerSeries = function (api) {
         return req && req.episodes;
     }
 
+    function showKey() {
+        var eps = episodes();
+        return eps ? eps.show || '' : '';
+    }
+
+    function previousIndex() {
+        var eps = episodes();
+        return eps && eps.index > 0 ? eps.index - 1 : -1;
+    }
+
     function nextIndex() {
         var eps = episodes();
         return eps && eps.index + 1 < eps.items.length ? eps.index + 1 : -1;
@@ -54,7 +67,8 @@ window.PlayerSeries = function (api) {
 
     function inIntro() {
         var pos = api.position();
-        return !!episodes() && !s.introDone && !api.isEnded() && pos >= INTRO.from && pos < INTRO.until;
+        var end = IntroMarks.get(showKey()) || INTRO.until;
+        return !!episodes() && !s.introDone && !api.isEnded() && pos >= INTRO.from && pos < end;
     }
 
     function buttons() {
@@ -62,6 +76,8 @@ window.PlayerSeries = function (api) {
         if (!req || req.live) return [];
         var list = [];
         list.push({ id: 'play', play: true, run: function () { api.togglePause(); } });
+        if (previousIndex() >= 0) list.push({ id: 'previous', label: I18n.t('player.previous'), icon: 'previous', run: function () { playEpisode(previousIndex()); } });
+        if (nextIndex() >= 0) list.push({ id: 'next', label: I18n.t('player.next'), icon: 'next', run: playNext });
         list.push({ id: 'startOver', label: I18n.t('detail.startOver'), icon: 'restart', run: startOver });
         list.push({ id: 'tracks', label: I18n.t('player.hint.audioSubs'), icon: 'subs', run: function () { api.openMenu('tracks'); } });
         if (episodes()) list.push({ id: 'episodes', label: I18n.t('player.episodes'), icon: 'episodes', run: openPanel });
@@ -69,10 +85,33 @@ window.PlayerSeries = function (api) {
         return list;
     }
 
+    // The show's learnt end, else the chosen length; the first skip is learnt.
     function skipIntro() {
+        var learnt = IntroMarks.get(showKey());
+        var target = learnt || api.position() + Prefs.get('skipIntroSeconds') * 1000;
+        if (!learnt) IntroMarks.set(showKey(), target);
         s.introDone = true;
-        api.seekTo(api.position() + Prefs.get('skipIntroSeconds') * 1000);
+        s.learnUntil = Date.now() + LEARN_MS;
+        api.seekTo(target);
         api.showControls();
+    }
+
+    // A jump soon after Skip intro is the viewer fixing where the intro ends.
+    function onJump(ms) {
+        if (!s.learnUntil || Date.now() > s.learnUntil || !showKey()) return;
+        IntroMarks.set(showKey(), ms);
+        s.learnUntil = Date.now() + LEARN_MS;
+    }
+
+    // The Intro group of the ▲ menu, once the show has a learnt end.
+    function introEntries(head, item) {
+        var learnt = IntroMarks.get(showKey());
+        if (!learnt) return;
+        head(I18n.t('player.intro'), I18n.t('player.introEnds', { time: api.clock(learnt) }));
+        item(I18n.t('player.introForget'), false, function () {
+            IntroMarks.clear(showKey());
+            api.toast(I18n.t('player.introForgotten'));
+        });
     }
 
     function startOver() {
@@ -284,6 +323,8 @@ window.PlayerSeries = function (api) {
 
     return {
         reset: reset,
+        onJump: onJump,
+        introEntries: introEntries,
         // Keeps the overlay up while the user is on a button or the panel.
         busy: function () {
             return !!s.panel || (s.focus !== 'play' && s.focus !== 'bar');

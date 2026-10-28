@@ -1157,6 +1157,8 @@ window.Browser = function (hooks) {
         req.episodes = {
             items: list,
             index: index,
+            // Names the show for what the player learns about it (its intro's end).
+            show: sourceId() + '|' + (show.series_id || show.name || ''),
             open: function (next) {
                 record(list[next], show, list[next]);
                 return episodeRequest(show, list, next);

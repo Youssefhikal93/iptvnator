@@ -140,6 +140,8 @@ window.Player = (function () {
         },
         autoplayBlocked: sleep.blocksAutoplay,
         togglePause: function () { togglePause(); },
+        clock: fmt,
+        toast: function (text) { document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: text })); },
         play: play,
         openMenu: openMenu,
         showControls: showControls,
@@ -454,6 +456,7 @@ window.Player = (function () {
         seek.timer = null;
         if (seek.target === null) return;
         jumpTo(seek.target);
+        series.onJump(seek.target);
         seek.holdPos = seek.target;
         seek.holdUntil = Date.now() + 1200;
         seek.target = null;
@@ -631,6 +634,7 @@ window.Player = (function () {
                 });
             });
         }
+        if (!current.live) series.introEntries(m.head, m.item);
         m.head(sleep.heading());
         sleep.choices(current).forEach(function (choice) { m.item(choice.label, choice.active, choice.select); });
         m.head(I18n.t('player.streamInfo'));

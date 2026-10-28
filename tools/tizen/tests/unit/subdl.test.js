@@ -175,7 +175,7 @@ test('#52 one search asks both providers, merges them into one ranked list and s
     v.player.start({ id: 'movie:1', title: 'Fixture' });
     await v.player.search();
     // SubDL failed, so its name says so under the title and OpenSubtitles' result still shows.
-    assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · OpenSubtitles 1 · SubDL: unavailable');
+    assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · OpenSubtitles 1 · SubDL: no connection');
     assert.equal(env.menu.children[1].textContent, 'Show.S01E01.WEBOpenSubtitles★⬇ 12k');
     assert.ok(env.logs.some(function (line) { return line === 'SUBS providers opensubtitles 1, subdl failed 500'; }));
     v.player.stop();

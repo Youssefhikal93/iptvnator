@@ -926,7 +926,7 @@ window.Player = (function () {
                 } catch (e) {
                     // Older firmware.
                 }
-                AvResolve.tracks(av);
+                AvResolve.tracks(av, current.audio);
                 av.play();
                 finish(null);
             },

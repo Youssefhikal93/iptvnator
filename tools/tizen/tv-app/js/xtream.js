@@ -82,6 +82,13 @@ window.XtreamSource = function (source, options) {
             r_frame_rate: video.r_frame_rate, avg_frame_rate: video.avg_frame_rate };
     }
 
+    // The audio the provider's scan found (codec and channels), for the play log.
+    function audioFacts(info) {
+        var audio = info && info.audio;
+        if (!audio || typeof audio !== 'object' || Array.isArray(audio)) return undefined;
+        return { codec_name: audio.codec_name, profile: audio.profile, channels: audio.channels };
+    }
+
     // Shared shape of get_vod_info / get_series_info `info` for the detail page.
     function details(info, item) {
         return {
@@ -95,6 +102,7 @@ window.XtreamSource = function (source, options) {
             genre: info.genre || '',
             seconds: seconds(info),
             video: videoFacts(info),
+            audio: audioFacts(info),
             plot: info.plot || info.description || '',
             cast: info.cast || info.actors || '',
             director: info.director || '',
@@ -183,6 +191,7 @@ window.XtreamSource = function (source, options) {
                                 plot: info.plot || '',
                                 seconds: seconds(info),
                                 video: videoFacts(info),
+                                audio: audioFacts(info),
                             });
                         });
                     });

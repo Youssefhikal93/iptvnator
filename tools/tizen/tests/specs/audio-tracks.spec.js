@@ -26,7 +26,8 @@ async function samsungPlayer(page, request, file = 'tracks.mkv.head', seed = {})
             getDuration: () => 3600000,
             getTotalTrackInfo: () => [{ type: 'VIDEO', index: 0, extra_info: extra({ fourCC: 'H264' }) }].concat(sound, text ? [{ type: 'TEXT', index: 3, extra_info: extra({ language: 'eng' }) }] : []),
             getCurrentStreamInfo: () => [{ type: 'AUDIO', index: nativePlayback.audio, extra_info: '{}' }],
-            setSelectTrack: (type, index) => { nativePlayback.selected.push(type + ':' + index); nativePlayback[type === 'AUDIO' ? 'audio' : 'text'] = index; },
+            // Like AVPlay, sound can only be switched while playing (window.__strictTracks).
+            setSelectTrack: (type, index) => { if (window.__strictTracks && type === 'AUDIO' && nativePlayback.state !== 'PLAYING') throw new DOMException('not playing', 'InvalidStateError'); nativePlayback.selected.push(type + ':' + index); nativePlayback[type === 'AUDIO' ? 'audio' : 'text'] = index; },
             stop: () => { nativePlayback.state = 'IDLE'; },
             close: () => { nativePlayback.state = 'NONE'; },
         } };
@@ -146,4 +147,17 @@ test('the language picked last is where the next movie starts', async ({ page, r
     await playerMenu(page);
     await playerGroup(page, 'Audio');
     await expect(choices(page).nth(1)).toHaveClass(/active/);
+});
+
+test('#60 preferred sound is switched once AVPlay plays, as AVPlay refuses it before', async ({ page, request }) => {
+    await page.addInitScript(() => { window.__strictTracks = true; });
+    await samsungPlayer(page, request, 'language-tracks.mkv.head', { storage: {
+        settings: { preferredSound: 'en', preferredSubtitles: { language: '', when: 'always' } },
+        'audio-choice': { shows: {}, last: 'ar' },
+    } });
+    await openFirst(page, 'Movies');
+    await press(page, 'Enter');
+    await expect(page.locator('#player')).toHaveClass(/av/);
+    await expect(page.locator('#pl-status')).toBeHidden();
+    await expect.poll(() => selected(page)).toEqual(['AUDIO:2']);
 });

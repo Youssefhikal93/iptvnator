@@ -31,6 +31,9 @@ window.CollectionLookup = (function () {
     function Run(deps) {
         var timer = null;
         var cursor = 0;
+        // The list the cursor walks: another list (a profile switch on the same
+        // source) is walked from its start; films already known are skipped.
+        var walked = null;
         var failures = Object.create(null);
         var self = { deps: deps, done: 0, total: 0, finished: false };
 
@@ -82,7 +85,11 @@ window.CollectionLookup = (function () {
             var movies = deps.movies();
             if (!movies) return later(QUIET_MS);
             if (busy() || Tmdb.throttled()) return later(Math.max(QUIET_MS, Tmdb.throttled()));
-            if (self.total !== movies.length) count(movies);
+            if (movies !== walked) {
+                walked = movies;
+                cursor = 0;
+                count(movies);
+            }
             var item = nextFilm(movies);
             if (!item) {
                 var wanted = deps.index.stale(language(), MAX_AGE).filter(function (id) { return (failures['c' + id] || 0) < MAX_FAILURES; });
@@ -111,6 +118,7 @@ window.CollectionLookup = (function () {
         self.start = function (fresh) {
             self.finished = false;
             cursor = 0;
+            walked = null;
             self.total = 0;
             if (fresh) failures = Object.create(null);
             later(0);

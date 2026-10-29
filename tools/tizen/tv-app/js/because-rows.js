@@ -9,8 +9,10 @@
 // ordered(found, credits) -> the items of Tmdb.inLibrary's entries in TMDB's
 //   order of `credits`.
 // wanted(sourceId) -> [{ section, item }] watched titles with no fresh list.
-// rows(sourceId, keep) -> [{ section, title, items }] for Home; keep(section,
-//   item) leaves out hidden and finished titles. Kept until invalidate().
+// rows(sourceId, keep, shown) -> [{ section, title, items }] for Home;
+//   keep(section, item) leaves out hidden and finished titles, shown(section,
+//   title) leaves out a watched title the viewer may no longer see. Kept
+//   until invalidate().
 window.BecauseRows = (function () {
     'use strict';
 
@@ -117,14 +119,15 @@ window.BecauseRows = (function () {
         }).filter(Boolean);
     }
 
-    // The latest watched title that has a saved list gives the row.
-    function build(sourceId, keep) {
+    // The latest watched title that has a saved list gives the row; a title
+    // the viewer may no longer see (locked, hidden, not for Kids) gives none.
+    function build(sourceId, keep, shown) {
         var data = read(sourceId);
         return SECTIONS.map(function (section) {
             var titles = watchedTitles(sourceId, section);
             for (var i = 0; i < titles.length; i++) {
                 var found = data[titleKey(section, titles[i])];
-                if (!found) continue;
+                if (!found || (shown && !shown(section, titles[i]))) continue;
                 var items = found.items.filter(function (item) { return keep(section, item); }).slice(0, SHOWN_MAX);
                 return items.length >= SHOWN_MIN ? { section: section, title: titles[i], items: items } : null;
             }
@@ -132,9 +135,9 @@ window.BecauseRows = (function () {
         }).filter(Boolean);
     }
 
-    function rows(sourceId, keep) {
+    function rows(sourceId, keep, shown) {
         var key = storeKey(sourceId);
-        if (!built || built.key !== key) built = { key: key, rows: Tmdb.enabled() ? build(sourceId, keep) : [] };
+        if (!built || built.key !== key) built = { key: key, rows: Tmdb.enabled() ? build(sourceId, keep, shown) : [] };
         return built.rows;
     }
 

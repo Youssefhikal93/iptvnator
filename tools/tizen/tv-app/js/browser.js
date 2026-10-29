@@ -1434,9 +1434,12 @@ window.Browser = function (hooks) {
     // "Because you watched" (#63), from the lists saved after playback and on
     // detail pages: Home itself never asks TMDB.
     function becauseRows() {
+        function shown(section, item) {
+            return available(section) && visibility.allows(section, item, { sourceId: item.sourceId });
+        }
         return BecauseRows.rows(sourceId(), function (section, item) {
-            return available(section) && visibility.allows(section, item, { sourceId: item.sourceId }) && !watched.isWatched(item, section);
-        }).map(function (row) {
+            return shown(section, item) && !watched.isWatched(item, section);
+        }, shown).map(function (row) {
             return {
                 id: 'because-' + row.section,
                 title: I18n.t('home.because', { title: row.title.name }),

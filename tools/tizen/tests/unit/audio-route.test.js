@@ -33,7 +33,7 @@ test('a file with playable sound opens as it is; an unread header may retry afte
 test('what worked is where the file starts next time', function () {
     var env = route();
     env.api.remember({ id: 'movie:1' }, 'ts');
-    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'ts? file!');
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'ts? m3u8^? file!');
     env.api.remember({ id: 'movie:1' }, 'none');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'file!');
     env.api.remember({ id: 'movie:1' }, 'original');
@@ -72,7 +72,7 @@ test('a direct .m3u8 try comes first; an older "file" note is checked again, and
     env.api.remember({ id: 'movie:1' }, 'file');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8^? ts? file!');
     env.api.remember({ id: 'movie:1' }, 'm3u8');
-    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8^? file!');
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8^? ts? file!');
 });
 
 test('asking for Converted sound tries the converted addresses even after a saved "own sound" or "no sound" note', function () {

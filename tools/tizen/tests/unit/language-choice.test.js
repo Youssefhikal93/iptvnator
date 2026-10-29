@@ -89,3 +89,14 @@ test('#60 native and AVPlay subtitle metadata survives, and Off leaves a showing
     s.apply();
     assert.deepEqual(s.calls, []);
 });
+
+test('#60 a refused sound switch is not done, so the player tries again later', function () {
+    var s = scene('en', '', 'always');
+    s.tracks.audio[1].select = function () { throw new Error('InvalidStateError'); };
+    var env = s.env;
+    env.Log = { error: function () {}, info: function () {} };
+    assert.equal(env.LanguageChoice.apply({}, s.tracks, env.LanguageChoice.read()), false);
+    s.tracks.audio[1].select = function () { s.calls.push('audio:ok'); };
+    assert.equal(env.LanguageChoice.apply({}, s.tracks, env.LanguageChoice.read()), true);
+    assert.deepEqual(s.calls, ['audio:ok']);
+});

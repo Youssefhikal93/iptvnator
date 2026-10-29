@@ -1049,8 +1049,9 @@ window.Player = (function () {
                         AudioRoute.remember(current, 'none');
                         document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: AudioRoute.message(current) }));
                     }
-                    var preferred = preferAudio();
                     av.play();
+                    // AVPlay switches sound only while playing.
+                    var preferred = preferAudio();
                     finish(null);
                     // Some firmware lists a track only once playback runs; a second look
                     // tells a late track from a missing one.

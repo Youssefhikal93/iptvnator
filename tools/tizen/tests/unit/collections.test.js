@@ -281,3 +281,22 @@ test('#58 a look-up started for one source stops when another source opens; its 
     await first.ready();
     assert.deepEqual(plain(first.film({ name: 'B2', stream_id: 2 })), undefined);
 });
+
+test('#58 a new film list (another profile on the same source) is checked from its start; known films stay known', async function () {
+    var release;
+    var answers = { A: { status: 'none' }, B: new Promise(function (resolve) { release = resolve; }), C: { status: 'none' } };
+    var client = lookupClient(answers);
+    var g = client.env.globals;
+    var films = ['A', 'B', 'C'].map(function (name, i) { return { name: name, stream_id: i + 1 }; });
+    var shown = films;
+    var index = g.CollectionIndex('s1');
+    g.CollectionLookup.start({ index: index, movies: function () { return shown; }, changed: function () {} });
+    await until(function () { return client.asked.length === 2; });
+    // A Kids profile now sees only C, while B is still being asked.
+    shown = [films[2]];
+    release({ status: 'none' });
+    await until(function () { return g.CollectionLookup.progress() === null; });
+    assert.deepEqual(plain(client.asked), ['A', 'B', 'C']);
+    assert.equal(index.film(films[0]), 0);
+    g.CollectionLookup.stop();
+});

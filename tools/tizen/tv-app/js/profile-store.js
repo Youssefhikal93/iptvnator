@@ -22,7 +22,7 @@ window.ProfileStore = (function () {
 
     function get(key) {
         try {
-            return localStorage.getItem(key);
+            return Stored.text(key);
         } catch (e) {
             return null;
         }
@@ -38,7 +38,7 @@ window.ProfileStore = (function () {
 
     function put(key, value) {
         try {
-            localStorage.setItem(key, value);
+            Stored.put(key, value);
             return true;
         } catch (e) {
             return false;
@@ -48,10 +48,9 @@ window.ProfileStore = (function () {
     function keysWith(prefix) {
         var found = [];
         try {
-            for (var i = 0; i < localStorage.length; i++) {
-                var key = localStorage.key(i);
+            Stored.keys().forEach(function (key) {
                 if (key && key.indexOf(prefix) === 0) found.push(key);
-            }
+            });
         } catch (e) {
             // Nothing to list.
         }
@@ -100,7 +99,7 @@ window.ProfileStore = (function () {
             if (saved === null && put(dest, wanted)) saved = get(dest);
             if (saved === wanted) {
                 try {
-                    localStorage.removeItem(old);
+                    Stored.remove(old);
                 } catch (e) {
                     complete = false;
                 }
@@ -174,7 +173,7 @@ window.ProfileStore = (function () {
         // The list goes first, so an interrupted clean-up only leaves unreachable keys.
         keysWith(keyFor(id, '')).forEach(function (key) {
             try {
-                localStorage.removeItem(key);
+                Stored.remove(key);
             } catch (e) {
                 // Left behind; nothing reads it.
             }

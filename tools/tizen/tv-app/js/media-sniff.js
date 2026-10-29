@@ -49,14 +49,14 @@ window.MediaSniff = (function () {
 
     function flagged() {
         try {
-            var saved = JSON.parse(localStorage.getItem(STORE));
+            var saved = JSON.parse(Stored.text(STORE));
             return Array.isArray(saved) ? saved : [];
         } catch (e) { return []; }
     }
 
     function save(list) {
         try {
-            localStorage.setItem(STORE, JSON.stringify(list.slice(-KEEP)));
+            Stored.save(STORE, list.slice(-KEEP));
         } catch (e) {
             // Without storage the next play just skips the check.
         }

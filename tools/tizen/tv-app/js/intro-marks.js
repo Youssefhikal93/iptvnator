@@ -9,7 +9,7 @@ window.IntroMarks = (function () {
 
     function all() {
         try {
-            var saved = JSON.parse(localStorage.getItem(storageKey()));
+            var saved = JSON.parse(Stored.text(storageKey()));
             return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
         } catch (e) {
             return {};
@@ -18,7 +18,7 @@ window.IntroMarks = (function () {
 
     function write(marks) {
         try {
-            localStorage.setItem(storageKey(), JSON.stringify(marks));
+            Stored.save(storageKey(), marks);
         } catch (e) {
             // Storage full: the show is learnt again on the next skip.
         }

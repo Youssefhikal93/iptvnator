@@ -22,6 +22,7 @@ function node() {
     var element = { children: [], className: '', style: {}, attributes: {} };
     element.appendChild = function (child) { element.children.push(child); return child; };
     element.setAttribute = function (name, text) { element.attributes[name] = text; };
+    element.getAttribute = function (name) { return element.attributes[name] === undefined ? null : element.attributes[name]; };
     element.classList = { toggle: function () {} };
     element.querySelector = function () {
         var found = null;

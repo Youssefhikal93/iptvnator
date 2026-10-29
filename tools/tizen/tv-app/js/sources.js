@@ -9,7 +9,7 @@ window.Sources = (function () {
 
     function read(key) {
         try {
-            return JSON.parse(localStorage.getItem(key));
+            return Stored.json(key);
         } catch (e) {
             return null;
         }
@@ -17,7 +17,7 @@ window.Sources = (function () {
 
     function write(key, value) {
         try {
-            localStorage.setItem(key, JSON.stringify(value));
+            Stored.save(key, value);
         } catch (e) {
             // Kept for this session only.
         }
@@ -34,7 +34,7 @@ window.Sources = (function () {
     function all() {
         var list;
         try {
-            list = JSON.parse(localStorage.getItem(LIST_KEY));
+            list = Stored.json(LIST_KEY);
             if (list !== null && !Array.isArray(list)) throw new Error('Invalid sources list');
         } catch (e) {
             // A read failure is not an empty library. Leave the original intact.
@@ -86,7 +86,7 @@ window.Sources = (function () {
     return {
         all: all,
         // Backup restore needs a checked write so it can roll back on failure.
-        replace: function (sources) { localStorage.setItem(LIST_KEY, JSON.stringify(sources)); },
+        replace: function (sources) { Stored.save(LIST_KEY, sources); },
         add: add,
         update: function (source) {
             write(LIST_KEY, all().map(function (saved) { return saved.id === source.id ? source : saved; }));

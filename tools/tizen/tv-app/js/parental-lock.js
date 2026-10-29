@@ -11,7 +11,7 @@ window.ParentalLock = (function (clock) {
 
     function read(key, fallback) {
         try {
-            return JSON.parse(localStorage.getItem(key)) || fallback;
+            return Stored.json(key) || fallback;
         } catch (e) {
             return fallback;
         }
@@ -92,7 +92,7 @@ window.ParentalLock = (function (clock) {
     function setPin(pin) {
         if (!/^\d{4}$/.test(pin)) throw new Error('Enter four digits');
         var salt = Date.now().toString(36) + Math.random().toString(36).slice(2);
-        localStorage.setItem(pinKey(), JSON.stringify({ salt: salt, hash: hash(pin, salt) }));
+        Stored.save(pinKey(), { salt: salt, hash: hash(pin, salt) });
         failures = 0;
         closeSession();
         changed();
@@ -112,19 +112,14 @@ window.ParentalLock = (function (clock) {
         var saved = read(locksKey(sourceId), {});
         var list = ids(sourceId, section).filter(function (id) { return id !== String(categoryId); });
         saved[section] = locked ? list.concat(String(categoryId)) : list;
-        localStorage.setItem(locksKey(sourceId), JSON.stringify(saved));
+        Stored.save(locksKey(sourceId), saved);
         changed();
     }
 
     function removePin() {
         // Clear every source, including sources that are not currently selected.
-        var keys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-            var key = localStorage.key(i);
-            if (key.indexOf(locksKey('')) === 0) keys.push(key);
-        }
-        keys.forEach(function (key) { localStorage.removeItem(key); });
-        localStorage.removeItem(pinKey());
+        Stored.keys().filter(function (key) { return key.indexOf(locksKey('')) === 0; }).forEach(Stored.remove);
+        Stored.remove(pinKey());
         failures = 0;
         blockedUntil = 0;
         closeSession();

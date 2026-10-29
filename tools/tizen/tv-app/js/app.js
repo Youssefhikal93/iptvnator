@@ -125,6 +125,13 @@
         return true;
     }
 
+    // Where the remote is, for the key timing log.
+    function browserScreen() {
+        var content = document.getElementById('content');
+        if (document.querySelector('#rail .focused')) return 'menu';
+        return content.classList.contains('home') ? 'home' : content.classList.contains('settings') ? 'settings' : 'lists';
+    }
+
     document.addEventListener('keydown', function (event) {
         if (PinPad.isOpen()) {
             PinPad.onKey(event.keyCode);
@@ -138,7 +145,8 @@
         if (TmdbSettings.isOpen()) return TmdbSettings.onKey(event);
         if (OpenSubsSettings.isOpen()) return OpenSubsSettings.onKey(event);
         if (screen === 'form') return Form.onKey(event);
-        var handled = screen === 'player' ? onPlayerKey(event.keyCode) : browser.onKey(event.keyCode);
+        var handled = screen === 'player' ? onPlayerKey(event.keyCode)
+            : KeyTiming.measure(browserScreen(), function () { return browser.onKey(event.keyCode); });
         if (handled) event.preventDefault();
     });
 

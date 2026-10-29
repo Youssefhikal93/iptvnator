@@ -22,7 +22,9 @@ window.Browser = function (hooks) {
     var $ = function (id) {
         return document.getElementById(id);
     };
-    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, timer: null, catalogue: null, base: null, search: null, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null };
+    var state = { section: 'settings', zone: 'settings', source: null, adapter: null, info: null, timer: null, catalogue: null, base: null, search: null, searching: false, searchTimer: null, tool: 0, toolFrom: 'items', played: false, favKeys: null, toastTimer: null, updating: 0, added: {}, epg: null, epgWanted: [], epgTimer: null, redrawTimer: null, guide: null, railAt: null, railTimer: null };
+    // A section the menu passes opens only once the focus rests on it (#53).
+    var RAIL_REST_MS = 200;
     var restoring = false;
     var account = Promise.resolve();
     var homeLoading = {};
@@ -822,12 +824,13 @@ window.Browser = function (hooks) {
         LoadScreen.render();
         document.body.classList.toggle('menu-top', menuOnTop());
         $('rail').innerHTML = '';
+        var at = railAt();
         SECTIONS.forEach(function (section) {
             var el = document.createElement('div');
             el.className =
                 'rail-item' +
                 (section.id === state.section ? ' active' : '') +
-                (section.id === state.section && state.zone === 'rail' && !state.profileFocus ? ' focused' : '') +
+                (section.id === at && state.zone === 'rail' && !state.profileFocus ? ' focused' : '') +
                 (section.id === 'settings' ? ' rail-bottom' : '') +
                 (available(section.id) ? '' : ' disabled');
             el.innerHTML =
@@ -1030,14 +1033,14 @@ window.Browser = function (hooks) {
             stamps: {
                 get: function (key) {
                     try {
-                        return Number(localStorage.getItem('iptvnator-tv:fetched:' + source.id + ':' + key)) || 0;
+                        return Number(Stored.text('iptvnator-tv:fetched:' + source.id + ':' + key)) || 0;
                     } catch (e) {
                         return 0;
                     }
                 },
                 set: function (key) {
                     try {
-                        localStorage.setItem('iptvnator-tv:fetched:' + source.id + ':' + key, String(Date.now()));
+                        Stored.put('iptvnator-tv:fetched:' + source.id + ':' + key, String(Date.now()));
                     } catch (e) {
                         // Storage full: the list refreshes next start.
                     }
@@ -1057,6 +1060,8 @@ window.Browser = function (hooks) {
 
     function openSection(id) {
         if (!available(id)) return;
+        clearTimeout(state.railTimer);
+        state.railAt = null;
         if (id !== 'live') hooks.preview.stop();
         state.section = id;
         clearTimeout(state.timer);
@@ -1461,14 +1466,36 @@ window.Browser = function (hooks) {
 
     // ---- Keys ----
 
+    // The section the menu's focus is on.
+    function railAt() {
+        return state.railAt || state.section;
+    }
+
+    // Moving along the menu only moves its focus: the section opens once the
+    // focus rests, so passing Live TV and Movies on the way to Settings does
+    // not load them (#53). Returns false at either end.
     function moveSection(delta) {
-        var index = SECTIONS.indexOf(sectionOf(state.section));
+        var index = SECTIONS.indexOf(sectionOf(railAt()));
         for (var i = index + delta; i >= 0 && i < SECTIONS.length; i += delta) {
             if (available(SECTIONS[i].id)) {
-                openSection(SECTIONS[i].id);
-                return setZone('rail');
+                state.railAt = SECTIONS[i].id;
+                clearTimeout(state.railTimer);
+                state.railTimer = setTimeout(settleRail, RAIL_REST_MS);
+                renderChrome();
+                return true;
             }
         }
+        return false;
+    }
+
+    // Opens the section the menu's focus rests on.
+    function settleRail() {
+        clearTimeout(state.railTimer);
+        var id = state.railAt;
+        state.railAt = null;
+        if (!id || id === state.section) return renderChrome();
+        openSection(id);
+        if (state.zone === 'rail') setZone('rail');
     }
 
     function onCategoryMoved() {
@@ -1625,15 +1652,17 @@ window.Browser = function (hooks) {
             } else if (Keys.isBack(code)) hooks.exit();
             else return code === prev;
         } else if (state.zone === 'rail') {
-            var from = state.section;
             if (code === prev || code === next) {
-                moveSection(code === prev ? -1 : 1);
                 // Back past the first section reaches the profile avatar.
-                if (code === prev && state.section === from) {
+                if (!moveSection(code === prev ? -1 : 1) && code === prev) {
+                    settleRail();
                     state.profileFocus = true;
                     renderChrome();
                 }
-            } else if (code === enter || code === KEY.ENTER) setZone(contentZone());
+            } else if (code === enter || code === KEY.ENTER) {
+                settleRail();
+                setZone(contentZone());
+            }
             else if (Keys.isBack(code)) hooks.exit();
             else return false;
         } else if (state.zone === 'categories') {

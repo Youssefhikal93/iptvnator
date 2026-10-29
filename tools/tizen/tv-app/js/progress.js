@@ -16,7 +16,7 @@ window.Progress = (function () {
     function read(sourceId) {
         try {
             var key = storageKey(sourceId);
-            return key ? JSON.parse(localStorage.getItem(key)) || {} : {};
+            return key ? Stored.json(key) || {} : {};
         } catch (e) {
             return {};
         }
@@ -25,7 +25,7 @@ window.Progress = (function () {
     function write(records, sourceId) {
         try {
             var key = storageKey(sourceId);
-            if (key) localStorage.setItem(key, JSON.stringify(records));
+            if (key) Stored.save(key, records);
         } catch (e) {
             // Storage full or unavailable; playback can still continue.
         }

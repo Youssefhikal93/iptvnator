@@ -36,7 +36,7 @@ window.MovieHash = (function () {
 
     function stored() {
         try {
-            var saved = JSON.parse(localStorage.getItem(STORE));
+            var saved = JSON.parse(Stored.text(STORE));
             return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
         } catch (e) { return {}; }
     }
@@ -49,7 +49,7 @@ window.MovieHash = (function () {
             saved[id] = hash;
             var keys = Object.keys(saved);
             keys.slice(0, Math.max(0, keys.length - KEEP)).forEach(function (old) { delete saved[old]; });
-            localStorage.setItem(STORE, JSON.stringify(saved));
+            Stored.save(STORE, saved);
         } catch (e) {
             // A full store only costs a second lookup on the next play.
         }

@@ -2,11 +2,16 @@ const { test: base, expect } = require('@playwright/test');
 
 // Playwright's page fixture gives every test a new context, including a new
 // localStorage and IndexedDB. Reset the server's global failure switch too.
+// Saved records are shared between their readers (Stored, #53), so every
+// test also checks that no code changed one without saving it.
 const test = base.extend({
     page: async ({ page, request }, use) => {
         await request.get('/__fail');
+        await page.addInitScript(() => { window.__storedCheck = true; });
         try {
             await use(page);
+            const drift = await page.evaluate(() => window.__storedDrift || []).catch(() => []);
+            expect([...new Set(drift)], 'saved records changed without being saved').toEqual([]);
         } finally {
             await request.get('/__fail');
         }

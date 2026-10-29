@@ -11,7 +11,7 @@ window.NewEpisodes = (function () {
 
     function readSeen(sourceId) {
         try {
-            var saved = JSON.parse(localStorage.getItem(ProfileStore.key('seen:' + sourceId)));
+            var saved = Stored.json(ProfileStore.key('seen:' + sourceId));
             return saved && typeof saved === 'object' ? saved : {};
         } catch (e) {
             return {};
@@ -81,7 +81,7 @@ window.NewEpisodes = (function () {
             if (all[key] >= at) return;
             all[key] = at;
             try {
-                localStorage.setItem(ProfileStore.key('seen:' + sourceId), JSON.stringify(all));
+                Stored.save(ProfileStore.key('seen:' + sourceId), all);
             } catch (e) {
                 // The badge may come back after a restart.
             }

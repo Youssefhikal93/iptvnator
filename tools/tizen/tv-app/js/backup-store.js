@@ -13,7 +13,7 @@ window.BackupStore = (function () {
 
     function read(key, fallback) {
         var storedKey = storageKey(key);
-        var saved = storedKey ? localStorage.getItem(storedKey) : null;
+        var saved = storedKey ? Stored.text(storedKey) : null;
         return saved === null ? fallback : JSON.parse(saved);
     }
 
@@ -49,19 +49,19 @@ window.BackupStore = (function () {
     function commit(writes, sources) {
         var before = {};
         Object.keys(writes).concat(['sources']).forEach(function (key) {
-            before[key] = localStorage.getItem(storageKey(key));
+            before[key] = Stored.text(storageKey(key));
         });
         try {
             Object.keys(writes).forEach(function (key) {
-                if (key.indexOf('progress:') === 0 && writes[key] === null) localStorage.removeItem(storageKey(key));
-                else localStorage.setItem(storageKey(key), JSON.stringify(writes[key]));
+                if (key.indexOf('progress:') === 0 && writes[key] === null) Stored.remove(storageKey(key));
+                else Stored.save(storageKey(key), writes[key]);
             });
             Sources.replace(sources);
         } catch (error) {
             // Release newly occupied space before restoring the previous footprint.
-            Object.keys(before).forEach(function (key) { localStorage.removeItem(storageKey(key)); });
+            Object.keys(before).forEach(function (key) { Stored.remove(storageKey(key)); });
             Object.keys(before).forEach(function (key) {
-                if (before[key] !== null) localStorage.setItem(storageKey(key), before[key]);
+                if (before[key] !== null) Stored.put(storageKey(key), before[key]);
             });
             throw new Error('Could not save backup. Free TV storage and try again.');
         }

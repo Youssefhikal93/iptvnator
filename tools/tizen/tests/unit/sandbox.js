@@ -34,7 +34,7 @@ module.exports = function (files, stored, overrides) {
     sandbox.window = sandbox;
     vm.createContext(sandbox);
     // Every module may ask I18n for its English text.
-    ['i18n.js', 'i18n/en.js'].concat(files).forEach(function (file) {
+    ['i18n.js', 'i18n/en.js', 'stored.js'].concat(files).forEach(function (file) {
         var filename = path.join(__dirname, '../../tv-app/js', file);
         vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: filename });
     });

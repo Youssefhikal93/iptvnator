@@ -23,7 +23,7 @@ window.SourceRequest = (function () {
 
     function load() {
         try {
-            var saved = JSON.parse(localStorage.getItem(REST_KEY)) || {};
+            var saved = JSON.parse(Stored.text(REST_KEY)) || {};
             var now = Date.now();
             Object.keys(saved).forEach(function (host) {
                 // A rest that ended long ago no longer doubles the next one.
@@ -37,7 +37,7 @@ window.SourceRequest = (function () {
 
     function save() {
         try {
-            localStorage.setItem(REST_KEY, JSON.stringify(rests));
+            Stored.save(REST_KEY, rests);
         } catch (e) {
             // Storage full: the rest still holds until the app closes.
         }

@@ -35,9 +35,12 @@ window.LanguageChoice = (function () {
         if (request.live) return true;
         var playing = tracks.audio.filter(function (row) { return row.active; })[0];
         var sound = AudioChoice.pick(request, tracks.audio, prefs.sound);
-        if (select(sound)) playing = sound;
+        var refused = !!sound && !sound.active && !select(sound);
+        if (sound && !refused) playing = sound;
         select(subtitle(tracks.text, playing && playing.language, prefs));
-        return tracks.audio.some(function (row) { return !!row.select; });
+        // Done once the tracks are known and the wanted sound was not refused,
+        // so a refused switch is tried again later.
+        return !refused && tracks.audio.some(function (row) { return !!row.select; });
     }
 
     return { read: read, apply: apply };

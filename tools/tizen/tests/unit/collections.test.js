@@ -223,3 +223,27 @@ test('#67 a forced look-up asks TMDB for the details again; the search and an un
     await api.Tmdb.collection(8091, true);
     assert.deepEqual(plain(calls.slice(3)), ['/movie/7', '/collection/8091']);
 });
+
+test('#58 pacing counts every request of a film: its search and details as well as its collection', async function () {
+    var spent = 0;
+    var times = [];
+    var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'collection-index.js', 'collection-lookup.js'], {}, {
+        Tmdb: {
+            enabled: function () { return true; },
+            throttled: function () { return 0; },
+            fetches: function () { return spent; },
+            // A film not seen before costs a search and its details.
+            lookup: function (item) { times.push([item.name, Date.now()]); spent += 2; return Promise.resolve({ status: 'found', body: { id: item.stream_id, belongs_to_collection: { id: 70 + item.stream_id } } }); },
+            collection: function (id) { times.push(['c' + id, Date.now()]); spent += 1; return Promise.resolve({ status: 'found', body: { name: 'C' + id, parts: [] } }); },
+        },
+        Player: { isOpen: function () { return false; } },
+    });
+    var g = env.globals;
+    var films = [{ name: 'A', stream_id: 1 }, { name: 'B', stream_id: 2 }];
+    g.CollectionLookup.start({ index: g.CollectionIndex('s1'), movies: function () { return films; }, changed: function () {} });
+    await until(function () { return times.length >= 3; });
+    g.CollectionLookup.stop();
+    assert.deepEqual(plain(times.slice(0, 3).map(function (entry) { return entry[0]; })), ['A', 'c71', 'B']);
+    // Three requests for film A: at two a second, B waits about 1.5 s after A started.
+    assert.ok(times[2][1] - times[0][1] >= 1400, 'B asked ' + (times[2][1] - times[0][1]) + ' ms after A');
+});

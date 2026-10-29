@@ -55,3 +55,14 @@ test('the message names the format the file holds, or says it plainly', function
     assert.match(api.message({ fileAudio: DTS }), /\(DTS\) isn't supported by Samsung TVs/);
     assert.match(api.message({ fileAudio: null }), /isn't supported by this TV/);
 });
+
+test('an old "no sound" note does not silence a file whose header names playable sound; forget drops the note', function () {
+    var env = route();
+    var aac = [{ codec: 'aac', language: 'ara', channels: 2 }];
+    env.api.remember({ id: 'movie:1' }, 'file');
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: aac }, SOURCE, 'file.mkv')), 'file');
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: null }, SOURCE, 'file.mkv')), 'file!');
+    env.api.forget({ id: 'movie:1' });
+    assert.deepEqual(JSON.parse(env.stored['iptvnator-tv:audio-route']), {});
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: null }, SOURCE, 'file.mkv')), 'file~');
+});

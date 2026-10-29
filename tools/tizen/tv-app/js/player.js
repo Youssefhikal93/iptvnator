@@ -1034,7 +1034,9 @@ window.Player = (function () {
                     if (route.needsSound && !sound && route.next) return route.next('has no sound');
                     if (route.needsSound && sound) AudioRoute.remember(current, route.name);
                     avRoute = route.name || 'file';
-                    if (route.silent) {
+                    // The last resort is only silent when the TV lists no sound track.
+                    if (route.silent && sound) AudioRoute.forget(current);
+                    if (route.silent && !sound) {
                         AudioRoute.remember(current, 'file');
                         document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: AudioRoute.message(current) }));
                     }

@@ -52,13 +52,28 @@ window.AudioRoute = (function () {
         var before = saved()[request.id];
         // The viewer chose the file's own sound in the Audio list.
         if (request.audioRoute === 'original' || before === 'original') return [file];
-        if (before === 'file') return [{ name: 'file', url: url, silent: true }];
+        // A header that names a playable track outranks an old "no sound" note.
+        var playable = Array.isArray(request.fileAudio) && request.fileAudio.length > 0 && !silentFile(request.fileAudio);
+        if (before === 'file' && !playable) return [{ name: 'file', url: url, silent: true }];
         var worked = others.filter(function (route) { return route.name === before; })[0];
         if (worked) return [worked, { name: 'file', url: url, silent: true }];
         if (request.audioRetry || silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);
         // A file whose header named a playable track is not second-guessed.
         file.retry = !Array.isArray(request.fileAudio) || !request.fileAudio.length;
         return [file];
+    }
+
+    // The file turned out to have sound: drop the note so it is not silent next time.
+    function forget(request) {
+        if (!request || !request.id) return;
+        try {
+            var list = saved();
+            if (!(request.id in list)) return;
+            delete list[request.id];
+            Stored.save(STORE, list);
+        } catch (e) {
+            // Without storage there is nothing to forget.
+        }
     }
 
     // What the viewer is told when the file plays without sound.
@@ -74,5 +89,5 @@ window.AudioRoute = (function () {
         });
     }
 
-    return { plan: plan, remember: remember, message: message, offered: offered };
+    return { plan: plan, remember: remember, forget: forget, message: message, offered: offered };
 })();

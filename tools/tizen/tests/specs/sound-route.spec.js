@@ -9,7 +9,8 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
         const extra = (info) => JSON.stringify(info);
         window.nativePlayback = { state: 'NONE', url: '', opened: [], seeks: [], listener: {} };
         const ext = () => nativePlayback.url.split('.').pop();
-        const sound = () => (ext() === 'mkv' ? !dtsOnly : converted.includes(ext()));
+        // window.__mkvSound: the TV lists a sound track for the file after all.
+        const sound = () => (ext() === 'mkv' ? (window.__mkvSound || !dtsOnly) : converted.includes(ext()));
         window.webapis = { avplay: {
             // Only the last part of the address: the user and password stay out of the test.
             open: (url) => { nativePlayback.url = url; nativePlayback.opened.push(url.split('/').pop()); nativePlayback.state = 'IDLE'; },
@@ -136,4 +137,20 @@ test('converted addresses the provider refuses are tried once each, then the fil
 
     await playAgain(page);
     expect(await opened(page)).toEqual(['2025.mkv']);
+});
+
+test('a file noted as silent plays without the message once the TV lists a sound track, and the note is dropped', async ({ page, request }) => {
+    await samsungPlayer(page, request, { converted: [] });
+    await startFirstMovie(page);
+    await expect(page.locator('#toast')).toHaveText(UNSUPPORTED);
+    const notes = () => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:audio-route') || '{}'));
+    expect(Object.values(await notes())).toEqual(['file']);
+
+    await page.evaluate(() => { window.__mkvSound = true; });
+    await expect(page.locator('#toast')).toBeHidden({ timeout: 15_000 });
+    await playAgain(page);
+    expect(await opened(page)).toEqual(['2025.mkv']);
+    await page.waitForTimeout(1000);
+    await expect(page.locator('#toast')).toBeHidden();
+    expect(await notes()).toEqual({});
 });

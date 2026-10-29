@@ -977,7 +977,8 @@ window.Player = (function () {
         }
         route.stale = function () { return chain.stale(mine) || current !== request; };
         var first = route.name === 'file' && (at === 0 || !link);
-        var address = first ? Promise.resolve({ url: route.url }) : AvResolve.final(route.name === 'file' ? link : route.url);
+        if (route.direct) Log.info('AUDIO route ' + route.name + ' direct');
+        var address = first || route.direct ? Promise.resolve({ url: route.url }) : AvResolve.final(route.name === 'file' ? link : route.url);
         address.then(function (found) {
             if (route.stale()) return;
             if (found.error) return route.next ? route.next(found.error) : finish(found.error);
@@ -1040,7 +1041,7 @@ window.Player = (function () {
                     // The last resort is only silent when the TV lists no sound track.
                     if (route.silent && sound) AudioRoute.forget(current);
                     if (route.silent && !sound) {
-                        AudioRoute.remember(current, 'file');
+                        AudioRoute.remember(current, 'none');
                         document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: AudioRoute.message(current) }));
                     }
                     var preferred = preferAudio();

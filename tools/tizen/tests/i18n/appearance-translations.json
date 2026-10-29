@@ -64,7 +64,9 @@
         "header.wideView": "مربعات بصور عريضة",
         "header.infoView": "مربعات بالتفاصيل",
         "settings.wide": "مربعات عريضة",
-        "settings.info": "مربعات بالتفاصيل"
+        "settings.info": "مربعات بالتفاصيل",
+        "collections.refresh": "\u21bb تحديث",
+        "collections.refreshing": "يتم فحص أفلامك من جديد في الخلفية"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

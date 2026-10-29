@@ -33,6 +33,8 @@ I18n.tables.ar = {
     'collections.findingHint': "تظهر هنا أثناء فحص أفلامك",
     'collections.empty': "لا توجد أفلام في هذه المجموعة",
     'collections.searchHint': "البحث يجد المجموعات بالاسم",
+    'collections.refresh': '\u21bb تحديث',
+    'collections.refreshing': 'يتم فحص أفلامك من جديد في الخلفية',
     'browser.hideWatched': 'إخفاء ما شاهدته',
     'empty.watched.title': 'لقد شاهدت كل شيء هنا',
     'browser.showWatched': 'إظهار العناوين التي شاهدتها',

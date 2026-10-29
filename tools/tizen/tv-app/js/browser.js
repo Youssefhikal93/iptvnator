@@ -231,6 +231,9 @@ window.Browser = function (hooks) {
         },
         picture: BoxCards.picture,
         meta: function (it) { return BoxCards.meta(it, state.section); },
+        action: function () {
+            return refreshAvailable() ? { label: I18n.t('collections.refresh'), focused: state.refreshFocus } : null;
+        },
         plot: function (it) { return BoxCards.plot(it, state.section); },
     });
     var guide = TvGuide({
@@ -512,6 +515,33 @@ window.Browser = function (hooks) {
             var row = shownCategory();
             if (row && row.virtual === 'collections' && !state.collection) showVirtual(row, items.index());
         }, 2000);
+    }
+
+    // The Collections shelf's Refresh pill (#67): with a TMDB key, while the
+    // shelf itself is shown. ▲ from its top row reaches it.
+    function refreshAvailable() {
+        var row = shownCategory();
+        return state.section === 'movies' && !!row && row.virtual === 'collections' && !state.collection && Tmdb.enabled() && !currentList.showingSearch();
+    }
+
+    function focusRefresh(on) {
+        state.refreshFocus = on;
+        items.setActive(!on);
+    }
+
+    // Keys while the Refresh pill has the focus.
+    function onRefreshKey(code) {
+        if (code === KEY.ENTER) {
+            collections.refresh();
+            toast(I18n.t('collections.refreshing'));
+        } else if (code === KEY.DOWN) focusRefresh(false);
+        else if (code === KEY.UP) {
+            focusRefresh(false);
+            if (!enterToolbar('items') && menuOnTop()) setZone('rail');
+        } else if (code === KEY.LEFT) setZone('categories');
+        else if (Keys.isBack(code)) setZone('rail');
+        else return false;
+        return true;
     }
 
     // OK on a collection lists its films; Return goes back to the collections.
@@ -1034,6 +1064,7 @@ window.Browser = function (hooks) {
     function setZone(zone) {
         if (state.zone === 'rail' && zone !== 'rail') LoadScreen.enter();
         if (zone !== 'rail') state.profileFocus = false;
+        state.refreshFocus = false;
         state.zone = zone;
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
@@ -1935,9 +1966,11 @@ window.Browser = function (hooks) {
             else return code === KEY.RIGHT || code === KEY.ENTER;
         } else {
             var grid = items.cols() > 1;
+            if (state.refreshFocus) return onRefreshKey(code);
             if (STEPS[code]) {
                 var moved = moveItems(code);
-                if (!moved && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
+                if (!moved && code === KEY.UP && refreshAvailable()) focusRefresh(true);
+                else if (!moved && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
                 else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) genres.more();
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);

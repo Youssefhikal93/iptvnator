@@ -81,6 +81,14 @@ window.List = function (el, options) {
             position.textContent = state.index + 1 + ' / ' + count;
             header.appendChild(position);
         }
+        // A pill at the end of the header, such as Collections' Refresh (#67).
+        var action = options.action && options.action();
+        if (action) {
+            var pill = document.createElement('span');
+            pill.className = 'list-action' + (action.focused ? ' focused' : '');
+            pill.textContent = action.label;
+            header.appendChild(pill);
+        }
         el.appendChild(header);
 
         if (state.loading) return renderSkeleton(rows, grid);

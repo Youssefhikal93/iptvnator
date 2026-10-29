@@ -89,6 +89,11 @@ window.Collections = function (deps) {
 
     return {
         start: start,
+        // Asks TMDB about every film again in the background (#67).
+        refresh: function () {
+            var known = current();
+            if (known && Tmdb.enabled()) CollectionLookup.refresh({ index: known, movies: deps.movies, changed: deps.changed });
+        },
         // The Collections row for the category list, or null when there is none.
         row: function () {
             var list = shelf();

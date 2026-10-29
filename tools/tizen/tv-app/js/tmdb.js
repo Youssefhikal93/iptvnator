@@ -163,7 +163,8 @@ window.Tmdb = (function () {
     // For the background collection look-up (#58), the same requests as
     // match() with what went wrong told apart: 'found' with the details,
     // 'none' when TMDB has no such title, 'failed' to try again later.
-    function lookup(item, type) {
+    // force: the details are asked again even when a saved answer is fresh (#67).
+    function lookup(item, type, force) {
         if (!enabled()) return Promise.resolve({ status: 'failed' });
         var language = TmdbLanguage.tag(I18n.language());
         var params = { query: clean(title(item)) };
@@ -175,7 +176,7 @@ window.Tmdb = (function () {
             if (!result) return { status: 'failed' };
             if (!result.found) return { status: 'none' };
             var path = '/' + type + '/' + result.found.id;
-            return load(path, { append_to_response: 'credits,videos,similar', language: language }).then(function (record) {
+            return load(path, { append_to_response: 'credits,videos,similar', language: language }, force).then(function (record) {
                 if (!record || (record.failed && record.status !== 404)) return { status: 'failed' };
                 if (record.failed) return { status: 'none' };
                 return detail(path, language).then(function (body) {
@@ -188,8 +189,8 @@ window.Tmdb = (function () {
     }
 
     // A collection's parts (#58): { status, body } like lookup().
-    function collection(collectionId) {
-        return load('/collection/' + collectionId, {}).then(function (record) {
+    function collection(collectionId, force) {
+        return load('/collection/' + collectionId, {}, force).then(function (record) {
             if (!record || (record.failed && record.status !== 404)) return { status: 'failed' };
             return record.failed ? { status: 'none' } : { status: 'found', body: record.body };
         });

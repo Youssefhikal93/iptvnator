@@ -32,6 +32,8 @@ I18n.tables.en = {
     'collections.findingHint': "They show here as your movies are checked",
     'collections.empty': "No films in this collection",
     'collections.searchHint': "Search finds collections by name",
+    'collections.refresh': '\u21bb Refresh',
+    'collections.refreshing': 'Checking your movies again in the background',
     'settings.preferredSound': 'Preferred sound',
     'settings.preferredSubtitles': 'Preferred subtitles',
     'settings.showSubtitles': 'Show subtitles',

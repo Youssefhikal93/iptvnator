@@ -2,7 +2,9 @@
 // the TMDB database so no film is looked up twice, even after a restart:
 //   films: { filmKey: [collectionId, tmdbId] or 0 for a film in none }
 //   collections: { id: { name, poster, parts: [{ id, title, year, poster }],
-//                        fetched, language } or { none: true } }
+//                        fetched, language } or { none: true, fetched } }
+//   recheck: { filmKey: true } films a Refresh (#67) asks about again
+//   refreshAt: when the last Refresh began; older collections are asked again
 window.CollectionIndex = function (sourceId) {
     'use strict';
 
@@ -60,8 +62,28 @@ window.CollectionIndex = function (sourceId) {
         ready: function () { return ready; },
         filmKey: filmKey,
         film: function (item) { return data.films[filmKey(item)]; },
+        // Still to be asked about: never asked, or marked by a Refresh.
+        due: function (item) {
+            var key = filmKey(item);
+            return data.films[key] === undefined || !!(data.recheck && data.recheck[key]);
+        },
+        // Refresh (#67): every film and collection is asked about again; what
+        // is known stays shown until a new answer replaces it.
+        refresh: function () {
+            data.recheck = Object.create(null);
+            Object.keys(data.films).forEach(function (key) { data.recheck[key] = true; });
+            data.refreshAt = Date.now();
+            changed();
+        },
+        // Whether a collection is asked again because of a Refresh.
+        forced: function (id) {
+            var info = data.collections[id];
+            return !!data.refreshAt && (!info || (info.fetched || 0) < data.refreshAt);
+        },
         setFilm: function (item, collectionId, tmdbId) {
-            data.films[filmKey(item)] = collectionId ? [collectionId, tmdbId] : 0;
+            var key = filmKey(item);
+            data.films[key] = collectionId ? [collectionId, tmdbId] : 0;
+            if (data.recheck) delete data.recheck[key];
             changed();
         },
         collection: function (id) { return data.collections[id]; },
@@ -76,7 +98,8 @@ window.CollectionIndex = function (sourceId) {
                 var film = data.films[key];
                 if (!film) return;
                 var info = data.collections[film[0]];
-                if (!info || (!info.none && (info.language !== language || Date.now() - info.fetched > maxAge))) wanted[film[0]] = true;
+                var refreshed = (info && info.fetched || 0) < (data.refreshAt || 0);
+                if (!info || refreshed || (!info.none && (info.language !== language || Date.now() - info.fetched > maxAge))) wanted[film[0]] = true;
             });
             return Object.keys(wanted).map(Number);
         },

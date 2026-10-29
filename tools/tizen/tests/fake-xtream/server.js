@@ -37,12 +37,14 @@ const schedule = (seed, name) => {
     return list;
 };
 
-// Test switch: /__fail?api=503&media=404 breaks provider calls / streams; /__fail clears.
+// Test switch: /__fail?api=503&media=404 breaks provider calls / streams;
+// &file=tracks.mkv.head serves that header from fixtures/audio as every movie
+// and episode (for a fake AVPlay; a browser cannot play it); /__fail clears.
 let fail = {};
 http.createServer((req, res) => {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/__fail') {
-        fail = { api: url.searchParams.get('api'), media: url.searchParams.get('media') };
+        fail = { api: url.searchParams.get('api'), media: url.searchParams.get('media'), file: url.searchParams.get('file') };
         return json(res, fail);
     }
     if (fail.api && url.pathname === '/player_api.php' && url.searchParams.get('action')) {
@@ -141,13 +143,15 @@ http.createServer((req, res) => {
         return fs.createReadStream(path.join(__dirname, '..', 'media', 'live.ts')).pipe(res);
     }
     if (url.pathname.startsWith('/series/') || url.pathname.startsWith('/movie/')) {
-        const buf = fs.readFileSync(path.join(__dirname, '..', 'media', 'ep.mp4'));
+        const buf = fail.file
+            ? fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'audio', path.basename(fail.file)))
+            : fs.readFileSync(path.join(__dirname, '..', 'media', 'ep.mp4'));
         const m = /bytes=([0-9]+)-([0-9]*)/.exec(req.headers.range || '');
         if (!m) {
             res.writeHead(200, { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Content-Length': buf.length });
             return res.end(buf);
         }
-        const start = +m[1], end = m[2] ? +m[2] : buf.length - 1;
+        const start = +m[1], end = Math.min(m[2] ? +m[2] : buf.length - 1, buf.length - 1);
         res.writeHead(206, { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Content-Range': 'bytes ' + start + '-' + end + '/' + buf.length, 'Content-Length': end - start + 1 });
         return res.end(buf.subarray(start, end + 1));
     }

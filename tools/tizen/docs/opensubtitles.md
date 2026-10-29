@@ -47,6 +47,15 @@ error or a file under 64 KiB the hash is skipped and playback continues unchange
 is cached per title in memory and in `iptvnator-tv:movie-hashes` (newest 200), so replays
 skip the requests. The log says only `moviehash ok` or `moviehash skipped <reason>`.
 
+The same pre-play stage reads each new movie or episode's sound tracks for AVPlay's
+Audio list (#55, `js/media-sniff.js`): codec, language and channels from the Matroska
+Tracks element or the MP4 trak boxes in the first 64 KiB, reusing the block the hash just
+read (Matroska files without the list there also have their last 64 KiB read). Same 2 s budget;
+the result, or "no list found", is kept per title in `iptvnator-tv:sniff-tracks` (newest 50).
+Tracks AVPlay leaves out (DTS, TrueHD) show as "Not supported on this TV". The language
+picked there is kept per show and as the latest pick (`js/audio-choice.js`, per profile),
+and the next episode or movie starts in it when the file has it.
+
 Subtitles follow the current playback position on AVPlay and HTML video,
 including pause and seek, in the same subtitle style set in Settings. The player
 menu's **Off** hides them. Selecting an embedded subtitle track also turns

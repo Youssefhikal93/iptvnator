@@ -52,18 +52,53 @@ window.PlayerTracks = (function () {
         return found ? found.index : -1;
     }
 
-    // `audioIndex` and `textIndex` are the selected tracks' AVPlay indexes; -1 is none.
-    function av(total, audioIndex, textIndex) {
+    // ---- The file's own sound tracks (#55) --------------------------------
+
+    var CODEC_NAMES = {
+        aac: 'AAC', ac3: 'AC-3', eac3: 'E-AC-3', dts: 'DTS', truehd: 'TrueHD', opus: 'Opus',
+        flac: 'FLAC', mp3: 'MP3', mp2: 'MP2', vorbis: 'Vorbis', pcm: 'PCM', alac: 'ALAC',
+    };
+    // Sound Samsung TVs cannot decode; AVPlay leaves these tracks out of its list (#54).
+    var UNSUPPORTED = ['dts', 'truehd'];
+    var LAYOUTS = { 1: '1.0', 2: '2.0', 6: '5.1', 8: '7.1' };
+
+    // "English · DTS 5.1" for a track MediaSniff read from the file.
+    function fileLabel(track, n) {
+        var format = [CODEC_NAMES[track.codec] || String(track.codec).toUpperCase(),
+            LAYOUTS[track.channels] || (track.channels ? track.channels + ' ch' : '')].filter(Boolean).join(' ');
+        return (languageName(track.language) || I18n.t('player.track', { n: n + 1 })) + ' · ' + format;
+    }
+
+    // AVPlay's audio rows, named from the file's tracks (`file`, MediaSniff's
+    // list) when the two line up: the same count, or the same count once the
+    // tracks the TV cannot decode are left out. Those are then listed too, in
+    // the file's order, with `unsupported` set and no ref.
+    function avAudio(total, audioIndex, file) {
+        var playable = avOfType(total, 'AUDIO').map(function (track) {
+            return { label: track.label, language: track.extra.language || '', active: track.index === audioIndex, ref: track.index };
+        });
+        if (!file || !file.length) return playable;
+        var blocked = file.filter(function (track) { return UNSUPPORTED.indexOf(track.codec) >= 0; });
+        var every = file.length === playable.length;
+        if (!every && file.length - blocked.length !== playable.length) return playable;
+        var next = 0;
+        return file.map(function (track, n) {
+            if (!every && UNSUPPORTED.indexOf(track.codec) >= 0) {
+                return { label: fileLabel(track, n), language: track.language, active: false, ref: null, unsupported: true };
+            }
+            var row = playable[next++];
+            return { label: fileLabel(track, n), language: track.language || row.language, active: row.active, ref: row.ref };
+        });
+    }
+
+    // `audioIndex` and `textIndex` are the selected tracks' AVPlay indexes; -1
+    // is none. `file` is the file's own sound tracks, when known.
+    function av(total, audioIndex, textIndex, file) {
         var text = avOfType(total, 'TEXT').map(function (track) {
             return { label: track.label, active: track.index === textIndex, ref: track.index };
         });
         text.unshift(off(textIndex < 0, -1));
-        return {
-            audio: avOfType(total, 'AUDIO').map(function (track) {
-                return { label: track.label, active: track.index === audioIndex, ref: track.index };
-            }),
-            text: text,
-        };
+        return { audio: avAudio(total, audioIndex, file), text: text };
     }
 
     // `hls` is the hls.js instance, or any object with its track fields.
@@ -71,6 +106,7 @@ window.PlayerTracks = (function () {
         var audio = (hls.audioTracks || []).map(function (track, n) {
             return {
                 label: track.name || languageName(track.lang) || I18n.t('player.track', { n: n + 1 }),
+                language: track.lang || '',
                 active: hls.audioTrack === n,
                 ref: n,
             };
@@ -107,6 +143,7 @@ window.PlayerTracks = (function () {
         var audio = nativeList(audioTracks).map(function (track, n) {
             return {
                 label: track.label || languageName(track.language) || I18n.t('player.track', { n: n + 1 }),
+                language: track.language || '',
                 active: track.enabled,
                 ref: track,
             };

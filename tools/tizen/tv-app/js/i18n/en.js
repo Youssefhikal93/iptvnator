@@ -361,6 +361,7 @@ I18n.tables.en = {
     'pin.wait': 'Wait {s} s',
     'pin.wrong': 'Wrong PIN',
     'player.audio': 'Audio',
+    'player.audioUnsupported': 'Not supported on this TV',
     'player.menuKeys': 'OK: choose · Return: close',
     'player.menuKeysBack': 'OK: choose · ◀ / Return: back',
     'player.backToLive': 'Back to live',

@@ -148,6 +148,7 @@ I18n.tables.ar = {
     'pin.lockCategory': 'قفل الفئة',
     'pin.unlockCategory': 'إلغاء قفل الفئة',
     'player.audio': 'الصوت',
+    'player.audioUnsupported': 'غير مدعوم على هذا التلفاز',
     'player.menuKeys': 'OK: اختيار · Return: إغلاق',
     'player.menuKeysBack': 'OK: اختيار · ◀ / Return: رجوع',
     'player.endsAt': 'ينتهي {time}',

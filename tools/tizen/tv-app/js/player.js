@@ -514,7 +514,7 @@ window.Player = (function () {
         var selectText;
         if (kind === 'avplay') {
             if (avAudio < 0) avAudio = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
-            tracks = PlayerTracks.av(avRead('getTotalTrackInfo'), avAudio, avText);
+            tracks = PlayerTracks.av(avRead('getTotalTrackInfo'), avAudio, avText, current.fileAudio);
             selectAudio = function (index) {
                 avplay().setSelectTrack('AUDIO', index);
                 avAudio = index;
@@ -576,7 +576,38 @@ window.Player = (function () {
                 };
             });
         }
-        return { audio: bind(tracks.audio, selectAudio), text: bind(tracks.text, selectText) };
+        // A track the TV cannot decode is listed without a way to pick it;
+        // a picked one's language is what the next episode starts in.
+        var audio = tracks.audio.map(function (entry) {
+            if (entry.unsupported) return { label: entry.label, active: false, select: null, note: I18n.t('player.audioUnsupported') };
+            return {
+                label: entry.label,
+                active: entry.active,
+                select: function () {
+                    selectAudio(entry.ref);
+                    AudioChoice.remember(current, entry.language);
+                },
+            };
+        });
+        return { audio: audio, text: bind(tracks.text, selectText) };
+    }
+
+    // Starts AVPlay in the sound language picked last for this show (or at
+    // all) when the file has it. False while AVPlay lists no sound track yet.
+    function preferAudio() {
+        var playing = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
+        var rows = PlayerTracks.av(avRead('getTotalTrackInfo'), playing, -1, current.fileAudio).audio;
+        var row = AudioChoice.pick(current, rows);
+        if (row) {
+            try {
+                avplay().setSelectTrack('AUDIO', row.ref);
+                avAudio = row.ref;
+                Log.info('AUDIO starts in the remembered language');
+            } catch (e) {
+                Log.error('AUDIO remembered language failed ' + (e && e.name));
+            }
+        }
+        return rows.some(function (entry) { return entry.ref !== null; });
     }
 
     function streamInfoLines() {
@@ -603,7 +634,7 @@ window.Player = (function () {
                 keep = (tracks.indexOf(label) >= 0) === (menu.part === 'tracks');
                 if (keep) m.head(label, value);
             },
-            item: function (label, active, action) { if (keep) m.item(label, active, action); },
+            item: function (label, active, action, note) { if (keep) m.item(label, active, action, note); },
             note: function (text) { if (keep) m.note(text); },
             info: function (text) { if (keep) m.info(text); },
         };
@@ -617,7 +648,7 @@ window.Player = (function () {
         if (watch) m.item(I18n.t('player.watchFromStart'), false, watch);
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
         m.head(I18n.t('player.audio'));
-        if (tracks.audio.length) tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select); });
+        if (tracks.audio.length) tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
         else m.note(I18n.t('player.oneAudio'));
         m.head(I18n.t('picture.subtitles'));
         if (tracks.text.length > 1) tracks.text.forEach(function (t) {
@@ -929,14 +960,16 @@ window.Player = (function () {
                     // Older firmware.
                 }
                 AvResolve.tracks(av, current.audio);
+                var preferred = preferAudio();
                 av.play();
                 finish(null);
                 // Some firmware lists a track only once playback runs; a second look
                 // tells a late track from a missing one.
                 var shown = current;
                 setTimeout(function () {
-                    // No sound track: the next start reads which sound the file holds.
-                    if (current === shown && usingAv && !AvResolve.tracks(av, null, 'after 5s')) MediaSniff.flag(shown);
+                    if (current !== shown || !usingAv) return;
+                    AvResolve.tracks(av, null, 'after 5s');
+                    if (!preferred) preferAudio();
                 }, 5000);
             },
             function (err) {

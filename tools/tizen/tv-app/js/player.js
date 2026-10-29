@@ -16,6 +16,7 @@ window.Player = (function () {
     var TICK_MS = 500;
     var SAVE_EVERY_MS = 10000;
     var SEEK_COMMIT_MS = 400;
+    var ROUTE_GAP_MS = 1000; // between a failed sound route and the next (#54)
     var SEEK_STEPS_S = [10, 30, 60]; // repeated presses accelerate
     var SPEEDS_HTML = [0.5, 1, 1.25, 1.5, 2];
     var SPEEDS_AV = [1, 2];
@@ -950,14 +951,26 @@ window.Player = (function () {
         var route = routes[at];
         var request = current;
         if (at + 1 < routes.length) {
+            var moved = false;
             route.next = function (why) {
+                // The TV reports one failure twice (onerror and prepareAsync's error).
+                if (moved) return;
+                moved = true;
                 Log.info('AUDIO route ' + route.name + ' ' + why);
+                try {
+                    av.stop();
+                } catch (e) {
+                    // Never started.
+                }
                 try {
                     av.close();
                 } catch (e) {
                     // Already closed.
                 }
-                openRoute(av, routes, at + 1, finish, mine);
+                // A provider allowing one connection needs a moment to let it go.
+                setTimeout(function () {
+                    if (!route.stale()) openRoute(av, routes, at + 1, finish, mine);
+                }, ROUTE_GAP_MS);
             };
         }
         route.stale = function () { return chain.stale(mine) || current !== request; };

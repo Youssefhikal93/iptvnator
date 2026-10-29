@@ -3,19 +3,25 @@ const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup } = 
 // #54: Samsung TVs cannot decode DTS. The fake AVPlay lists a sound track
 // for the file only when it is not DTS-only, and for the provider's
 // converted .m3u8 / .ts addresses only when `converted` says they have one.
-async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'] } = {}) {
+async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'], refused = false } = {}) {
     await request.get('/__fail?file=' + file);
-    await page.addInitScript(({ dtsOnly, converted }) => {
+    await page.addInitScript(({ dtsOnly, converted, refused }) => {
         const extra = (info) => JSON.stringify(info);
-        window.nativePlayback = { state: 'NONE', url: '', opened: [], seeks: [] };
+        window.nativePlayback = { state: 'NONE', url: '', opened: [], seeks: [], listener: {} };
         const ext = () => nativePlayback.url.split('.').pop();
         const sound = () => (ext() === 'mkv' ? !dtsOnly : converted.includes(ext()));
         window.webapis = { avplay: {
             // Only the last part of the address: the user and password stay out of the test.
             open: (url) => { nativePlayback.url = url; nativePlayback.opened.push(url.split('/').pop()); nativePlayback.state = 'IDLE'; },
-            setListener: () => {},
+            setListener: (listener) => { nativePlayback.listener = listener; },
             setDisplayRect: () => {},
-            prepareAsync: success => success(),
+            // A provider that refuses its converted addresses: the TV reports it twice,
+            // through onerror and through prepareAsync's error callback.
+            prepareAsync: (success, error) => {
+                if (!refused || ext() === 'mkv') return success();
+                nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE');
+                error({ name: 'InvalidAccessError' });
+            },
             setSilentSubtitle: () => {},
             play: () => { nativePlayback.state = 'PLAYING'; },
             pause: () => { nativePlayback.state = 'PAUSED'; },
@@ -30,7 +36,7 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
             stop: () => { nativePlayback.state = 'IDLE'; },
             close: () => { nativePlayback.state = 'NONE'; },
         } };
-    }, { dtsOnly: file === 'dts-only.mkv.head', converted });
+    }, { dtsOnly: file === 'dts-only.mkv.head', converted, refused });
     await boot(page);
 }
 
@@ -120,4 +126,14 @@ test('a file whose header cannot be read and has no sound five seconds in is tri
     expect(await opened(page)).toEqual(['2025.mkv']);
     await expect.poll(() => opened(page), { timeout: 15_000 }).toEqual(['2025.mkv', '2025.m3u8']);
     await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
+});
+
+test('converted addresses the provider refuses are tried once each, then the file plays, and only the file next time', async ({ page, request }) => {
+    await samsungPlayer(page, request, { refused: true });
+    await startFirstMovie(page);
+    expect(await opened(page)).toEqual(['2025.m3u8', '2025.ts', '2025.mkv']);
+    await expect(page.locator('#toast')).toHaveText(UNSUPPORTED);
+
+    await playAgain(page);
+    expect(await opened(page)).toEqual(['2025.mkv']);
 });

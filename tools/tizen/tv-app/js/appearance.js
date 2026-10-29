@@ -11,8 +11,7 @@ window.Appearance = (function () {
         // Moroccan Arabic was dropped; a profile that chose it gets Arabic.
         if (Prefs.get('language') === 'ary') return Prefs.set('language', 'ar');
         I18n.setLanguage(Prefs.get('language'));
-        // The light palette is a [data-theme="light"] override of the :root tokens.
-        document.documentElement.setAttribute('data-theme', Prefs.get('theme') === 'light' ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', choice('theme', ['dark', 'black', 'grey', 'light']));
         document.documentElement.setAttribute('data-accent', choice('accent', ['blue', 'saffron', 'asphalt', 'violet', 'pink']));
         document.documentElement.setAttribute('data-density', choice('density', ['comfortable', 'compact']));
         document.documentElement.setAttribute('data-motion', choice('motion', ['on', 'off']));

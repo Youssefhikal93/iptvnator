@@ -43,6 +43,19 @@ test('a profile that chose the dropped Moroccan Arabic is moved to Arabic and ke
     assert.equal(app.attributes['data-theme'], 'light');
 });
 
+test('all four stored themes apply on startup and Prefs changes without rewriting saved values', function () {
+    ['dark', 'black', 'grey', 'light', 'unknown'].forEach(function (theme) {
+        var stored = { 'iptvnator-tv:p:default:settings': JSON.stringify({ theme: theme }) };
+        var app = appearance(stored);
+        var expected = theme === 'unknown' ? 'dark' : theme;
+        assert.equal(app.attributes['data-theme'], expected);
+        assert.equal(app.stored['iptvnator-tv:p:default:settings'], stored['iptvnator-tv:p:default:settings']);
+        app.globals.Prefs.set('theme', theme === 'light' ? 'dark' : 'light');
+        app.globals.Prefs.set('theme', theme);
+        assert.equal(app.attributes['data-theme'], expected);
+    });
+});
+
 test('stored appearance applies on startup and Prefs changes immediately update every appearance attribute and language', function () {
     var app = appearance({ 'iptvnator-tv:p:default:settings': JSON.stringify({ theme: 'light', accent: 'pink', density: 'compact' }) });
     assertAppearance(app, 'light', 'pink', 'compact');
@@ -72,13 +85,14 @@ test('appearance choices persist separately for each profile and switch with it'
     var other = profiles.add('Other');
     profiles.setActive(other.id);
     assertAppearance(app, 'dark', 'blue', 'comfortable');
+    prefs.set('theme', 'grey');
     prefs.set('accent', 'violet');
     profiles.setActive('default');
     assertAppearance(app, 'light', 'saffron', 'compact');
     profiles.setActive(other.id);
-    assertAppearance(app, 'dark', 'violet', 'comfortable');
+    assertAppearance(app, 'grey', 'violet', 'comfortable');
     var restarted = appearance(app.stored);
-    assertAppearance(restarted, 'dark', 'violet', 'comfortable');
+    assertAppearance(restarted, 'grey', 'violet', 'comfortable');
 });
 
 test('Appearance rows expose translated choices in every language table', function () {

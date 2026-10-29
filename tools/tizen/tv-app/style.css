@@ -7,6 +7,8 @@
 @font-face { font-family: 'DM Sans'; font-weight: 700; src: url(fonts/dm-sans-700.ttf) format('truetype'); }
 
 :root,
+[data-theme="black"] #player,
+[data-theme="grey"] #player,
 [data-theme="light"] #player {
     --shell-bg: #0d0f12;
     --rail-bg: #111318;
@@ -47,7 +49,41 @@
     --panel-outline: #a9baff;
 }
 
-/* Light theme. The player draws over video, so it keeps the dark palette above. */
+/* The player draws over video, so every theme keeps the Dark blue palette above. */
+[data-theme="black"] {
+    --shell-bg: #000000;
+    --rail-bg: #000000;
+    --content-bg: #050505;
+    --widget-bg: #141414;
+    --card-hover-bg: #1f1f1f;
+    --heading: #ececec;
+    --on-surface: #e6e6e6;
+    --eyebrow: #a8a8a8;
+    --muted: #a8a8a8;
+    --skeleton: #262626;
+    --poster-bg: linear-gradient(135deg, #1f1f1f, #0f0f0f);
+    --panel-bg: #0f0f0f;
+    --panel-border: #5c5c5c;
+    --field-bg: #1c1c1c;
+}
+
+[data-theme="grey"] {
+    --shell-bg: #121212;
+    --rail-bg: #161616;
+    --content-bg: #1b1b1b;
+    --widget-bg: #262626;
+    --card-hover-bg: #313131;
+    --heading: #e6e6e6;
+    --on-surface: #e3e3e3;
+    --eyebrow: #b0b0b0;
+    --muted: #b0b0b0;
+    --skeleton: #3a3a3a;
+    --poster-bg: linear-gradient(135deg, #333333, #232323);
+    --panel-bg: #222222;
+    --panel-border: #6c6c6c;
+    --field-bg: #2e2e2e;
+}
+
 [data-theme="light"] {
     --shell-bg: #eef0f3;
     --rail-bg: #eef0f3;

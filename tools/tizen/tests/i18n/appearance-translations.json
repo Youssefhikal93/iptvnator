@@ -1,5 +1,8 @@
 {
     "ar": {
+        "settings.dark": "داكن أزرق",
+        "settings.darkBlack": "داكن أسود",
+        "settings.darkGrey": "داكن رمادي",
         "settings.accent": "لون التمييز",
         "settings.blue": "أزرق",
         "settings.saffron": "زعفراني",

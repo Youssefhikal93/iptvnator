@@ -113,7 +113,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     await setting(page, 'Theme');
-    await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Dark');
+    await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Dark blue');
     const darkFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
 
@@ -148,9 +148,9 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(238, 240, 243)');
 
-    // Back to Dark restores the original colours.
+    // Back to Dark blue restores the original colours.
     await setting(page, 'Theme');
-    await choose(page, 'Dark');
+    await choose(page, 'Dark blue');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(dark);
 });

@@ -7,12 +7,13 @@ the shared tokens, focus language and main-screen safe area.
 
 `Prefs` stores `theme`, `accent` and `density` in the active profile's settings,
 through the same path as Language. `Appearance` applies them at startup, on
-changes and on profile switches. Missing or unknown values display Dark,
+changes and on profile switches. Missing or unknown values display Dark blue,
 Blue and Comfortable without rewriting saved settings.
 
 Blue inherits the original accent tokens. Other accents override only the
 selection, focus-ring and panel-outline tokens. `#player` always gets the dark
-palette and dark accent values, including when the surrounding app is Light.
+blue palette and dark accent values in every theme. Display > Theme offers
+Dark blue (`dark`, default), Dark black (`black`), Dark grey (`grey`) and Light (`light`).
 
 | Token | Comfortable | Compact |
 |---|---|---|

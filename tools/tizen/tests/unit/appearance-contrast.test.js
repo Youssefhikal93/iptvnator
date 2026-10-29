@@ -33,8 +33,8 @@ function contrast(first, second) {
 
 test('all five accents, focus rings and secondary text meet 4.5:1 on normal theme surfaces, with readable accent fills', function () {
     var dark = declarations(baseCss, '[data-theme="light"] #player');
-    ['dark', 'light'].forEach(function (theme) {
-        var base = theme === 'dark' ? dark : Object.assign({}, dark, declarations(baseCss, '[data-theme="light"]'));
+    ['dark', 'black', 'grey', 'light'].forEach(function (theme) {
+        var base = theme === 'dark' ? dark : Object.assign({}, dark, declarations(baseCss, '[data-theme="' + theme + '"]'));
         var surfaces = ['--shell-bg', '--rail-bg', '--content-bg', '--widget-bg', '--card-hover-bg', '--panel-bg', '--field-bg', '--skeleton'].map(function (name) { return base[name]; });
         surfaces = surfaces.concat(base['--poster-bg'].match(/#[a-f\d]{6}/gi));
         ['blue', 'saffron', 'asphalt', 'violet', 'pink'].forEach(function (accent) {

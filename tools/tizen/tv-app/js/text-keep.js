@@ -12,13 +12,20 @@ window.TextKeep = (function () {
     }
 
     // Taking the focus starts from what the field holds, so text the app
-    // itself changed while the field was away is never brought back.
+    // itself changed while the field was away is never brought back. Taking
+    // the focus or typing again also ends a restore still pending.
     function remember(event) {
-        if (typed && isText(event.target)) typed.set(event.target, event.target.value);
+        if (!typed || !isText(event.target)) return;
+        typed.set(event.target, { value: event.target.value, blur: 0 });
     }
 
-    function put(input, value) {
-        if (!input.isConnected || input.value === value) return;
+    // Only what the keyboard drops comes back: the tail of the typed text,
+    // in a field still on screen, from the blur that is still the last one.
+    function put(input, entry, blur) {
+        var now = typed.get(input);
+        var value = entry.value;
+        if (now !== entry || entry.blur !== blur || !input.isConnected || !input.offsetParent) return;
+        if (input.value === value || value.indexOf(input.value) !== 0) return;
         Log.info('TEXT kept ' + (input.id || 'field') + ' (' + value.length + ' chars)');
         input.value = value;
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -27,10 +34,11 @@ window.TextKeep = (function () {
     // The keyboard may drop the text during the blur or just after it.
     function restore(event) {
         var input = event.target;
-        if (!typed || !isText(input) || !typed.has(input)) return;
-        var value = typed.get(input);
-        setTimeout(function () { put(input, value); }, 0);
-        setTimeout(function () { if (document.activeElement !== input) put(input, value); }, 150);
+        var entry = typed && isText(input) && typed.get(input);
+        if (!entry) return;
+        var blur = entry.blur = entry.blur + 1;
+        setTimeout(function () { put(input, entry, blur); }, 0);
+        setTimeout(function () { if (document.activeElement !== input) put(input, entry, blur); }, 150);
     }
 
     // Which keys reach the page while typing, without what was typed.

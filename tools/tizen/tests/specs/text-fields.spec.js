@@ -44,6 +44,23 @@ test('the keyboard Cancel keeps the dialog and the text; Done goes on to the but
     await expect(page.locator('#profile-dialog-ok')).toBeFocused();
 });
 
+test('text typed again right after leaving a field is not replaced by the older text', async ({ page }) => {
+    await boot(page);
+    await newProfileName(page);
+    // Leave the empty field, come back, type and leave again, all within the restore window.
+    await page.evaluate(async () => {
+        const input = document.getElementById('profile-name');
+        const ok = document.getElementById('profile-dialog-ok');
+        ok.focus();
+        input.focus();
+        input.value = 'Quick';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        ok.focus();
+        await new Promise((done) => setTimeout(done, 400));
+    });
+    await expect(page.locator('#profile-name')).toHaveValue('Quick');
+});
+
 test('text the app clears is not brought back', async ({ page }) => {
     await boot(page);
     await newProfileName(page);

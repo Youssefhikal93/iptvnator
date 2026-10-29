@@ -74,6 +74,8 @@
 :is(.focus, .focused, :focus) {
     --focus-gap: var(--shell-bg);
     --focus-shadow: 0 0 0 4px var(--focus-gap), 0 0 0 8px var(--focus-ring), 0 10px 24px rgba(0, 0, 0, 0.35);
+    /* A list scrolled to the focused item leaves room for its ring (#56). */
+    scroll-margin: 20px;
 }
 :is(.rail-item.focused, #searchbar.focused, .view-btn.focused, .row.focused,
     .menu-row.focused, .st-row.focused, .dt-btn.focus, .dt-ep-pill.focus,
@@ -93,12 +95,16 @@
     --focus-gap: #0d0f12;
     position: relative;
     z-index: 1;
-    transform: scale(1.1);
+    transform: scale(var(--focus-zoom, 1.1));
     border-color: transparent;
     background: var(--card-hover-bg);
     color: var(--on-surface);
     box-shadow: var(--focus-shadow);
 }
+/* The grown tile and its 8 px ring stay inside the gap to the next tile and
+   the row title (#56): wide tiles and grid cards grow less. */
+.hm-card.big { --focus-zoom: 1.04; }
+.card { --focus-zoom: 1.05; }
 /* TMDB rows scroll by card offsets, so padding does not change their stride. */
 .tm-cards { padding: 24px; }
 

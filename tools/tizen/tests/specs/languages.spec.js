@@ -17,6 +17,7 @@ test('#60 language settings reveal the condition and persist independently per p
     await press(page, 'Enter');
     await page.locator('#profile-name').fill('Anna');
     await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await setting(page, 'Preferred sound');
     await expect(value('Preferred sound')).toHaveText('Not set');

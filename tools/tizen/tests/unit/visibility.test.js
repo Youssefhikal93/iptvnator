@@ -8,7 +8,7 @@ var load = require('./sandbox');
 function app() {
     // An unlocked session would otherwise keep a real relock timer running.
     var clock = { now: function () { return 0; }, setTimeout: function () { return 0; }, clearTimeout: function () {} };
-    var run = load(['settings-store.js', 'hidden-categories.js', 'parental-lock.js', 'visibility.js'], {}, { ParentalLockClock: clock });
+    var run = load(['profile-store.js', 'settings-store.js', 'hidden-categories.js', 'parental-lock.js', 'kids-profile.js', 'visibility.js'], {}, { ParentalLockClock: clock });
     var g = run.globals;
     g.ParentalLock.setPin('1234');
     g.HiddenCategories.hide('s1', 'movies', '1');

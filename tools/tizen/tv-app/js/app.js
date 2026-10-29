@@ -139,6 +139,7 @@
             return;
         }
         if (ProfileDialog.isOpen()) return ProfileDialog.onKey(event);
+        if (KidsPicker.isOpen()) return KidsPicker.onKey(event);
         if (AvatarPicker.isOpen()) return AvatarPicker.onKey(event);
         if (ProfileScreen.isOpen()) return ProfileScreen.onKey(event);
         if (BackupScreen.isOpen()) return BackupScreen.onKey(event);

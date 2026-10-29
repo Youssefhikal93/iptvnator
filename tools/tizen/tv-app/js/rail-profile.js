@@ -15,6 +15,7 @@ window.RailProfile = (() => {
     };
 
     // changed() reloads the browser for the new profile; manage() opens Settings.
+    // A kids profile (#62) leaves only with the PIN and has no Settings.
     const open = (changed, manage) => {
         const active = ProfileStore.active().id;
         let at = 0;
@@ -24,10 +25,10 @@ window.RailProfile = (() => {
                 icon: html`<${Kit.Avatar} cls="menu-avatar" profile=${profile} />`,
                 label: profile.name,
                 check: profile.id === active,
-                run: () => { if (ProfileStore.setActive(profile.id)) changed(); },
+                run: () => KidsProfile.leave(profile.id, () => { if (ProfileStore.setActive(profile.id)) changed(); }),
             };
         });
-        options.push({ label: I18n.t('profile.manage'), run: manage });
+        if (!KidsProfile.on()) options.push({ label: I18n.t('profile.manage'), run: manage });
         Menu.open(I18n.t('profile.switch'), options, at);
         document.getElementById('menu').classList.add('profile-menu');
     };

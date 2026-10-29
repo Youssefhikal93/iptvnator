@@ -90,6 +90,7 @@ test('a new profile starts with the switch off and switching back restores the c
     await press(page, 'Enter');
     await page.locator('#profile-name').fill('Anna');
     await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
     await section(page, 'Movies');

@@ -74,9 +74,10 @@ window.ParentalLock = (function (clock) {
         return Math.max(0, Math.ceil((blockedUntil - clock.now()) / 1000));
     }
 
-    function verify(pin) {
+    // profileId checks another profile's PIN: a kids profile's guardian (#62).
+    function verify(pin, profileId) {
         if (waitSeconds()) return false;
-        var saved = read(pinKey(), null);
+        var saved = read(profileId ? ProfileStore.keyOf(profileId, 'pin') : pinKey(), null);
         if (saved && /^\d{4}$/.test(pin) && saved.hash === hash(pin, saved.salt)) {
             failures = 0;
             return true;

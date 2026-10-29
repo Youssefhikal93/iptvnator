@@ -23,6 +23,7 @@ async function enterName(page, name) {
     await expect(page.locator('#profile-dialog')).toBeVisible();
     await page.locator('#profile-name').fill(name);
     await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
 }
@@ -141,9 +142,11 @@ test('rename updates the name; duplicate and empty names are refused', async ({ 
     await expect(page.locator('#profile-name')).toHaveValue('Me');
     await page.locator('#profile-name').fill('');
     await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog-message')).toHaveText('Enter a name.');
     await page.locator('#profile-name').fill('Dad');
+    await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
@@ -153,6 +156,7 @@ test('rename updates the name; duplicate and empty names are refused', async ({ 
     await settingsRow(page, 'Add profile…');
     await press(page, 'Enter');
     await page.locator('#profile-name').fill('dad');
+    await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog-message')).toHaveText('That name is already used.');
@@ -313,6 +317,7 @@ test('holding OK on Who is watching offers to change the name or the avatar', as
     await press(page, 'Enter');
     await expect(page.locator('#profile-name')).toHaveValue('Anna');
     await page.locator('#profile-name').fill('Annie');
+    await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await press(page, 'Enter');
     await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Annie');

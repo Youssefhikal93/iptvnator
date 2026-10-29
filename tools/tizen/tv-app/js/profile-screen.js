@@ -42,43 +42,25 @@ window.ProfileScreen = (() => {
         if (done) done(changed);
     };
 
-    // Name or avatar of the focused profile, from a held OK.
+    // Name, Kids switch, avatar and, for a kids profile, its categories, from
+    // a held OK. While a kids profile is in use, these ask for the PIN first.
     const options = (profile) => {
         const again = () => { if (root) render(); };
-        Menu.open(profile.name, [
-            {
-                label: I18n.t('profile.changeName'),
-                run: () => ProfileDialog.open({
-                    title: I18n.t('profile.rename'),
-                    text: I18n.t('profile.renameHint', { name: profile.name }),
-                    value: profile.name,
-                    ok: I18n.t('common.save'),
-                    validate: (name) => ProfileStore.nameError(name, profile.id),
-                    done: (name) => {
-                        if (name) ProfileStore.rename(profile.id, name);
-                        again();
-                    },
-                }),
-            },
+        const list = [
+            { label: I18n.t('profile.changeName'), run: () => KidsSetup.edit(profile, again) },
             { label: I18n.t('profile.changeAvatar'), run: () => AvatarPicker.open(profile, again) },
-        ], 0, { profile });
+        ];
+        if (profile.kids) list.push({ label: I18n.t('kids.title', { name: profile.name }), run: () => KidsSetup.choose(profile, again) });
+        KidsProfile.leave(null, () => Menu.open(profile.name, list, 0, { profile }));
     };
 
     const choose = () => {
         const profile = slots()[focus];
-        if (profile) return finish(ProfileStore.setActive(profile.id));
-        ProfileDialog.open({
-            title: I18n.t('profile.add'),
-            text: I18n.t('profile.addHint'),
-            value: '',
-            ok: I18n.t('profile.addButton'),
-            validate: (name) => ProfileStore.nameError(name, null),
-            done: (name) => {
-                const added = name && ProfileStore.add(name);
-                if (added) finish(ProfileStore.setActive(added.id));
-                else if (root) render();
-            },
-        });
+        if (profile) return KidsProfile.leave(profile.id, () => finish(ProfileStore.setActive(profile.id)));
+        KidsProfile.leave(null, () => KidsSetup.add(I18n.t('profile.addHint'), (added) => {
+            if (added) finish(ProfileStore.setActive(added.id));
+            else if (root) render();
+        }));
     };
 
     return {

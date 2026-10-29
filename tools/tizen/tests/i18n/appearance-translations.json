@@ -23,7 +23,10 @@
         "settings.subtitlesOnly": "فقط عندما لا أفهم لغة الصوت",
         "settings.screenSaver": "شاشة التوقف",
         "describe.screenSaver": "تعرض عناوينك عندما لا يُضغط أي زر لمدة، حتى لا تحترق الشاشة",
-        "saver.hint": "اضغط أي زر للرجوع"
+        "saver.hint": "اضغط أي زر للرجوع",
+        "home.because": "لأنك شاهدت {title}",
+        "home.pillMovie": "فيلم",
+        "home.pillShow": "مسلسل"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

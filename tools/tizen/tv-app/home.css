@@ -365,6 +365,20 @@
     font-weight: 700;
     color: var(--heading);
 }
+/* "Because you watched" rows (#63): Movie or TV show, in the accent. */
+.hm-pill {
+    display: inline-block;
+    margin-inline-start: 14px;
+    padding: 2px 14px;
+    border-radius: 999px;
+    font-size: 0.62em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    vertical-align: 0.18em;
+    color: var(--selection);
+    background: var(--selection-surface);
+    border: 1px solid var(--selection-border);
+}
 /* How many titles the row has, or the place in it while focused. */
 .hm-aside {
     margin-left: 18px;

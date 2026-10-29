@@ -486,6 +486,7 @@ window.Browser = function (hooks) {
 
     // After playback or a favorite change: refresh counts and the open list.
     function refreshLibrary() {
+        BecauseRows.invalidate();
         if (state.section === 'home') {
             state.favKeys = null;
             return home.render();
@@ -1275,10 +1276,49 @@ window.Browser = function (hooks) {
             { id: 'live', title: I18n.t('home.liveFavorites'), entries: shownEntries('live', libraryList('favorites', 'live')) },
             { id: 'fav-movies', title: I18n.t('home.favMovies'), entries: shownEntries('movies', libraryList('favorites', 'movies')) },
             { id: 'fav-series', title: I18n.t('home.favSeries'), entries: shownEntries('series', libraryList('favorites', 'series')) },
+        ].concat(becauseRows(), [
             { id: 'new-movies', title: I18n.t('home.newMovies'), entries: entriesOf('movies', addedOf('movies')), loading: homeLoading.movies },
             { id: 'new-series', title: I18n.t('home.newSeries'), entries: entriesOf('series', addedOf('series')), loading: homeLoading.series },
             { id: 'recent-live', title: I18n.t('home.recentLive'), entries: shownEntries('live', libraryList('recent', 'live')) },
-        ];
+        ]);
+    }
+
+    // "Because you watched" (#63), from the lists saved after playback and on
+    // detail pages: Home itself never asks TMDB.
+    function becauseRows() {
+        return BecauseRows.rows(sourceId(), function (section, item) {
+            return available(section) && visibility.allows(section, item, { sourceId: item.sourceId }) && !watched.isWatched(item, section);
+        }).map(function (row) {
+            return {
+                id: 'because-' + row.section,
+                title: I18n.t('home.because', { title: row.title.name }),
+                pill: I18n.t(row.section === 'movies' ? 'home.pillMovie' : 'home.pillShow'),
+                entries: entriesOf(row.section, row.items),
+            };
+        });
+    }
+
+    // After playback: finds TMDB's similar titles for the latest movie and
+    // show watched, when their saved lists are missing or a week old.
+    function learnSimilar() {
+        if (!Tmdb.enabled() || !state.adapter) return;
+        var adapter = state.adapter;
+        var id = sourceId();
+        BecauseRows.wanted(id).forEach(function (title) {
+            var type = title.section === 'movies' ? 'movie' : 'tv';
+            Tmdb.match(title.item, type).then(function (body) {
+                if (!body || adapter !== state.adapter) return null;
+                return tmdbCatalogue().then(function (catalogue) {
+                    if (adapter !== state.adapter) return;
+                    var credits = ((body.similar || {}).results || []).map(function (entry) { return Object.assign({}, entry, { media_type: type }); });
+                    var found = Tmdb.inLibrary(credits, catalogue).filter(function (entry) { return entry.type === type; });
+                    BecauseRows.save(id, title.section, title.item, BecauseRows.ordered(found, credits));
+                    if (state.section === 'home') home.render();
+                });
+            }).catch(function (err) {
+                Log.error('BECAUSE FAIL ' + (err && err.message));
+            });
+        });
     }
 
     // Artwork and plot for the hero.
@@ -1328,6 +1368,7 @@ window.Browser = function (hooks) {
     }
 
     function showHome() {
+        BecauseRows.invalidate();
         home.render();
         renderChrome();
         loadRecentlyAdded();
@@ -1375,6 +1416,7 @@ window.Browser = function (hooks) {
         detail.open({
             item: movie,
             catalogue: tmdbCatalogue,
+            similarFound: keepSimilar.bind(null, 'movies', movie),
             related: relatedTitles.bind(null, movie, 'movies'),
             open: openEntry,
             load: function () {
@@ -1429,6 +1471,7 @@ window.Browser = function (hooks) {
         detail.open({
             item: show,
             catalogue: tmdbCatalogue,
+            similarFound: keepSimilar.bind(null, 'series', show),
             related: relatedTitles.bind(null, show, 'series'),
             open: openEntry,
             episodes: episodes,
@@ -1466,6 +1509,11 @@ window.Browser = function (hooks) {
                 return list;
             },
         });
+    }
+
+    // A detail page's similar titles also feed "Because you watched" (#63).
+    function keepSimilar(section, item, items) {
+        if (!otherSource(item)) BecauseRows.save(sourceId(), section, item, items);
     }
 
     function tmdbCatalogue() {
@@ -1786,6 +1834,7 @@ window.Browser = function (hooks) {
             if (!state.played) return;
             state.played = false;
             refreshLibrary();
+            learnSimilar();
             // Zapping does not move the list; land on the channel watched last.
             var at = state.section === 'live' && !currentList.showingSearch() ? live.indexOf(items.items(), live.current()) : -1;
             if (at >= 0) items.select(at);

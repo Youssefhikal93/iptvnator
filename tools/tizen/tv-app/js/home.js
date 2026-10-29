@@ -242,7 +242,9 @@ window.Home = (api) => {
         const kind = [row.id === 'live' || row.live ? 'live' : '', row.big ? 'big' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
             right && !(focused && r.focus === r.offset + visible - 1) ? 'fade' : ''].filter(Boolean).join(' ');
         const aside = focused ? (r.focus + 1) + ' / ' + total : String(total);
-        return html`<${Kit.Row} cls="hm" kind=${kind} label=${row.title} aside=${aside}
+        // "Because you watched" rows (#63) say whether they follow a movie or a show.
+        const label = row.pill ? html`${row.title}<span class="hm-pill">${row.pill}</span>` : row.title;
+        return html`<${Kit.Row} cls="hm" kind=${kind} label=${label} aside=${aside}
             tiles=${row.entries.slice(r.offset, r.offset + visible).map((entry) => tile(entry, row.big))} focus=${focused ? r.focus - r.offset : -1} />`;
     };
 

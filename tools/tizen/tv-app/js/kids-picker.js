@@ -28,19 +28,25 @@ window.KidsPicker = (() => {
     const ticked = (section, id) => draft()[section].indexOf(String(id)) !== -1;
 
     // Loads every tab of the current source once; counts arrive when saved.
+    // An answer belongs to the picker and source it was asked for: a closed
+    // or reopened picker, or another source shown since, does not take it.
     const load = () => {
+        const session = s;
+        const from = source();
         sections().forEach((section) => {
             const at = key(section);
-            if (at in s.cats) return;
-            s.cats[at] = null;
+            if (at in session.cats) return;
+            session.cats[at] = null;
             const provider = KidsProfile.catalogue();
-            provider.categories(source(), section).then((rows) => {
-                s.cats[at] = rows && rows.length ? rows : 'none';
-                if (root) render();
-                return provider.counts(source(), section);
+            provider.categories(from, section).then((rows) => {
+                if (s !== session) return null;
+                session.cats[at] = rows && rows.length ? rows : 'none';
+                render();
+                return provider.counts(from, section);
             }).then((counts) => {
-                if (counts) s.counts[at] = counts;
-                if (root) render();
+                if (s !== session) return;
+                if (counts) session.counts[at] = counts;
+                render();
             });
         });
     };

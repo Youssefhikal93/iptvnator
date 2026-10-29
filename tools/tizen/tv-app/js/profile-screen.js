@@ -9,6 +9,9 @@ window.ProfileScreen = (() => {
     let focus = 0;
     let onDone = null;
     let onCancel = null;
+    // The profile in use changed its limits here (Kids switch or lists), so
+    // leaving must reload even when the same profile stays in use.
+    let reload = false;
 
     // The profiles, then an empty slot for "Add profile" while there is room.
     const slots = () => {
@@ -45,7 +48,10 @@ window.ProfileScreen = (() => {
     // Name, Kids switch, avatar and, for a kids profile, its categories, from
     // a held OK. While a kids profile is in use, these ask for the PIN first.
     const options = (profile) => {
-        const again = () => { if (root) render(); };
+        const again = (changed) => {
+            if (changed === true) reload = true;
+            if (root) render();
+        };
         const list = [
             { label: I18n.t('profile.changeName'), run: () => KidsSetup.edit(profile, again) },
             { label: I18n.t('profile.changeAvatar'), run: () => AvatarPicker.open(profile, again) },
@@ -56,7 +62,7 @@ window.ProfileScreen = (() => {
 
     const choose = () => {
         const profile = slots()[focus];
-        if (profile) return KidsProfile.leave(profile.id, () => finish(ProfileStore.setActive(profile.id)));
+        if (profile) return KidsProfile.leave(profile.id, () => finish(ProfileStore.setActive(profile.id) || reload));
         KidsProfile.leave(null, () => KidsSetup.add(I18n.t('profile.addHint'), (added) => {
             if (added) finish(ProfileStore.setActive(added.id));
             else if (root) render();
@@ -71,6 +77,7 @@ window.ProfileScreen = (() => {
             close();
             onDone = done;
             onCancel = cancel;
+            reload = false;
             const active = ProfileStore.active().id;
             focus = Math.max(0, ProfileStore.list().map((profile) => profile.id).indexOf(active));
             root = document.createElement('section');
@@ -97,6 +104,7 @@ window.ProfileScreen = (() => {
                 if (profile) Keys.press(choose, () => options(profile));
                 else choose();
             } else if (Keys.isBack(code)) {
+                if (reload) return finish(true);
                 const cancel = onCancel;
                 close();
                 if (cancel) cancel();

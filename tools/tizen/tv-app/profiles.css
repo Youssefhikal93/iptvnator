@@ -15,6 +15,8 @@
 .pf-title { margin: 0 0 80px; font-size: 68px; font-weight: 700; }
 .pf-tiles { display: flex; gap: 56px; flex-wrap: wrap; justify-content: center; max-width: 1700px; }
 .pf-tile { position: relative; width: 240px; padding: 10px; text-align: center; color: var(--muted); }
+/* A held OK opens a profile's options over Who is watching. */
+body:has(> #profiles) #menu { z-index: 61; }
 #profiles .pf-tile.focused { background: transparent; box-shadow: none; color: var(--on-surface); }
 .pf-avatar {
     width: 220px;

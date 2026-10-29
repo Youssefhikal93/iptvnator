@@ -1,4 +1,4 @@
-const { test, expect, boot, resumeSeed, movie, show, channel, section, press, back, moveTo, setting } = require('./helpers');
+const { test, expect, boot, resumeSeed, movie, show, channel, section, press, back, moveTo, setting, holdOK } = require('./helpers');
 
 const P = 'iptvnator-tv:';
 
@@ -284,10 +284,44 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await page.reload();
     await expect(page.locator('#profiles')).toBeVisible();
     await expect(page.locator('#profiles .pf-tile.focused .pf-avatar.drawn .avatar-art')).toHaveCount(1);
-    // ▲ on Who's watching opens the same picker; Return keeps the avatar.
-    await press(page, 'ArrowUp');
+    // ▲ on Who's watching opens the same picker from a held OK; Return keeps the avatar.
+    await holdOK(page);
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
     await expect(page.locator('#avatar-picker')).toBeVisible();
     await back(page);
     await expect(page.locator('#avatar-picker')).toHaveCount(0);
     await expect(page.locator('#profiles')).toBeVisible();
+});
+
+test('holding OK on Who is watching offers to change the name or the avatar', async ({ page }) => {
+    await boot(page);
+    await addProfile(page, 'Anna');
+    await page.reload();
+    await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Anna');
+    await expect(page.locator('#profiles .pf-hint')).toHaveText('Hold OK to change the name or avatar');
+    // ▲ no longer opens the avatars.
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#avatar-picker')).toHaveCount(0);
+    await holdOK(page);
+    await expect(page.locator('#menu .menu-row')).toHaveText(['Change name', 'Change avatar']);
+    // The held OK did not also pick the first option.
+    await expect(page.locator('#profile-dialog')).toHaveCount(0);
+    await press(page, 'Enter');
+    await expect(page.locator('#profile-name')).toHaveValue('Anna');
+    await page.locator('#profile-name').fill('Annie');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Annie');
+    await holdOK(page);
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('#avatar-picker')).toBeVisible();
+    await press(page, 'ArrowRight');
+    await press(page, 'Enter');
+    await expect(page.locator('#avatar-picker')).toHaveCount(0);
+    expect((await profiles(page))[1]).toMatchObject({ name: 'Annie', avatar: 'fox' });
+    // The switcher is still open, and a short OK picks the profile.
+    await press(page, 'Enter');
+    await expect(page.locator('#profiles')).toHaveCount(0);
 });

@@ -116,7 +116,8 @@ window.Form = (function () {
             $('form-epg-prefer').value = code === KEY.LEFT ? 'no' : 'yes';
             return event.preventDefault();
         }
-        var step = { 38: -1, 40: 1 }[code] || (onButtons ? { 37: -1, 39: 1 }[code] : 0);
+        // The keyboard's Done goes on to the next field, as ▼ does.
+        var step = { 38: -1, 40: 1, 65376: 1 }[code] || (onButtons ? { 37: -1, 39: 1 }[code] : 0);
         if (step) {
             $(list[Math.max(0, Math.min(list.length - 1, index + step))]).focus();
             event.preventDefault();

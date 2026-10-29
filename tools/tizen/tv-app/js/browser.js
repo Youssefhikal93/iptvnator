@@ -92,6 +92,10 @@ window.Browser = function (hooks) {
         if (state.section === 'live') items.select(items.index());
         else if (state.section === 'home') home.render();
     });
+    var hideOn = !!Prefs.get('hideWatched');
+    ProfileStore.onSwitch(function () { hideOn = !!Prefs.get('hideWatched'); });
+    var watchedEmpty = false;
+    var hiddenSnapshot = null;
     var visible = { list: [], empty: '' };
     var currentList = CurrentList(function () {
         return { section: state.section, base: !!state.base, category: categories.item(), loading: homeLoading };
@@ -445,10 +449,17 @@ window.Browser = function (hooks) {
 
     // The catalogue's categories minus the hidden ones, after the virtual rows.
     function categoryRows(list) {
-        return libraryRows.build().concat(visibility.categories(state.section, list || state.base || []));
+        var rows = libraryRows.build().concat(visibility.categories(state.section, list || state.base || []));
+        if (!hideOn || !hideAvailable()) return rows;
+        var all = state.catalogue.peek({ section: state.section, kind: 'items' }) || [];
+        return hiddenList().counts(rows, visibility.items(state.section, all), function (row) {
+            var cached = state.catalogue.peek({ section: state.section, kind: 'items', id: row.category_id });
+            return cached && shownItems(row, cached);
+        });
     }
 
     function showCategories(index) {
+        hiddenSnapshot = null;
         categories.set(categoryRows(), index, I18n.t('browser.noCategories'));
     }
 
@@ -484,6 +495,7 @@ window.Browser = function (hooks) {
         showCategories(categories.index());
         var category = categories.item();
         if (category && category.virtual && !currentList.showingSearch()) showVirtual(category, items.index());
+        else if (hideOn && hideAvailable()) drawItems(items.index(), true);
         else if (items.items().length) items.select(items.index());
         renderChrome();
     }
@@ -606,6 +618,7 @@ window.Browser = function (hooks) {
     }
 
     function setItems(list, index, empty) {
+        hiddenSnapshot = null;
         visible = { list: list, empty: empty };
         genres.look();
         drawItems(index);
@@ -615,7 +628,10 @@ window.Browser = function (hooks) {
     function drawItems(index, keep) {
         var mode = sortMode();
         var view = genres.apply(visible.list, visible.empty);
-        var shown = mode ? Sort.order(view.list, state.section, mode) : view.list.slice();
+        var filtered = hideOn && hideAvailable() && !currentList.showingSearch() ? hiddenList().filter(view.list) : view.list;
+        watchedEmpty = view.list.length > 0 && filtered.length === 0;
+        if (watchedEmpty) view.empty = [I18n.t('empty.watched.title'), '', { label: I18n.t('browser.showWatched'), run: toggleWatched }];
+        var shown = mode ? Sort.order(filtered, state.section, mode) : filtered.slice();
         items.set(shown, keep ? Math.max(0, indexIn(shown, items.item(), index)) : index, view.empty);
     }
 
@@ -635,6 +651,7 @@ window.Browser = function (hooks) {
         var adapter = state.adapter;
         genres.offer(section, function () {
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
+                if (hideOn && adapter === state.adapter && state.section === section) showCategories(categories.index());
                 return adapter === state.adapter ? visibility.items(section, all) : null;
             });
         });
@@ -660,8 +677,25 @@ window.Browser = function (hooks) {
         Menu.open(I18n.t('find.genre'), options, Math.max(0, names.indexOf(chosen) + 1));
     }
 
+    function hideAvailable() {
+        return state.section === 'movies' || state.section === 'series';
+    }
+
+    function hiddenList() {
+        return hiddenSnapshot || (hiddenSnapshot = HideWatched(watched, state.section));
+    }
+
+    function toggleWatched() {
+        hideOn = !hideOn;
+        Prefs.set('hideWatched', hideOn);
+        showCategories(categories.index());
+        drawItems(items.index(), true);
+        renderChrome();
+    }
+
     function toolbarTools() {
         var tools = libraryRows.canSort(shownCategory()) ? TOOLS : TOOLS.slice(0, 3);
+        if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
         return guideAvailable() ? tools.concat(['guide']) : tools;
     }
@@ -696,7 +730,7 @@ window.Browser = function (hooks) {
     // any; otherwise back where the toolbar was entered from.
     function leaveToolbar() {
         var results = currentList.showingSearch() && items.items().length;
-        var back = (results || state.toolFrom === 'items') && items.items().length ? 'items' : 'categories';
+        var back = (results || state.toolFrom === 'items') && (items.items().length || watchedEmpty) ? 'items' : 'categories';
         setZone(back);
     }
 
@@ -766,6 +800,7 @@ window.Browser = function (hooks) {
         else if (Keys.isBack(code) || towardMenu(code)) setZone('rail');
         else if (code === KEY.DOWN) leaveToolbar();
         else if (code === KEY.ENTER && tool === 'search') startTyping();
+        else if (code === KEY.ENTER && tool === 'hide-watched') toggleWatched();
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER && tool === 'genre') openGenreMenu();
         else if (code === KEY.ENTER && tool === 'guide') openGuide();
@@ -809,7 +844,7 @@ window.Browser = function (hooks) {
         var id = item && (item.stream_id || item.series_id || item.category_id || item.id || item.url);
         for (var i = 0; id !== undefined && i < list.length; i++) {
             var other = list[i];
-            if ((other.stream_id || other.series_id || other.category_id || other.id || other.url) === id) return i;
+            if ((other.stream_id || other.series_id || other.category_id || other.id || other.url) === id && (other.sourceId || '') === (item.sourceId || '')) return i;
         }
         return fallback;
     }
@@ -859,8 +894,14 @@ window.Browser = function (hooks) {
         var input = $('search-input');
         input.placeholder = on ? I18n.t('browser.searchIn', { section: sectionOf(state.section).label }) : I18n.t('browser.search');
         if (!state.searching) input.value = currentList.showingSearch() ? state.search.query : '';
-        Array.prototype.forEach.call(document.querySelectorAll('.view-btn'), function (btn) {
+        Array.prototype.forEach.call(document.querySelectorAll('#view-toggle .view-btn'), function (btn) {
             var mode = btn.getAttribute('data-mode');
+            if (mode === 'hide-watched') {
+                btn.classList.toggle('hidden', !on || !hideAvailable());
+                btn.classList.toggle('chosen', hideOn);
+                btn.setAttribute('aria-pressed', String(hideOn));
+                btn.textContent = I18n.t('browser.hideWatched') + ': ' + I18n.t(hideOn ? 'common.on' : 'common.off');
+            }
             if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
             if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
             if (mode === 'genre') {
@@ -1536,7 +1577,7 @@ window.Browser = function (hooks) {
                 setZone('items');
             });
         }
-        if (items.items().length) setZone('items');
+        if (items.items().length || watchedEmpty) setZone('items');
     }
 
     // After hiding or showing categories: redraw the list. A category that
@@ -1697,6 +1738,7 @@ window.Browser = function (hooks) {
                 else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) genres.more();
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);
+            else if (code === KEY.ENTER && watchedEmpty) toggleWatched();
             else if (code === KEY.ENTER) {
                 // Holding OK opens the options menu; a short press opens on release.
                 Keys.press(activateItem, function () {

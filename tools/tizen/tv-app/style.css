@@ -243,7 +243,9 @@ body.bar-off #header {
 /* The genre filter (#31): the genre in use shows beside the funnel. */
 #genre-button { width: auto; min-width: 64px; gap: 8px; padding: 0 12px; box-sizing: border-box; font-size: 24px; white-space: nowrap; }
 #genre-button > span:empty { display: none; }
-#genre-button.chosen { color: var(--selection); }
+#genre-button.chosen, [data-mode="hide-watched"].chosen { color: var(--selection); }
+.view-btn[data-mode="hide-watched"], .list-empty .view-btn { width: auto; padding: 0 12px; font: inherit; font-size: 24px; white-space: nowrap; }
+.list-empty .view-btn { margin: 24px auto 0; background: var(--search-bg); }
 .view-btn {
     display: flex;
     align-items: center;

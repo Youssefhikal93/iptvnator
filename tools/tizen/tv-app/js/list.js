@@ -89,6 +89,13 @@ window.List = function (el, options) {
             var hint = document.createElement('small');
             hint.textContent = lines[1];
             empty.appendChild(hint);
+            if (lines[2]) {
+                var action = document.createElement('button');
+                action.className = 'view-btn' + (state.active ? ' focused' : '');
+                action.textContent = lines[2].label;
+                action.onclick = lines[2].run;
+                empty.appendChild(action);
+            }
             el.appendChild(empty);
             return;
         }

@@ -46,9 +46,9 @@ window.Progress = (function () {
         return duration > 0 && position > 0 && (position >= duration * 0.95 || duration - position < FINISHED_MARGIN_S);
     }
 
-    function of(id, sourceId) {
+    function of(id, sourceId, records) {
         if (id === undefined || id === null) return null;
-        var saved = read(sourceId)[String(id)];
+        var saved = (records || read(sourceId))[String(id)];
         if (!saved || !(saved.position > 0) || !(saved.duration > 0) || !isFinite(saved.position) || !isFinite(saved.duration)) return null;
         return {
             position: saved.position,
@@ -127,6 +127,16 @@ window.Progress = (function () {
         clear: function (id, sourceId) { mark([id], false, null, sourceId); },
         resumeFrom: resumeFrom,
         isWatched: isWatched,
+        // One read per source for a whole list, using the same validation as of().
+        watchedIds: function (sourceId) {
+            var records = read(sourceId);
+            var ids = Object.create(null);
+            Object.keys(records).forEach(function (id) {
+                var saved = of(id, sourceId, records);
+                if (saved && saved.status === 'watched') ids[id] = true;
+            });
+            return ids;
+        },
         unfinished: unfinished,
         allWatched: function (episodes, sourceId) {
             return !!episodes && episodes.length > 0 && episodes.every(function (episode) {

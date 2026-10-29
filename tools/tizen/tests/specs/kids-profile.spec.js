@@ -241,3 +241,21 @@ test('a kids profile with nothing allowed, made from Settings, never reaches Set
     await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
     await expect(page.locator('#rail .focused')).toHaveCount(1);
 });
+
+test('a kids profile sees the collections of its allowed films, not only their count', async ({ page }) => {
+    // Without a TMDB key the collections come from the names; Toy Story is in
+    // the ticked category 1, The Godfather in category 2.
+    const films = ['Toy Story', 'Toy Story 2', 'Toy Story 3', 'The Godfather', 'The Godfather Part II', 'Heat'];
+    await page.route('**/player_api.php*', async (route) => {
+        const action = new URL(route.request().url()).searchParams.get('action');
+        if (action !== 'get_vod_streams') return route.continue();
+        await route.fulfill({ json: films.map((name, i) => ({ name, stream_id: 2100 + i, category_id: i < 3 ? '1' : '2', container_extension: 'mkv', added: String(1700000000 + i) })) });
+    });
+    await boot(page);
+    await addKids(page);
+    await section(page, 'Movies');
+    await expect.poll(async () => (await page.locator('#categories .row .label').allTextContents()).includes('Collections')).toBe(true);
+    await moveTo(page, '#categories .focused .label', 'Collections', 'ArrowUp');
+    await expect(page.locator('#items .list-header')).toContainText('Collections');
+    await expect(page.locator('#items .card-title')).toHaveText(['Toy Story']);
+});

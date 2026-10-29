@@ -584,9 +584,12 @@ window.Browser = function (hooks) {
         applyView();
         // Library lists keep items of hidden categories; only the lock applies.
         // Collections are shown as they are: no genre, watched filter or sort.
-        setItems(category.list().filter(function (item) {
+        // Their tiles have no category; they come from films that already
+        // passed the profile's rules (collectionMovies).
+        var tiles = category.virtual === 'collections';
+        setItems(tiles ? category.list() : category.list().filter(function (item) {
             return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
-        }), index || 0, category.empty, category.virtual === 'collections');
+        }), index || 0, category.empty, tiles);
         renderChrome();
     }
 

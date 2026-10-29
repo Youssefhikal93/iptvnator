@@ -67,8 +67,9 @@ window.AudioRoute = (function () {
         // 'none' (no address had sound); an older 'file' note predates the
         // direct .m3u8 try, so that file is checked again.
         if (before === 'none' && !playable) return [{ name: 'file', url: url, silent: true }];
+        // What worked goes first; the other addresses stay, in case it stops working.
         var worked = others.filter(function (route) { return route.name === before; })[0];
-        if (worked) return [worked, { name: 'file', url: url, silent: true }];
+        if (worked) return [worked].concat(others.filter(function (route) { return route !== worked; }), [{ name: 'file', url: url, silent: true }]);
         if (silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);
         // A file whose header named a playable track is not second-guessed.
         file.retry = !Array.isArray(request.fileAudio) || !request.fileAudio.length;

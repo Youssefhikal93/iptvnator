@@ -1,5 +1,6 @@
-// What the current profile may see: hidden categories and the parental lock
-// in one place, so a list is never shown with only one of the two applied.
+// What the current profile may see: a kids profile's allowed categories (#62),
+// hidden categories and the parental lock in one place, so a list is never
+// shown with only some of them applied. withHidden never lifts the kids rule.
 //
 // Visibility(current) -> { items, allows, categories }
 //   current() -> the id of the source on screen
@@ -23,14 +24,15 @@ window.Visibility = function (current) {
     return {
         items: function (section, list, options) {
             var id = current();
-            return ParentalLock.filterItems(id, section, withHidden(options) ? list : HiddenCategories.filterItems(id, section, list));
+            var allowed = KidsProfile.filterItems(id, section, list);
+            return ParentalLock.filterItems(id, section, withHidden(options) ? allowed : HiddenCategories.filterItems(id, section, allowed));
         },
         allows: function (section, item, options) {
             var id = sourceOf(options);
-            return (withHidden(options) || HiddenCategories.allows(id, section, item)) && ParentalLock.allows(id, section, item);
+            return KidsProfile.allows(id, section, item) && (withHidden(options) || HiddenCategories.allows(id, section, item)) && ParentalLock.allows(id, section, item);
         },
         categories: function (section, list) {
-            return HiddenCategories.visible(current(), section, list);
+            return KidsProfile.categories(current(), section, HiddenCategories.visible(current(), section, list));
         },
     };
 };

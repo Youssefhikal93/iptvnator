@@ -73,6 +73,10 @@ _Avoid_: History (for all of it)
 One viewer of the TV (up to six) with their own library, watched marks, app settings, hidden and locked categories and PIN; sources, catalogues, the TMDB key and the OpenSubtitles key are shared. "Who's watching?" picks one on start when there are two or more.
 _Avoid_: User, account, family member
 
+**Kids profile**:
+A profile that sees only the categories a grown-up ticked for it, per source; categories added later stay hidden until ticked. It has no Settings, and leaving it or changing what it may watch asks for its guardian's PIN (the grown-up profile that made it).
+_Avoid_: Child lock, restricted mode (the parental lock is a different thing)
+
 **Favorite**:
 An item the viewer marked to find again quickly. Episodes are favorited through their show.
 

@@ -53,6 +53,7 @@ window.HiddenCategories = (function () {
     return {
         ids: ids,
         isReal: isReal,
+        categoryOf: categoryOf,
         isHidden: isHidden,
         count: function (sourceId, section) {
             return ids(sourceId, section).length;

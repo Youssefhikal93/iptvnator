@@ -20,12 +20,15 @@ test('a typed name survives ▼ and ▲ out of the field and is saved', async ({
     await keyboardDropsOnBlur(page);
     await page.keyboard.type('Anna');
     await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
     await expect(page.locator('#profile-dialog-ok')).toBeFocused();
     await expect(page.locator('#profile-name')).toHaveValue('Anna');
-    // Back into the field and out again keeps it too.
+    // Back into the field (past the Kids switch, #62) and out again keeps it too.
+    await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
     await expect(page.locator('#profile-name')).toBeFocused();
     await page.keyboard.type('belle');
+    await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await expect(page.locator('#profile-name')).toHaveValue('Annabelle');
     await press(page, 'Enter');

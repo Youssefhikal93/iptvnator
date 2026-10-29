@@ -146,6 +146,7 @@ window.Browser = function (hooks) {
         toast: toast,
     });
     var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged, chrome: renderChrome, sources: sourceHooks() });
+    KidsProfile.setCatalogue(kidsCatalogue());
     var watched = Watched({
         knownShow: function (show) {
             if (otherSource(show)) return null;
@@ -542,13 +543,14 @@ window.Browser = function (hooks) {
                 },
             });
         }
-        options.push({
+        var favorite = {
             label: I18n.t(isFavorite(item, section) ? 'menu.removeFavorite' : 'menu.addFavorite'),
             glyph: isFavorite(item, section) ? '☆' : '★',
             run: function () {
                 toggleFavorite(item, section);
             },
-        });
+        };
+        options.push(favorite);
         var progressId = Progress.id(section, item);
         var progress = section === 'live' ? null : Progress.of(progressId, item.sourceId);
         if (progress && progress.status === 'continue') {
@@ -577,6 +579,8 @@ window.Browser = function (hooks) {
             image: item.stream_icon || item.cover || item.logo || '',
             sub: [I18n.t(section === 'live' ? 'rail.live' : section === 'movies' ? 'rail.movies' : 'rail.series'), item.year].filter(Boolean).join('  ·  '),
         };
+        // A kids profile (#62) keeps Favorite and Mark watched only.
+        if (KidsProfile.on()) options = [favorite];
         if (otherSource(item)) Menu.open(itemLabel(item), options, 0, header);
         else watched.openItemMenu(item, section, options, itemLabel(item), header);
     }
@@ -827,9 +831,11 @@ window.Browser = function (hooks) {
         })[0];
     }
 
+    // A kids profile (#62) has no Settings and only sections with ticked categories.
     function available(id) {
         if (id === 'home') return !!state.adapter;
-        return id === 'settings' || (state.adapter && state.adapter.sections.indexOf(id) !== -1);
+        if (id === 'settings') return !KidsProfile.on();
+        return !!state.adapter && state.adapter.sections.indexOf(id) !== -1 && KidsProfile.any(sourceId(), id);
     }
 
     function loadCatalogue(what, onFresh) {
@@ -856,6 +862,7 @@ window.Browser = function (hooks) {
         $('rail').innerHTML = '';
         var at = railAt();
         SECTIONS.forEach(function (section) {
+            if (section.id === 'settings' && KidsProfile.on()) return;
             var el = document.createElement('div');
             el.className =
                 'rail-item' +
@@ -1592,10 +1599,51 @@ window.Browser = function (hooks) {
     // Another profile is active: stop playback and reload the Home of the
     // current source from that profile's library.
     function profileChanged() {
-        var source = Sources.current();
+        var source = KidsProfile.source(Sources.current());
         if (source) return watch(source);
         setSource(null);
+        if (KidsProfile.on()) return kidsWithoutSource();
         openSources(addRow);
+    }
+
+    // What "What can <name> watch?" ticks (#62): the open source's lists as
+    // browsing loads them, other sources only from what the app already saved.
+    function kidsCatalogue() {
+        function open(source) {
+            return !!state.adapter && !!state.source && state.source.id === source.id;
+        }
+        function saved(source, key) {
+            return Catalogue.get(source.id, key).then(function (list) { return Array.isArray(list) ? list : null; });
+        }
+        return {
+            sections: function (source) {
+                return open(source) ? state.adapter.sections.slice() : KidsProfile.sections.slice();
+            },
+            categories: function (source, section) {
+                var list = open(source) ? state.catalogue.load({ section: section, kind: 'categories' }, { screen: false }) : saved(source, section + ':categories');
+                return list.then(function (rows) { return (rows || []).filter(HiddenCategories.isReal); }, function () { return []; });
+            },
+            // Items per category, only when the whole list is already saved.
+            counts: function (source, section) {
+                var cached = open(source) && state.catalogue.peek({ section: section, kind: 'items' });
+                return (cached ? Promise.resolve(cached) : saved(source, section + ':items:')).then(function (items) {
+                    if (!items) return null;
+                    var counts = {};
+                    items.forEach(function (item) {
+                        var id = HiddenCategories.categoryOf(item);
+                        counts[id] = (counts[id] || 0) + 1;
+                    });
+                    return counts;
+                });
+            },
+        };
+    }
+
+    // A kids profile with nothing ticked anywhere: the menu and a note, no Settings.
+    function kidsWithoutSource() {
+        setZone('rail');
+        renderChrome();
+        toast(I18n.t('kids.nothing'));
     }
 
     // ---- Hidden categories ----
@@ -1613,6 +1661,7 @@ window.Browser = function (hooks) {
 
     // Hold OK on a category: hide it, hide the rest, or manage them all.
     function openCategoryMenu(row) {
+        if (KidsProfile.on()) return;
         var options = manage.menu(state.section, row, state.base);
         if (HiddenCategories.isReal(row)) options.splice(options.length - 1, 0, ParentalMenu.category(sourceId(), state.section, row));
         Menu.open(row.category_name, options);
@@ -1805,12 +1854,13 @@ window.Browser = function (hooks) {
 
     function start() {
         return LoadScreen.run('saved', function () {
-            return Sources.current();
+            return KidsProfile.source(Sources.current());
         }, function () { return true; }).then(startSource);
     }
 
     function startSource(source) {
         setSource(source);
+        if (!source && KidsProfile.on()) return kidsWithoutSource();
         // With no source yet, Settings opens on Add source (#51).
         if (!source) return openSources(addRow);
         openSection('home');

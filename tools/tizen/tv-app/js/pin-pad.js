@@ -23,6 +23,7 @@ window.PinPad = (function () {
     function title() {
         if (state.stage === 'new') return I18n.t('pin.enterNew');
         if (state.stage === 'confirm') return I18n.t('pin.confirm');
+        if (state.mode === 'guardian') return I18n.t('kids.pinOf', { name: state.guardian.name });
         return I18n.t(state.mode === 'unlock' ? 'pin.enter' : 'pin.enterCurrent');
     }
 
@@ -93,7 +94,8 @@ window.PinPad = (function () {
     }
 
     function submitCurrent() {
-        var accepted = state.mode === 'unlock' ? ParentalLock.unlock(state.digits) : ParentalLock.verify(state.digits);
+        var accepted = state.mode === 'unlock' ? ParentalLock.unlock(state.digits)
+            : ParentalLock.verify(state.digits, state.mode === 'guardian' ? state.guardian.profileId : undefined);
         if (!accepted) state.message = I18n.t('pin.wrong');
         else if (state.mode === 'change') state.stage = 'new';
         else if (state.mode === 'remove') removePin();
@@ -135,8 +137,9 @@ window.PinPad = (function () {
     }
 
     return {
-        open: function (mode, done) {
-            state = { mode: mode, stage: mode === 'set' ? 'new' : 'current', digits: '', first: '', focus: 0, message: '', done: done };
+        // 'guardian' checks another profile's PIN: guardian { profileId, name } (#62).
+        open: function (mode, done, guardian) {
+            state = { mode: mode, stage: mode === 'set' ? 'new' : 'current', digits: '', first: '', focus: 0, message: '', done: done, guardian: guardian };
             root.classList.remove('hidden');
             clearInterval(refreshTimer);
             refreshTimer = setInterval(render, 1000);

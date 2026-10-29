@@ -214,6 +214,23 @@ window.ProfileStore = (function () {
         hasPin: function (id) {
             return !!parse(get(keyFor(id, 'pin')));
         },
+        // Another profile's key, for the kids allow lists and its guardian's PIN.
+        keyOf: keyFor,
+        // A kids profile (#62) names the profile whose PIN guards it; null makes
+        // it a normal profile again.
+        setKids: function (id, guardian) {
+            var profile = find(id);
+            if (!profile) return false;
+            if (guardian) {
+                profile.kids = true;
+                profile.guardian = String(guardian);
+            } else {
+                delete profile.kids;
+                delete profile.guardian;
+            }
+            saveList();
+            return true;
+        },
         nameError: nameError,
         onSwitch: function (listener) { listeners.push(listener); },
         // Exposed for the unit tests: runs the start-up step again.

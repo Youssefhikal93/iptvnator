@@ -27,10 +27,15 @@ window.Kit = (() => {
     const Pill = ({ cls, label, active, selected, focused }) =>
         html`<span class=${classes(cls, { active, selected, focus: focused })}>${label}</span>`;
 
-    // A profile's drawn avatar (avatars.js), or its initial, on its colour.
-    const Avatar = ({ cls, profile }) => (Avatars.has(profile.avatar)
-        ? html`<div class=${cls + ' drawn'} style=${{ background: profile.color }}>${Avatars.art(profile.avatar)}</div>`
-        : html`<div class=${cls} style=${{ background: profile.color }}>${profile.name.charAt(0).toUpperCase()}</div>`);
+    // A profile's drawn avatar (avatars.js), or its initial, on its colour. A
+    // kids profile (#62) wears a KIDS badge on the avatar's bottom edge.
+    const Avatar = ({ cls, profile }) => {
+        const face = Avatars.has(profile.avatar) ? Avatars.art(profile.avatar) : profile.name.charAt(0).toUpperCase();
+        const drawn = Avatars.has(profile.avatar) ? ' drawn' : '';
+        return profile.kids
+            ? html`<div class=${cls + drawn + ' kids'} style=${{ background: profile.color }}>${face}<span class="kids-badge">${I18n.t('kids.badge')}</span></div>`
+            : html`<div class=${cls + drawn} style=${{ background: profile.color }}>${face}</div>`;
+    };
 
     // Full-screen artwork with the shade that keeps text readable on it.
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;

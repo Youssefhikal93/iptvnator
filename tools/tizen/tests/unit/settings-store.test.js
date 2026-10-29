@@ -21,12 +21,14 @@ test('legacy startup choices are read without migration and explicit onStart rem
     });
 });
 
-test('settings object wins conflicting view keys and older bare choices remain readable', function () {
+test('settings object wins conflicting view keys and older bare choices remain readable', async function () {
     var stored = {};
     stored[VIEW] = 'list';
     var app = load(['settings-store.js', 'library.js'], stored);
     assert.equal(app.globals.Library.view('movies'), 'list');
     app.stored[SETTINGS] = JSON.stringify({ 'view:movies': 'grid' });
+    // A write from outside the app is read from the next run of its code.
+    await null;
     assert.equal(app.globals.Prefs.get('view:movies'), 'grid');
     assert.equal(app.globals.Library.view('movies'), 'grid');
     var changes = [];

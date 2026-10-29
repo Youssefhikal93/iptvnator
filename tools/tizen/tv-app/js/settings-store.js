@@ -37,7 +37,7 @@ window.Prefs = (function () {
 
     function read(key, fallback) {
         try {
-            return JSON.parse(localStorage.getItem(key)) || fallback;
+            return Stored.json(key) || fallback;
         } catch (e) {
             return fallback;
         }
@@ -45,7 +45,7 @@ window.Prefs = (function () {
 
     function write(key, value) {
         try {
-            localStorage.setItem(key, JSON.stringify(value));
+            Stored.save(key, value);
         } catch (e) {
             // Storage full or unavailable.
         }
@@ -64,7 +64,7 @@ window.Prefs = (function () {
         if (name.indexOf('view:') === 0) {
             var saved;
             try {
-                saved = localStorage.getItem(ProfileStore.key(name));
+                saved = Stored.text(ProfileStore.key(name));
             } catch (e) {
                 // Use the default when storage is unavailable.
             }
@@ -83,7 +83,7 @@ window.Prefs = (function () {
         write(store(name), settings);
         if (name.indexOf('view:') === 0) {
             try {
-                localStorage.setItem(ProfileStore.key(name), value);
+                Stored.put(ProfileStore.key(name), value);
             } catch (e) {
                 // The settings object still holds the choice.
             }

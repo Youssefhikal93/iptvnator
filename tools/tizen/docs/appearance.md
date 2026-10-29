@@ -47,6 +47,10 @@ row): every choice is visible, LEFT/RIGHT move between them and stop at the
 ends, OK cycles. `js/rail-profile.js` draws the active profile above the rail;
 UP from the first section focuses it and OK opens the switch menu.
 
+Moving along the rail moves only its focus: the section opens once the focus
+rests on it for 200 ms, or at once with RIGHT/OK, so passing Live TV and
+Movies on the way to Settings loads neither (#53).
+
 New appearance translations live in `tests/i18n/appearance-translations.json`
 as well as the shipped tables. The table builder retains them when desktop
 translations are regenerated. Existing browser specs seed Compact in

@@ -12,14 +12,14 @@ window.XmltvGuide = (function () {
 
     function status(id) {
         try {
-            var saved = JSON.parse(localStorage.getItem(PREFIX + id));
+            var saved = JSON.parse(Stored.text(PREFIX + id));
             return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
         }
         catch (e) { return {}; }
     }
 
     function notify(id, value) {
-        try { localStorage.setItem(PREFIX + id, JSON.stringify(value)); }
+        try { Stored.save(PREFIX + id, value); }
         catch (e) { Log.error('Guide status could not be saved'); }
         listeners.forEach(function (listener) { listener(id); });
     }
@@ -166,7 +166,7 @@ window.XmltvGuide = (function () {
         return (job ? job.promise : Promise.resolve()).then(function () {
             return XmltvStore.remove(id);
         }).then(function () {
-            localStorage.removeItem(PREFIX + id);
+            Stored.remove(PREFIX + id);
             revisions[id] = (revisions[id] || 0) + 1;
             listeners.forEach(function (listener) { listener(id); });
         }).catch(function () { Log.error('Guide could not be removed'); });

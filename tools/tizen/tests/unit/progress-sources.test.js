@@ -143,14 +143,17 @@ test('#34 All sources snapshots, Continue watching and watched actions use the i
     assert.equal(g.Library.continueWatching('s2', 'movies').length, 0);
 });
 
-test('#34 new episode badges use progress from the requested source', function () {
+test('#34 new episode badges use progress from the requested source', async function () {
     var env = load(FILES, seed());
     var g = env.globals;
     var show = { name: 'Show', series_id: 7, last_modified: 200 };
     g.Library.addRecent('s2', 'series', show, show, { id: 42 });
     env.stored[P + 'progress:s1'] = JSON.stringify({ 'episode:42': { position: 120, duration: 1000, updatedAt: 300000 } });
     env.stored[P + 'progress:s2'] = JSON.stringify({ 'episode:42': { position: 120, duration: 1000, updatedAt: 100000 } });
+    // A write from outside the app is read from the next run of its code.
+    await null;
     assert.equal(g.NewEpisodes.isNew('s2', show), true);
     env.stored[P + 'progress:s2'] = env.stored[P + 'progress:s1'];
+    await null;
     assert.equal(g.NewEpisodes.isNew('s2', show), false);
 });

@@ -18,6 +18,12 @@ const json = (res, body) => {
     res.end(JSON.stringify(body));
 };
 const range = (n, f) => Array.from({ length: n }, (_, i) => f(i + 1));
+// FAKE_CATALOGUE=<movies> serves a provider-sized catalogue for speed checks
+// (#53): that many movies, a quarter as many shows and channels across 30
+// categories. Unset, the lists stay the small ones the specs expect.
+const many = Number(process.env.FAKE_CATALOGUE) || 0;
+const sized = (small, share) => (many ? Math.round(many * share) : small);
+const spread = (i, small) => String(1 + (i % (many ? 30 : small)));
 // A day of programmes (6 h back, 18 h ahead) on whole hours, 30/60/90 min long; times in s.
 const schedule = (seed, name) => {
     const list = [];
@@ -52,9 +58,9 @@ http.createServer((req, res) => {
         const cat = url.searchParams.get('category_id');
         if (!action) return json(res, { user_info: { auth: 1, status: 'Active', exp_date: String(Math.floor(Date.now() / 1000) + 365 * 86400), active_cons: '0', max_connections: '1' } });
         if (action.endsWith('_categories')) return json(res, range(30, (i) => ({ category_id: String(i), category_name: action + ' cat ' + i })));
-        if (action === 'get_live_streams') return json(res, range(cat ? 40 : 500, (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, epg_channel_id: 'ch' + (1000 + i) + '.se', category_id: cat || String(1 + (i % 30)) })));
-        if (action === 'get_vod_streams') return json(res, range(25, (i) => ({ name: 'Movie ' + i, stream_id: 2000 + i, category_id: cat || String(1 + (i % 3)), container_extension: 'mkv', stream_icon: i % 3 ? origin + '/img/poster.jpg' : '', added: i === 5 ? '' : String(1700000000 + i * 3600), rating_5based: String(((i * 7) % 10) / 2) })));
-        if (action === 'get_series') return json(res, range(15, (i) => ({ name: 'Show ' + i, series_id: 3000 + i, genre: ['Drama', 'دراما, Crime', 'Comedy'][i % 3], category_id: cat || String(1 + (i % 3)), cover: origin + '/img/poster.jpg', last_modified: String(1700000000 + (i % 5) * 7200) })));
+        if (action === 'get_live_streams') return json(res, range(cat ? 40 : sized(500, 0.25), (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, epg_channel_id: 'ch' + (1000 + i) + '.se', category_id: cat || String(1 + (i % 30)) })));
+        if (action === 'get_vod_streams') return json(res, range(sized(25, 1), (i) => ({ name: 'Movie ' + i, stream_id: 2000 + i, category_id: cat || spread(i, 3), container_extension: 'mkv', stream_icon: i % 3 ? origin + '/img/poster.jpg' : '', added: i === 5 ? '' : String(1700000000 + i * 3600), rating_5based: String(((i * 7) % 10) / 2) })));
+        if (action === 'get_series') return json(res, range(sized(15, 0.25), (i) => ({ name: 'Show ' + i, series_id: 3000 + i, genre: ['Drama', 'دراما, Crime', 'Comedy'][i % 3], category_id: cat || spread(i, 3), cover: origin + '/img/poster.jpg', last_modified: String(1700000000 + (i % 5) * 7200) })));
         if (action === 'get_series_info') {
             const ep = (id, i, title) => ({ id, episode_num: i, title, container_extension: 'mp4', info: { movie_image: i % 2 ? origin + '/img/backdrop.jpg' : '', plot: 'The team follows a new lead. '.repeat(i), duration_secs: 2580 + i * 60 } });
             return json(res, {

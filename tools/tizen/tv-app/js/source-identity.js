@@ -21,7 +21,7 @@ window.SourceIdentity = (function () {
 
     function read() {
         try {
-            var accounts = JSON.parse(localStorage.getItem(KEY));
+            var accounts = JSON.parse(Stored.text(KEY));
             return accounts && typeof accounts === 'object' && !Array.isArray(accounts) ? accounts : {};
         } catch (e) {
             Log.error('Source accounts could not be read');
@@ -55,7 +55,7 @@ window.SourceIdentity = (function () {
         }
         accounts[key] = id;
         try {
-            localStorage.setItem(KEY, JSON.stringify(accounts));
+            Stored.save(KEY, accounts);
         } catch (e) {
             Log.error('Source accounts could not be saved');
         }

@@ -6,7 +6,7 @@ window.HiddenCategories = (function () {
 
     function read(sourceId) {
         try {
-            var saved = JSON.parse(localStorage.getItem(ProfileStore.key('hidden-categories:' + sourceId)));
+            var saved = Stored.json(ProfileStore.key('hidden-categories:' + sourceId));
             return saved && typeof saved === 'object' ? saved : {};
         } catch (e) {
             return {};
@@ -23,7 +23,7 @@ window.HiddenCategories = (function () {
         if (list.length) all[section] = list;
         else delete all[section];
         try {
-            localStorage.setItem(ProfileStore.key('hidden-categories:' + sourceId), JSON.stringify(all));
+            Stored.save(ProfileStore.key('hidden-categories:' + sourceId), all);
         } catch (e) {
             // Kept for this session only.
         }

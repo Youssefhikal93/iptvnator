@@ -31,7 +31,7 @@ window.SourceAccount = (function () {
 
     function load() {
         try {
-            var saved = JSON.parse(localStorage.getItem(SAVED));
+            var saved = JSON.parse(Stored.text(SAVED));
             return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
         } catch (e) {
             return {};
@@ -50,7 +50,7 @@ window.SourceAccount = (function () {
             kept[id] = { state: known.state, info: info, at: known.at };
         });
         try {
-            localStorage.setItem(SAVED, JSON.stringify(kept));
+            Stored.save(SAVED, kept);
         } catch (e) {
             // Storage full: the checks still hold until the app closes.
         }

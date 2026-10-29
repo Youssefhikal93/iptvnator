@@ -7,7 +7,7 @@ window.SubtitleStore = (function () {
 
     function read(key) {
         try {
-            var saved = JSON.parse(localStorage.getItem(key));
+            var saved = JSON.parse(Stored.text(key));
             if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return {};
             Object.keys(saved).forEach(function (id) {
                 if (!saved[id] || typeof saved[id] !== 'object' || Array.isArray(saved[id])) delete saved[id];
@@ -18,7 +18,7 @@ window.SubtitleStore = (function () {
 
     function write(key, saved) {
         try {
-            localStorage.setItem(key, JSON.stringify(saved));
+            Stored.save(key, saved);
             return true;
         } catch (e) {
             // A full store must not interrupt playback or erase the previous cache.

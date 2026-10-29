@@ -11,7 +11,7 @@ window.Library = (function () {
 
     function read(key, fallback) {
         try {
-            return JSON.parse(localStorage.getItem(ProfileStore.key(key))) || fallback;
+            return Stored.json(ProfileStore.key(key)) || fallback;
         } catch (e) {
             return fallback;
         }
@@ -19,7 +19,7 @@ window.Library = (function () {
 
     function write(key, value) {
         try {
-            localStorage.setItem(ProfileStore.key(key), JSON.stringify(value));
+            Stored.save(ProfileStore.key(key), value);
         } catch (e) {
             // Kept for this session only.
         }

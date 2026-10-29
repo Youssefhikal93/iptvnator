@@ -891,7 +891,9 @@ window.Player = (function () {
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
                 // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
-                return MovieHash.prepare(current, address.url || address).then(function () { return address; });
+                return MovieHash.prepare(current, address.url || address).then(function () {
+                    return MediaSniff.prepare(current, address.url || address);
+                }).then(function () { return address; });
             }).then(function (address) {
                 if (!address || chain.stale(mine) || address.error) return;
                 try {
@@ -933,7 +935,8 @@ window.Player = (function () {
                 // tells a late track from a missing one.
                 var shown = current;
                 setTimeout(function () {
-                    if (current === shown && usingAv) AvResolve.tracks(av, null, 'after 5s');
+                    // No sound track: the next start reads which sound the file holds.
+                    if (current === shown && usingAv && !AvResolve.tracks(av, null, 'after 5s')) MediaSniff.flag(shown);
                 }, 5000);
             },
             function (err) {

@@ -13,7 +13,7 @@ window.DetailRows = () => {
 
     return {
         view: (rows, focused) => UI.html`<div class="dt-rows">${rows.map((entry, i) =>
-            UI.html`<${Kit.Row} key=${entry.label} kind=${entry.kind} label=${entry.label} tiles=${entry.cards} focus=${focused && i === row ? focus : -1} />`)}</div>`,
+            UI.html`<${Kit.Row} key=${entry.label} kind=${entry.kind} label=${entry.label} aside=${entry.aside} tiles=${entry.cards} focus=${focused && i === row ? focus : -1} />`)}</div>`,
         // 'up' or 'down' when the focus leaves the rows.
         key: (rows, code) => {
             row = Math.min(row, rows.length - 1);

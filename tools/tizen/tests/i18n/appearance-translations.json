@@ -45,7 +45,19 @@
         "kids.needGuardian": "يحتاج ملف الأطفال إلى ملف آخر لديه رمز PIN",
         "kids.noSource": "أضف مصدراً أولاً",
         "kids.profiles": "ملفات الأطفال",
-        "kids.nothing": "لا يوجد ما يُشاهد بعد. اطلب من شخص بالغ اختيار الفئات."
+        "kids.nothing": "لا يوجد ما يُشاهد بعد. اطلب من شخص بالغ اختيار الفئات.",
+        "collections.title": "المجموعات",
+        "collections.count": "{n} أفلام · {m} متاحة",
+        "collections.films": "{n} أفلام",
+        "collections.ofName": "مجموعة {name}",
+        "collections.thisFilm": "هذا الفيلم",
+        "collections.notAvailable": "غير متاح",
+        "collections.notAvailableHint": "هذا الفيلم غير متوفر لدى مزوّدك",
+        "collections.progress": "جارٍ البحث عن المجموعات… تم فحص {done} من {total} فيلم",
+        "collections.finding": "لا توجد مجموعات بعد",
+        "collections.findingHint": "تظهر هنا أثناء فحص أفلامك",
+        "collections.empty": "لا توجد أفلام في هذه المجموعة",
+        "collections.searchHint": "البحث يجد المجموعات بالاسم"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

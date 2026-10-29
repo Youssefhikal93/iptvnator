@@ -46,8 +46,14 @@ window.TmdbStore = (function () {
                 return record;
             });
         },
-        put: function (key, body, failed) {
-            var record = { body: body, failed: !!failed, expires: Date.now() + (failed ? 3600000 : 7 * 86400000) };
+        put: function (key, body, failed, status) {
+            var record = { body: body, failed: !!failed, status: status || 0, expires: Date.now() + (failed ? 3600000 : 7 * 86400000) };
+            memory[key] = record;
+            return run('readwrite', key, record);
+        },
+        // Kept until replaced: the collection index (#58) is the app's own work.
+        keep: function (key, body) {
+            var record = { body: body, failed: false, expires: Infinity };
             memory[key] = record;
             return run('readwrite', key, record);
         },

@@ -112,6 +112,13 @@ window.Browser = function (hooks) {
         continued: function () { return Library.continueWatching(sourceId(), state.section); },
         added: function () { return addedOf(state.section); },
     });
+    // The films' collections (#58): a category under Movies and a detail row.
+    var collections = Collections({
+        sourceId: function () { return state.source ? sourceId() : null; },
+        movies: collectionMovies,
+        all: function () { return collectionMovies() && state.movieShelf.all; },
+        changed: collectionsChanged,
+    });
     var genres = GenreFilter({
         section: function () { return state.section; },
         ready: hasTools,
@@ -204,6 +211,7 @@ window.Browser = function (hooks) {
     var items = List($('items'), {
         rows: 9,
         title: function () {
+            if (state.collection) return state.collection.found.label;
             if (currentList.showingSearch()) return I18n.t('browser.searchTitle', { query: state.search.query });
             var category = categories.item();
             return category ? I18n.categoryName(category) : '';
@@ -211,6 +219,8 @@ window.Browser = function (hooks) {
         subtitle: sortSubtitle,
         decorate: decorate,
         label: itemLabel,
+        // A collection's count, or the year of a film the provider lacks.
+        sub: function (it) { return it.sub || (it.missing && it.year) || ''; },
         plate: function () {
             return state.section === 'live';
         },
@@ -322,7 +332,8 @@ window.Browser = function (hooks) {
 
     // Star for favorites and a thin progress bar for unfinished movies and episodes.
     function decorate(el, item) {
-        if (!state.source) return;
+        if (!state.source || item.collection) return;
+        if (item.missing) return CollectionView.decorate(el, item);
         if (otherSource(item)) {
             var chip = document.createElement('span');
             chip.className = 'source-chip';
@@ -448,9 +459,12 @@ window.Browser = function (hooks) {
         }, 300);
     }
 
-    // The catalogue's categories minus the hidden ones, after the virtual rows.
+    // The catalogue's categories minus the hidden ones, after the virtual rows;
+    // Collections comes after Recently added.
     function categoryRows(list) {
         var rows = libraryRows.build().concat(visibility.categories(state.section, list || state.base || []));
+        var shelf = state.section === 'movies' && collections.row();
+        if (shelf) rows.splice(rows[1] && rows[1].virtual === 'added' ? 2 : 1, 0, shelf);
         if (!hideOn || !hideAvailable()) return rows;
         var all = state.catalogue.peek({ section: state.section, kind: 'items' }) || [];
         return hiddenList().counts(rows, visibility.items(state.section, all), function (row) {
@@ -459,9 +473,68 @@ window.Browser = function (hooks) {
         });
     }
 
-    function showCategories(index) {
+    // keep: the focus stays on its row while rows come or go (Collections).
+    function showCategories(index, keep) {
         hiddenSnapshot = null;
-        categories.set(categoryRows(), index, I18n.t('browser.noCategories'));
+        state.movieShelf = null;
+        var focused = keep && categories.item();
+        var rows = categoryRows();
+        if (focused) {
+            var same = rows.map(function (row) { return String(row.category_id); }).indexOf(String(focused.category_id));
+            if (same >= 0) index = same;
+        }
+        categories.set(rows, index, I18n.t('browser.noCategories'));
+    }
+
+    // The source's films as the collections see them: without hidden or
+    // locked categories, worked out once per category list.
+    function collectionMovies() {
+        if (!state.catalogue || !state.adapter || state.adapter.sections.indexOf('movies') === -1) return null;
+        var all = state.catalogue.peek({ section: 'movies', kind: 'items' });
+        if (!all) return null;
+        if (!state.movieShelf || state.movieShelf.all !== all) state.movieShelf = { all: all, list: visibility.items('movies', all) };
+        return state.movieShelf.list;
+    }
+
+    // The look-up found something: the Collections row and its list follow,
+    // at most every two seconds (it only runs while the remote rests).
+    function collectionsChanged() {
+        if (state.collectionsTimer) return;
+        state.collectionsTimer = setTimeout(function () {
+            state.collectionsTimer = null;
+            if (state.section !== 'movies' || !state.base || state.searching) return;
+            showCategories(categories.index(), true);
+            var row = shownCategory();
+            if (row && row.virtual === 'collections' && !state.collection) showVirtual(row, items.index());
+        }, 2000);
+    }
+
+    // OK on a collection lists its films; Return goes back to the collections.
+    function openCollection(entry) {
+        var back = { list: visible.list, empty: visible.empty, raw: visible.raw, index: items.index() };
+        setItems(collections.parts(entry.collection), 0, I18n.t('collections.empty'), true);
+        state.collection = { found: entry.collection, back: back };
+        // Drawn again so the header names the collection.
+        items.select(0);
+        renderChrome();
+    }
+
+    function closeCollection() {
+        var back = state.collection.back;
+        setItems(back.list, back.index, back.empty, back.raw);
+        renderChrome();
+    }
+
+    // A film's collection row on its detail page.
+    function filmCollection(movie, provider) {
+        if (otherSource(movie)) return Promise.resolve(null);
+        var lookup = Object.assign({}, movie, { year: provider.year || movie.year, tmdb_id: provider.tmdb_id || movie.tmdb_id || movie.tmdb });
+        return (Tmdb.enabled() ? Tmdb.match(lookup, 'movie') : Promise.resolve(null)).then(function (body) {
+            if (Tmdb.enabled() && !body) return null;
+            return collections.forFilm(movie, body, tmdbCatalogue);
+        }).then(function (found) {
+            return found && CollectionView.row(found, function (item) { openEntry(item, 'movies'); });
+        }).catch(function () { return null; });
     }
 
     // Recently added, without items of hidden categories.
@@ -473,9 +546,10 @@ window.Browser = function (hooks) {
         currentList.begin();
         applyView();
         // Library lists keep items of hidden categories; only the lock applies.
+        // Collections are shown as they are: no genre, watched filter or sort.
         setItems(category.list().filter(function (item) {
             return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
-        }), index || 0, category.empty);
+        }), index || 0, category.empty, category.virtual === 'collections');
         renderChrome();
     }
 
@@ -615,6 +689,9 @@ window.Browser = function (hooks) {
     }
 
     function sortSubtitle() {
+        if (state.collection) return state.collection.found.sub;
+        var row = shownCategory();
+        if (row && row.virtual === 'collections') return collections.progress();
         var mode = sortMode();
         var option = Sort.options.filter(function (entry) {
             return entry.id === mode;
@@ -622,15 +699,21 @@ window.Browser = function (hooks) {
         return option ? I18n.t('browser.sortedBy', { sort: option.label.toLowerCase() }) : '';
     }
 
-    function setItems(list, index, empty) {
+    // raw: shown as it is, without the genre, watched filter or sort.
+    function setItems(list, index, empty, raw) {
         hiddenSnapshot = null;
-        visible = { list: list, empty: empty };
-        genres.look();
+        state.collection = null;
+        visible = { list: list, empty: empty, raw: !!raw };
+        if (!raw) genres.look();
         drawItems(index);
     }
 
     // The list with the genre pill applied; keep holds the focused title.
     function drawItems(index, keep) {
+        if (visible.raw) {
+            watchedEmpty = false;
+            return items.set(visible.list.slice(), keep ? Math.max(0, indexIn(visible.list, items.item(), index)) : index, visible.empty);
+        }
         var mode = sortMode();
         var view = genres.apply(visible.list, visible.empty);
         var filtered = hideOn && hideAvailable() && !currentList.showingSearch() ? hiddenList().filter(view.list) : view.list;
@@ -656,7 +739,9 @@ window.Browser = function (hooks) {
         var adapter = state.adapter;
         genres.offer(section, function () {
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
-                if (hideOn && adapter === state.adapter && state.section === section) showCategories(categories.index());
+                // The films are in: the collections can be found and shown.
+                if (section === 'movies' && adapter === state.adapter) collections.start();
+                if ((hideOn || section === 'movies') && adapter === state.adapter && state.section === section) showCategories(categories.index(), true);
                 return adapter === state.adapter ? visibility.items(section, all) : null;
             });
         });
@@ -763,6 +848,14 @@ window.Browser = function (hooks) {
         var token = currentList.beginSearch();
         state.search = { section: section, query: query, results: [] };
         applyView();
+        // In Collections the bar finds collections by name: nothing is asked.
+        var shelf = categories.item();
+        if (shelf && shelf.virtual === 'collections') {
+            state.search.results = Find.rank(shelf.list(), section, query);
+            setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('collections.searchHint')], true);
+            renderChrome();
+            return Promise.resolve(state.search.results.length);
+        }
         items.loading();
         return loadCatalogue({ section: section, kind: 'items' })
             .then(function (all) {
@@ -1140,7 +1233,8 @@ window.Browser = function (hooks) {
             .then(function (list) {
                 if (!currentList.isActive(token)) return;
                 state.base = list;
-                showCategories(libraryRows.build().length);
+                // The first provider category, after the library rows and Collections.
+                showCategories(categoryRows().filter(function (row) { return row.virtual || row.all; }).length);
                 loadItems();
                 if (sortableSection()) loadRecentlyAdded(id);
                 if (id === 'movies' || id === 'series') loadGenres(id);
@@ -1425,6 +1519,7 @@ window.Browser = function (hooks) {
             catalogue: tmdbCatalogue,
             similarFound: keepSimilar.bind(null, 'movies', movie),
             related: relatedTitles.bind(null, movie, 'movies'),
+            collection: filmCollection.bind(null, movie),
             open: openEntry,
             load: function () {
                 if (!state.adapter.movieInfo) return Promise.resolve(null);
@@ -1548,6 +1643,8 @@ window.Browser = function (hooks) {
     function activateItem() {
         var item = items.item();
         if (!item) return;
+        if (item.collection) return openCollection(item);
+        if (item.missing) return toast(I18n.t('collections.notAvailableHint'));
         if (otherSource(item)) return openEntry(item, state.section);
         // OK on a channel previews it beside the list (see live-preview.js).
         if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items().filter(function (channel) { return !otherSource(channel); }))) return;
@@ -1839,9 +1936,11 @@ window.Browser = function (hooks) {
             else if (code === KEY.ENTER) {
                 // Holding OK opens the options menu; a short press opens on release.
                 Keys.press(activateItem, function () {
-                    openItemMenu(items.item(), state.section);
+                    var held = items.item();
+                    if (held && !held.collection && !held.missing) openItemMenu(held, state.section);
                 });
-            } else if (Keys.isBack(code)) setZone('rail');
+            } else if (Keys.isBack(code) && state.collection) closeCollection();
+            else if (Keys.isBack(code)) setZone('rail');
             else if (code === KEY.LEFT) setZone('categories');
             else return false;
         }

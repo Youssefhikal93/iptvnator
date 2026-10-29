@@ -66,3 +66,11 @@ test('an old "no sound" note does not silence a file whose header names playable
     assert.deepEqual(JSON.parse(env.stored['iptvnator-tv:audio-route']), {});
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: null }, SOURCE, 'file.mkv')), 'file~');
 });
+
+test('asking for Converted sound tries the converted addresses even after a saved "own sound" or "no sound" note', function () {
+    ['original', 'file'].forEach(function (note) {
+        var env = route();
+        env.api.remember({ id: 'movie:1' }, note);
+        assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS, audioRetry: true, audioRoute: null }, SOURCE, 'file.mkv')), 'm3u8? ts? file!');
+    });
+});

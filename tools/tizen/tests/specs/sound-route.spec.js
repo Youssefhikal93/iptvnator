@@ -126,6 +126,16 @@ test('a file with playable sound opens as it is; Converted sound in the Audio li
     await press(page, 'Enter');
     await expect.poll(() => opened(page)).toEqual(['2025.mkv', '2025.m3u8', '2025.mkv']);
     await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
+
+    // Converted sound again, after the saved choice of the file's own sound.
+    await playerMenu(page);
+    await playerGroup(page, 'Audio');
+    await expect(choices(page).last()).toHaveText('Converted sound (provider)');
+    for (let i = 0; i < 3; i++) await press(page, 'ArrowDown');
+    await expect(choices(page).last()).toHaveClass(/focus/);
+    await press(page, 'Enter');
+    await expect.poll(() => opened(page)).toEqual(['2025.mkv', '2025.m3u8', '2025.mkv', '2025.m3u8']);
+    await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
 });
 
 test('a file whose header cannot be read and has no sound five seconds in is tried on the converted address', async ({ page, request }) => {

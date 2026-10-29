@@ -51,13 +51,16 @@ window.AudioRoute = (function () {
         if (!others.length || !request || request.live || !request.id) return [file];
         var before = saved()[request.id];
         // The viewer chose the file's own sound in the Audio list.
-        if (request.audioRoute === 'original' || before === 'original') return [file];
+        if (request.audioRoute === 'original') return [file];
+        // Converted sound asked for (or a retry): saved notes do not stand in the way.
+        if (request.audioRetry) return others.concat([{ name: 'file', url: url, silent: true }]);
+        if (before === 'original') return [file];
         // A header that names a playable track outranks an old "no sound" note.
         var playable = Array.isArray(request.fileAudio) && request.fileAudio.length > 0 && !silentFile(request.fileAudio);
         if (before === 'file' && !playable) return [{ name: 'file', url: url, silent: true }];
         var worked = others.filter(function (route) { return route.name === before; })[0];
         if (worked) return [worked, { name: 'file', url: url, silent: true }];
-        if (request.audioRetry || silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);
+        if (silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);
         // A file whose header named a playable track is not second-guessed.
         file.retry = !Array.isArray(request.fileAudio) || !request.fileAudio.length;
         return [file];

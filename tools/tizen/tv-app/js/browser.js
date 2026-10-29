@@ -57,7 +57,7 @@ window.Browser = function (hooks) {
     Prefs.onChange(function (name) {
         if (name === 'programmeGuide') updateEpg();
         if (name === 'topBar' || name === 'menuPosition') renderChrome();
-        // The rail, header and hints show the new language at once.
+        // The rail and header show the new language at once.
         if (name === 'language') {
             renderChrome();
             if (state.section === 'settings') settings.render();
@@ -840,20 +840,11 @@ window.Browser = function (hooks) {
         // its name for diagnostics and tests.
         document.body.setAttribute('data-source', state.source ? state.source.name : '');
         renderToolbar();
-        $('hints').textContent =
-            state.section === 'settings'
-                ? settings.hints()
-                : state.zone === 'home'
-                ? I18n.t(home.onSearch() ? 'hints.find' : 'hints.home')
-                : state.zone === 'items'
-                ? I18n.t('hints.items')
-                : state.zone === 'categories'
-                ? I18n.t('hints.categories')
-                : I18n.t('hints.default');
-        // With the source pill gone (#45), a catalogue refresh shows here.
-        if (state.updating) $('hints').textContent += '  ·  ' + I18n.t('browser.updating');
-        var genreHint = genres.hint();
-        if (genreHint) $('hints').textContent += '  ·  ' + genreHint;
+        // No key hints: the chip shows only work in progress, such as a
+        // catalogue refresh (with the source pill gone, #45) or a genre check.
+        $('status').textContent = [state.updating ? I18n.t('browser.updating') : '', genres.hint()]
+            .filter(Boolean)
+            .join('  ·  ');
     }
 
     function renderToolbar() {
@@ -1557,7 +1548,7 @@ window.Browser = function (hooks) {
 
     function onHomeKey(code) {
         if (home.typing()) return home.key(code);
-        if (Keys.isBack(code) && home.back()) return renderHints();
+        if (Keys.isBack(code) && home.back()) return true;
         var entry = home.focused();
         if (code === KEY.ENTER && entry) {
             Keys.press(
@@ -1569,12 +1560,8 @@ window.Browser = function (hooks) {
                 }
             );
         } else if (Keys.isBack(code) || leavesFor(home.key(code))) setZone('rail');
-        return renderHints();
-    }
-
-    function renderHints() {
-        if (state.zone !== 'home') return renderChrome(), true;
-        if (state.zone === 'home') $('hints').textContent = I18n.t(home.onSearch() ? 'hints.find' : 'hints.home');
+        // Home redraws itself; the chrome only when the focus left it.
+        if (state.zone !== 'home') renderChrome();
         return true;
     }
 

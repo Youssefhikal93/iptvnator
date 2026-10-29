@@ -51,10 +51,6 @@ body.menu-top #menu.profile-menu {
     top: calc(var(--menu-h) + 16px);
     left: 48px;
 }
-/* The hints line up with the content's own margin. */
-body.menu-top #hints {
-    left: 48px;
-}
 
 /* The content is one menu height shorter: lists show a row less. */
 body.menu-top {

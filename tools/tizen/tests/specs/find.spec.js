@@ -7,7 +7,6 @@ test('Home search shows movies, series and Live TV results and Return closes it'
     await expect(page.locator('.hm-search-icon')).toBeVisible();
     await press(page, 'ArrowUp');
     await expect(page.locator('.hm-search-icon')).toHaveClass(/focus/);
-    await expect(page.locator('#hints')).toContainText('OK: search');
     await press(page, 'Enter');
     await expect(page.locator('.hm-search-bar')).toHaveClass(/typing/);
     await expect(page.locator('.hm-search-note')).toHaveText('Type a movie, series or channel name.');
@@ -84,12 +83,12 @@ test('a picked genre checks the open list with TMDB twenty titles at a time and 
     await tmdbThrillers(page);
     await genre(page, 'Movies', 'Thriller');
     // Recently added has 24 movies; the first twenty are checked.
-    await expect(page.locator('#hints')).toContainText('check 20 more (4 left)', { timeout: 30000 });
+    await expect(page.locator('#status')).toContainText('check 20 more (4 left)', { timeout: 30000 });
     expect(await page.evaluate(() => window.tmdbAsked)).toBe(20);
     const first = await page.locator('#items .list-header .count').innerText();
     // ▼ past the last row checks the other four.
     for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
-    await expect(page.locator('#hints')).not.toContainText('check 20 more', { timeout: 30000 });
+    await expect(page.locator('#status')).not.toContainText('check 20 more', { timeout: 30000 });
     expect(await page.evaluate(() => window.tmdbAsked)).toBe(24);
     expect(await page.locator('#items .list-header .count').innerText()).not.toBe(first);
     expect(pages).toBe(0);

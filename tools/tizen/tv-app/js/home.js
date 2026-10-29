@@ -479,11 +479,6 @@ window.Home = (api) => {
             return block.row.entries[rowState(block.row).focus];
         },
         typing: () => s.q.typing,
-        // Whether the focus is on the search icon or bar (for the hints).
-        onSearch: () => {
-            const block = blocks()[s.block];
-            return !!block && !!(block.icon || block.box);
-        },
         // Return closes an open search: true when it did.
         back: () => {
             if (!s.q.open) return false;

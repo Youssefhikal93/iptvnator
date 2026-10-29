@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, moveTo, resumeSeed, setting, back } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, resumeSeed, setting, choose, back } = require('./helpers');
 
 test('settings show current values; guide Off stops requests and On resumes them', async ({ page }) => {
     let requests = 0;
@@ -35,7 +35,7 @@ test('settings show current values; guide Off stops requests and On resumes them
 test('Big first row and Backdrop home layouts, and the choice survives reload', async ({ page }) => {
     await boot(page, resumeSeed());
     await setting(page, 'Home layout');
-    await press(page, 'Enter');
+    await choose(page, 'Big first row');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Big first row');
     await section(page, 'Home');
     // No banner: the first row has wide tiles with the time left.
@@ -47,7 +47,7 @@ test('Big first row and Backdrop home layouts, and the choice survives reload', 
     await page.reload();
     await expect(page.locator('#home')).toHaveClass(/bigrow/);
     await setting(page, 'Home layout');
-    await press(page, 'Enter');
+    await choose(page, 'Backdrop');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Backdrop');
     await section(page, 'Home');
     // The focused title is drawn behind one row; the next row peeks in below.
@@ -71,7 +71,8 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     const groups = page.locator('#settings .st-group-item');
     await expect(groups.first()).toContainText('Sources');
     await expect(groups.first()).toHaveClass(/focused/);
-    await expect(page.locator('#hints')).toContainText('group');
+    // No key-hint bar: the screen speaks for itself.
+    await expect(page.locator('#hints')).toHaveCount(0);
     // ▼ shows the next group's rows at once; only that group is visible.
     await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
@@ -84,8 +85,7 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await press(page, 'ArrowRight');
     await expect(page.locator('#settings .st-row.focused .st-label')).toHaveText('Autoplay next episode');
     await expect(page.locator('#settings .st-row.focused .st-sub')).toHaveText('Counts down to the next episode when one ends');
-    await expect(page.locator('#settings .st-row.focused .st-arrow')).toHaveCount(2);
-    await expect(page.locator('#hints')).toContainText('Return: groups');
+    await expect(page.locator('#settings .st-row.focused .st-arrow')).toHaveCount(1);
     await press(page, 'ArrowDown');
     await expect(page.locator('#settings .st-row.focused .st-switch')).toHaveClass(/on/);
     await press(page, 'Enter');
@@ -97,4 +97,31 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
     await back(page);
     await expect(page.locator('#rail .focused')).toHaveText('Settings');
+});
+
+test('OK on a Settings row lists its choices; ◀ goes back to the groups', async ({ page }) => {
+    await boot(page);
+    await setting(page, 'Autoplay next episode');
+    // ▶ no longer changes the value.
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#settings .st-row.focused .st-value')).toHaveText('8 s');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu')).toBeVisible();
+    await expect(page.locator('#menu .focused')).toHaveText('\u2713 8 s');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#menu .focused')).toHaveText('15 s');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu')).toBeHidden();
+    await expect(page.locator('#settings .st-row.focused .st-value')).toHaveText('15 s');
+    // Return closes the list without a change.
+    await press(page, 'Enter');
+    await press(page, 'ArrowUp');
+    await back(page);
+    await expect(page.locator('#menu')).toBeHidden();
+    await expect(page.locator('#settings .st-row.focused .st-value')).toHaveText('15 s');
+    // ◀ goes back to the groups, from any row.
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('#settings .st-group-item.focused')).toContainText('Playback');
+    await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
 });

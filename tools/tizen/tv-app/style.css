@@ -113,7 +113,6 @@ svg {
 :root {
     --menu-w: 208px;
     --menu-h: 0px;
-    --hint-h: 54px;
 }
 
 /* Rail: icon column like the desktop, with labels for sofa reading */
@@ -277,7 +276,7 @@ body.bar-off #header {
     left: var(--menu-w);
     right: 0;
     top: calc(var(--menu-h) + 112px);
-    bottom: var(--hint-h);
+    bottom: 0;
     display: flex;
 }
 .pane {
@@ -344,7 +343,7 @@ body.bar-off #header {
 }
 #load-error {
     position: fixed;
-    inset: calc(var(--menu-h) + 112px) 0 var(--hint-h) var(--menu-w);
+    inset: calc(var(--menu-h) + 112px) 0 0 var(--menu-w);
     z-index: 7;
     background: var(--content-bg);
     display: flex;
@@ -443,12 +442,21 @@ body.bar-off #header {
     color: var(--on-surface);
 }
 
-#hints {
+/* Work in progress (a refresh, a genre check) as a chip; nothing otherwise. */
+#status {
     position: absolute;
-    left: calc(var(--menu-w) + 40px);
-    bottom: 12px;
+    right: 40px;
+    bottom: 24px;
+    z-index: 5;
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: var(--widget-bg);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     color: var(--eyebrow);
     font-size: 24px;
+}
+#status:empty {
+    display: none;
 }
 
 /* Add-source form */

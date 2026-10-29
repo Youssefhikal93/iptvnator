@@ -103,16 +103,12 @@
     font-weight: 600;
 }
 
-/* A choice with its arrows; the value keeps its width as it changes. */
+/* A choice and the › that says OK opens its list. */
 .st-choice {
     display: flex;
     flex: none;
     align-items: center;
     gap: 18px;
-}
-.st-choice .st-value {
-    min-width: 120px;
-    text-align: center;
 }
 .st-arrow {
     font-size: 34px;

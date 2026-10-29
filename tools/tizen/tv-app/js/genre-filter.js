@@ -151,7 +151,7 @@ window.GenreFilter = function (deps) {
             }
             return { list: shown, empty: empty };
         },
-        // What the hints line adds: the count while checking, else what is left.
+        // What the status chip shows: the count while checking, else what is left.
         hint: function () {
             if (progress) return I18n.t('find.progress', progress);
             if (remaining && current()) return I18n.t('find.moreHint', { n: remaining });

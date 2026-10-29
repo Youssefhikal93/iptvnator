@@ -177,6 +177,31 @@ async function menuChoice(page, label) {
     await expect(page.locator('#menu')).toBeHidden();
 }
 
+// On a focused Settings row, OK opens its choices (the current one ticked)
+// and `value` is chosen from them.
+async function choose(page, value) {
+    await press(page, 'Enter');
+    await expect(page.locator('#menu')).toBeVisible();
+    // Where the wanted choice sits from the focused one, among the focused one's siblings.
+    const steps = await page.locator('#menu .focused').evaluate((focused, value) => {
+        const plain = text => text.replace(/^✓\s*/, '').replace(/\s+/g, ' ').trim();
+        const options = [...focused.parentElement.children];
+        const at = options.findIndex(option => plain(option.textContent) === plain(value));
+        return at < 0 ? null : at - options.indexOf(focused);
+    }, value);
+    if (steps === null) throw new Error('No choice ' + JSON.stringify(value));
+    for (let i = 0; i < Math.abs(steps); i++) await press(page, steps > 0 ? 'ArrowDown' : 'ArrowUp');
+    await expect(page.locator('#menu .focused')).toHaveText(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
+    await press(page, 'Enter');
+    await expect(page.locator('#menu')).toBeHidden();
+}
+
+// Settings row `label` set to `value`.
+async function pick(page, label, value) {
+    await setting(page, label);
+    await choose(page, value);
+}
+
 // ▲ from the player's buttons goes to the timeline, ▲ again opens the menu.
 async function playerMenu(page) {
     for (let i = 0; i < 3 && !await page.locator('#pl-menu').isVisible(); i++) await press(page, 'ArrowUp');
@@ -225,4 +250,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };

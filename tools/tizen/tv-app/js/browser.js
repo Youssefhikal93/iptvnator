@@ -584,9 +584,12 @@ window.Browser = function (hooks) {
         applyView();
         // Library lists keep items of hidden categories; only the lock applies.
         // Collections are shown as they are: no genre, watched filter or sort.
-        setItems(category.list().filter(function (item) {
+        // Their tiles have no category; they come from films that already
+        // passed the profile's rules (collectionMovies).
+        var tiles = category.virtual === 'collections';
+        setItems(tiles ? category.list() : category.list().filter(function (item) {
             return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
-        }), index || 0, category.empty, category.virtual === 'collections');
+        }), index || 0, category.empty, tiles);
         renderChrome();
     }
 
@@ -1084,8 +1087,10 @@ window.Browser = function (hooks) {
 
     // ---- Sources, in Settings (#51) ----
 
-    // Opens Settings with the focus on the first row `match` accepts.
+    // Opens Settings with the focus on the first row `match` accepts. A kids
+    // profile has no Settings, whichever way asks (Go to Sources included).
     function openSources(match) {
+        if (!available('settings')) return;
         openSection('settings');
         settings.select(match);
         setZone('settings');
@@ -1936,6 +1941,7 @@ window.Browser = function (hooks) {
             } else if (code === KEY.ENTER) {
                 RailProfile.open(profileChanged, function () {
                     state.profileFocus = false;
+                    if (!available('settings')) return renderChrome();
                     openSection('settings');
                     setZone('settings');
                 });

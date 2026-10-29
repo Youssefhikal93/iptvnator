@@ -62,8 +62,10 @@ window.CollectionLookup = (function () {
             later(Math.max(50, (Tmdb.fetches() - before) * PACE_MS));
         }
 
-        function fetchCollection(id) {
-            var before = Tmdb.fetches();
+        // `before`: the request count when this film's look-up began, so the
+        // pause covers its search and details too.
+        function fetchCollection(id, before) {
+            if (before === undefined) before = Tmdb.fetches();
             return Tmdb.collection(id, deps.index.forced(id)).then(function (result) {
                 if (run !== self) return;
                 if (result.status === 'failed') return failed('c' + id);
@@ -99,7 +101,7 @@ window.CollectionLookup = (function () {
                 deps.index.setFilm(item, collection || 0, body.id || 0);
                 self.done++;
                 deps.changed();
-                if (collection && (!deps.index.collection(collection) || deps.index.forced(collection))) return fetchCollection(collection);
+                if (collection && (!deps.index.collection(collection) || deps.index.forced(collection))) return fetchCollection(collection, before);
                 paced(before);
             }).catch(function () {
                 if (run === self) failed(deps.index.filmKey(item));

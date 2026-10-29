@@ -29,9 +29,23 @@ window.Collections = function (deps) {
         return index;
     }
 
+    // The look-up's films while its source is open; another source stops it,
+    // so that source's films never go into this source's index.
+    function owned(id) {
+        return function () {
+            if (deps.sourceId() === id) return deps.movies();
+            CollectionLookup.stop();
+            return null;
+        };
+    }
+
+    function lookupDeps(known) {
+        return { index: known, movies: owned(indexFor), changed: deps.changed };
+    }
+
     function start() {
         var known = current();
-        if (known && Tmdb.enabled()) CollectionLookup.start({ index: known, movies: deps.movies, changed: deps.changed });
+        if (known && Tmdb.enabled()) CollectionLookup.start(lookupDeps(known));
     }
 
     function icon(item) { return item.stream_icon || item.cover || ''; }
@@ -92,7 +106,7 @@ window.Collections = function (deps) {
         // Asks TMDB about every film again in the background (#67).
         refresh: function () {
             var known = current();
-            if (known && Tmdb.enabled()) CollectionLookup.refresh({ index: known, movies: deps.movies, changed: deps.changed });
+            if (known && Tmdb.enabled()) CollectionLookup.refresh(lookupDeps(known));
         },
         // The Collections row for the category list, or null when there is none.
         row: function () {

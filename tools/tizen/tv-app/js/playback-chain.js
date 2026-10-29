@@ -10,7 +10,7 @@
 // failed try, where the player closes it before the next opens; giveUp(kind)
 // with 'offline' (every player failed) or 'busy' (503 twice).
 // Starters that finish asynchronously ask stale(token) with session() read at
-// their start. Timers are the globals, so tests can replace them.
+// their start, and finish.ended() for their own attempt. Timers are the globals, so tests can replace them.
 window.PlaybackChain = function () {
     'use strict';
 
@@ -34,6 +34,11 @@ window.PlaybackChain = function () {
                 clearTimeout(timer);
                 resolve(error);
             }
+            // Whether this attempt has ended (played, failed or timed out):
+            // a starter's late work for it must not open a player again.
+            finish.ended = function () {
+                return done;
+            };
             var timer = setTimeout(function () {
                 finish('timeout');
             }, ATTEMPT_MS);

@@ -6,6 +6,10 @@ window.Tmdb = (function () {
     var pending = {};
     var matches = {};
     var expiries = new WeakMap();
+    // After a 429 every background look-up waits until then (#58).
+    var throttledUntil = 0;
+    // Requests sent so far: the look-up paces itself by the ones it caused.
+    var fetches = 0;
 
     function key() { return Prefs.get('tmdbApiKey') || ''; }
     function enabled() { return !!key(); }
@@ -27,15 +31,23 @@ window.Tmdb = (function () {
     function fetchResponse(job) {
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, 8000);
+        var status = 0;
+        fetches++;
         return fetch('https://api.themoviedb.org/3' + job.path + '?api_key=' + encodeURIComponent(job.secret) + (job.query ? '&' + job.query : ''), { signal: controller.signal })
             .then(function (res) {
+                status = res.status;
                 if (!res.ok) throw new Error('TMDB refused');
                 return res.json();
             }).then(function (body) {
                 return TmdbStore.put(job.cacheKey, body, false);
             }).catch(function () {
                 Log.error('TMDB FAIL ' + job.path);
-                return TmdbStore.put(job.cacheKey, null, true);
+                // Too many requests: nothing is kept, so the next ask tries again.
+                if (status === 429) {
+                    throttledUntil = Date.now() + 30000;
+                    return { body: null, failed: true, status: 429, expires: 0 };
+                }
+                return TmdbStore.put(job.cacheKey, null, true, status);
             }).then(function (record) {
                 clearTimeout(timer);
                 return record;
@@ -57,7 +69,8 @@ window.Tmdb = (function () {
         });
     }
 
-    function request(path, params, force) {
+    // The saved or fetched record ({ body, failed, status }) or null.
+    function load(path, params, force) {
         var secret = key();
         if (!secret) return Promise.resolve(null);
         params = TmdbLanguage.parameters(path, params);
@@ -71,11 +84,14 @@ window.Tmdb = (function () {
         });
         pending[cacheKey] = promise.then(function (record) {
             delete pending[cacheKey];
-            if (!record) return null;
-            if (record.body && typeof record.body === 'object') expiries.set(record.body, record.expires);
-            return record.body;
+            if (record && record.body && typeof record.body === 'object') expiries.set(record.body, record.expires);
+            return record || null;
         });
         return pending[cacheKey];
+    }
+
+    function request(path, params, force) {
+        return load(path, params, force).then(function (record) { return record ? record.body : null; });
     }
 
     function clean(title) {
@@ -144,6 +160,41 @@ window.Tmdb = (function () {
         });
     }
 
+    // For the background collection look-up (#58), the same requests as
+    // match() with what went wrong told apart: 'found' with the details,
+    // 'none' when TMDB has no such title, 'failed' to try again later.
+    function lookup(item, type) {
+        if (!enabled()) return Promise.resolve({ status: 'failed' });
+        var language = TmdbLanguage.tag(I18n.language());
+        var params = { query: clean(title(item)) };
+        if (year(item)) params[type === 'movie' ? 'year' : 'first_air_date_year'] = year(item);
+        var resolving = id(item) ? Promise.resolve({ found: { id: id(item) } }) : load('/search/' + type, params).then(function (record) {
+            return record && !record.failed ? { found: pick(item, (record.body || {}).results) } : null;
+        });
+        return resolving.then(function (result) {
+            if (!result) return { status: 'failed' };
+            if (!result.found) return { status: 'none' };
+            var path = '/' + type + '/' + result.found.id;
+            return load(path, { append_to_response: 'credits,videos,similar', language: language }).then(function (record) {
+                if (!record || (record.failed && record.status !== 404)) return { status: 'failed' };
+                if (record.failed) return { status: 'none' };
+                return detail(path, language).then(function (body) {
+                    if (!body) return { status: 'failed' };
+                    matches[identity(item, type, language)] = { body: body, expires: expiries.get(body) };
+                    return { status: 'found', body: body };
+                });
+            });
+        });
+    }
+
+    // A collection's parts (#58): { status, body } like lookup().
+    function collection(collectionId) {
+        return load('/collection/' + collectionId, {}).then(function (record) {
+            if (!record || (record.failed && record.status !== 404)) return { status: 'failed' };
+            return record.failed ? { status: 'none' } : { status: 'found', body: record.body };
+        });
+    }
+
     function creditIndex(credits, type) {
         var index = { ids: Object.create(null), titles: Object.create(null) };
         credits.forEach(function (credit) {
@@ -176,6 +227,11 @@ window.Tmdb = (function () {
         enabled: enabled,
         request: request,
         match: match,
+        lookup: lookup,
+        collection: collection,
+        throttled: function () { return Math.max(0, throttledUntil - Date.now()); },
+        fetches: function () { return fetches; },
+        clean: clean,
         normalize: normalize,
         year: year,
         pick: pick,

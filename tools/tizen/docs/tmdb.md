@@ -38,7 +38,8 @@ are read only for `en-US`, preserving their original expiry without clearing
 or rewriting the database. Successful responses expire
 after seven days; failures after one hour. Test key bypasses stored responses.
 Unavailable storage falls back to session memory. Catalogue and guide database
-versions and records stay unchanged.
+versions and records stay unchanged. A failure keeps its HTTP status, so a 404
+(no such title) is told apart from a request that failed.
 
 `js/tmdb-detail.js` enriches a provider detail page asynchronously. It fills
 an empty plot and improves title, artwork, rating, genre and runtime when TMDB supplies
@@ -64,10 +65,36 @@ picks a genre. Cached matches filter again without another request; ▼ past the
 end, CH▼ or **Check 20 more** checks the next twenty. It never asks the provider
 and never scans the whole catalogue by itself. It replaced Discover.
 
+## Collections (#58)
+
+A film's detail page shows its collection first under the plot, and Movies has
+a **Collections** category after Recently added. With a key they come from
+TMDB's `belongs_to_collection` and `/collection/{id}`; without one,
+`js/name-groups.js` groups the provider's film names (a sequel number, Roman
+numeral, "Part II" or a subtitle after ":"), sends nothing, and drops a name
+shared by more than twelve films (a word such as "Movie", not a series).
+
+`js/collection-lookup.js` is the only background TMDB work. It asks about one
+film at a time with the same search and detail requests as a detail page, so a
+film already matched costs nothing, and waits 500 ms per request it caused
+(at most two a second). It runs only while the remote has rested for three
+seconds and nothing plays, stops when the key is removed or the source changes,
+and waits 30 seconds after a 429 (a 429 is not cached, so it is asked again).
+`js/collection-index.js` keeps each film's collection, or none, in the
+`responses` store under `collections|v1|<source>` with no expiry, so a film is
+asked once even across restarts; a failed answer is not kept and is retried
+at most three times a session. Collection parts are fetched once per
+collection and again after 30 days or in another language; a collection whose
+id TMDB no longer knows is kept as none. The Movies search bar filters the
+Collections list by name with no request; a film's detail page may ask for its
+collection's parts once when the look-up has not reached it yet.
+
 Network fixtures and browser checks are in `tests/specs/tmdb.spec.js` and
 `tests/fixtures/tmdb/`; matching, opt-in, request limits and expiry are checked
 by `tests/unit/tmdb.test.js`. Language tags, fallback, trailer order and cache
-compatibility are checked by `tests/unit/tmdb-language.test.js`.
+compatibility are checked by `tests/unit/tmdb-language.test.js`. Collections
+are checked by `tests/unit/collections.test.js` and `tests/specs/collections.spec.js`
+(request counts, no repeats after a reload, the no-key grouping).
 Real TV checks must cover changing language and reopening the same detail,
 an untranslated plot, translated Cast navigation, the Samsung keyboard,
 YouTube app discovery/launch, Return, and CH paging.

@@ -126,6 +126,13 @@ window.List = function (el, options) {
             label.className = 'label';
             label.textContent = options.label(item);
             row.appendChild(label);
+            var rowSub = options.sub && options.sub(item);
+            if (rowSub) {
+                var rowSubEl = document.createElement('small');
+                rowSubEl.className = 'sub';
+                rowSubEl.textContent = rowSub;
+                row.appendChild(rowSubEl);
+            }
             var badge = options.badge && options.badge(item);
             if (badge !== undefined && badge !== null && badge !== '') {
                 var badgeEl = document.createElement('span');
@@ -180,6 +187,14 @@ window.List = function (el, options) {
             title.className = 'card-title';
             title.textContent = options.label(item);
             card.appendChild(title);
+            // A second line under the title, such as a collection's count.
+            var sub = options.sub && options.sub(item);
+            if (sub) {
+                var subEl = document.createElement('div');
+                subEl.className = 'card-sub';
+                subEl.textContent = sub;
+                card.appendChild(subEl);
+            }
             grid.appendChild(card);
         }
         el.appendChild(grid);

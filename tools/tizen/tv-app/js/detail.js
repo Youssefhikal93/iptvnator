@@ -10,6 +10,7 @@
 //   episodes   optional DetailEpisodes section under the buttons
 //   badges     optional extra chips, e.g. [I18n.t('home.newEpisodes')]
 //   related()  optional Promise of { label, items } for "More in <category>"
+//   collection(provider) optional Promise of the film's collection row (#58)
 window.Detail = function () {
     'use strict';
 
@@ -51,10 +52,10 @@ window.Detail = function () {
         return list;
     }
 
-    // The TMDB rows (cast first, then similar titles) once they arrive, then
-    // "More in <category>": the cast is what a viewer looks for first.
+    // The film's collection first (#58), the TMDB rows (cast, then similar
+    // titles) once they arrive, then "More in <category>".
     function rows() {
-        return (s.tmdb ? s.tmdb.rows() : []).concat(s.related ? [s.related] : []);
+        return (s.collection ? [s.collection] : []).concat(s.tmdb ? s.tmdb.rows() : [], s.related ? [s.related] : []);
     }
 
     function relatedRow(found) {
@@ -220,7 +221,7 @@ window.Detail = function () {
     return {
         open: function (page) {
             if (s && s.tmdb) s.tmdb.dispose();
-            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false, renders: [], rows: DetailRows(), related: null };
+            s = { page: page, details: null, loading: true, focus: 0, zone: 'buttons', clipped: false, more: false, youtube: false, renders: [], rows: DetailRows(), related: null, collection: null };
             var mine = s;
             if (Tmdb.enabled() && page.catalogue) s.tmdb = TmdbDetail(page, function (enriched) {
                 if (s !== mine) return;
@@ -255,6 +256,11 @@ window.Detail = function () {
                     if (page.episodes) page.episodes.ready(s.details);
                     render();
                     if (s.tmdb) s.tmdb.load(s.details || {});
+                    if (page.collection) page.collection(s.provider || {}).then(function (row) {
+                        if (s !== mine || !row) return;
+                        s.collection = row;
+                        render();
+                    });
                 });
         },
         isOpen: function () {

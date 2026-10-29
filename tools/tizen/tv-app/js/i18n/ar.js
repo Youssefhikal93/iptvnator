@@ -2,6 +2,18 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ar = {
+    'collections.title': "المجموعات",
+    'collections.count': "{n} أفلام · {m} متاحة",
+    'collections.films': "{n} أفلام",
+    'collections.ofName': "مجموعة {name}",
+    'collections.thisFilm': "هذا الفيلم",
+    'collections.notAvailable': "غير متاح",
+    'collections.notAvailableHint': "هذا الفيلم غير متوفر لدى مزوّدك",
+    'collections.progress': "جارٍ البحث عن المجموعات… تم فحص {done} من {total} فيلم",
+    'collections.finding': "لا توجد مجموعات بعد",
+    'collections.findingHint': "تظهر هنا أثناء فحص أفلامك",
+    'collections.empty': "لا توجد أفلام في هذه المجموعة",
+    'collections.searchHint': "البحث يجد المجموعات بالاسم",
     'browser.hideWatched': 'إخفاء ما شاهدته',
     'empty.watched.title': 'لقد شاهدت كل شيء هنا',
     'browser.showWatched': 'إظهار العناوين التي شاهدتها',

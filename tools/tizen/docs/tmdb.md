@@ -12,9 +12,9 @@ compatible year. Ambiguous search results are left unmatched. Movie and TV
 identities stay separate when intersecting similar titles or person credits
 with the current source's catalogue.
 
-`js/tmdb-language.js` maps all 20 app language codes to TMDB tags for the
+`js/tmdb-language.js` maps all 19 app language codes to TMDB tags for the
 `language` query parameter, using `I18n.language()` when a lookup starts.
-Moroccan Arabic (`ary`) uses `ar`, Belarusian (`by`) uses `be-BY`, Portuguese
+Belarusian (`by`) uses `be-BY`, Portuguese
 uses `pt-PT`, and unknown codes use `en-US`. Search stays in English for title
 matching; details, similar titles, genres and person requests use the app
 language. Changing Settings language applies to the next opened detail page;

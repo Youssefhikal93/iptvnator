@@ -113,7 +113,8 @@ Object.keys(english).forEach(function (key) {
 
 var report = [];
 fs.readdirSync(desktop).map(function (name) { return name.replace('.json', ''); }).sort().forEach(function (code) {
-    if (code === 'en') return;
+    // Moroccan Arabic is not offered on the TV (the owner keeps Arabic only).
+    if (code === 'en' || code === 'ary') return;
     var table = load(code);
     var lines = [];
     Object.keys(english).sort().forEach(function (key) {

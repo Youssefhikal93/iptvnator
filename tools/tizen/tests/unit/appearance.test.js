@@ -36,6 +36,13 @@ test('fresh and unknown stored appearance choices apply dark, blue and comfortab
     });
 });
 
+test('a profile that chose the dropped Moroccan Arabic is moved to Arabic and keeps its other settings', function () {
+    var app = appearance({ 'iptvnator-tv:p:default:settings': JSON.stringify({ language: 'ary', theme: 'light' }) });
+    assert.equal(app.globals.Prefs.get('language'), 'ar');
+    assert.deepEqual(JSON.parse(app.stored['iptvnator-tv:p:default:settings']), { language: 'ar', theme: 'light' });
+    assert.equal(app.attributes['data-theme'], 'light');
+});
+
 test('stored appearance applies on startup and Prefs changes immediately update every appearance attribute and language', function () {
     var app = appearance({ 'iptvnator-tv:p:default:settings': JSON.stringify({ theme: 'light', accent: 'pink', density: 'compact' }) });
     assertAppearance(app, 'light', 'pink', 'compact');

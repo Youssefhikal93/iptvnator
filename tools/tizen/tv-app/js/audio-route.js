@@ -11,6 +11,11 @@ window.AudioRoute = (function () {
     var STORE = 'iptvnator-tv:audio-route';
     var KEEP = 200;
 
+    // The same id can be on two sources, so notes are kept per source too.
+    function key(request) {
+        return request.subtitleId || request.id;
+    }
+
     function saved() {
         try {
             var list = JSON.parse(Stored.text(STORE));
@@ -24,8 +29,8 @@ window.AudioRoute = (function () {
         if (!request || !request.id) return;
         try {
             var list = saved();
-            delete list[request.id];
-            list[request.id] = name;
+            delete list[key(request)];
+            list[key(request)] = name;
             var keys = Object.keys(list);
             keys.slice(0, Math.max(0, keys.length - KEEP)).forEach(function (old) { delete list[old]; });
             Stored.save(STORE, list);
@@ -49,7 +54,7 @@ window.AudioRoute = (function () {
             return { name: route.name, url: route.url, needsSound: true };
         });
         if (!others.length || !request || request.live || !request.id) return [file];
-        var before = saved()[request.id];
+        var before = saved()[key(request)];
         // The viewer chose the file's own sound in the Audio list.
         if (request.audioRoute === 'original') return [file];
         // Converted sound asked for (or a retry): saved notes do not stand in the way.
@@ -71,8 +76,8 @@ window.AudioRoute = (function () {
         if (!request || !request.id) return;
         try {
             var list = saved();
-            if (!(request.id in list)) return;
-            delete list[request.id];
+            if (!(key(request) in list)) return;
+            delete list[key(request)];
             Stored.save(STORE, list);
         } catch (e) {
             // Without storage there is nothing to forget.

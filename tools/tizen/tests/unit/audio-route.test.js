@@ -74,3 +74,12 @@ test('asking for Converted sound tries the converted addresses even after a save
         assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS, audioRetry: true, audioRoute: null }, SOURCE, 'file.mkv')), 'm3u8? ts? file!');
     });
 });
+
+test('notes are kept per source: the same id on another source starts afresh', function () {
+    var env = route();
+    env.api.remember({ id: 'movie:1', subtitleId: 'a|movie:1' }, 'file');
+    assert.equal(names(env.api.plan({ id: 'movie:1', subtitleId: 'a|movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'file!');
+    assert.equal(names(env.api.plan({ id: 'movie:1', subtitleId: 'b|movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8? ts? file!');
+    env.api.forget({ id: 'movie:1', subtitleId: 'a|movie:1' });
+    assert.deepEqual(JSON.parse(env.stored['iptvnator-tv:audio-route']), {});
+});

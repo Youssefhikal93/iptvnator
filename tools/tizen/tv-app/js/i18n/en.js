@@ -1,6 +1,11 @@
 // English is the source table and the fallback for any key a language lacks.
 // Placeholders are {name}; plural forms are 'key.one' / 'key.other' picked by params.count.
 I18n.tables.en = {
+    'settings.preferredSound': 'Preferred sound',
+    'settings.preferredSubtitles': 'Preferred subtitles',
+    'settings.showSubtitles': 'Show subtitles',
+    'settings.subtitlesAlways': 'Always',
+    'settings.subtitlesOnly': "Only when I don't understand the sound",
     'account.accountExpired': 'Account expired',
     'account.accountInactive': 'Account inactive',
     'account.active': 'Active',

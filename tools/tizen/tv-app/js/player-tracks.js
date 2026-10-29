@@ -95,7 +95,7 @@ window.PlayerTracks = (function () {
     // is none. `file` is the file's own sound tracks, when known.
     function av(total, audioIndex, textIndex, file) {
         var text = avOfType(total, 'TEXT').map(function (track) {
-            return { label: track.label, active: track.index === textIndex, ref: track.index };
+            return { label: track.label, language: track.extra.language || '', active: track.index === textIndex, ref: track.index };
         });
         text.unshift(off(textIndex < 0, -1));
         return { audio: avAudio(total, audioIndex, file), text: text };
@@ -115,6 +115,7 @@ window.PlayerTracks = (function () {
         (hls.subtitleTracks || []).forEach(function (track, n) {
             text.push({
                 label: track.name || languageName(track.lang) || I18n.t('player.subtitle', { n: n + 1 }),
+                language: track.lang || '',
                 active: hls.subtitleTrack === n,
                 ref: n,
             });
@@ -156,6 +157,7 @@ window.PlayerTracks = (function () {
         subs.forEach(function (track, n) {
             text.push({
                 label: track.label || languageName(track.language) || I18n.t('player.subtitle', { n: n + 1 }),
+                language: track.language || '',
                 active: track.mode === 'showing',
                 ref: track,
             });

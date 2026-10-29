@@ -34,6 +34,7 @@ window.Settings = function (hooks) {
         { get group() { return I18n.t('settings.playback'); }, get label() { return I18n.t('settings.autoplay'); }, get hint() { return I18n.t('describe.autoplay'); }, key: 'autoplayMs', choices: [0, 5000, 8000, 15000], get labels() { return [I18n.t('common.off'), I18n.t('unit.seconds', { n: 5 }), I18n.t('unit.seconds', { n: 8 }), I18n.t('unit.seconds', { n: 15 })]; } },
         { get label() { return I18n.t('settings.programmeGuide'); }, get hint() { return I18n.t('describe.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return onOff(); } },
         { get label() { return I18n.t('settings.livePreview'); }, get hint() { return I18n.t('describe.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return onOff(); } },
+        ...LanguageSettings.rows,
         placed(picture[4], null, 'picture.picture'),
         { get part() { return I18n.t('settings.startUp'); }, get label() { return I18n.t('settings.onStart'); }, get hint() { return I18n.t('describe.onStart'); }, key: 'onStart', choices: ['last-channel', 'home'], get labels() { return [I18n.t('settings.lastChannel'), I18n.t('rail.home')]; } },
         placed(picture[0], 'picture.subtitles', 'picture.subtitleStyle'),
@@ -66,6 +67,7 @@ window.Settings = function (hooks) {
     function groups() {
         const list = [];
         SourceSettings.rows(hooks.sources).concat(rows).forEach((row) => {
+            if (row.hidden) return;
             const name = row.group;
             if (name || !list.length) list.push({ name, rows: [] });
             list[list.length - 1].rows.push(row);
@@ -73,7 +75,7 @@ window.Settings = function (hooks) {
         return list;
     }
 
-    const choice = (row) => Math.max(0, row.choices.indexOf(Prefs.get(row.key)));
+    const choice = (row) => Math.max(0, row.choices.indexOf(row.read ? row.read() : Prefs.get(row.key)));
     const isSwitch = (row) => !row.pills && !!row.choices && row.choices.length === 2 && row.choices[0] === true && row.choices[1] === false;
     const valueText = (row) => (row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text);
     const classes = (base, flags) => [base].concat(Object.keys(flags).filter((flag) => flags[flag])).join(' ');
@@ -141,7 +143,8 @@ window.Settings = function (hooks) {
     }
 
     function save(row, value) {
-        Prefs.set(row.key, value);
+        if (row.write) row.write(value);
+        else Prefs.set(row.key, value);
         hooks.toast(I18n.t('toast.saved'));
         render();
     }

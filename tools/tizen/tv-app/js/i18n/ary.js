@@ -2,6 +2,11 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ary = {
+    "settings.preferredSound": "لغة الصوت اللي كنفضل",
+    "settings.preferredSubtitles": "لغة الترجمة اللي كنفضل",
+    "settings.showSubtitles": "بيّن الترجمة",
+    "settings.subtitlesAlways": "ديما",
+    "settings.subtitlesOnly": "غير ملي ما كنفهمش لغة الصوت",
     'account.accountExpired': 'الحساب انتهى',
     'account.accountInactive': 'الحساب غير نشط',
     'account.active': 'خدام',

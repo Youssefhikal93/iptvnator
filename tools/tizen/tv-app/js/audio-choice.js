@@ -54,9 +54,9 @@ window.AudioChoice = (function () {
 
     // Of PlayerTracks' audio rows, the playable one in the remembered
     // language when another one plays now; else null.
-    function pick(request, rows) {
+    function pick(request, rows, preferred) {
         var saved = read();
-        var want = saved.shows[showOf(request)] || saved.last;
+        var want = saved.shows[showOf(request)] || preferred || saved.last;
         if (!want) return null;
         var row = rows.filter(function (entry) {
             return entry.ref !== null && entry.language && name(entry.language) === name(want);
@@ -64,5 +64,5 @@ window.AudioChoice = (function () {
         return row && !row.active ? row : null;
     }
 
-    return { remember: remember, pick: pick };
+    return { remember: remember, pick: pick, name: name };
 })();

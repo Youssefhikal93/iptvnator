@@ -68,6 +68,8 @@ window.Browser = function (hooks) {
         }
     });
     ParentalLock.onChange(function () {
+        // Recommendation rows were built for the old lock state.
+        BecauseRows.invalidate();
         if (!ParentalLock.isUnlocked()) {
             // A pending OK must not open an item from the old unlocked list.
             Keys.repeat(KEY.RETURN);

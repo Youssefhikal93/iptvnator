@@ -247,3 +247,37 @@ test('#58 pacing counts every request of a film: its search and details as well 
     // Three requests for film A: at two a second, B waits about 1.5 s after A started.
     assert.ok(times[2][1] - times[0][1] >= 1400, 'B asked ' + (times[2][1] - times[0][1]) + ' ms after A');
 });
+
+test('#58 a look-up started for one source stops when another source opens; its films never go to the first index', async function () {
+    var asked = [];
+    var open = 's1';
+    var films = { s1: [{ name: 'A', stream_id: 1 }, { name: 'A2', stream_id: 2 }], s2: [{ name: 'B', stream_id: 1 }, { name: 'B2', stream_id: 2 }] };
+    var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'collection-index.js', 'collection-lookup.js', 'collections.js'], {}, {
+        Tmdb: {
+            enabled: function () { return true; },
+            throttled: function () { return 0; },
+            fetches: function () { return 0; },
+            lookup: function (item) { asked.push(item.name); return Promise.resolve({ status: 'found', body: { id: 500 + item.stream_id } }); },
+            collection: function () { return Promise.resolve({ status: 'none' }); },
+        },
+        Player: { isOpen: function () { return false; } },
+    });
+    var g = env.globals;
+    var collections = g.Collections({
+        sourceId: function () { return open; },
+        movies: function () { return films[open]; },
+        all: function () { return films[open]; },
+        changed: function () {},
+    });
+    collections.start();
+    await until(function () { return asked.length >= 1; });
+    // Source 2 opens; nothing on the Collections side has run since.
+    open = 's2';
+    await new Promise(function (resolve) { setTimeout(resolve, 400); });
+    g.CollectionLookup.stop();
+    assert.equal(asked.indexOf('B'), -1, 'asked ' + asked.join(','));
+    assert.equal(asked.indexOf('B2'), -1, 'asked ' + asked.join(','));
+    var first = g.CollectionIndex('s1');
+    await first.ready();
+    assert.deepEqual(plain(first.film({ name: 'B2', stream_id: 2 })), undefined);
+});

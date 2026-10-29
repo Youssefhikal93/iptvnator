@@ -15,7 +15,10 @@
         "settings.top": "أعلى",
         "settings.side": "جانب",
         "settings.on": "تشغيل",
-        "settings.off": "إيقاف"
+        "settings.off": "إيقاف",
+        "settings.screenSaver": "شاشة التوقف",
+        "describe.screenSaver": "تعرض عناوينك عندما لا يُضغط أي زر لمدة، حتى لا تحترق الشاشة",
+        "saver.hint": "اضغط أي زر للرجوع"
     },
     "ary": {
         "settings.accent": "لون التمييز",
@@ -33,7 +36,10 @@
         "settings.top": "الفوق",
         "settings.side": "الجنب",
         "settings.on": "مفعلة",
-        "settings.off": "معطلة"
+        "settings.off": "معطلة",
+        "settings.screenSaver": "شاشة التوقف",
+        "describe.screenSaver": "كتبين العناوين ديالك ملي ما كتورك على حتى زر شي مدة، باش الشاشة ما تتحرقش",
+        "saver.hint": "ورك على شي زر باش ترجع"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

@@ -1264,5 +1264,6 @@ window.Player = (function () {
         isOpen: function () {
             return current !== null;
         },
+        paused: isPaused,
     };
 })();

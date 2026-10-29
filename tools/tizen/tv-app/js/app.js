@@ -202,6 +202,13 @@
 
     LoadScreen.pause(document.hidden);
     // With two or more profiles, ask who is watching before anything loads.
+    // Menus, a paused video and the live preview count as idle; a playing
+    // full-screen video never does.
+    ScreenSaver({
+        allowed: function () { return screen !== 'player' || Player.paused(); },
+        slides: browser.saverSlides,
+    });
+
     if (ProfileScreen.shouldAsk()) whoIsWatching();
     else browser.start();
     Log.info('IPTVnator TV started');

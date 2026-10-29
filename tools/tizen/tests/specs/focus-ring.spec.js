@@ -79,3 +79,11 @@ test('the ring width the checks assume matches the focus style', async ({ page }
     const shadow = await page.locator('.card.focused').evaluate(el => getComputedStyle(el).boxShadow);
     expect(shadow).toContain(`0px 0px 0px ${RING}px`);
 });
+
+test('a focused Home row tile grows to 105% and a big tile to 104% (#68)', async ({ page }) => {
+    await boot(page, homeSeed('comfortable', 'bigrow'));
+    const zoom = (selector) => page.locator(selector).evaluate((el) => getComputedStyle(el).transform);
+    await expect.poll(() => zoom('.hm-card.big.focus')).toBe('matrix(1.04, 0, 0, 1.04, 0, 0)');
+    await press(page, 'ArrowDown');
+    await expect.poll(() => zoom('.hm-card.focus:not(.big)')).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
+});

@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, back, moveTo, openFirst, setting } = require('./helpers');
+const { test, expect, boot, section, press, back, moveTo, openFirst, setting, choose } = require('./helpers');
 
 const RAIL_GERMAN = ['Startseite', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
 const RAIL_ENGLISH = ['Home', 'Live TV', 'Movies', 'Series', 'Settings'];
@@ -115,7 +115,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     const darkFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
 
-    await press(page, 'Enter');
+    await choose(page, 'Light');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Light');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -148,7 +148,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
 
     // Back to Dark restores the original colours.
     await setting(page, 'Theme');
-    await press(page, 'Enter');
+    await choose(page, 'Dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(dark);
 });
@@ -172,7 +172,7 @@ test('Animations Off stops artwork fades and focus growth, and survives a reload
     await back(page);
     await setting(page, 'Animations');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('On');
-    await press(page, 'Enter');
+    await choose(page, 'Off');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Off');
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'off');
     await page.reload();

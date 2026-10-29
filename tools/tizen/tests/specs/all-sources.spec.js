@@ -1,4 +1,4 @@
-const { test, expect, boot, channel, movie, section, category, enterItems, press, back, holdOK, menuChoice, moveTo, playing, setting } = require('./helpers');
+const { test, expect, boot, channel, movie, section, category, enterItems, press, back, holdOK, menuChoice, moveTo, playing, setting, choose } = require('./helpers');
 
 async function twoSources(page, options = {}) {
     await boot(page, { livePreview: options.preview, storage: {
@@ -40,7 +40,7 @@ test('This source stays isolated; the Display choice merges categories and Home 
     expect(labels[labels.indexOf('Home layout') + 1]).toBe('Favorites and recents from');
     await setting(page, 'Favorites and recents from');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('This source');
-    await press(page, 'Enter');
+    await choose(page, 'All sources');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('All sources');
     await section(page, 'Live TV');
     await mergedFavorites(page);

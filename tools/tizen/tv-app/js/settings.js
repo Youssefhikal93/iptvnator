@@ -1,6 +1,7 @@
 // App-wide choices live beside the library, independent of the active source.
 // The groups run down the left and the chosen group's rows fill the right
-// (#49): ▲▼ pick a group, ▶ or OK opens its rows, Return goes back to the groups.
+// (#49): ▲▼ pick a group, ▶ or OK opens its rows; ◀ or Return goes back to the groups.
+// OK on a row flips an on/off switch, opens the row's choices as a list, or runs it.
 // Related settings share one group under part headings (#52).
 window.Settings = function (hooks) {
     'use strict';
@@ -92,7 +93,7 @@ window.Settings = function (hooks) {
             return html`<span class="st-toggle"><span class="st-value">${valueText(row)}</span>
                 <span class=${classes('st-switch', { on: Prefs.get(row.key) === true })}><i></i></span></span>`;
         }
-        if (row.key) return html`<span class="st-choice"><i class="st-arrow">‹</i><span class="st-value">${valueText(row)}</span><i class="st-arrow">›</i></span>`;
+        if (row.key) return html`<span class="st-choice"><span class="st-value">${valueText(row)}</span><i class="st-arrow">›</i></span>`;
         return html`<span class="st-value">${valueText(row)}</span>`;
     };
 
@@ -139,11 +140,14 @@ window.Settings = function (hooks) {
         hooks.chrome();
     }
 
-    function change(step, cycle) {
+    function save(row, value) {
+        Prefs.set(row.key, value);
+        hooks.toast(I18n.t('toast.saved'));
+        render();
+    }
+
+    function choose() {
         const row = current();
-        const index = row.key ? choice(row) : 0;
-        // LEFT at the first choice goes back to the groups; RIGHT cycles forward.
-        if (step < 0 && index === 0) return setZone('groups');
         if (!row.key) {
             if (row.backup) BackupScreen.open(row.backup);
             if (row.action && row.action.indexOf('tmdb-') === 0) return TmdbSettings.act(row.action, hooks, render);
@@ -152,11 +156,13 @@ window.Settings = function (hooks) {
             if (row.action) hooks.manage(row.action);
             return;
         }
-        // Pills and arrows stop at the last choice on RIGHT; OK still cycles.
-        if (!cycle && index + step >= row.choices.length) return;
-        Prefs.set(row.key, row.choices[(index + step) % row.choices.length]);
-        hooks.toast(I18n.t('toast.saved'));
-        render();
+        if (isSwitch(row)) return save(row, !Prefs.get(row.key));
+        // The choices as a list, the current one ticked, as for the language.
+        const at = choice(row);
+        Menu.open(row.label, row.labels.map((label, index) => ({
+            label: (index === at ? '\u2713 ' : '') + label,
+            run: () => save(row, row.choices[index]),
+        })), at);
     }
 
     function groupKey(code) {
@@ -177,8 +183,6 @@ window.Settings = function (hooks) {
 
     return {
         render,
-        // The hint bar follows the side of the screen in use.
-        hints: () => I18n.t(zone === 'rows' ? 'hints.settings' : 'hints.settingsGroups'),
         // Opens the group holding the first row `match` accepts (a source, Add).
         select(match) {
             groups().some((entry, index) => {
@@ -199,10 +203,8 @@ window.Settings = function (hooks) {
         },
         key(code) {
             if (zone === 'groups') return groupKey(code);
-            if (Keys.isBack(code)) return setZone('groups');
-            if (code === KEY.LEFT) return change(-1);
-            if (code === KEY.RIGHT) return change(1, false);
-            if (code === KEY.ENTER) return change(1, true);
+            if (Keys.isBack(code) || code === KEY.LEFT) return setZone('groups');
+            if (code === KEY.ENTER) return choose();
             if (code === KEY.UP || code === KEY.DOWN) {
                 focus = Math.max(0, Math.min(groups()[group].rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
                 render();

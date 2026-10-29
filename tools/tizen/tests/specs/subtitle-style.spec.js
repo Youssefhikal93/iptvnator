@@ -1,9 +1,9 @@
-const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting, playerGroup, playerMenu } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, openFirst, playing, back, enterItems, sendKeyCode, setting: openSetting, choose, playerGroup, playerMenu } = require('./helpers');
 
 const setting = (page, label) => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.st-value');
 const menuLabel = '#pl-menu .pl-menu-item.focus span:last-child';
 
-test('Settings subtitle and picture rows cycle choices and survive a reload', async ({ page }) => {
+test('Settings subtitle and picture rows offer their choices and survive a reload', async ({ page }) => {
     await boot(page);
     await section(page, 'Settings');
     expect((await page.locator('.st-group').allTextContents()).slice(0, 5)).toEqual(['Sources', 'Profiles', 'Playback', 'Subtitles', 'Display']);
@@ -18,7 +18,7 @@ test('Settings subtitle and picture rows cycle choices and survive a reload', as
         await expect(setting(page, label)).toHaveText(initial);
         await openSetting(page, label);
         for (const value of choices) {
-            await press(page, 'Enter');
+            await choose(page, value);
             await expect(setting(page, label)).toHaveText(value);
         }
     }

@@ -42,6 +42,7 @@ window.AvResolve = (function () {
     // their codecs, and the audio the provider reports (`expected`). An AUDIO
     // track missing from AVPlay while the provider lists one means the TV
     // cannot decode that sound. `when` marks a later look ("after 5s").
+    // Returns whether an AUDIO track was listed (true when unknown).
     function tracks(av, expected, when) {
         try {
             var list = av.getTotalTrackInfo().map(function (track) {
@@ -57,8 +58,10 @@ window.AvResolve = (function () {
             var said = expected && expected.codec_name ? ' (provider audio ' + expected.codec_name +
                 (expected.profile ? ' ' + expected.profile : '') + (expected.channels ? ' ' + expected.channels + 'ch' : '') + ')' : '';
             Log.info('AVPlay tracks ' + (when ? when + ' ' : '') + (list.join(' ') || 'none') + said);
+            return list.some(function (entry) { return entry.indexOf('AUDIO:') === 0; });
         } catch (e) {
             Log.error('AVPlay tracks unavailable (' + e.name + ')');
+            return true;
         }
     }
 

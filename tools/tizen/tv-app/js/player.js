@@ -978,7 +978,9 @@ window.Player = (function () {
                 }, ROUTE_GAP_MS);
             };
         }
-        route.stale = function () { return chain.stale(mine) || current !== request; };
+        // Also stale once this AVPlay attempt has ended (a timeout moves the
+        // chain on), so a late route never opens a second stream (ADR 0006).
+        route.stale = function () { return chain.stale(mine) || current !== request || !!(finish.ended && finish.ended()); };
         var first = route.name === 'file' && (at === 0 || !link);
         if (route.direct) Log.info('AUDIO route ' + route.name + ' direct');
         var address = first || route.direct ? Promise.resolve({ url: route.url }) : AvResolve.final(route.name === 'file' ? link : route.url);

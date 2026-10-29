@@ -3,9 +3,9 @@ const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup } = 
 // #54: Samsung TVs cannot decode DTS. The fake AVPlay lists a sound track
 // for the file only when it is not DTS-only, and for the provider's
 // converted .m3u8 / .ts addresses only when `converted` says they have one.
-async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'], refused = false } = {}) {
+async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'], refused = false, slowFail = 0 } = {}) {
     await request.get('/__fail?file=' + file);
-    await page.addInitScript(({ dtsOnly, converted, refused }) => {
+    await page.addInitScript(({ dtsOnly, converted, refused, slowFail }) => {
         const extra = (info) => JSON.stringify(info);
         window.nativePlayback = { state: 'NONE', url: '', opened: [], seeks: [], listener: {} };
         const ext = () => nativePlayback.url.split('.').pop();
@@ -21,6 +21,8 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
             prepareAsync: (success, error) => {
                 // Like AVPlay, HLS is known by its .m3u8 address only.
                 if (!['mkv', 'm3u8', 'ts'].includes(ext())) { nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE'); return error({ name: 'InvalidAccessError' }); }
+                // slowFail: the .m3u8 address fails only after that many ms.
+                if (slowFail && ext() === 'm3u8') return setTimeout(() => { nativePlayback.listener.onerror('PLAYER_ERROR_CONNECTION_FAILED'); error({ name: 'Error' }); }, slowFail);
                 if (!refused || ext() === 'mkv') return success();
                 nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE');
                 error({ name: 'InvalidAccessError' });
@@ -39,7 +41,7 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
             stop: () => { nativePlayback.state = 'IDLE'; },
             close: () => { nativePlayback.state = 'NONE'; },
         } };
-    }, { dtsOnly: file === 'dts-only.mkv.head', converted, refused });
+    }, { dtsOnly: file === 'dts-only.mkv.head', converted, refused, slowFail });
     await boot(page);
 }
 
@@ -220,4 +222,16 @@ test('a movie left while its file is still being read never has its sound read u
     const pairs = await page.evaluate(() => sniffed);
     expect(pairs.length).toBeGreaterThan(0);
     for (const [id, file] of pairs) expect(id.replace(/\D/g, '')).toBe(file.replace(/\D/g, ''));
+});
+
+test('a converted address that fails just before the attempt times out does not reopen AVPlay after the fallback', async ({ page, request }) => {
+    test.setTimeout(90_000);
+    // The .m3u8 fails at 19.5 s; the attempt ends at 20 s and the chain moves on.
+    await samsungPlayer(page, request, { converted: ['ts'], slowFail: 19_500 });
+    await openFirst(page, 'Movies');
+    await press(page, 'Enter');
+    await expect.poll(() => opened(page)).toEqual(['2025.m3u8']);
+    await page.waitForTimeout(24_000);
+    // The .ts try was due 1 s after the failure, after the attempt had ended.
+    expect(await opened(page)).toEqual(['2025.m3u8']);
 });

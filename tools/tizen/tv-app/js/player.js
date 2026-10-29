@@ -929,6 +929,12 @@ window.Player = (function () {
                 AvResolve.tracks(av, current.audio);
                 av.play();
                 finish(null);
+                // Some firmware lists a track only once playback runs; a second look
+                // tells a late track from a missing one.
+                var shown = current;
+                setTimeout(function () {
+                    if (current === shown && usingAv) AvResolve.tracks(av, null, 'after 5s');
+                }, 5000);
             },
             function (err) {
                 finish('prepare ' + (err && err.name));

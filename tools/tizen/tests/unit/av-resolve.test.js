@@ -29,3 +29,10 @@ test('a sound the TV cannot play shows as no AUDIO track next to the provider au
 test('without provider facts or codecs the line stays as before', function () {
     assert.equal(tracksLine([{ type: 'VIDEO', extra_info: 'plain text' }]), 'AVPlay tracks VIDEO:-');
 });
+
+test('a later look is marked as such', function () {
+    var lines = [];
+    var env = load(['av-resolve.js'], {}, { Log: { info: function (text) { lines.push(text); } } });
+    env.globals.AvResolve.tracks({ getTotalTrackInfo: function () { return [{ type: 'AUDIO', extra_info: '{"fourCC":"AC3"}' }]; } }, null, 'after 5s');
+    assert.equal(lines[0], 'AVPlay tracks after 5s AUDIO:-/AC3');
+});

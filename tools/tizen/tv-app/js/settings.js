@@ -12,6 +12,7 @@ window.Settings = function (hooks) {
     const root = document.getElementById('settings');
     const onOff = () => [I18n.t('common.on'), I18n.t('common.off')];
     const views = () => [I18n.t('settings.list'), I18n.t('settings.grid')];
+    const boxViews = () => views().concat([I18n.t('settings.wide'), I18n.t('settings.info')]);
     let group = 0;
     let focus = 0;
     let zone = 'groups';
@@ -42,8 +43,8 @@ window.Settings = function (hooks) {
         ...OpenSubsSettings.rows,
         { get group() { return I18n.t('settings.display'); }, get label() { return I18n.t('settings.homeLayout'); }, get hint() { return I18n.t('describe.homeLayout'); }, key: 'homeLayout', choices: ['cinema', 'bigrow', 'backdrop'], get labels() { return [I18n.t('settings.cinema'), I18n.t('settings.bigRow'), I18n.t('settings.backdrop')]; } },
         { get label() { return I18n.t('settings.libraryFrom'); }, get hint() { return I18n.t('describe.libraryFrom'); }, key: 'librarySources', choices: ['current', 'all'], get labels() { return [I18n.t('settings.thisSource'), I18n.t('settings.allSources')]; } },
-        { get label() { return I18n.t('settings.viewMovies'); }, key: 'view:movies', choices: ['list', 'grid'], get labels() { return views(); } },
-        { get label() { return I18n.t('settings.viewSeries'); }, key: 'view:series', choices: ['list', 'grid'], get labels() { return views(); } },
+        { get label() { return I18n.t('settings.viewMovies'); }, key: 'view:movies', choices: ['list', 'grid', 'wide', 'info'], get labels() { return boxViews(); } },
+        { get label() { return I18n.t('settings.viewSeries'); }, key: 'view:series', choices: ['list', 'grid', 'wide', 'info'], get labels() { return boxViews(); } },
         { get label() { return I18n.t('settings.viewLive'); }, key: 'view:live', choices: ['list', 'grid'], get labels() { return views(); } },
         { get label() { return I18n.t('settings.sortMovies'); }, key: 'sort:movies', choices: Sort.options.map(sortId), get labels() { return Sort.options.map(sortLabel); } },
         { get label() { return I18n.t('settings.sortSeries'); }, key: 'sort:series', choices: Sort.options.map(sortId), get labels() { return Sort.options.map(sortLabel); } },

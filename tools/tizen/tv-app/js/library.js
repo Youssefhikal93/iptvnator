@@ -147,7 +147,9 @@ window.Library = (function () {
         },
         view: function (section, fallback) {
             var saved = Prefs.get('view:' + section);
-            return saved === 'grid' || saved === 'list' ? saved : fallback;
+            // Wide picture and Info boxes (#66) are for Movies and Series only.
+            var modes = section === 'live' ? ['list', 'grid'] : ['list', 'grid', 'wide', 'info'];
+            return modes.indexOf(saved) !== -1 ? saved : fallback;
         },
         setView: function (section, mode) {
             Prefs.set('view:' + section, mode);

@@ -13,7 +13,7 @@ const PARTS = {
 const NAMES = { 900: 'Movie Trilogy Collection', 901: 'Pair Collection', 902: 'Lonely Collection' };
 
 // Every TMDB request as path?query, so a repeat is easy to see.
-async function tmdb(page) {
+async function tmdb(page, data = { collectionOf: COLLECTION_OF, parts: PARTS }) {
     const asked = [];
     await page.route('https://image.tmdb.org/**', route => route.fulfill({ path: path.join(__dirname, '../media/poster.jpg'), contentType: 'image/jpeg' }));
     await page.route('https://api.themoviedb.org/**', route => {
@@ -26,14 +26,14 @@ async function tmdb(page) {
         const movie = /^\/movie\/(\d+)$/.exec(endpoint);
         if (movie) {
             const n = Number(movie[1]) - 100;
-            const collection = COLLECTION_OF[n];
+            const collection = data.collectionOf[n];
             return route.fulfill({ json: { id: Number(movie[1]), title: 'Movie ' + n, release_date: '2021-03-14', overview: 'A film.', poster_path: '/p.jpg',
                 belongs_to_collection: collection ? { id: collection[0], name: collection[1] } : null, credits: { cast: [] }, videos: { results: [] }, similar: { results: [] } } });
         }
         const collection = /^\/collection\/(\d+)$/.exec(endpoint);
-        if (collection && PARTS[collection[1]]) {
+        if (collection && data.parts[collection[1]]) {
             return route.fulfill({ json: { id: Number(collection[1]), name: NAMES[collection[1]], poster_path: '/c.jpg',
-                parts: PARTS[collection[1]].map(([id, title, year]) => ({ id, title, release_date: year + '-01-01', poster_path: '/p.jpg' })) } });
+                parts: data.parts[collection[1]].map(([id, title, year]) => ({ id, title, release_date: year + '-01-01', poster_path: '/p.jpg' })) } });
         }
         if (endpoint.startsWith('/genre/')) return route.fulfill({ json: { genres: [] } });
         return route.fulfill({ status: 404, json: { status_message: 'not found' } });
@@ -124,7 +124,9 @@ test('a collection opens on its films in release order, a missing one greyed; th
     await expect(page.locator('#items .card').nth(0).locator('.cl-tag')).toHaveCount(0);
     await back(page);
     await expect(page.locator('#items .card-title')).toHaveText(['Movie Trilogy Collection', 'Pair Collection']);
-    // The top bar finds collections by name.
+    // The top bar finds collections by name; ▲ passes the Refresh pill (#67) first.
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#items .list-action.focused')).toHaveCount(1);
     await toolbar(page, 'search');
     await press(page, 'Enter');
     await page.keyboard.type('pair');
@@ -184,4 +186,40 @@ test('without a key collections come from the film names and TMDB is never asked
     await expect(row.locator('.tm-card').nth(1).locator('.cl-tag')).toHaveText('This film');
     await page.waitForTimeout(500);
     expect(asked).toHaveLength(0);
+});
+
+test('Refresh in the Collections header asks every film again in the background and keeps the shelf until new answers come', async ({ page }) => {
+    test.setTimeout(240_000);
+    const data = { collectionOf: { ...COLLECTION_OF }, parts: { ...PARTS } };
+    const asked = await tmdb(page, data);
+    await boot(page, keyed);
+    await section(page, 'Movies');
+    await collectionsFound(page);
+    await openCollections(page);
+    await enterItems(page);
+    // ▲ from the top row reaches the pill; ▼ goes back to the tiles.
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#items .list-action.focused')).toHaveText('\u21bb Refresh');
+    await expect(page.locator('#items .card.focused')).toHaveCount(0);
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#items .card.focused')).toHaveCount(1);
+    await press(page, 'ArrowUp');
+
+    // TMDB now puts Movie 7 in the pair.
+    data.collectionOf[7] = [901, 'Pair Collection'];
+    data.parts[901] = [...PARTS[901], [107, 'Movie 7', '2003']];
+    const before = lookups(asked).length;
+    await press(page, 'Enter');
+    await expect(page.locator('#toast')).toContainText('Checking your movies again');
+    // What is known stays on the shelf while the films are asked again.
+    await expect(page.locator('#items .card-title')).toHaveText(['Movie Trilogy Collection', 'Pair Collection']);
+    await expect(page.locator('#items .list-header')).toContainText(/Finding collections… \d+ of 25 movies checked/, { timeout: 30_000 });
+    await expect.poll(() => page.evaluate(() => CollectionLookup.progress()), { timeout: 120_000 }).toBe(null);
+    await expect(page.locator('#items .card-sub')).toHaveText(['4 films · 3 available', '3 films · 3 available'], { timeout: 10_000 });
+    // Each film's details once more, each collection once more, no new searches.
+    const again = lookups(asked).slice(before);
+    expect(again.filter(entry => entry.startsWith('/search/movie'))).toHaveLength(0);
+    expect(again.filter(entry => entry.startsWith('/movie/'))).toHaveLength(25);
+    expect(new Set(again.filter(entry => entry.startsWith('/movie/'))).size).toBe(25);
+    expect(again.filter(entry => entry.startsWith('/collection/')).sort()).toEqual(['/collection/900?', '/collection/901?', '/collection/902?'].map(e => expect.stringMatching('^' + e.replace('?', '\\?'))));
 });

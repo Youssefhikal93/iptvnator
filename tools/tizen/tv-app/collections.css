@@ -18,3 +18,7 @@
 .row .sub { margin-left: 12px; font-size: 18px; color: var(--muted); white-space: nowrap; }
 .poster.missing .icon { opacity: 0.35; filter: grayscale(1); }
 .poster .cl-tag.na { z-index: 1; }
+
+/* The Collections shelf's Refresh pill (#67), at the end of the list header. */
+.list-header .list-action { float: right; margin-top: -6px; padding: 6px 20px; border: 3px solid var(--search-border); border-radius: 999px; background: var(--search-bg); color: var(--on-surface); font-size: 22px; font-weight: 600; }
+.list-header .list-action.focused { border-color: var(--focus-ring); background: var(--selection-surface-strong); }

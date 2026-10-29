@@ -25,6 +25,7 @@
         <link rel="stylesheet" href="settings.css" />
         <link rel="stylesheet" href="screen-saver.css" />
         <link rel="stylesheet" href="collections.css" />
+        <link rel="stylesheet" href="boxes.css" />
     </head>
     <body>
         <aside id="rail"></aside>
@@ -38,6 +39,8 @@
                 <span id="genre-button" class="view-btn hidden" data-mode="genre" title="Genre" data-i18n-title="find.genre"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18h4v-2h-4zM3 6v2h18V6zm3 7h12v-2H6z"/></svg><span></span></span>
                 <span class="view-btn" data-mode="list" title="List view" data-i18n-title="header.listView"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z"/></svg></span>
                 <span class="view-btn" data-mode="grid" title="Grid view" data-i18n-title="header.gridView"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h5V5H4zm0 7h5v-6H4zm6 0h5v-6h-5zm6 0h5v-6h-5zm-6-7h5V5h-5zm6-6v6h5V5z"/></svg></span>
+                <span class="view-btn hidden" data-mode="wide" title="Wide picture boxes" data-i18n-title="header.wideView"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h8v6H3zm10 0h8v6h-8zM3 13h8v6H3zm10 0h8v6h-8z"/></svg></span>
+                <span class="view-btn hidden" data-mode="info" title="Info boxes" data-i18n-title="header.infoView"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h6v7H3zm8 1h10v2H11zm0 3h7v2h-7zM3 13h6v7H3zm8 1h10v2H11zm0 3h7v2h-7z"/></svg></span>
                 <span class="view-btn hidden" data-mode="sort" title="Sort" data-i18n-title="browser.sort"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v2H3zm0 5h12v2H3zm0 5h6v2H3z"/></svg></span>
                 <span class="view-btn hidden" data-mode="hide-watched" role="button" aria-pressed="false"></span>
                 <span id="guide-button" class="view-btn hidden" data-mode="guide" data-i18n="header.guide">TV guide</span>
@@ -259,6 +262,7 @@
         <script src="js/xmltv-store.js"></script>
         <script src="js/xmltv.js"></script>
         <script src="js/guide-data.js"></script>
+        <script src="js/box-cards.js"></script>
         <script src="js/list.js"></script>
         <script src="js/intro-marks.js"></script>
         <script src="js/player-series.js"></script>

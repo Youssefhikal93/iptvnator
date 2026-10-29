@@ -101,20 +101,22 @@ test('#58 the collection index keeps films for good and lists collections with t
 function lookupClient(answers) {
     var asked = [];
     var collections = [];
+    var forced = [];
     var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'collection-index.js', 'collection-lookup.js'], {}, {
         Tmdb: {
             enabled: function () { return true; },
             throttled: function () { return 0; },
             fetches: function () { return 0; },
-            lookup: function (item) { asked.push(item.name); return Promise.resolve(answers[item.name]); },
-            collection: function (id) {
+            lookup: function (item, type, force) { asked.push(item.name); forced.push(item.name + (force ? '!' : '')); return Promise.resolve(answers[item.name]); },
+            collection: function (id, force) {
                 collections.push(id);
+                forced.push('c' + id + (force ? '!' : ''));
                 return Promise.resolve({ status: 'found', body: { name: 'C' + id, parts: [{ id: 1, title: 'A', release_date: '2001-01-01' }, { id: 2, title: 'B', release_date: '2000-01-01' }] } });
             },
         },
         Player: { isOpen: function () { return false; } },
     });
-    return { env: env, asked: asked, collections: collections };
+    return { env: env, asked: asked, collections: collections, forced: forced };
 }
 
 function until(check) {
@@ -122,7 +124,7 @@ function until(check) {
         var started = Date.now();
         (function poll() {
             if (check()) return resolve();
-            if (Date.now() - started > 5000) return reject(new Error('timed out'));
+            if (Date.now() - started > 5000) return reject(new Error('timed out ' + check.toString().slice(0, 120)));
             setTimeout(poll, 20);
         })();
     });
@@ -166,4 +168,58 @@ test('#58 the look-up asks each film once, one at a time, fetches a shared colle
     await new Promise(function (resolve) { setTimeout(resolve, 1000); });
     assert.equal(other.asked.length, 0);
     other.env.globals.CollectionLookup.stop();
+});
+
+test('#67 Refresh asks every film and collection again with fresh details, keeping what is known until answered', async function () {
+    var answers = {
+        A: { status: 'found', body: { id: 11, belongs_to_collection: { id: 5 } } },
+        B: { status: 'found', body: { id: 12, belongs_to_collection: { id: 5 } } },
+        C: { status: 'none' },
+    };
+    var client = lookupClient(answers);
+    var g = client.env.globals;
+    var films = ['A', 'B', 'C'].map(function (name, i) { return { name: name, stream_id: i + 1 }; });
+    var index = g.CollectionIndex('s1');
+    var deps = { index: index, movies: function () { return films; }, changed: function () {} };
+    g.CollectionLookup.start(deps);
+    await until(function () { return client.asked.length === 3 && g.CollectionLookup.progress() === null; });
+    assert.deepEqual(plain(client.forced), ['A', 'c5', 'B', 'C']);
+
+    // C now belongs to collection 5 as well.
+    answers.C = { status: 'found', body: { id: 13, belongs_to_collection: { id: 5 } } };
+    g.CollectionLookup.refresh(deps);
+    await index.ready();
+    assert.equal(index.due(films[0]), true);
+    // Marked, not forgotten: the shelf still shows collection 5.
+    assert.deepEqual(plain(index.film(films[0])), [5, 11]);
+    assert.equal(index.shelf(films).length, 1);
+    await until(function () { return client.asked.length === 6 && g.CollectionLookup.progress() === null; });
+    // Every film once more with its details asked again, the collection once more.
+    assert.deepEqual(plain(client.forced.slice(4)), ['A!', 'c5!', 'B!', 'C!']);
+    assert.deepEqual(plain(index.film(films[2])), [5, 13]);
+    assert.equal(index.due(films[0]), false);
+    // A second pass after the refresh asks nothing.
+    g.CollectionLookup.start(deps);
+    await new Promise(function (resolve) { setTimeout(resolve, 200); });
+    assert.equal(client.asked.length, 6);
+    g.CollectionLookup.stop();
+});
+
+test('#67 a forced look-up asks TMDB for the details again; the search and an unforced look-up stay saved', async function () {
+    var calls = [];
+    var api = tmdbClient(function (url) {
+        var path = /\/3(\/[^?]*)/.exec(url)[1];
+        calls.push(path);
+        if (path === '/search/movie') return reply(200, { results: [{ id: 7, title: 'Alien', release_date: '1979-05-25' }] });
+        if (path === '/collection/8091') return reply(200, { id: 8091, name: 'Alien Collection', parts: [] });
+        return reply(200, { id: 7, title: 'Alien', overview: 'Space.', belongs_to_collection: { id: 8091 } });
+    });
+    await api.Tmdb.lookup({ name: 'Alien (1979)' }, 'movie');
+    await api.Tmdb.collection(8091);
+    await api.Tmdb.lookup({ name: 'Alien (1979)' }, 'movie');
+    await api.Tmdb.collection(8091);
+    assert.deepEqual(plain(calls), ['/search/movie', '/movie/7', '/collection/8091']);
+    await api.Tmdb.lookup({ name: 'Alien (1979)' }, 'movie', true);
+    await api.Tmdb.collection(8091, true);
+    assert.deepEqual(plain(calls.slice(3)), ['/movie/7', '/collection/8091']);
 });

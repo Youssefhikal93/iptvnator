@@ -102,7 +102,9 @@
     box-shadow: var(--focus-shadow);
 }
 /* The grown tile and its 8 px ring stay inside the gap to the next tile and
-   the row title (#56): wide tiles and grid cards grow less. */
+   the row title (#56): wide tiles and grid cards grow less. Home tiles grow
+   to 105% (#68). */
+.hm-card { --focus-zoom: 1.05; }
 .hm-card.big { --focus-zoom: 1.04; }
 .card { --focus-zoom: 1.05; }
 /* TMDB rows scroll by card offsets, so padding does not change their stride. */

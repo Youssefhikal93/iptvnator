@@ -5,8 +5,10 @@ window.Browser = function (hooks) {
 
     var KEY = Keys;
     // Header toolbar: search, the genre filter (Movies and Series), list,
-    // grid, then Sort or the Live TV guide.
-    var TOOLS = ['search', 'list', 'grid', 'sort'];
+    // grid, the Wide picture and Info boxes (Movies and Series, #66), then
+    // Sort or the Live TV guide.
+    var TOOLS = ['search', 'list', 'grid', 'wide', 'info', 'sort'];
+    var BOXES = ['wide', 'info'];
     var STEPS = {};
     STEPS[KEY.UP] = -1;
     STEPS[KEY.DOWN] = 1;
@@ -227,6 +229,12 @@ window.Browser = function (hooks) {
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
+        picture: BoxCards.picture,
+        meta: function (it) { return BoxCards.meta(it, state.section); },
+        action: function () {
+            return refreshAvailable() ? { label: I18n.t('collections.refresh'), focused: state.refreshFocus } : null;
+        },
+        plot: function (it) { return BoxCards.plot(it, state.section); },
     });
     var guide = TvGuide({
         play: function (channel) { openEntry(channel, 'live'); },
@@ -509,6 +517,33 @@ window.Browser = function (hooks) {
         }, 2000);
     }
 
+    // The Collections shelf's Refresh pill (#67): with a TMDB key, while the
+    // shelf itself is shown. ▲ from its top row reaches it.
+    function refreshAvailable() {
+        var row = shownCategory();
+        return state.section === 'movies' && !!row && row.virtual === 'collections' && !state.collection && Tmdb.enabled() && !currentList.showingSearch();
+    }
+
+    function focusRefresh(on) {
+        state.refreshFocus = on;
+        items.setActive(!on);
+    }
+
+    // Keys while the Refresh pill has the focus.
+    function onRefreshKey(code) {
+        if (code === KEY.ENTER) {
+            collections.refresh();
+            toast(I18n.t('collections.refreshing'));
+        } else if (code === KEY.DOWN) focusRefresh(false);
+        else if (code === KEY.UP) {
+            focusRefresh(false);
+            if (!enterToolbar('items') && menuOnTop()) setZone('rail');
+        } else if (code === KEY.LEFT) setZone('categories');
+        else if (Keys.isBack(code)) setZone('rail');
+        else return false;
+        return true;
+    }
+
     // OK on a collection lists its films; Return goes back to the collections.
     function openCollection(entry) {
         var back = { list: visible.list, empty: visible.empty, raw: visible.raw, index: items.index() };
@@ -664,7 +699,8 @@ window.Browser = function (hooks) {
     }
 
     function applyView() {
-        items.setGrid(viewMode() === 'grid');
+        var mode = viewMode();
+        items.setGrid(mode !== 'list', BOXES.indexOf(mode) !== -1 ? mode : '');
     }
 
     function setView(mode) {
@@ -784,7 +820,10 @@ window.Browser = function (hooks) {
     }
 
     function toolbarTools() {
-        var tools = libraryRows.canSort(shownCategory()) ? TOOLS : TOOLS.slice(0, 3);
+        var sort = libraryRows.canSort(shownCategory());
+        var tools = TOOLS.filter(function (tool) {
+            return tool === 'sort' ? sort : BOXES.indexOf(tool) === -1 || state.section !== 'live';
+        });
         if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
         return guideAvailable() ? tools.concat(['guide']) : tools;
@@ -1003,7 +1042,7 @@ window.Browser = function (hooks) {
                 btn.setAttribute('aria-pressed', String(hideOn));
                 btn.textContent = I18n.t('browser.hideWatched') + ': ' + I18n.t(hideOn ? 'common.on' : 'common.off');
             }
-            if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
+            if (mode === 'sort' || BOXES.indexOf(mode) !== -1) btn.classList.toggle('hidden', !on || tools.indexOf(mode) === -1);
             if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
             if (mode === 'genre') {
                 // The genre in use shows on the button.
@@ -1025,6 +1064,7 @@ window.Browser = function (hooks) {
     function setZone(zone) {
         if (state.zone === 'rail' && zone !== 'rail') LoadScreen.enter();
         if (zone !== 'rail') state.profileFocus = false;
+        state.refreshFocus = false;
         state.zone = zone;
         categories.setActive(zone === 'categories');
         items.setActive(zone === 'items');
@@ -1926,9 +1966,11 @@ window.Browser = function (hooks) {
             else return code === KEY.RIGHT || code === KEY.ENTER;
         } else {
             var grid = items.cols() > 1;
+            if (state.refreshFocus) return onRefreshKey(code);
             if (STEPS[code]) {
                 var moved = moveItems(code);
-                if (!moved && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
+                if (!moved && code === KEY.UP && refreshAvailable()) focusRefresh(true);
+                else if (!moved && code === KEY.UP && !enterToolbar('items') && menuOnTop()) setZone('rail');
                 else if (!moved && (code === KEY.DOWN || code === KEY.CH_DOWN)) genres.more();
             } else if (grid && code === KEY.RIGHT) items.move(1);
             else if (grid && code === KEY.LEFT && items.index() % items.cols() !== 0) items.move(-1);

@@ -3,7 +3,7 @@
 window.List = function (el, options) {
     'use strict';
 
-    var state = { items: [], index: 0, active: false, empty: '', grid: false, loading: false };
+    var state = { items: [], index: 0, active: false, empty: '', grid: false, boxes: '', loading: false };
     Prefs.onChange(function (name) {
         if (name === 'density') render();
     });
@@ -49,6 +49,9 @@ window.List = function (el, options) {
 
     function render() {
         el.classList.toggle('channels', plates());
+        // Wide picture and Info boxes (#66) are grids with their own counts in CSS.
+        el.classList.toggle('boxes-wide', state.boxes === 'wide');
+        el.classList.toggle('boxes-info', state.boxes === 'info');
         var grid = gridSize();
         var rows = state.grid ? grid.rows : visibleRows();
         var count = state.items.length;
@@ -77,6 +80,14 @@ window.List = function (el, options) {
             position.className = 'count';
             position.textContent = state.index + 1 + ' / ' + count;
             header.appendChild(position);
+        }
+        // A pill at the end of the header, such as Collections' Refresh (#67).
+        var action = options.action && options.action();
+        if (action) {
+            var pill = document.createElement('span');
+            pill.className = 'list-action' + (action.focused ? ' focused' : '');
+            pill.textContent = action.label;
+            header.appendChild(pill);
         }
         el.appendChild(header);
 
@@ -163,6 +174,32 @@ window.List = function (el, options) {
         el.appendChild(strip);
     }
 
+    function text(cls, value) {
+        var node = document.createElement('div');
+        node.className = cls;
+        node.textContent = value;
+        return node;
+    }
+
+    // A Wide picture or Info box (#66): the picture, then title, meta and plot.
+    function box(item, card) {
+        card.className += ' box ' + state.boxes;
+        var picture = document.createElement('div');
+        picture.className = 'poster';
+        var src = (options.picture && options.picture(item)) || (options.icon && options.icon(item));
+        picture.appendChild(src ? logo(src, item) : placeholder(item));
+        if (options.decorate) options.decorate(picture, item);
+        card.appendChild(picture);
+        var caption = document.createElement('div');
+        caption.className = 'box-text';
+        caption.appendChild(text('card-title', options.label(item)));
+        var meta = options.meta ? options.meta(item) : options.sub && options.sub(item);
+        if (meta) caption.appendChild(text('box-meta', meta));
+        var plot = state.boxes === 'info' && options.plot && options.plot(item);
+        if (plot) caption.appendChild(text('box-plot', plot));
+        card.appendChild(caption);
+    }
+
     // Poster cards follow CSS columns; only the visible rows exist in the DOM.
     function renderGrid(start, count, size) {
         var grid = document.createElement('div');
@@ -172,6 +209,11 @@ window.List = function (el, options) {
             var card = document.createElement('div');
             card.className = plates() ? 'card channel' : 'card';
             if (i === state.index) card.className += state.active ? ' focused' : ' selected';
+            if (state.boxes && !plates()) {
+                box(item, card);
+                grid.appendChild(card);
+                continue;
+            }
             var poster;
             if (plates()) {
                 poster = plate(item, 'poster');
@@ -222,8 +264,10 @@ window.List = function (el, options) {
             render();
             return moved;
         },
-        setGrid: function (grid) {
+        // boxes: '' for posters, or 'wide' / 'info' (#66).
+        setGrid: function (grid, boxes) {
             state.grid = grid;
+            state.boxes = (grid && boxes) || '';
             render();
         },
         cols: function () {

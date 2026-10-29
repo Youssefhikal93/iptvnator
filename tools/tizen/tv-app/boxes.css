@@ -1,0 +1,43 @@
+/* Movies and Series as Wide picture boxes or Info boxes (#66). The counts are
+   read by List through AppearanceLayout, like the poster grid's. */
+#items.boxes-wide { --grid-cols: 3; --grid-rows: 3; --box-h: 190px; }
+#items.boxes-info { --grid-cols: 2; --grid-rows: 4; --box-h: 164px; }
+[data-density="compact"] #items.boxes-wide { --grid-cols: 4; --grid-rows: 4; --box-h: 142px; }
+[data-density="compact"] #items.boxes-info { --grid-cols: 2; --grid-rows: 5; --box-h: 132px; }
+
+.card.box { position: relative; height: var(--box-h); padding: 0; overflow: hidden; background: var(--widget-bg); }
+.card.box .poster { height: auto; border-radius: 0; }
+.card.box .card-title { margin: 0; font-weight: 600; }
+.box-meta { margin-top: 4px; font-size: 19px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Wide: the picture fills the box; the text sits on a dark fade at the bottom. */
+.card.box.wide .poster { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.card.box.wide .box-text {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 44px 18px 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0));
+    color: #ffffff;
+}
+.card.box.wide .box-meta { color: #d0d4dc; }
+[data-density="compact"] .card.box.wide .card-title { font-size: 21px; }
+[data-density="compact"] .card.box.wide .box-meta { font-size: 17px; }
+
+/* Info: a small poster beside the title, meta and two lines of plot. */
+.card.box.info { display: flex; gap: 18px; padding: 12px; }
+.card.box.info .poster { flex: none; width: 96px; border-radius: 10px; }
+[data-density="compact"] .card.box.info .poster { width: 76px; }
+.card.box.info .box-text { flex: 1; min-width: 0; padding-top: 2px; }
+.box-plot {
+    display: -webkit-box;
+    margin-top: 6px;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 19px;
+    line-height: 1.3;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+[data-density="compact"] .box-plot { -webkit-line-clamp: 1; font-size: 17px; }

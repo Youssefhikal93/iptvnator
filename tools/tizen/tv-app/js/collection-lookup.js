@@ -41,13 +41,13 @@ window.CollectionLookup = (function () {
 
         function count(movies) {
             self.total = movies.length;
-            self.done = movies.filter(function (item) { return deps.index.film(item) !== undefined; }).length;
+            self.done = movies.filter(function (item) { return !deps.index.due(item); }).length;
         }
 
         function nextFilm(movies) {
             for (; cursor < movies.length; cursor++) {
                 var item = movies[cursor];
-                if (deps.index.film(item) === undefined && (failures[deps.index.filmKey(item)] || 0) < MAX_FAILURES) return item;
+                if (deps.index.due(item) && (failures[deps.index.filmKey(item)] || 0) < MAX_FAILURES) return item;
             }
             return null;
         }
@@ -64,10 +64,10 @@ window.CollectionLookup = (function () {
 
         function fetchCollection(id) {
             var before = Tmdb.fetches();
-            return Tmdb.collection(id).then(function (result) {
+            return Tmdb.collection(id, deps.index.forced(id)).then(function (result) {
                 if (run !== self) return;
                 if (result.status === 'failed') return failed('c' + id);
-                deps.index.setCollection(id, result.status === 'none' ? { none: true } : CollectionIndex.info(result.body));
+                deps.index.setCollection(id, result.status === 'none' ? { none: true, fetched: Date.now() } : CollectionIndex.info(result.body));
                 deps.changed();
                 paced(before);
             });
@@ -90,7 +90,8 @@ window.CollectionLookup = (function () {
                 return deps.changed();
             }
             var before = Tmdb.fetches();
-            Tmdb.lookup(item, 'movie').then(function (result) {
+            // A film asked again by a Refresh skips its saved details.
+            Tmdb.lookup(item, 'movie', deps.index.film(item) !== undefined).then(function (result) {
                 if (run !== self) return;
                 if (result.status === 'failed') return failed(deps.index.filmKey(item));
                 var body = result.body || {};
@@ -98,16 +99,18 @@ window.CollectionLookup = (function () {
                 deps.index.setFilm(item, collection || 0, body.id || 0);
                 self.done++;
                 deps.changed();
-                if (collection && !deps.index.collection(collection)) return fetchCollection(collection);
+                if (collection && (!deps.index.collection(collection) || deps.index.forced(collection))) return fetchCollection(collection);
                 paced(before);
             }).catch(function () {
                 if (run === self) failed(deps.index.filmKey(item));
             });
         }
 
-        self.start = function () {
+        self.start = function (fresh) {
             self.finished = false;
             cursor = 0;
+            self.total = 0;
+            if (fresh) failures = Object.create(null);
             later(0);
         };
         self.stop = function () { clearTimeout(timer); };
@@ -133,6 +136,20 @@ window.CollectionLookup = (function () {
             deps.index.ready().then(function () { if (run && run.deps === deps) run.start(); });
         },
         stop: stop,
+        // Refresh (#67): the index is marked and the look-up goes through every
+        // film again, at the same pace and only while the remote rests.
+        refresh: function (deps) {
+            if (!Tmdb.enabled()) return;
+            deps.index.ready().then(function () {
+                deps.index.refresh();
+                if (!run || run.deps.index !== deps.index) {
+                    stop();
+                    run = Run(deps);
+                }
+                run.start(true);
+                deps.changed();
+            });
+        },
         // { done, total } while films are still to be checked, else null.
         progress: function () {
             return run && !run.finished && run.total ? { done: run.done, total: run.total } : null;

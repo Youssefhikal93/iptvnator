@@ -18,7 +18,7 @@ window.AudioRoute = (function () {
         } catch (e) { return {}; }
     }
 
-    // `name` is 'm3u8' or 'ts' (that address had sound), 'file' (none did)
+    // `name` is 'm3u8' or 'ts' (that address had sound), 'none' (none did)
     // or 'original' (the viewer chose the file's own sound).
     function remember(request, name) {
         if (!request || !request.id) return;
@@ -46,7 +46,9 @@ window.AudioRoute = (function () {
     function plan(request, source, url) {
         var file = { name: 'file', url: url };
         var others = ((source && source.converted) || []).map(function (route) {
-            return { name: route.name, url: route.url, needsSound: true };
+            // The .m3u8 link goes to AVPlay as it is, as other IPTV apps do:
+            // its redirect may drop the .m3u8 that tells AVPlay it is HLS.
+            return { name: route.name, url: route.url, needsSound: true, direct: route.name === 'm3u8' };
         });
         if (!others.length || !request || request.live || !request.id) return [file];
         var before = saved()[request.id];
@@ -54,7 +56,9 @@ window.AudioRoute = (function () {
         if (request.audioRoute === 'original' || before === 'original') return [file];
         // A header that names a playable track outranks an old "no sound" note.
         var playable = Array.isArray(request.fileAudio) && request.fileAudio.length > 0 && !silentFile(request.fileAudio);
-        if (before === 'file' && !playable) return [{ name: 'file', url: url, silent: true }];
+        // 'none' (no address had sound); an older 'file' note predates the
+        // direct .m3u8 try, so that file is checked again.
+        if (before === 'none' && !playable) return [{ name: 'file', url: url, silent: true }];
         var worked = others.filter(function (route) { return route.name === before; })[0];
         if (worked) return [worked, { name: 'file', url: url, silent: true }];
         if (request.audioRetry || silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);

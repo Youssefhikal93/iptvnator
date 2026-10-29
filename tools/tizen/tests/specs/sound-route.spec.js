@@ -19,6 +19,8 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
             // A provider that refuses its converted addresses: the TV reports it twice,
             // through onerror and through prepareAsync's error callback.
             prepareAsync: (success, error) => {
+                // Like AVPlay, HLS is known by its .m3u8 address only.
+                if (!['mkv', 'm3u8', 'ts'].includes(ext())) { nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE'); return error({ name: 'InvalidAccessError' }); }
                 if (!refused || ext() === 'mkv') return success();
                 nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE');
                 error({ name: 'InvalidAccessError' });
@@ -153,7 +155,7 @@ test('a file noted as silent plays without the message once the TV lists a sound
     await startFirstMovie(page);
     await expect(page.locator('#toast')).toHaveText(UNSUPPORTED);
     const notes = () => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:audio-route') || '{}'));
-    expect(Object.values(await notes())).toEqual(['file']);
+    expect(Object.values(await notes())).toEqual(['none']);
 
     await page.evaluate(() => { window.__mkvSound = true; });
     await expect(page.locator('#toast')).toBeHidden({ timeout: 15_000 });
@@ -171,4 +173,13 @@ test('after refused converted addresses the file opens on a fresh one-time link,
     expect(await opened(page)).toEqual(['2025.m3u8', '2025.ts', '2025.mkv']);
     // Once when Play is pressed, once more right before the file opens.
     expect(count()).toBe(2);
+});
+
+test('the .m3u8 link goes to AVPlay as it is, so a redirect to an address without .m3u8 still plays with converted sound', async ({ page, request }) => {
+    await samsungPlayer(page, request, { converted: ['m3u8'] });
+    await page.route('**/2025.m3u8', (route) => route.fulfill({ status: 302, headers: { location: new URL(route.request().url()).origin + '/hls/1/index' } }));
+    await page.route('**/hls/**', (route) => route.fulfill({ status: 200, body: '#EXTM3U' }));
+    await startFirstMovie(page);
+    expect(await opened(page)).toEqual(['2025.m3u8']);
+    await expect(page.locator('#toast')).toBeHidden();
 });

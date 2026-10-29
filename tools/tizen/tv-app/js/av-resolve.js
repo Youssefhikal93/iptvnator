@@ -14,6 +14,17 @@ window.AvResolve = (function () {
         }
     }
 
+    // The address's file type only, e.g. " (.m3u8)": an HLS link that
+    // redirects to one without it is not recognised as HLS.
+    function kind(url) {
+        try {
+            var found = /\.([a-z0-9]{2,5})$/i.exec(new URL(url).pathname);
+            return found ? ' (.' + found[1].toLowerCase() + ')' : ' (no extension)';
+        } catch (e) {
+            return '';
+        }
+    }
+
     // Resolves to { url } (the final address, or the original one when the
     // lookup fails or is slow) or { error: 'HTTP 503' } when the server refuses.
     function final(url) {
@@ -23,7 +34,7 @@ window.AvResolve = (function () {
             if (res.body && res.body.cancel) res.body.cancel().catch(function () {});
             if (res.status >= 400) return { error: 'HTTP ' + res.status };
             if (!res.redirected || !res.url || res.url === url) return { url: url };
-            Log.info('AVPlay redirect ' + host(url) + ' -> ' + host(res.url));
+            Log.info('AVPlay redirect ' + host(url) + ' -> ' + host(res.url) + kind(res.url));
             return { url: res.url };
         });
         var limit = new Promise(function (resolve) {

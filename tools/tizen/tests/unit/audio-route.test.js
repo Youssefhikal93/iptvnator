@@ -14,12 +14,12 @@ var DTS = [{ codec: 'dts', language: 'eng', channels: 6 }];
 
 function names(list) {
     return list.map(function (step) {
-        return step.name + (step.needsSound ? '?' : '') + (step.silent ? '!' : '') + (step.retry ? '~' : '');
+        return step.name + (step.direct ? '^' : '') + (step.needsSound ? '?' : '') + (step.silent ? '!' : '') + (step.retry ? '~' : '');
     }).join(' ');
 }
 
 test('a DTS-only file tries the converted addresses before the file, which then says why it is silent', function () {
-    assert.equal(names(route().api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8? ts? file!');
+    assert.equal(names(route().api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8^? ts? file!');
 });
 
 test('a file with playable sound opens as it is; an unread header may retry after five seconds', function () {
@@ -27,14 +27,14 @@ test('a file with playable sound opens as it is; an unread header may retry afte
     var mixed = DTS.concat([{ codec: 'aac', language: 'ara', channels: 2 }]);
     assert.equal(names(api.plan({ id: 'movie:1', fileAudio: mixed }, SOURCE, 'file.mkv')), 'file');
     assert.equal(names(api.plan({ id: 'movie:1', fileAudio: null }, SOURCE, 'file.mkv')), 'file~');
-    assert.equal(names(api.plan({ id: 'movie:1', fileAudio: null, audioRetry: true }, SOURCE, 'file.mkv')), 'm3u8? ts? file!');
+    assert.equal(names(api.plan({ id: 'movie:1', fileAudio: null, audioRetry: true }, SOURCE, 'file.mkv')), 'm3u8^? ts? file!');
 });
 
 test('what worked is where the file starts next time', function () {
     var env = route();
     env.api.remember({ id: 'movie:1' }, 'ts');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'ts? file!');
-    env.api.remember({ id: 'movie:1' }, 'file');
+    env.api.remember({ id: 'movie:1' }, 'none');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'file!');
     env.api.remember({ id: 'movie:1' }, 'original');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'file');
@@ -59,10 +59,18 @@ test('the message names the format the file holds, or says it plainly', function
 test('an old "no sound" note does not silence a file whose header names playable sound; forget drops the note', function () {
     var env = route();
     var aac = [{ codec: 'aac', language: 'ara', channels: 2 }];
-    env.api.remember({ id: 'movie:1' }, 'file');
+    env.api.remember({ id: 'movie:1' }, 'none');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: aac }, SOURCE, 'file.mkv')), 'file');
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: null }, SOURCE, 'file.mkv')), 'file!');
     env.api.forget({ id: 'movie:1' });
     assert.deepEqual(JSON.parse(env.stored['iptvnator-tv:audio-route']), {});
     assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: null }, SOURCE, 'file.mkv')), 'file~');
+});
+
+test('a direct .m3u8 try comes first; an older "file" note is checked again, and m3u8 that worked is tried first', function () {
+    var env = route();
+    env.api.remember({ id: 'movie:1' }, 'file');
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8^? ts? file!');
+    env.api.remember({ id: 'movie:1' }, 'm3u8');
+    assert.equal(names(env.api.plan({ id: 'movie:1', fileAudio: DTS }, SOURCE, 'file.mkv')), 'm3u8^? file!');
 });

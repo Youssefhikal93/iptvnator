@@ -85,6 +85,7 @@ window.Library = (function () {
             write(PREFIX + 'last-channel:' + sourceId, snapshot(channel));
         },
         keyOf: keyOf,
+        snapshot: snapshot,
         favorites: function (sourceId, section) {
             return listOf('favorites', sourceId, section);
         },

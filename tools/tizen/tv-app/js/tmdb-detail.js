@@ -43,6 +43,7 @@ window.TmdbDetail = function (page, changed) {
                     var type = page.episodes ? 'tv' : 'movie';
                     similarCredits = ((body.similar || {}).results || []).map(function (entry) { return Object.assign({}, entry, { media_type: type }); });
                     similar = Tmdb.inLibrary(similarCredits, catalogue).filter(function (entry) { return entry.item !== page.item && !Tmdb.pick(entry.item, [body]); });
+                    if (page.similarFound) page.similarFound(BecauseRows.ordered(similar.filter(function (entry) { return entry.type === type; }), similarCredits));
                     changed();
                 });
             });

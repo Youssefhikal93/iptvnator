@@ -15,7 +15,10 @@
         "settings.top": "أعلى",
         "settings.side": "جانب",
         "settings.on": "تشغيل",
-        "settings.off": "إيقاف"
+        "settings.off": "إيقاف",
+        "home.because": "لأنك شاهدت {title}",
+        "home.pillMovie": "فيلم",
+        "home.pillShow": "مسلسل"
     },
     "ary": {
         "settings.accent": "لون التمييز",
@@ -33,7 +36,10 @@
         "settings.top": "الفوق",
         "settings.side": "الجنب",
         "settings.on": "مفعلة",
-        "settings.off": "معطلة"
+        "settings.off": "معطلة",
+        "home.because": "حيت تفرجتي ف {title}",
+        "home.pillMovie": "فيلم",
+        "home.pillShow": "مسلسل"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

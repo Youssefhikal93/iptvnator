@@ -38,8 +38,11 @@ window.AvResolve = (function () {
         });
     }
 
-    // One line per start: which embedded audio and subtitle tracks exist.
-    function tracks(av) {
+    // One line per start: which embedded audio and subtitle tracks exist, with
+    // their codecs, and the audio the provider reports (`expected`). An AUDIO
+    // track missing from AVPlay while the provider lists one means the TV
+    // cannot decode that sound.
+    function tracks(av, expected) {
         try {
             var list = av.getTotalTrackInfo().map(function (track) {
                 var info = {};
@@ -48,9 +51,12 @@ window.AvResolve = (function () {
                 } catch (e) {
                     // Some firmware sends plain text.
                 }
-                return track.type + ':' + (info.language || info.track_lang || '-');
+                var codec = info.fourCC || info.fourcc || info.codec || '';
+                return track.type + ':' + (info.language || info.track_lang || '-') + (codec ? '/' + codec : '');
             });
-            Log.info('AVPlay tracks ' + (list.join(' ') || 'none'));
+            var said = expected && expected.codec_name ? ' (provider audio ' + expected.codec_name +
+                (expected.profile ? ' ' + expected.profile : '') + (expected.channels ? ' ' + expected.channels + 'ch' : '') + ')' : '';
+            Log.info('AVPlay tracks ' + (list.join(' ') || 'none') + said);
         } catch (e) {
             Log.error('AVPlay tracks unavailable (' + e.name + ')');
         }

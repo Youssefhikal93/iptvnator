@@ -33,6 +33,8 @@ window.SubtitleContext = (function () {
 
     function attach(request, context) {
         request.subtitleId = context.sourceId + '|' + request.id;
+        // What the provider says the sound is; the play log compares it with AVPlay's tracks.
+        request.audio = (context.episode || {}).audio || (context.details || {}).audio;
         request.subtitleLookup = function () {
             var known = identity(context, context.details || {});
             var episode = context.episode;

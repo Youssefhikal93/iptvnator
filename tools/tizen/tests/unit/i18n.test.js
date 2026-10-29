@@ -128,10 +128,11 @@ test('every language table only uses keys English has, with the same placeholder
     });
 });
 
-test('every desktop translation file has a table and index.html loads it', function () {
+test('every desktop translation file but Moroccan Arabic has a table and index.html loads it', function () {
     var desktop = path.join(__dirname, '../../../../apps/web/src/assets/i18n');
     var html = fs.readFileSync(path.join(appDir, 'index.html'), 'utf8');
-    fs.readdirSync(desktop).filter(function (name) { return /\.json$/.test(name); }).forEach(function (name) {
+    assert.ok(!fs.existsSync(path.join(jsDir, 'i18n', 'ary.js')) && html.indexOf('i18n/ary.js') < 0, 'Moroccan Arabic is not shipped');
+    fs.readdirSync(desktop).filter(function (name) { return /\.json$/.test(name) && name !== 'ary.json'; }).forEach(function (name) {
         var code = name.replace('.json', '');
         assert.ok(fs.existsSync(path.join(jsDir, 'i18n', code + '.js')), code + ' table exists');
         assert.ok(html.indexOf('src="js/i18n/' + code + '.js"') > 0, code + ' is loaded');

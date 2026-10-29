@@ -86,7 +86,9 @@ test('the Language list offers the desktop languages by their own names, current
     const names = (await page.locator('#menu .menu-row').allTextContents()).map(text => text.replace('✓ ', ''));
     expect(names.slice(0, 2)).toEqual(['English', 'العربية']);
     for (const name of ['Deutsch', 'Français', 'Español', '日本語', 'Русский']) expect(names).toContain(name);
-    expect(names).toHaveLength(20);
+    // The desktop's 20 minus Moroccan Arabic, which the TV does not offer.
+    expect(names).not.toContain('الدارجة');
+    expect(names).toHaveLength(19);
     await expect(page.locator('#menu .focused')).toHaveText('✓ English');
     // A long list scrolls inside the dialog instead of running off the screen.
     const box = await page.locator('#menu').boundingBox();

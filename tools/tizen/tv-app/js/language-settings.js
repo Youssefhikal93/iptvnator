@@ -2,7 +2,7 @@ window.LanguageSettings = (function () {
     'use strict';
 
     function code(ui) {
-        return { ary: 'ar', by: 'be', zh: 'zh-cn', zhtw: 'zh-tw' }[ui] || ui;
+        return { by: 'be', zh: 'zh-cn', zhtw: 'zh-tw' }[ui] || ui;
     }
 
     function choices(all) {

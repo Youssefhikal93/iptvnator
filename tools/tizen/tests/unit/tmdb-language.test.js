@@ -30,7 +30,7 @@ function response(body, ok) {
 test('every shipped app language maps to a TMDB tag, including dialect and legacy codes', function () {
     var api = client();
     var expected = {
-        en: 'en-US', ar: 'ar-SA', ary: 'ar', by: 'be-BY', de: 'de-DE', el: 'el-GR',
+        en: 'en-US', ar: 'ar-SA', by: 'be-BY', de: 'de-DE', el: 'el-GR',
         es: 'es-ES', fr: 'fr-FR', hu: 'hu-HU', it: 'it-IT', ja: 'ja-JP', ko: 'ko-KR',
         nl: 'nl-NL', pl: 'pl-PL', pt: 'pt-PT', ru: 'ru-RU', tr: 'tr-TR', uk: 'uk-UA', zh: 'zh-CN', zhtw: 'zh-TW',
     };

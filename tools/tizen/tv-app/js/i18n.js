@@ -7,7 +7,6 @@ window.I18n = (function () {
     var LANGUAGES = [
         { code: 'en', name: 'English', locale: 'en' },
         { code: 'ar', name: '\u0627\u0644\u0639\u0631\u0628\u064a\u0629', locale: 'ar' },
-        { code: 'ary', name: '\u0627\u0644\u062f\u0627\u0631\u062c\u0629', locale: 'ar-MA' },
         { code: 'by', name: '\u0411\u0435\u043b\u0430\u0440\u0443\u0441\u043a\u0430\u044f', locale: 'be' },
         { code: 'de', name: 'Deutsch', locale: 'de' },
         { code: 'el', name: '\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac', locale: 'el' },

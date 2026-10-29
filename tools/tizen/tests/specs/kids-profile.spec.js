@@ -218,3 +218,26 @@ test('a grown-up changes what Kids can watch after the PIN; the ticks are kept',
     const labels = await page.locator('#categories .row .label').allTextContents();
     expect(labels.filter((label) => label.startsWith('get_vod_categories'))).toEqual(['get_vod_categories cat 1', 'get_vod_categories cat 3']);
 });
+
+test('a kids profile with nothing allowed, made from Settings, never reaches Settings', async ({ page }) => {
+    await boot(page);
+    await setting(page, 'Add profile\u2026');
+    await press(page, 'Enter');
+    await page.locator('#profile-name').fill('Kids');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await digits(page, '12341234');
+    await expect(page.locator('#kids-picker h1')).toHaveText('What can Kids watch?');
+    // Saved with nothing ticked.
+    await save(page);
+    await expect(page.locator('#rail .rail-avatar .kids-badge')).toHaveText('KIDS');
+    await expect(page.locator('#content')).not.toHaveClass(/settings/);
+    // OK in the menu opens nothing: Settings and its sources stay out of reach.
+    await press(page, 'Enter');
+    await page.waitForTimeout(300);
+    await expect(page.locator('#content')).not.toHaveClass(/settings/);
+    await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
+    await expect(page.locator('#rail .focused')).toHaveCount(1);
+});

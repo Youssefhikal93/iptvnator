@@ -15,6 +15,8 @@
 .pf-title { margin: 0 0 80px; font-size: 68px; font-weight: 700; }
 .pf-tiles { display: flex; gap: 56px; flex-wrap: wrap; justify-content: center; max-width: 1700px; }
 .pf-tile { position: relative; width: 240px; padding: 10px; text-align: center; color: var(--muted); }
+/* A held OK opens a profile's options over Who is watching. */
+body:has(> #profiles) #menu { z-index: 61; }
 #profiles .pf-tile.focused { background: transparent; box-shadow: none; color: var(--on-surface); }
 .pf-avatar {
     width: 220px;
@@ -97,6 +99,19 @@
     font-size: 26px;
     font-weight: 700;
     color: #071225;
+}
+/* A profile's options: its avatar, its name under it, then the options. */
+.menu-head.profile {
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin: 0 0 36px;
+}
+.menu-head.profile .menu-title { text-align: center; }
+.menu-avatar.menu-head-avatar {
+    width: 160px;
+    height: 160px;
+    font-size: 76px;
 }
 .menu-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-check { color: var(--selection); font-weight: 700; }

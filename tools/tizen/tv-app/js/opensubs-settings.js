@@ -140,7 +140,9 @@ window.OpenSubsSettings = (function () {
         isOpen: function () { return !!dialog; },
         onKey: function (event) {
             var code = event.keyCode;
-            if (code === Keys.RETURN || code === Keys.ESCAPE || code === Keys.IME_CANCEL) {
+            // The keyboard's own Cancel only closes the keyboard; the text stays.
+            if (code === Keys.IME_CANCEL) return event.preventDefault();
+            if (code === Keys.RETURN || code === Keys.ESCAPE) {
                 close();
                 return event.preventDefault();
             }

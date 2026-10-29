@@ -1,6 +1,6 @@
 // "Who's watching?": one tile per profile plus Add profile. Shown on start when
-// there are two or more profiles, and from Settings to switch. ▲ changes the
-// focused profile's avatar.
+// there are two or more profiles, and from Settings to switch. Holding OK on
+// a profile offers to change its name or avatar.
 window.ProfileScreen = (() => {
     'use strict';
 
@@ -42,6 +42,28 @@ window.ProfileScreen = (() => {
         if (done) done(changed);
     };
 
+    // Name or avatar of the focused profile, from a held OK.
+    const options = (profile) => {
+        const again = () => { if (root) render(); };
+        Menu.open(profile.name, [
+            {
+                label: I18n.t('profile.changeName'),
+                run: () => ProfileDialog.open({
+                    title: I18n.t('profile.rename'),
+                    text: I18n.t('profile.renameHint', { name: profile.name }),
+                    value: profile.name,
+                    ok: I18n.t('common.save'),
+                    validate: (name) => ProfileStore.nameError(name, profile.id),
+                    done: (name) => {
+                        if (name) ProfileStore.rename(profile.id, name);
+                        again();
+                    },
+                }),
+            },
+            { label: I18n.t('profile.changeAvatar'), run: () => AvatarPicker.open(profile, again) },
+        ], 0, { profile });
+    };
+
     const choose = () => {
         const profile = slots()[focus];
         if (profile) return finish(ProfileStore.setActive(profile.id));
@@ -81,19 +103,22 @@ window.ProfileScreen = (() => {
         onKey: (event) => {
             const code = event.keyCode;
             const profile = slots()[focus];
+            event.preventDefault();
+            // A held OK must not also pick in the menu it opens.
+            if (Keys.repeat(code)) return;
+            if (Menu.isOpen()) return Menu.onKey(code);
             if (code === Keys.LEFT || code === Keys.RIGHT) {
                 const moved = Focus.step(focus, slots().length, code, 'row');
                 if (moved.index !== undefined) focus = moved.index;
                 render();
-            } else if (code === Keys.UP && profile) {
-                AvatarPicker.open(profile, () => { if (root) render(); });
-            } else if (code === Keys.ENTER) choose();
-            else if (Keys.isBack(code)) {
+            } else if (code === Keys.ENTER) {
+                if (profile) Keys.press(choose, () => options(profile));
+                else choose();
+            } else if (Keys.isBack(code)) {
                 const cancel = onCancel;
                 close();
                 if (cancel) cancel();
             }
-            event.preventDefault();
         },
     };
 })();

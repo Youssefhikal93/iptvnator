@@ -6,7 +6,7 @@
 //
 // api: hero() / rows() -> entries { item, section } and [{ id, title, entries }]
 //      open(entry) (OK on a poster), resume(entry) and openDetails(entry)
-//      (hero buttons), details(entry) -> Promise of detail-page details,
+//      (hero buttons, and OK / hold-OK in Continue watching), details(entry) -> Promise of detail-page details,
 //      progress(entry) -> Progress.of shape or null, watched(entry) -> boolean,
 //      isNew(entry) -> whether a show has new episodes since it was watched,
 //      programme(item) -> the programme on now for a channel, or null
@@ -155,6 +155,8 @@ window.Home = (api) => {
         : null);
     const minutesLeft = (p) => (p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '');
 
+    const heroArt = (entry, d) => UI.img('hm-hero-art', d.backdrop || d.poster || art(entry.item));
+
     const Hero = ({ hero, focused }) => {
         const entry = hero[heroIndex(hero)];
         const d = heroDetails(entry);
@@ -162,7 +164,7 @@ window.Home = (api) => {
         const chips = chipsOf(entry, d);
         const left = minutesLeft(p);
         return html`<div class="hm-hero">
-            ${UI.img('hm-hero-art', d.backdrop || d.poster || art(entry.item))}
+            ${heroArt(entry, d)}
             <div class="hm-hero-shade"></div>
             <div class="hm-hero-text">
                 <div class="hm-eyebrow">${I18n.t('browser.continueWatching') + (hero.length > 1 ? '  ·  ' + (s.hero + 1) + ' / ' + hero.length : '')}</div>
@@ -244,11 +246,22 @@ window.Home = (api) => {
             tiles=${row.entries.slice(r.offset, r.offset + visible).map((entry) => tile(entry, row.big))} focus=${focused ? r.focus - r.offset : -1} />`;
     };
 
+    // The block the focus left going down, cut to the bottom of its tiles (a
+    // hero to the bottom of its art) and faded, so the way back up shows
+    // without a second title.
+    const Peek = ({ block }) => {
+        if (block.hero) {
+            const entry = block.hero[heroIndex(block.hero)];
+            return html`<div class="hm-peek hero">${heroArt(entry, heroDetails(entry))}<div class="hm-hero-shade"></div></div>`;
+        }
+        return html`<div class="hm-peek"><${HomeRow} row=${block.row} focused=${false} /></div>`;
+    };
+
     // ---- Backdrop ---------------------------------------------------------
 
     // The focused title fills the screen behind one row of tiles. The row
-    // above is named over it and the next row peeks in below, so the way
-    // up and down shows. A channel shows its logo on a colour.
+    // above peeks in over it and the next row below, so the way up and down
+    // shows. A channel shows its logo on a colour.
     const Stage = ({ list }) => {
         const at = list[s.block].row ? s.block : list.findIndex((block) => block.row);
         if (at === -1) return null;
@@ -264,14 +277,13 @@ window.Home = (api) => {
             ${entry ? UI.img('hm-stage-art', live ? art(entry.item) : d.backdrop || d.poster || art(entry.item)) : null}
             <div class="hm-stage-shade"></div>
             ${entry ? html`<div class="hm-stage-text">
-                <div class="hm-eyebrow">${row.title}</div>
                 <div class="hm-hero-title">${titleOf(entry)}</div>
                 <${Chips} chips=${live ? [] : chipsOf(entry, d)} />
                 ${plot ? html`<div class="hm-hero-plot">${plot}</div>` : null}
             </div>` : null}
         </div>
         <div class="hm-stage-rows">
-            ${above ? html`<div class="hm-stage-above">${above.title}</div>` : null}
+            ${above ? html`<${Peek} key="peek" block=${{ row: above }} />` : null}
             <${HomeRow} key=${row.id} row=${row} focused=${s.active && at === s.block} />
             ${below ? html`<div class="hm-stage-below"><${HomeRow} key=${below.id} row=${below} focused=${false} /></div>` : null}
         </div>`;
@@ -390,14 +402,16 @@ window.Home = (api) => {
             return;
         }
         // The icon, bar and hero show while they or the block under them
-        // have the focus; further down, the focused row moves to the top.
+        // have the focus; further down, the focused row moves to the top,
+        // under the bottom edge of the block above it.
         const lead = (block) => block.icon || block.box || block.hero;
         let first = s.block;
         while (first > 0 && (lead(list[first]) || lead(list[first - 1])) && !(list[first].row && list[first - 1].hero)) first--;
+        const above = first > 0 && (list[first - 1].row || list[first - 1].hero) ? list[first - 1] : null;
         // Three blocks, and the search bar above them when it is open.
         const rest = list.slice(first).filter((block) => !block.icon);
         const shown = rest.slice(0, rest[0] && rest[0].box ? 4 : 3);
-        UI.render(html`${icon}${shown.map((block) => {
+        UI.render(html`${icon}${above ? html`<${Peek} key="peek" block=${above} />` : null}${shown.map((block) => {
             const focused = s.active && list.indexOf(block) === s.block;
             return block.box
                 ? html`<${SearchBar} key="search" focused=${focused} />`
@@ -477,6 +491,12 @@ window.Home = (api) => {
             const block = blocks()[s.block];
             if (!block || !block.row || block.row.loading) return null;
             return block.row.entries[rowState(block.row).focus];
+        },
+        // Whether that entry is in the Continue watching row, where OK
+        // resumes it and hold-OK opens its details, like the hero's buttons.
+        inContinue: () => {
+            const block = blocks()[s.block];
+            return !!block && !!block.row && block.row.id === 'continue';
         },
         typing: () => s.q.typing,
         // Return closes an open search: true when it did.

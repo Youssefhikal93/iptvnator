@@ -939,15 +939,17 @@ window.Player = (function () {
                 }).then(function () { return address; });
             }).then(function (address) {
                 if (!address || chain.stale(mine) || address.error) return;
-                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine);
+                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine, url);
             });
         };
     }
 
     // Opens routes[at] (audio-route.js); a route that needs sound and has
     // none, or fails, closes and hands over to the next one. Only one is
-    // open at a time (ADR 0006).
-    function openRoute(av, routes, at, finish, mine) {
+    // open at a time (ADR 0006). `link` is the provider's own link: its
+    // redirect is often good for one use, so a file opened after another
+    // route asks for a fresh one.
+    function openRoute(av, routes, at, finish, mine, link) {
         var route = routes[at];
         var request = current;
         if (at + 1 < routes.length) {
@@ -969,12 +971,13 @@ window.Player = (function () {
                 }
                 // A provider allowing one connection needs a moment to let it go.
                 setTimeout(function () {
-                    if (!route.stale()) openRoute(av, routes, at + 1, finish, mine);
+                    if (!route.stale()) openRoute(av, routes, at + 1, finish, mine, link);
                 }, ROUTE_GAP_MS);
             };
         }
         route.stale = function () { return chain.stale(mine) || current !== request; };
-        var address = route.name === 'file' ? Promise.resolve({ url: route.url }) : AvResolve.final(route.url);
+        var first = route.name === 'file' && (at === 0 || !link);
+        var address = first ? Promise.resolve({ url: route.url }) : AvResolve.final(route.name === 'file' ? link : route.url);
         address.then(function (found) {
             if (route.stale()) return;
             if (found.error) return route.next ? route.next(found.error) : finish(found.error);

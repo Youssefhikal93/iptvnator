@@ -41,6 +41,15 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
     await boot(page);
 }
 
+// Counts the address look-ups for the movie's own link (AVPlay's two-byte
+// redirect check), as a provider's one-time redirect needs a fresh one per open.
+function lookups(page) {
+    let count = 0;
+    page.on('request', (req) => {
+        if (/\/movie\/.*\/2025\.mkv$/.test(req.url()) && req.headers().range === 'bytes=0-1') count++;
+    });
+    return () => count;
+}
 async function startFirstMovie(page) {
     await openFirst(page, 'Movies');
     await press(page, 'Enter');
@@ -153,4 +162,13 @@ test('a file noted as silent plays without the message once the TV lists a sound
     await page.waitForTimeout(1000);
     await expect(page.locator('#toast')).toBeHidden();
     expect(await notes()).toEqual({});
+});
+
+test('after refused converted addresses the file opens on a fresh one-time link, not the stale first one', async ({ page, request }) => {
+    await samsungPlayer(page, request, { refused: true });
+    const count = lookups(page);
+    await startFirstMovie(page);
+    expect(await opened(page)).toEqual(['2025.m3u8', '2025.ts', '2025.mkv']);
+    // Once when Play is pressed, once more right before the file opens.
+    expect(count()).toBe(2);
 });

@@ -3,11 +3,14 @@
 window.Watched = function (api) {
     'use strict';
 
-    function isWatched(item, section) {
+    function isWatched(item, section, ids) {
         if (section === 'live') return false;
-        if (section !== 'series' || item.episode) return Progress.isWatched(Progress.id(section, item), item.sourceId);
+        var done = function (id) { return ids ? !!ids[id] : Progress.isWatched(id, item.sourceId); };
+        if (section !== 'series' || item.episode) return done(Progress.id(section, item));
         var info = api.knownShow(item);
-        return Progress.allWatched(info && info.episodes, item.sourceId);
+        return !!info && !!info.episodes && info.episodes.length > 0 && info.episodes.every(function (episode) {
+            return done(Progress.episodeId(episode));
+        });
     }
 
     function itemOption(item, section) {

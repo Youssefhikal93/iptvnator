@@ -18,6 +18,7 @@ window.Prefs = (function () {
         pictureAspect: 'auto',
         homeLayout: 'cinema',
         librarySources: 'current',
+        hideWatched: false,
         askProfile: true,
         'view:movies': 'grid',
         'view:series': 'grid',

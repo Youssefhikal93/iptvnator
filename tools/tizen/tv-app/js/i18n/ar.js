@@ -2,6 +2,9 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ar = {
+    'browser.hideWatched': 'إخفاء ما شاهدته',
+    'empty.watched.title': 'لقد شاهدت كل شيء هنا',
+    'browser.showWatched': 'إظهار العناوين التي شاهدتها',
     'account.accountExpired': 'انتهاء صلاحية الحساب',
     'account.accountInactive': 'الحساب غير نشط',
     'account.active': 'نشط',

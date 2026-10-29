@@ -20,7 +20,10 @@
         "settings.preferredSubtitles": "لغة الترجمة المفضلة",
         "settings.showSubtitles": "إظهار الترجمة",
         "settings.subtitlesAlways": "دائماً",
-        "settings.subtitlesOnly": "فقط عندما لا أفهم لغة الصوت"
+        "settings.subtitlesOnly": "فقط عندما لا أفهم لغة الصوت",
+        "settings.screenSaver": "شاشة التوقف",
+        "describe.screenSaver": "تعرض عناوينك عندما لا يُضغط أي زر لمدة، حتى لا تحترق الشاشة",
+        "saver.hint": "اضغط أي زر للرجوع"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

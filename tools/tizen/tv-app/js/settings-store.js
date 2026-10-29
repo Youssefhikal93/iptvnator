@@ -36,6 +36,7 @@ window.Prefs = (function () {
         motion: 'on',
         topBar: 'on',
         menuPosition: 'side',
+        screenSaverMs: 600000,
     };
 
     function read(key, fallback) {

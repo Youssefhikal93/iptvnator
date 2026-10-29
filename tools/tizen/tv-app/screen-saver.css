@@ -1,0 +1,30 @@
+/* The app's own screen saver (#61). Always dark, whatever the theme: it runs
+   while nobody watches, and a dark screen is what protects the panel. */
+#screen-saver { position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; color: #fff; font-family: 'DM Sans', sans-serif; }
+#screen-saver .ss-stage { position: absolute; inset: 0; }
+#screen-saver .ss-slide { position: absolute; inset: 0; animation: ss-in 1.6s ease-out both; }
+#screen-saver .ss-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: ss-drift 20s linear both; }
+/* A title with only a poster: the poster blurred behind, sharp on the right. */
+#screen-saver .ss-poster-back { position: absolute; inset: -60px; background-size: cover; background-position: center; filter: blur(48px) brightness(0.45); }
+#screen-saver .ss-poster { position: absolute; right: 200px; top: 200px; height: 600px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 16px; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6); animation: ss-drift 20s linear both; }
+#screen-saver .ss-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.18) 45%, transparent 70%), linear-gradient(to right, rgba(0, 0, 0, 0.45), transparent 55%); }
+#screen-saver .ss-clock { position: absolute; top: 72px; right: 120px; font-size: 64px; font-weight: 500; color: rgba(255, 255, 255, 0.88); transition: transform 1.6s ease; }
+#screen-saver .ss-info { position: absolute; left: 128px; bottom: 120px; max-width: 1100px; transition: transform 1.6s ease; }
+#screen-saver .ss-from { font-size: 24px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--selection); }
+#screen-saver .ss-title { font-size: 76px; font-weight: 700; line-height: 1.1; margin: 8px 0 10px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+#screen-saver .ss-meta { font-size: 28px; color: rgba(255, 255, 255, 0.75); }
+#screen-saver .ss-hint { position: absolute; right: 120px; bottom: 64px; font-size: 22px; color: rgba(255, 255, 255, 0.45); }
+/* Nothing to show: only the clock, moving a little with every change. */
+#screen-saver .empty .ss-clock { top: 44%; right: 44%; color: rgba(255, 255, 255, 0.6); }
+#screen-saver .empty .ss-hint { color: rgba(255, 255, 255, 0.3); }
+
+@keyframes ss-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ss-drift { from { transform: scale(1.08) translate(-1.2%, -0.8%); } to { transform: scale(1.08) translate(1.2%, 0.8%); } }
+
+/* Animations off (Settings > Display): the picture still changes every 20 s,
+   it just does not drift or fade. */
+[data-motion="off"] #screen-saver .ss-slide,
+[data-motion="off"] #screen-saver .ss-art,
+[data-motion="off"] #screen-saver .ss-poster { animation: none; }
+[data-motion="off"] #screen-saver .ss-clock,
+[data-motion="off"] #screen-saver .ss-info { transition: none; }

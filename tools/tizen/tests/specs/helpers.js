@@ -29,6 +29,9 @@ async function boot(page, seed = {}) {
     // Keep existing grid moves and size assertions on the original density.
     storage.settings = { density: 'compact', ...storage.settings };
     if (!seed.livePreview) storage.settings = { livePreview: false, ...storage.settings };
+    // The screen saver (#61) is off unless a spec opts in with { screenSaver:
+    // true }, so specs that fast-forward the clock keep their next key.
+    if (!seed.screenSaver) storage.settings = { screenSaverMs: 0, ...storage.settings };
     seed = { ...seed, storage };
     // Seed once per context; a reload must exercise the app's persisted state.
     await page.addInitScript((seed) => {

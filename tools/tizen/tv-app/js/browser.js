@@ -1795,5 +1795,22 @@ window.Browser = function (hooks) {
         live: live,
         epg: function () { return state.epg; },
         zap: live.zap,
+        // The screen saver's titles (#61): only details already loaded, so
+        // it never sends a request.
+        saverSlides: function () {
+            if (!state.adapter) return [];
+            return ScreenSaver.slides(homeRows(), {
+                progress: progressOf,
+                details: function (entry) {
+                    if (otherSource(entry.item)) return null;
+                    if (entry.item.episode || entry.section === 'series') {
+                        var show = entry.item.show || entry.item;
+                        var info = state.catalogue.peek({ kind: 'show', id: show.series_id });
+                        return info && info.details;
+                    }
+                    return state.catalogue.peek({ kind: 'movie', id: entry.item.stream_id });
+                },
+            });
+        },
     };
 };

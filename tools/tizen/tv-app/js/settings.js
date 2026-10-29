@@ -51,6 +51,8 @@ window.Settings = function (hooks) {
         { get label() { return I18n.t('settings.manageMovies'); }, action: 'movies', text: hiddenText('movies') },
         { get label() { return I18n.t('settings.manageSeries'); }, action: 'series', text: hiddenText('series') },
         ...AppearanceSettings.rows,
+        // Our own screen saver (#61); Off hands the screen back to Samsung's.
+        { get label() { return I18n.t('settings.screenSaver'); }, get hint() { return I18n.t('describe.screenSaver'); }, key: 'screenSaverMs', choices: [0, 300000, 600000, 900000], get labels() { return [I18n.t('common.off'), I18n.t('unit.minutes', { n: 5 }), I18n.t('unit.minutes', { n: 10 }), I18n.t('unit.minutes', { n: 15 })]; } },
         { get group() { return I18n.t('settings.parentalLock'); }, get label() { return I18n.t('settings.pin'); }, get hint() { return I18n.t('describe.pin'); }, run: () => ParentalMenu.settings(render), text: () => (ParentalLock.hasPin() ? I18n.t('settings.changePin') : I18n.t('settings.setPin')) },
         { get label() { return I18n.t('settings.relock'); }, get hint() { return I18n.t('describe.relock'); }, key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], get labels() { return [I18n.t('unit.minutes', { n: 5 }), I18n.t('unit.minutes', { n: 15 }), I18n.t('unit.hour'), I18n.t('settings.relockClose')]; } },
         { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },

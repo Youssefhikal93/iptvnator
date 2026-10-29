@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const load = require('./sandbox');
 
 function app() {
-    return load(['sources.js', 'progress.js', 'watched.js', 'hide-watched.js'], {
+    return load(['sources.js', 'progress.js', 'watched.js', 'hidden-categories.js', 'hide-watched.js'], {
         'iptvnator-tv:sources': '[{"id":"s1"}]',
         'iptvnator-tv:current': '"s1"',
     }).globals;
@@ -53,4 +53,13 @@ test('8000-title filtering reads progress once per source and the snapshot needs
     filter.filter(items);
     assert.equal(reads, first);
     assert.ok(first <= 3);
+});
+
+test('M3U items, known by their group, count under their category', () => {
+    const g = app();
+    g.Progress.mark(['movie:2'], true);
+    const movies = [1, 2, 3].map(id => ({ stream_id: id, group: 'Action' }));
+    const filter = g.HideWatched(g.Watched({}), 'movies');
+    const rows = [{ category_id: 'Action' }];
+    assert.equal(filter.counts(rows, movies, () => null)[0].count, 2);
 });

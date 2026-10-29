@@ -17,7 +17,8 @@ window.HideWatched = function (watched, section) {
         var totals = Object.create(null);
         var remaining = filter(all);
         remaining.forEach(function (item) {
-            var id = String(item.category_id);
+            // Xtream items carry category_id, M3U items their group.
+            var id = HiddenCategories.categoryOf(item);
             totals[id] = (totals[id] || 0) + 1;
         });
         return rows.map(function (row) {

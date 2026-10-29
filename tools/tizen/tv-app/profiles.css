@@ -100,6 +100,19 @@ body:has(> #profiles) #menu { z-index: 61; }
     font-weight: 700;
     color: #071225;
 }
+/* A profile's options: its avatar, its name under it, then the options. */
+.menu-head.profile {
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    margin: 0 0 36px;
+}
+.menu-head.profile .menu-title { text-align: center; }
+.menu-avatar.menu-head-avatar {
+    width: 160px;
+    height: 160px;
+    font-size: 76px;
+}
 .menu-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-check { color: var(--selection); font-weight: 700; }
 .pf-dialog {

@@ -61,7 +61,7 @@ window.ProfileScreen = (() => {
                 }),
             },
             { label: I18n.t('profile.changeAvatar'), run: () => AvatarPicker.open(profile, again) },
-        ], 0);
+        ], 0, { profile });
     };
 
     const choose = () => {

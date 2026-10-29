@@ -45,8 +45,12 @@ window.Kit = (() => {
         </div>`
         : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view })} data-glyph=${option.glyph}>${option.view || option.label}</div>`);
 
-    // header { image, sub } puts the item's artwork and a line beside the title (#48).
-    const MenuHead = ({ title, header }) => (header
+    // header { image, sub } puts the item's artwork and a line beside the title (#48);
+    // header { profile } puts the profile's avatar above its name.
+    const MenuHead = ({ title, header }) => (header && header.profile
+        ? html`<div class="menu-head profile"><${Avatar} cls="menu-avatar menu-head-avatar" profile=${header.profile} />
+            <div class="menu-title">${title}</div></div>`
+        : header
         ? html`<div class="menu-head">${header.image ? img('menu-art', header.image) : null}<div class="menu-head-text">
             <div class="menu-title">${title}</div>${header.sub ? html`<div class="menu-sub">${header.sub}</div>` : null}
         </div></div>`

@@ -304,6 +304,9 @@ test('holding OK on Who is watching offers to change the name or the avatar', as
     await press(page, 'ArrowUp');
     await expect(page.locator('#avatar-picker')).toHaveCount(0);
     await holdOK(page);
+    // The profile's avatar, its name under it, then the options.
+    await expect(page.locator('#menu .menu-head.profile .menu-head-avatar')).toHaveText('A');
+    await expect(page.locator('#menu .menu-head.profile .menu-title')).toHaveText('Anna');
     await expect(page.locator('#menu .menu-row')).toHaveText(['Change name', 'Change avatar']);
     // The held OK did not also pick the first option.
     await expect(page.locator('#profile-dialog')).toHaveCount(0);

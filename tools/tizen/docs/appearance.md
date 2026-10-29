@@ -33,6 +33,13 @@ details and guide rows must fit. `List` and `Home` read the counts through
 container into view: the virtual lists render only the visible window, and an
 earlier `scrollIntoView` shifted whole screens on the TV.
 
+Movies and Series also offer Wide picture boxes (`wide`, 3 a row, 4 when
+compact) and Info boxes (`info`, 2 a row) beside List and Grid (#66). They are
+the same virtual grid with their own `--grid-cols`/`--grid-rows` on
+`#items.boxes-wide` / `#items.boxes-info` (`boxes.css`). `BoxCards` builds their
+text from the list item, or from a TMDB match already in memory: a box costs no
+request and no storage read.
+
 Existing `.focus` and `.focused` classes define `--focus-shadow` locally so
 the ring resolves against the element's palette, including inside the player.
 Artwork cards scale to 1.08 with a dark 4px gap and an 8px outer ring. Rows,

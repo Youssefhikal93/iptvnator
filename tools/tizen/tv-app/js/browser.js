@@ -5,8 +5,10 @@ window.Browser = function (hooks) {
 
     var KEY = Keys;
     // Header toolbar: search, the genre filter (Movies and Series), list,
-    // grid, then Sort or the Live TV guide.
-    var TOOLS = ['search', 'list', 'grid', 'sort'];
+    // grid, the Wide picture and Info boxes (Movies and Series, #66), then
+    // Sort or the Live TV guide.
+    var TOOLS = ['search', 'list', 'grid', 'wide', 'info', 'sort'];
+    var BOXES = ['wide', 'info'];
     var STEPS = {};
     STEPS[KEY.UP] = -1;
     STEPS[KEY.DOWN] = 1;
@@ -227,6 +229,9 @@ window.Browser = function (hooks) {
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
+        picture: BoxCards.picture,
+        meta: function (it) { return BoxCards.meta(it, state.section); },
+        plot: function (it) { return BoxCards.plot(it, state.section); },
     });
     var guide = TvGuide({
         play: function (channel) { openEntry(channel, 'live'); },
@@ -664,7 +669,8 @@ window.Browser = function (hooks) {
     }
 
     function applyView() {
-        items.setGrid(viewMode() === 'grid');
+        var mode = viewMode();
+        items.setGrid(mode !== 'list', BOXES.indexOf(mode) !== -1 ? mode : '');
     }
 
     function setView(mode) {
@@ -784,7 +790,10 @@ window.Browser = function (hooks) {
     }
 
     function toolbarTools() {
-        var tools = libraryRows.canSort(shownCategory()) ? TOOLS : TOOLS.slice(0, 3);
+        var sort = libraryRows.canSort(shownCategory());
+        var tools = TOOLS.filter(function (tool) {
+            return tool === 'sort' ? sort : BOXES.indexOf(tool) === -1 || state.section !== 'live';
+        });
         if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
         return guideAvailable() ? tools.concat(['guide']) : tools;
@@ -1003,7 +1012,7 @@ window.Browser = function (hooks) {
                 btn.setAttribute('aria-pressed', String(hideOn));
                 btn.textContent = I18n.t('browser.hideWatched') + ': ' + I18n.t(hideOn ? 'common.on' : 'common.off');
             }
-            if (mode === 'sort') btn.classList.toggle('hidden', !on || tools.indexOf('sort') === -1);
+            if (mode === 'sort' || BOXES.indexOf(mode) !== -1) btn.classList.toggle('hidden', !on || tools.indexOf(mode) === -1);
             if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
             if (mode === 'genre') {
                 // The genre in use shows on the button.

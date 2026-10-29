@@ -234,7 +234,7 @@ async function toolbar(page, name) {
     await press(page, 'ArrowUp');
     await expect(page.locator('#searchbar')).toHaveClass(/focused/);
     if (name !== 'search') {
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 10; i++) {
             const focused = page.locator('.view-btn.focused');
             if (await focused.count() && await focused.getAttribute('data-mode') === name) return;
             await press(page, 'ArrowRight');

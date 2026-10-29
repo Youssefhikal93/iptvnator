@@ -291,3 +291,77 @@ test('a kids profile with an expired account cannot reach Settings through Go to
     await expect(page.locator('#menu')).toBeHidden();
     await expect(page.locator('.pf-dialog')).toHaveCount(0);
 });
+
+test('turning the profile in use into a kids profile from Who is watching leaves Settings', async ({ page }) => {
+    await boot(page);
+    // Me sets a PIN, so Me can guard a kids profile.
+    await setting(page, 'PIN');
+    await press(page, 'Enter');
+    await digits(page, '12341234');
+    await expect(page.locator('.st-row.focused .st-value')).not.toHaveText('Set PIN…');
+    // A second grown-up, Anna, opens at once.
+    await setting(page, 'Add profile\u2026');
+    await press(page, 'Enter');
+    await page.locator('#profile-name').fill('Anna');
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('#profile-dialog')).toHaveCount(0);
+    // Settings > Current profile, hold OK on Anna, Change name, Kids switch on.
+    await setting(page, 'Current profile');
+    await press(page, 'Enter');
+    await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Anna');
+    await holdOK(page);
+    await expect(page.locator('#menu .menu-row').first()).toHaveText('Change name');
+    await press(page, 'Enter');
+    await expect(page.locator('#profile-name')).toHaveValue('Anna');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#profile-kids')).toBeFocused();
+    await press(page, 'Enter');
+    await expect(page.locator('#profile-kids')).toHaveAttribute('aria-checked', 'true');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    // Me, the guardian, gives the PIN.
+    await expect(page.locator('#pin-pad .pin-title')).toBeVisible();
+    await digits(page, '1234');
+    await expect(page.locator('#kids-picker h1')).toHaveText('What can Anna watch?');
+    await tab(page, 'Movies');
+    await tick(page, ['get_vod_categories cat 1']);
+    await save(page);
+    // Still Anna: picking her again must apply the new limits, not keep Settings.
+    await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Anna');
+    await press(page, 'Enter');
+    await expect(page.locator('#profiles')).toHaveCount(0);
+    await expect(page.locator('#rail .rail-avatar .kids-badge')).toHaveText('KIDS');
+    await expect(page.locator('#content')).not.toHaveClass(/settings/);
+    await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
+});
+
+test('Return on Who is watching after turning the profile in use into a kids profile also leaves Settings', async ({ page }) => {
+    await boot(page);
+    await setting(page, 'PIN');
+    await press(page, 'Enter');
+    await digits(page, '12341234');
+    await setting(page, 'Add profile\u2026');
+    await press(page, 'Enter');
+    await page.locator('#profile-name').fill('Anna');
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await setting(page, 'Current profile');
+    await press(page, 'Enter');
+    await holdOK(page);
+    await press(page, 'Enter');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await digits(page, '1234');
+    await tab(page, 'Movies');
+    await tick(page, ['get_vod_categories cat 1']);
+    await save(page);
+    await back(page);
+    await expect(page.locator('#profiles')).toHaveCount(0);
+    await expect(page.locator('#rail .rail-avatar .kids-badge')).toHaveText('KIDS');
+    await expect(page.locator('#content')).not.toHaveClass(/settings/);
+});

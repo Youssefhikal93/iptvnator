@@ -11,6 +11,8 @@ window.Prefs = (function () {
         livePreview: true,
         subtitleSize: 'm',
         subtitleLanguages: 'en',
+        preferredSound: '',
+        preferredSubtitles: { language: '', when: 'always' },
         subtitleFallback: true,
         subtitleColour: 'white',
         subtitleBackground: 'shadow',

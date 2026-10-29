@@ -105,10 +105,7 @@ window.OpenSubsSettings = (function () {
     }
 
     function languageChoices() {
-        var ui = Prefs.get('language');
-        var codes = { ary: 'ar', by: 'be', zh: 'zh-cn', zhtw: 'zh-tw' };
-        var language = codes[ui] || ui;
-        var choices = ['en', 'ar'].concat(language && language !== 'en' && language !== 'ar' ? [language] : []);
+        var choices = LanguageSettings.choices();
         var saved = Prefs.get('subtitleLanguages');
         // One language per search: a pair saved before keeps its first language.
         if (String(saved).indexOf(',') >= 0) {
@@ -121,13 +118,7 @@ window.OpenSubsSettings = (function () {
     }
 
     function languageLabels() {
-        return languageChoices().map(function (value) {
-            return value.split(',').map(function (code) {
-                var ui = { be: 'by', 'zh-cn': 'zh', 'zh-tw': 'zhtw' }[code] || code;
-                var language = I18n.languages().filter(function (entry) { return entry.code === ui; })[0];
-                return language ? language.name : code;
-            }).join(' + ');
-        });
+        return LanguageSettings.labels(languageChoices());
     }
 
     return {

@@ -38,7 +38,7 @@ function element() {
     return node;
 }
 
-function scene() {
+function scene(settings, Hls) {
     var nodes = {};
     var intervals = {};
     var serial = 0;
@@ -63,8 +63,9 @@ function scene() {
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js',
         'subtitle-file.js', 'subtitle-rank.js', 'movie-hash.js', 'media-sniff.js', 'subtitle-store.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'playback-chain.js', 'player-tracks.js', 'player-reconnect.js',
-        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'player.js',
-    ], {}, {
+        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'audio-choice.js', 'language-choice.js', 'player.js',
+    ], { 'iptvnator-tv:settings': JSON.stringify(settings || {}) }, {
+        Hls: Hls,
         UI: uiSandbox.UI,
         document: {
             body: element(),
@@ -118,6 +119,40 @@ test('#37 Return hides movie, episode and live controls before allowing close, w
         s.player.key(s.keys.ENTER, request.live);
         assert.equal(s.controls.classList.contains('hidden'), false);
         assert.equal(s.player.key(s.keys.STOP, request.live), false);
+    }
+});
+
+test('#60 HTML and hls.js apply preferences at playback start without replacing later viewer choices', async function () {
+    function Hls() {
+        Hls.instance = this;
+        this.audioTracks = [{ lang: 'ara' }, { lang: 'eng' }];
+        this.audioTrack = 0;
+        this.subtitleTracks = [{ lang: 'en-GB' }];
+        this.subtitleTrack = -1;
+    }
+    Hls.isSupported = function () { return true; };
+    Hls.Events = { ERROR: 'error' };
+    ['on', 'loadSource', 'attachMedia', 'destroy'].forEach(function (method) { Hls.prototype[method] = function () {}; });
+    for (var engine of ['video', 'hls']) {
+        var s = scene({ preferredSound: 'en', preferredSubtitles: { language: 'en', when: 'always' } }, Hls);
+        s.video.audioTracks = [{ language: 'ara', enabled: true }, { language: 'eng', enabled: false }];
+        s.video.textTracks.push({ kind: 'subtitles', language: 'en-GB', mode: 'disabled' });
+        var request = s.request(false);
+        request.sources[0].via = engine;
+        await s.player.play(request, null);
+        if (engine === 'video') {
+            assert.equal(s.video.audioTracks[1].enabled, true);
+            assert.equal(s.video.audioTracks[0].enabled, false);
+            assert.equal(s.video.textTracks[0].mode, 'showing');
+            s.video.textTracks[0].mode = 'disabled';
+        } else {
+            assert.equal(Hls.instance.audioTrack, 1);
+            assert.equal(Hls.instance.subtitleTrack, 0);
+            Hls.instance.subtitleTrack = -1;
+        }
+        s.tick();
+        s.player.key(s.keys.ENTER, false);
+        assert.equal(engine === 'video' ? s.video.textTracks[0].mode : Hls.instance.subtitleTrack, engine === 'video' ? 'disabled' : -1);
     }
 });
 

@@ -508,7 +508,7 @@ window.Player = (function () {
 
     // Returns { audio: [{label, active, select}], text: [...] }. The lists come
     // from player-tracks.js; the switching is each engine's own.
-    function getTracks() {
+    function getTracks(automatic) {
         var kind = engineKind();
         var tracks;
         var selectAudio;
@@ -570,6 +570,8 @@ window.Player = (function () {
             return list.map(function (entry) {
                 return {
                     label: entry.label,
+                    language: entry.language,
+                    ref: entry.ref,
                     active: entry.active,
                     select: function () {
                         select(entry.ref);
@@ -583,10 +585,12 @@ window.Player = (function () {
             if (entry.unsupported) return { label: entry.label, active: false, select: null, note: I18n.t('player.audioUnsupported') };
             return {
                 label: entry.label,
+                language: entry.language,
+                ref: entry.ref,
                 active: entry.active,
                 select: function () {
                     selectAudio(entry.ref);
-                    AudioChoice.remember(current, entry.language);
+                    if (!automatic) AudioChoice.remember(current, entry.language);
                 },
             };
         });
@@ -605,22 +609,10 @@ window.Player = (function () {
         play(Object.assign({}, current, converted ? { audioRetry: true, audioRoute: null, resume: true } : { audioRetry: false, audioRoute: 'original', resume: true }));
     }
 
-    // Starts AVPlay in the sound language picked last for this show (or at
-    // all) when the file has it. False while AVPlay lists no sound track yet.
+    var languagePrefs;
+
     function preferAudio() {
-        var playing = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
-        var rows = PlayerTracks.av(avRead('getTotalTrackInfo'), playing, -1, fileAudio()).audio;
-        var row = AudioChoice.pick(current, rows);
-        if (row) {
-            try {
-                avplay().setSelectTrack('AUDIO', row.ref);
-                avAudio = row.ref;
-                Log.info('AUDIO starts in the remembered language');
-            } catch (e) {
-                Log.error('AUDIO remembered language failed ' + (e && e.name));
-            }
-        }
-        return rows.some(function (entry) { return entry.ref !== null; });
+        return LanguageChoice.apply(current, getTracks(true), languagePrefs);
     }
 
     function streamInfoLines() {
@@ -1107,6 +1099,7 @@ window.Player = (function () {
         };
         if (!usingAv && lib && window.Hls && lib instanceof Hls) lib.subtitleTrack = -1;
         subtitles.start(current);
+        if (!usingAv) preferAudio();
         video.textTracks.addEventListener('change', refreshCover);
         refreshCover();
         renderHint();
@@ -1135,6 +1128,7 @@ window.Player = (function () {
         playbackError = false;
         release();
         current = req;
+        languagePrefs = LanguageChoice.read();
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
         hideControls();

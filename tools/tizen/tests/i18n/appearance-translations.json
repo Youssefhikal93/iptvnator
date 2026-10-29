@@ -15,7 +15,12 @@
         "settings.top": "أعلى",
         "settings.side": "جانب",
         "settings.on": "تشغيل",
-        "settings.off": "إيقاف"
+        "settings.off": "إيقاف",
+        "settings.preferredSound": "لغة الصوت المفضلة",
+        "settings.preferredSubtitles": "لغة الترجمة المفضلة",
+        "settings.showSubtitles": "إظهار الترجمة",
+        "settings.subtitlesAlways": "دائماً",
+        "settings.subtitlesOnly": "فقط عندما لا أفهم لغة الصوت"
     },
     "ary": {
         "settings.accent": "لون التمييز",
@@ -33,7 +38,12 @@
         "settings.top": "الفوق",
         "settings.side": "الجنب",
         "settings.on": "مفعلة",
-        "settings.off": "معطلة"
+        "settings.off": "معطلة",
+        "settings.preferredSound": "لغة الصوت اللي كنفضل",
+        "settings.preferredSubtitles": "لغة الترجمة اللي كنفضل",
+        "settings.showSubtitles": "بيّن الترجمة",
+        "settings.subtitlesAlways": "ديما",
+        "settings.subtitlesOnly": "غير ملي ما كنفهمش لغة الصوت"
     },
     "by": {
         "settings.accent": "Акцэнтны колер",

@@ -4,34 +4,34 @@ const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup } = 
 // (fixtures/audio/tracks.mkv.head). Like a Samsung TV, the fake AVPlay lists
 // only the first two: it cannot decode DTS. With dts-only.mkv.head it lists
 // no sound track at all, like the TV did for #54's episode.
-async function samsungPlayer(page, request, file = 'tracks.mkv.head') {
+async function samsungPlayer(page, request, file = 'tracks.mkv.head', seed = {}) {
     await request.get('/__fail?file=' + file);
-    await page.addInitScript((dtsOnly) => {
+    await page.addInitScript(({ dtsOnly, text }) => {
         const extra = (info) => JSON.stringify(info);
         const sound = dtsOnly ? [] : [
             { type: 'AUDIO', index: 1, extra_info: extra({ language: 'ara', fourCC: 'AAC' }) },
             { type: 'AUDIO', index: 2, extra_info: extra({ language: 'eng', fourCC: 'AC3' }) },
         ];
-        window.nativePlayback = { state: 'NONE', audio: 1, selected: [] };
+        window.nativePlayback = { state: 'NONE', audio: 1, text: -1, selected: [] };
         window.webapis = { avplay: {
-            open: () => { nativePlayback.state = 'IDLE'; nativePlayback.audio = 1; },
+            open: () => { nativePlayback.state = 'IDLE'; nativePlayback.audio = 1; nativePlayback.text = -1; },
             setListener: () => {},
             setDisplayRect: () => {},
             prepareAsync: success => success(),
-            setSilentSubtitle: () => {},
+            setSilentSubtitle: silent => { if (silent) nativePlayback.text = -1; },
             play: () => { nativePlayback.state = 'PLAYING'; },
             pause: () => { nativePlayback.state = 'PAUSED'; },
             getState: () => nativePlayback.state,
             getCurrentTime: () => 40000,
             getDuration: () => 3600000,
-            getTotalTrackInfo: () => [{ type: 'VIDEO', index: 0, extra_info: extra({ fourCC: 'H264' }) }].concat(sound),
+            getTotalTrackInfo: () => [{ type: 'VIDEO', index: 0, extra_info: extra({ fourCC: 'H264' }) }].concat(sound, text ? [{ type: 'TEXT', index: 3, extra_info: extra({ language: 'eng' }) }] : []),
             getCurrentStreamInfo: () => [{ type: 'AUDIO', index: nativePlayback.audio, extra_info: '{}' }],
-            setSelectTrack: (type, index) => { nativePlayback.selected.push(type + ':' + index); nativePlayback.audio = index; },
+            setSelectTrack: (type, index) => { nativePlayback.selected.push(type + ':' + index); nativePlayback[type === 'AUDIO' ? 'audio' : 'text'] = index; },
             stop: () => { nativePlayback.state = 'IDLE'; },
             close: () => { nativePlayback.state = 'NONE'; },
         } };
-    }, file === 'dts-only.mkv.head');
-    await boot(page);
+    }, { dtsOnly: file === 'dts-only.mkv.head', text: file === 'language-tracks.mkv.head' });
+    await boot(page, seed);
 }
 
 async function playFocused(page) {
@@ -44,6 +44,44 @@ async function playFocused(page) {
 
 const choices = page => page.locator('#pl-menu .pl-menu-item');
 const selected = page => page.evaluate(() => nativePlayback.selected.slice());
+
+for (const scenario of [
+    { name: 'preferred sound overrides last', sound: 'en', subtitles: '', expected: ['AUDIO:2'] },
+    { name: 'preferred subtitles select a file track', sound: '', subtitles: 'en', expected: ['TEXT:3'] },
+    { name: 'Off leaves file subtitles off', sound: '', subtitles: '', expected: [] },
+]) {
+    test('#60 ' + scenario.name, async ({ page, request }) => {
+        const providerRequests = [];
+        page.on('request', req => {
+            if (/opensubtitles|subdl|subsource|deepl/.test(new URL(req.url()).hostname)) providerRequests.push(req.url());
+        });
+        await samsungPlayer(page, request, 'language-tracks.mkv.head', { storage: {
+            settings: { preferredSound: scenario.sound, preferredSubtitles: { language: scenario.subtitles, when: 'always' } },
+            'audio-choice': { shows: {}, last: 'ar' },
+        } });
+        await openFirst(page, 'Movies');
+        await press(page, 'Enter');
+        await expect(page.locator('#player')).toHaveClass(/av/);
+        await expect(page.locator('#pl-status')).toBeHidden();
+        expect(await selected(page)).toEqual(scenario.expected);
+        expect(await page.evaluate(() => nativePlayback.text)).toBe(scenario.subtitles ? 3 : -1);
+        expect(providerRequests).toEqual([]);
+    });
+}
+
+test('#60 a show pick beats preferred sound for the next episode', async ({ page, request }) => {
+    await samsungPlayer(page, request, 'tracks.mkv.head', { storage: { settings: { preferredSound: 'en' } } });
+    await page.evaluate(async () => {
+        const episodes = { show: 's1|3001', index: 1, items: [{ title: 'First', season: 1 }, { title: 'Next', season: 1 }] };
+        AudioChoice.remember({ episodes }, 'ar');
+        await Player.play({ id: 'episode:2', title: 'Next episode', episodes,
+            sources: [{ via: 'avplay', url: location.origin + '/series/tester/secret/4002.mkv' }] });
+    });
+    await expect(page.locator('#player')).toHaveClass(/av/);
+    await expect(page.locator('#pl-status')).toBeHidden();
+    expect(await selected(page)).toEqual([]);
+    expect(await page.evaluate(() => nativePlayback.audio)).toBe(1);
+});
 
 test('the Audio list shows every track in the file, the DTS one marked and not selectable', async ({ page, request }) => {
     await samsungPlayer(page, request);

@@ -54,7 +54,12 @@ read (Matroska files without the list there also have their last 64 KiB read). S
 the result, or "no list found", is kept per title in `iptvnator-tv:sniff-tracks` (newest 50).
 Tracks AVPlay leaves out (DTS, TrueHD) show as "Not supported on this TV". The language
 picked there is kept per show and as the latest pick (`js/audio-choice.js`, per profile),
-and the next episode or movie starts in it when the file has it.
+and the next episode starts in that show's pick when the file has it. Otherwise,
+Settings → Playback → Preferred sound wins; when Not set, the latest pick is used.
+Preferred subtitles selects a matching loaded file track, or stays off if absent.
+Its Show subtitles condition can limit this to sound in neither preferred language
+(unknown sound languages count as not understood). Both preferences belong to the
+viewer profile, exclude live TV, and never search for or download subtitles.
 
 A file whose only sound the TV cannot decode (#54, `js/audio-route.js`) opens first on the
 provider's `.m3u8`, then `.ts` address for the same id, where many Xtream servers convert the

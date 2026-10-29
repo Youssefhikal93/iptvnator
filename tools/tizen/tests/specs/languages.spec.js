@@ -1,0 +1,38 @@
+const { test, expect, boot, setting, choose, press, moveTo } = require('./helpers');
+
+test('#60 language settings reveal the condition and persist independently per profile', async ({ page }) => {
+    await boot(page);
+    const value = label => page.locator('.st-row').filter({ has: page.locator('.st-label', { hasText: label, exact: true }) }).locator('.st-value');
+    await setting(page, 'Preferred sound');
+    await expect(value('Preferred sound')).toHaveText('Not set');
+    await expect(value('Preferred subtitles')).toHaveText('Off');
+    await expect(value('Show subtitles')).toHaveCount(0);
+    await choose(page, 'English');
+    await setting(page, 'Preferred subtitles');
+    await choose(page, 'English');
+    await expect(value('Show subtitles')).toHaveText('Always');
+    await setting(page, 'Show subtitles');
+    await choose(page, "Only when I don't understand the sound");
+    await setting(page, 'Add profile…');
+    await press(page, 'Enter');
+    await page.locator('#profile-name').fill('Anna');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await setting(page, 'Preferred sound');
+    await expect(value('Preferred sound')).toHaveText('Not set');
+    await expect(value('Preferred subtitles')).toHaveText('Off');
+    await expect(value('Show subtitles')).toHaveCount(0);
+    await choose(page, 'English');
+    await page.reload();
+    await expect(page.locator('#profiles')).toBeVisible();
+    for (let i = 0; i < 6; i++) await press(page, 'ArrowLeft');
+    await moveTo(page, '#profiles .pf-tile.focused .pf-name', 'Me', 'ArrowRight');
+    await press(page, 'Enter');
+    await setting(page, 'Preferred sound');
+    await expect(value('Preferred sound')).toHaveText('English');
+    await expect(value('Preferred subtitles')).toHaveText('English');
+    await expect(value('Show subtitles')).toHaveText("Only when I don't understand the sound");
+    await setting(page, 'Preferred subtitles');
+    await choose(page, 'Off');
+    await expect(value('Show subtitles')).toHaveCount(0);
+});

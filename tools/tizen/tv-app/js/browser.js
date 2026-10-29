@@ -179,14 +179,8 @@ window.Browser = function (hooks) {
         open: function (entry) {
             openEntry(entry.item, entry.section);
         },
-        resume: function (entry) {
-            if (entry.item.episode) playSavedEpisode(entry.item, true);
-            else playMovie(entry.item, true);
-        },
-        openDetails: function (entry) {
-            if (entry.item.episode) openShow(entry.item.show);
-            else openMovie(entry.item);
-        },
+        resume: resumeEntry,
+        openDetails: entryDetails,
         details: homeDetails,
         progress: progressOf,
         isNew: function (entry) {
@@ -1573,17 +1567,32 @@ window.Browser = function (hooks) {
         return items.move(target - at);
     }
 
+    // Home's Continue watching plays on from where it stopped, without the
+    // Resume question; its details are a hold-OK away.
+    function resumeEntry(entry) {
+        if (entry.item.episode) playSavedEpisode(entry.item, true);
+        else playMovie(entry.item, true);
+    }
+
+    function entryDetails(entry) {
+        if (entry.item.episode) openShow(entry.item.show);
+        else openMovie(entry.item);
+    }
+
     function onHomeKey(code) {
         if (home.typing()) return home.key(code);
         if (Keys.isBack(code) && home.back()) return true;
         var entry = home.focused();
         if (code === KEY.ENTER && entry) {
+            var resumes = home.inContinue() && !otherSource(entry.item);
             Keys.press(
                 function () {
-                    openEntry(entry.item, entry.section);
+                    if (resumes) resumeEntry(entry);
+                    else openEntry(entry.item, entry.section);
                 },
                 function () {
-                    openItemMenu(entry.item, entry.section);
+                    if (resumes) entryDetails(entry);
+                    else openItemMenu(entry.item, entry.section);
                 }
             );
         } else if (Keys.isBack(code) || leavesFor(home.key(code))) setZone('rail');

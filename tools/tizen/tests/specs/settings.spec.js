@@ -54,15 +54,18 @@ test('Big first row and Backdrop home layouts, and the choice survives reload', 
     await expect(page.locator('#home')).toHaveClass(/backdrop/);
     await expect(page.locator('.hm-stage-rows > .hm-row')).toHaveCount(1);
     await expect(page.locator('.hm-stage-below .hm-row')).toHaveCount(1);
-    await expect(page.locator('.hm-stage-above')).toHaveCount(0);
+    await expect(page.locator('.hm-peek')).toHaveCount(0);
     const first = await page.locator('.hm-stage-rows .hm-card > span').first().textContent();
     await expect(page.locator('.hm-stage-text .hm-hero-title')).toHaveText(first);
     await press(page, 'ArrowDown');
     await press(page, 'ArrowRight');
     const second = await page.locator('.hm-stage-rows .hm-card.focus > span').textContent();
     await expect(page.locator('.hm-stage-text .hm-hero-title')).toHaveText(second);
-    // Further down, the row above is named over the focused one.
-    await expect(page.locator('.hm-stage-above')).toHaveText('Continue watching');
+    // Further down, the bottom of the row above peeks in over the focused
+    // one, without its title.
+    await expect(page.locator('.hm-stage-rows > .hm-peek .hm-card').first()).toBeVisible();
+    await expect(page.locator('.hm-stage-rows > .hm-peek h2')).toBeHidden();
+    await expect(page.locator('.hm-stage-text')).not.toContainText('Continue watching');
 });
 
 test('Settings shows groups on the left and one group of rows on the right (#49)', async ({ page }) => {

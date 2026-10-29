@@ -1,4 +1,12 @@
-const { test, expect, boot, resumeSeed, movie, show, channel, press, playing, section, moveTo, enterItems, toolbar, setting, choose } = require('./helpers');
+const { test, expect, boot, resumeSeed, movie, show, channel, press, back, playing, section, moveTo, enterItems, toolbar, setting, choose } = require('./helpers');
+
+// Holds OK on Home and waits for what it opens (the item menu by default).
+async function holdOK(page, opens = '#menu') {
+    await page.keyboard.down('Enter');
+    await page.waitForTimeout(800); // The app's long-press threshold is 600 ms.
+    await page.keyboard.up('Enter');
+    await expect(page.locator(opens)).toBeVisible();
+}
 
 test('home hero resumes progress and rows show continue, favorites and recently added', async ({ page }) => {
     const seed = resumeSeed();
@@ -22,6 +30,51 @@ test('home hero resumes progress and rows show continue, favorites and recently 
     await press(page, 'Enter');
     await playing(page);
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(195);
+});
+
+// The hero shows Movie 25; the Continue watching row under it has Movie 24, 100 s in.
+function twoUnfinished() {
+    const seed = resumeSeed();
+    seed.storage.progress['movie:2024'] = { position: 100, duration: 400, updatedAt: 50 };
+    seed.storage['recent:s1'].movies.push(movie(24));
+    seed.storage['favorites:s1'] = { movies: [movie(7)] };
+    return seed;
+}
+
+test('OK in Continue watching plays on from where it stopped, and holding OK opens the details', async ({ page }) => {
+    await boot(page, twoUnfinished());
+    await press(page, 'ArrowDown');
+    await expect(page.locator('.hm-row.focused, .hm-row:has(.hm-card.focus) > h2').first()).toContainText('Continue watching');
+    await expect(page.locator('.hm-card.focus')).toContainText('Movie 24');
+    await press(page, 'Enter');
+    await playing(page);
+    await expect(page.locator('#pl-resume')).toBeHidden();
+    await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(95);
+    for (let i = 0; i < 6 && await page.locator('#player').isVisible(); i++) await back(page);
+    await expect(page.locator('#player')).toBeHidden();
+    await expect(page.locator('.hm-card.focus')).toContainText('Movie 24');
+    await holdOK(page, '#detail');
+    await expect(page.locator('#detail')).toContainText('Movie 24');
+    // Elsewhere on Home, hold-OK still opens the item's menu.
+    await back(page);
+    await expect(page.locator('#detail')).toBeHidden();
+    await press(page, 'ArrowDown');
+    await expect(page.locator('.hm-card.focus')).toContainText('Movie 7');
+    await holdOK(page);
+});
+
+test('below the hero, the row above stays in view as the faded bottom edge of its tiles', async ({ page }) => {
+    await boot(page, twoUnfinished());
+    await expect(page.locator('.hm-peek')).toHaveCount(0);
+    await press(page, 'ArrowDown');
+    // Under the hero: the bottom of its picture, no buttons.
+    await expect(page.locator('.hm-peek.hero')).toHaveCount(1);
+    await expect(page.locator('.hm-peek .hm-hero-buttons')).toHaveCount(0);
+    await press(page, 'ArrowDown');
+    // Further down: the Continue watching tiles, without the row's title.
+    await expect(page.locator('.hm-peek .hm-card')).toContainText(['Movie 24']);
+    await expect(page.locator('.hm-peek h2')).toBeHidden();
+    await expect(page.locator('.hm-card.focus')).toContainText('Movie 7');
 });
 
 test('the top bar shows only where it works, and Top bar Off brings it up from the top of a list (#45)', async ({ page }) => {

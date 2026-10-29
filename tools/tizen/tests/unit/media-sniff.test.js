@@ -2,54 +2,115 @@
 
 var test = require('node:test');
 var assert = require('node:assert/strict');
+var fs = require('fs');
+var path = require('path');
 var load = require('./sandbox');
+
+// Headers of two ffmpeg files: tracks.mkv holds Arabic AAC 2.0, English AC-3
+// 5.1 and English DTS 5.1; tracks.mp4 Arabic AAC 2.0 and Swedish AC-3 5.1.
+function fixture(name) {
+    return new Uint8Array(fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'audio', name)));
+}
 
 function sniff(stored, globals) {
     return load(['media-sniff.js'], stored || {}, Object.assign({ Log: { info: function () {} } }, globals || {})).globals.MediaSniff;
 }
 
-function block(prefix, text) {
-    var bytes = new Uint8Array(65536);
-    bytes.set(prefix, 0);
-    for (var i = 0; i < text.length; i++) bytes[200 + i] = text.charCodeAt(i);
-    return bytes;
+function plain(list) {
+    return JSON.parse(JSON.stringify(list));
 }
 
-test('a Matroska file names its sound codecs in the first block', function () {
-    var found = sniff().scan(block([0x1a, 0x45, 0xdf, 0xa3], 'V_MPEG4/ISO/AVC....A_DTS....A_AAC'));
-    assert.equal(sniff().line(found), 'media mkv audio aac,dts');
+test('a Matroska header lists each sound track with its codec, language and channels', function () {
+    assert.deepEqual(plain(sniff().tracks(fixture('tracks.mkv.head'))), [
+        { codec: 'aac', language: 'ara', channels: 2 },
+        { codec: 'ac3', language: 'eng', channels: 6 },
+        { codec: 'dts', language: 'eng', channels: 6 },
+    ]);
 });
 
-test('an MP4 file with its index at the end shows the sound from the last block', function () {
-    var first = block([0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70], '');
-    var found = sniff().scan(first, block([], 'stsd....ec-3....'));
-    assert.equal(sniff().line(found), 'media mp4 audio eac3');
+test('an MP4 header lists its sound tracks, with AC-3 channels from its own box', function () {
+    assert.deepEqual(plain(sniff().tracks(fixture('tracks.mp4.head'))), [
+        { codec: 'aac', language: 'ara', channels: 2 },
+        { codec: 'ac3', language: 'swe', channels: 6 },
+    ]);
 });
 
-test('nothing recognised is said as such', function () {
-    assert.equal(sniff().line(sniff().scan(block([1, 2, 3, 4], 'hello'))), 'media unknown audio none found');
+test('a header cut short still gives the tracks it holds, and other files give none', function () {
+    var cut = fixture('tracks.mkv.head');
+    var at = Buffer.from(cut).indexOf('A_DTS');
+    assert.deepEqual(plain(sniff().tracks(cut.subarray(0, at))).map(function (t) { return t.codec; }), ['aac', 'ac3']);
+    assert.equal(sniff().tracks(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])), null);
+    assert.equal(sniff().tracks(fixture('tracks.mp4.head').subarray(0, 40)), null, 'no moov box in the block');
 });
 
-test('only a flagged file is read, once, before AVPlay opens it', async function () {
+function server(file, size) {
     var reads = [];
-    var lines = [];
-    var file = block([0x1a, 0x45, 0xdf, 0xa3], 'A_TRUEHD');
-    var api = sniff({}, {
+    return {
+        reads: reads,
+        fetch: function (url, options) {
+            var range = /bytes=(\d+)-(\d+)/.exec(options.headers.Range);
+            reads.push(options.headers.Range);
+            var from = Number(range[1]);
+            var bytes = file(from);
+            return Promise.resolve({ status: 206, headers: { get: function () { return 'bytes ' + from + '-' + range[2] + '/' + size; } },
+                arrayBuffer: function () { return Promise.resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)); } });
+        },
+    };
+}
+
+function api(fake, lines, stored) {
+    return sniff(stored || {}, {
         AbortController: AbortController, setTimeout: setTimeout, clearTimeout: clearTimeout,
         Log: { info: function (text) { lines.push(text); } },
-        fetch: function (url, options) {
-            reads.push(options.headers.Range);
-            return Promise.resolve({ status: 206, headers: { get: function () { return 'bytes 0-65535/9000000'; } },
-                arrayBuffer: function () { return Promise.resolve(file.buffer); } });
-        },
+        fetch: fake.fetch,
     });
-    await api.prepare({ id: 'series:7' }, 'http://example.test/7.mkv');
-    assert.equal(reads.length, 0);
-    api.flag({ id: 'series:7' });
-    api.flag({ id: 'live:1', live: true });
-    await api.prepare({ id: 'series:7' }, 'http://example.test/7.mkv');
-    assert.deepEqual(reads, ['bytes=0-65535', 'bytes=8934464-8999999']);
-    assert.deepEqual(lines, ['media mkv audio truehd']);
-    await api.prepare({ id: 'series:7' }, 'http://example.test/7.mkv');
-    assert.equal(reads.length, 2);
+}
+
+test('a file is read once before AVPlay opens it, and a live channel never', async function () {
+    var lines = [];
+    var fake = server(function () { return fixture('tracks.mkv.head'); }, 9000000);
+    var sniffer = api(fake, lines);
+    var request = { id: 'series:7' };
+    await sniffer.prepare({ id: 'live:1', live: true }, 'http://example.test/1.ts');
+    await sniffer.prepare(request, 'http://example.test/7.mkv');
+    assert.deepEqual(fake.reads, ['bytes=0-65535']);
+    assert.deepEqual(lines, ['media mkv audio aac,ac3,dts']);
+    assert.equal(request.fileAudio.length, 3);
+    var again = { id: 'series:7' };
+    await sniffer.prepare(again, 'http://example.test/7.mkv');
+    assert.equal(fake.reads.length, 1);
+    assert.equal(again.fileAudio[2].codec, 'dts');
+});
+
+test('the block MovieHash already read is used instead of a second request', async function () {
+    var lines = [];
+    var fake = server(function () { throw new Error('no read expected'); }, 9000000);
+    var request = { id: 'movies:3', fileHead: { bytes: fixture('tracks.mp4.head'), size: 9000000 } };
+    await api(fake, lines).prepare(request, 'http://example.test/3.mp4');
+    assert.deepEqual(fake.reads, []);
+    assert.equal(request.fileHead, undefined);
+    assert.deepEqual(plain(request.fileAudio).map(function (t) { return t.language; }), ['ara', 'swe']);
+});
+
+test('a Matroska file whose track list is not at its start is read at its end', async function () {
+    var lines = [];
+    var start = new Uint8Array(65536);
+    start.set([0x1a, 0x45, 0xdf, 0xa3, 0x80]);
+    var fake = server(function (from) { return from ? fixture('tracks.mkv.head') : start; }, 9000000);
+    var request = { id: 'movies:4' };
+    await api(fake, lines).prepare(request, 'http://example.test/4.mkv');
+    assert.deepEqual(fake.reads, ['bytes=0-65535', 'bytes=8934464-8999999']);
+    assert.equal(request.fileAudio.length, 3);
+});
+
+test('a file without a track list is remembered as unknown and not read again', async function () {
+    var lines = [];
+    var fake = server(function () { return new Uint8Array(100); }, 100);
+    var sniffer = api(fake, lines);
+    var request = { id: 'movies:5' };
+    await sniffer.prepare(request, 'http://example.test/5.avi');
+    await sniffer.prepare({ id: 'movies:5' }, 'http://example.test/5.avi');
+    assert.equal(request.fileAudio, null);
+    assert.deepEqual(lines, ['media unknown audio not found']);
+    assert.equal(fake.reads.length, 1);
 });

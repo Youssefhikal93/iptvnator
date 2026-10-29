@@ -34,8 +34,14 @@ window.XtreamSource = function (source, options) {
     }
 
     // Movies and episodes: AVPlay first; HLS containers can use hls.js too.
-    function vodChain(src, ext) {
-        var chain = [{ via: 'avplay', url: src }];
+    // AVPlay may also open the provider's .m3u8 or .ts address for the same
+    // id, where the sound is often converted to one the TV plays (#54).
+    function vodChain(src, ext, kind, id) {
+        var avplay = { via: 'avplay', url: src };
+        if (!/^(m3u8|ts)$/i.test(ext)) {
+            avplay.converted = ['m3u8', 'ts'].map(function (name) { return { name: name, url: streamUrl(kind, id, name) }; });
+        }
+        var chain = [avplay];
         if (/^m3u8$/i.test(ext)) chain.push({ via: 'hls', url: src });
         chain.push({ via: 'video', url: src });
         return chain;
@@ -215,7 +221,7 @@ window.XtreamSource = function (source, options) {
         movieRequest: function (movie) {
             var ext = movie.container_extension || 'mp4';
             var src = streamUrl('movie', movie.stream_id, ext);
-            return { live: false, id: Progress.id('movies', movie), title: movie.name, sources: vodChain(src, ext) };
+            return { live: false, id: Progress.id('movies', movie), title: movie.name, sources: vodChain(src, ext, 'movie', movie.stream_id) };
         },
         episodeRequest: function (show, episode) {
             var ext = episode.container_extension || 'mp4';
@@ -225,7 +231,7 @@ window.XtreamSource = function (source, options) {
                 id: Progress.episodeId(episode),
                 title: show.name,
                 subtitle: episode.label,
-                sources: vodChain(src, ext),
+                sources: vodChain(src, ext, 'series', episode.id),
             };
         },
     };

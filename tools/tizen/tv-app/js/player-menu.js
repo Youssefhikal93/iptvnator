@@ -5,9 +5,9 @@
 //
 // The player fills it on every render through build(entries), where
 // entries.head(label, value) starts a group (value, when given, is what its
-// row shows instead of the chosen choices), entries.item(label, active, run) adds
-// a choice (before the first group it is a row of its own, such as Back to
-// live), entries.note(text) says why a group has no choices and
+// row shows instead of the chosen choices), entries.item(label, active, run, note)
+// adds a choice (before the first group it is a row of its own, such as Back
+// to live; without run it cannot be picked and note says why), entries.note(text) says why a group has no choices and
 // entries.info(text) adds a line of stream information.
 window.PlayerMenu = (root, hooks) => {
     'use strict';
@@ -26,7 +26,7 @@ window.PlayerMenu = (root, hooks) => {
                 group = { label, value, items: [], notes: [], infos: [] };
                 list.push(group);
             },
-            item: (label, active, action) => (group ? group.items : list).push({ label, active, run: action }),
+            item: (label, active, action, note) => (group ? group.items : list).push({ label, active, run: action, note }),
             note: (text) => group && group.notes.push(text),
             info: (text) => group && group.infos.push(text),
         });
@@ -45,8 +45,8 @@ window.PlayerMenu = (root, hooks) => {
         return group.items.length ? '' : group.notes.join(' ');
     };
 
-    const Choice = ({ entry, focused }) => html`<div class=${'pl-menu-item' + (entry.active ? ' active' : '') + (focused ? ' focus' : '')}>
-        <span class="dot">${entry.active ? '●' : ''}</span><span>${entry.label}</span>
+    const Choice = ({ entry, focused }) => html`<div class=${'pl-menu-item' + (entry.active ? ' active' : '') + (entry.run ? '' : ' unavailable') + (focused ? ' focus' : '')}>
+        <span class="dot">${entry.active ? '●' : ''}</span><span>${entry.label}${entry.note ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
     </div>`;
 
     const Group = ({ group, focused }) => html`<div class=${'pl-menu-item pl-menu-group' + (focused ? ' focus' : '')}>

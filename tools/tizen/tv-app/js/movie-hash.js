@@ -92,6 +92,8 @@ window.MovieHash = (function () {
         var first;
         return range(url, 0, BLOCK - 1, controller.signal).then(function (head) {
             first = head.bytes;
+            // MediaSniff reads the sound tracks from this same block.
+            request.fileHead = head;
             if (!(head.size >= BLOCK) || first.byteLength !== BLOCK) throw new Error('size');
             return range(url, head.size - BLOCK, head.size - 1, controller.signal).then(function (tail) {
                 var hash = compute(first, tail.bytes, head.size);

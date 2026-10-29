@@ -73,6 +73,7 @@ window.Player = (function () {
     var lastSave = 0;
     var avAudio = -1;
     var avText = -1;
+    var avRoute = 'file'; // the address AVPlay plays (audio-route.js)
     var avSeekPending = false;
     var avSeekSerial = 0;
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
@@ -514,7 +515,7 @@ window.Player = (function () {
         var selectText;
         if (kind === 'avplay') {
             if (avAudio < 0) avAudio = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
-            tracks = PlayerTracks.av(avRead('getTotalTrackInfo'), avAudio, avText);
+            tracks = PlayerTracks.av(avRead('getTotalTrackInfo'), avAudio, avText, fileAudio());
             selectAudio = function (index) {
                 avplay().setSelectTrack('AUDIO', index);
                 avAudio = index;
@@ -576,7 +577,50 @@ window.Player = (function () {
                 };
             });
         }
-        return { audio: bind(tracks.audio, selectAudio), text: bind(tracks.text, selectText) };
+        // A track the TV cannot decode is listed without a way to pick it;
+        // a picked one's language is what the next episode starts in.
+        var audio = tracks.audio.map(function (entry) {
+            if (entry.unsupported) return { label: entry.label, active: false, select: null, note: I18n.t('player.audioUnsupported') };
+            return {
+                label: entry.label,
+                active: entry.active,
+                select: function () {
+                    selectAudio(entry.ref);
+                    AudioChoice.remember(current, entry.language);
+                },
+            };
+        });
+        return { audio: audio, text: bind(tracks.text, selectText) };
+    }
+
+    // The file's own sound tracks; a converted address has others.
+    function fileAudio() {
+        return avRoute === 'file' ? current.fileAudio : null;
+    }
+
+    // Reopens what plays where it is, on the provider's converted address
+    // (`converted`) or the file itself (#54, #55).
+    function switchRoute(converted) {
+        if (!converted) AudioRoute.remember(current, 'original');
+        play(Object.assign({}, current, converted ? { audioRetry: true, audioRoute: null, resume: true } : { audioRetry: false, audioRoute: 'original', resume: true }));
+    }
+
+    // Starts AVPlay in the sound language picked last for this show (or at
+    // all) when the file has it. False while AVPlay lists no sound track yet.
+    function preferAudio() {
+        var playing = PlayerTracks.avCurrentIndex(avRead('getCurrentStreamInfo'), 'AUDIO');
+        var rows = PlayerTracks.av(avRead('getTotalTrackInfo'), playing, -1, fileAudio()).audio;
+        var row = AudioChoice.pick(current, rows);
+        if (row) {
+            try {
+                avplay().setSelectTrack('AUDIO', row.ref);
+                avAudio = row.ref;
+                Log.info('AUDIO starts in the remembered language');
+            } catch (e) {
+                Log.error('AUDIO remembered language failed ' + (e && e.name));
+            }
+        }
+        return rows.some(function (entry) { return entry.ref !== null; });
     }
 
     function streamInfoLines() {
@@ -603,7 +647,7 @@ window.Player = (function () {
                 keep = (tracks.indexOf(label) >= 0) === (menu.part === 'tracks');
                 if (keep) m.head(label, value);
             },
-            item: function (label, active, action) { if (keep) m.item(label, active, action); },
+            item: function (label, active, action, note) { if (keep) m.item(label, active, action, note); },
             note: function (text) { if (keep) m.note(text); },
             info: function (text) { if (keep) m.info(text); },
         };
@@ -617,8 +661,13 @@ window.Player = (function () {
         if (watch) m.item(I18n.t('player.watchFromStart'), false, watch);
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
         m.head(I18n.t('player.audio'));
-        if (tracks.audio.length) tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select); });
-        else m.note(I18n.t('player.oneAudio'));
+        tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
+        var routes = usingAv && AudioRoute.offered(current);
+        if (routes) {
+            var converted = avRoute !== 'file';
+            m.item(I18n.t('player.convertedSound'), converted, function () { if (!converted) switchRoute(true); });
+            if (converted) m.item(I18n.t('player.originalSound'), false, function () { switchRoute(false); });
+        } else if (!tracks.audio.length) m.note(I18n.t('player.oneAudio'));
         m.head(I18n.t('picture.subtitles'));
         if (tracks.text.length > 1) tracks.text.forEach(function (t) {
             m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
@@ -809,6 +858,7 @@ window.Player = (function () {
         series.reset();
         epg.reset();
         avAudio = avText = -1;
+        avRoute = 'file';
         speed = 1;
         ui.speed.classList.add('hidden');
         if (lib) {
@@ -896,16 +946,62 @@ window.Player = (function () {
                 }).then(function () { return address; });
             }).then(function (address) {
                 if (!address || chain.stale(mine) || address.error) return;
-                try {
-                    open(av, address.url || address, finish);
-                } catch (e) {
-                    finish(e.name || String(e));
-                }
+                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine);
             });
         };
     }
 
-    function open(av, url, finish) {
+    // Opens routes[at] (audio-route.js); a route that needs sound and has
+    // none, or fails, closes and hands over to the next one. Only one is
+    // open at a time (ADR 0006).
+    function openRoute(av, routes, at, finish, mine) {
+        var route = routes[at];
+        var request = current;
+        if (at + 1 < routes.length) {
+            route.next = function (why) {
+                Log.info('AUDIO route ' + route.name + ' ' + why);
+                try {
+                    av.close();
+                } catch (e) {
+                    // Already closed.
+                }
+                openRoute(av, routes, at + 1, finish, mine);
+            };
+        }
+        route.stale = function () { return chain.stale(mine) || current !== request; };
+        var address = route.name === 'file' ? Promise.resolve({ url: route.url }) : AvResolve.final(route.url);
+        address.then(function (found) {
+            if (route.stale()) return;
+            if (found.error) return route.next ? route.next(found.error) : finish(found.error);
+            try {
+                open(av, found.url, finish, route);
+            } catch (e) {
+                if (route.next) route.next(e.name || String(e));
+                else finish(e.name || String(e));
+            }
+        });
+    }
+
+    // Whether AVPlay lists a sound track; a route that needs one also gets
+    // four seconds of playback, as some firmware lists tracks only then.
+    function checkSound(av, route, done) {
+        var sound = AvResolve.tracks(av, current.audio);
+        if (sound || !route.needsSound) return done(sound);
+        av.play();
+        setTimeout(function () {
+            if (!route.stale()) done(AvResolve.tracks(av, null, 'after 4s'));
+        }, 4000);
+    }
+
+    // No sound five seconds into a file that has other routes: start again
+    // there, where the viewer was (audio-route.js).
+    function retrySound() {
+        Log.info('AUDIO no sound after 5s, trying the converted routes');
+        play(Object.assign({}, current, { audioRetry: true, resume: true }));
+    }
+
+    function open(av, url, finish, route) {
+        route = route || {};
         av.open(url);
         av.setListener({
             onbufferingstart: function () {
@@ -913,6 +1009,7 @@ window.Player = (function () {
             },
             onbufferingcomplete: hideStatus,
             onerror: function (type) {
+                if (!ready && route.next) return route.next('error ' + type);
                 if (ready) streamLost(String(type), I18n.t('player.stoppedType', { type: type }));
                 finish(String(type));
             },
@@ -928,18 +1025,30 @@ window.Player = (function () {
                 } catch (e) {
                     // Older firmware.
                 }
-                AvResolve.tracks(av, current.audio);
-                av.play();
-                finish(null);
-                // Some firmware lists a track only once playback runs; a second look
-                // tells a late track from a missing one.
-                var shown = current;
-                setTimeout(function () {
-                    // No sound track: the next start reads which sound the file holds.
-                    if (current === shown && usingAv && !AvResolve.tracks(av, null, 'after 5s')) MediaSniff.flag(shown);
-                }, 5000);
+                checkSound(av, route, function (sound) {
+                    if (route.needsSound && !sound && route.next) return route.next('has no sound');
+                    if (route.needsSound && sound) AudioRoute.remember(current, route.name);
+                    avRoute = route.name || 'file';
+                    if (route.silent) {
+                        AudioRoute.remember(current, 'file');
+                        document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: AudioRoute.message(current) }));
+                    }
+                    var preferred = preferAudio();
+                    av.play();
+                    finish(null);
+                    // Some firmware lists a track only once playback runs; a second look
+                    // tells a late track from a missing one.
+                    var shown = current;
+                    setTimeout(function () {
+                        if (current !== shown || !usingAv) return;
+                        var later = AvResolve.tracks(av, null, 'after 5s');
+                        if (!later && route.retry) return retrySound();
+                        if (!preferred) preferAudio();
+                    }, 5000);
+                });
             },
             function (err) {
+                if (route.next) return route.next('prepare ' + (err && err.name));
                 finish('prepare ' + (err && err.name));
             }
         );

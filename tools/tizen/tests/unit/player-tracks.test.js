@@ -40,6 +40,42 @@ test('AVPlay: a selected subtitle turns Off inactive; no tracks gives only Off',
     same(pickFields(empty.text), ['Off|true|-1']);
 });
 
+// What MediaSniff read from a file: Arabic AAC 2.0, English AC-3 5.1, English DTS 5.1.
+var FILE = [
+    { codec: 'aac', language: 'ara', channels: 2 },
+    { codec: 'ac3', language: 'eng', channels: 6 },
+    { codec: 'dts', language: 'eng', channels: 6 },
+];
+
+function rows(list) {
+    return list.map(function (t) { return t.label + '|' + t.active + '|' + t.ref + (t.unsupported ? '|unsupported' : ''); });
+}
+
+test('the file\'s tracks name AVPlay\'s, and a DTS track AVPlay hides is listed as unsupported', function () {
+    var total = [avTrack('VIDEO', 0, {}), avTrack('AUDIO', 1, {}), avTrack('AUDIO', 2, {})];
+    same(rows(tracks.av(total, 2, -1, FILE).audio), [
+        'Arabic · AAC 2.0|false|1',
+        'English · AC-3 5.1|true|2',
+        'English · DTS 5.1|false|null|unsupported',
+    ]);
+    same(tracks.av(total, 2, -1, FILE).audio.map(function (t) { return t.language; }), ['ara', 'eng', 'eng']);
+});
+
+test('a DTS-only file shows its one track as unsupported instead of nothing', function () {
+    same(rows(tracks.av([avTrack('VIDEO', 0, {})], -1, -1, [{ codec: 'dts', language: 'eng', channels: 6 }]).audio), [
+        'English · DTS 5.1|false|null|unsupported',
+    ]);
+});
+
+test('a TV that lists the DTS track too plays every track, and a list that does not line up keeps AVPlay\'s', function () {
+    var three = [avTrack('AUDIO', 1, {}), avTrack('AUDIO', 2, {}), avTrack('AUDIO', 3, {})];
+    same(rows(tracks.av(three, 3, -1, FILE).audio), ['Arabic · AAC 2.0|false|1', 'English · AC-3 5.1|false|2', 'English · DTS 5.1|true|3']);
+    var one = [avTrack('AUDIO', 1, { language: 'ara' })];
+    same(rows(tracks.av(one, 1, -1, FILE).audio), ['Arabic|true|1']);
+    same(rows(tracks.av(one, 1, -1, null).audio), ['Arabic|true|1']);
+    same(rows(tracks.av([avTrack('AUDIO', 1, {})], 1, -1, [{ codec: 'opus', language: '', channels: 3 }]).audio), ['Track 1 · Opus 3 ch|true|1']);
+});
+
 test('AVPlay current index reads the stream of one type, else -1', function () {
     var streams = [{ type: 'VIDEO', index: 0 }, { type: 'AUDIO', index: 7 }];
     assert.equal(tracks.avCurrentIndex(streams, 'AUDIO'), 7);

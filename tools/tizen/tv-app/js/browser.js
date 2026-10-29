@@ -1087,8 +1087,10 @@ window.Browser = function (hooks) {
 
     // ---- Sources, in Settings (#51) ----
 
-    // Opens Settings with the focus on the first row `match` accepts.
+    // Opens Settings with the focus on the first row `match` accepts. A kids
+    // profile has no Settings, whichever way asks (Go to Sources included).
     function openSources(match) {
+        if (!available('settings')) return;
         openSection('settings');
         settings.select(match);
         setZone('settings');
@@ -1939,6 +1941,7 @@ window.Browser = function (hooks) {
             } else if (code === KEY.ENTER) {
                 RailProfile.open(profileChanged, function () {
                     state.profileFocus = false;
+                    if (!available('settings')) return renderChrome();
                     openSection('settings');
                     setZone('settings');
                 });

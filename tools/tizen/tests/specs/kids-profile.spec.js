@@ -259,3 +259,35 @@ test('a kids profile sees the collections of its allowed films, not only their c
     await expect(page.locator('#items .list-header')).toContainText('Collections');
     await expect(page.locator('#items .card-title')).toHaveText(['Toy Story']);
 });
+
+test('a kids profile with an expired account cannot reach Settings through Go to Sources', async ({ page }) => {
+    let expired = false;
+    await page.route('**/player_api.php?**', async (route) => {
+        const url = new URL(route.request().url());
+        if (!expired || url.searchParams.get('action')) return route.continue();
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ user_info: { auth: 1, status: 'Expired', exp_date: String(Math.floor(Date.now() / 1000) - 3 * 86400), active_cons: '0', max_connections: '1' } }) });
+    });
+    await boot(page);
+    await addKids(page);
+    expired = true;
+    await page.reload();
+    await expect(page.locator('#profiles .pf-tile.focused .kids-badge')).toHaveText('KIDS');
+    await press(page, 'Enter');
+    await expect(page.locator('#load-message')).toHaveText('Account expired');
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#load-sources')).toBeFocused();
+    await press(page, 'Enter');
+    // Settings stays closed; Back dismisses the screen.
+    await back(page);
+    await expect(page.locator('#load-error')).toBeHidden();
+    await expect(page.locator('#content')).not.toHaveClass(/settings/);
+    // The remote must not drive the hidden Settings (Add profile is there).
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await page.waitForTimeout(300);
+    await expect(page.locator('#settings .focused')).toHaveCount(0);
+    await press(page, 'Enter');
+    await page.waitForTimeout(500);
+    await expect(page.locator('#menu')).toBeHidden();
+    await expect(page.locator('.pf-dialog')).toHaveCount(0);
+});

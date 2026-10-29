@@ -53,7 +53,7 @@ test('the Audio list shows every track in the file, the DTS one marked and not s
     await expect(page.locator('#pl-status')).toBeHidden();
     await playerMenu(page);
     await playerGroup(page, 'Audio');
-    await expect(choices(page)).toHaveText(['●Arabic · AAC 2.0', 'English · AC-3 5.1', 'English · DTS 5.1Not supported on this TV']);
+    await expect(choices(page)).toHaveText(['●Arabic · AAC 2.0', 'English · AC-3 5.1', 'English · DTS 5.1Not supported on this TV', 'Converted sound (provider)']);
     await expect(choices(page).nth(2)).toHaveClass(/unavailable/);
     await expect(choices(page).nth(0)).toHaveClass(/active/);
 
@@ -77,10 +77,11 @@ test('a file whose only sound is DTS shows that track as unsupported, not "Only 
     await openFirst(page, 'Movies');
     await press(page, 'Enter');
     await expect(page.locator('#player')).toHaveClass(/av/);
-    await expect(page.locator('#pl-status')).toBeHidden();
+    // The provider's converted addresses have no sound either here (#54): 4 s each.
+    await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
     await playerMenu(page);
     await playerGroup(page, 'Audio');
-    await expect(choices(page)).toHaveText(['English · DTS 5.1Not supported on this TV']);
+    await expect(choices(page)).toHaveText(['English · DTS 5.1Not supported on this TV', 'Converted sound (provider)']);
     await expect(page.locator('#pl-menu .pl-menu-empty')).toHaveCount(0);
 });
 

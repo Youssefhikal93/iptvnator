@@ -235,5 +235,7 @@ window.PlayerTracks = (function () {
         nativeList: nativeList,
         nativeSubtitles: nativeSubtitles,
         infoLines: infoLines,
+        unsupported: function (codec) { return UNSUPPORTED.indexOf(codec) >= 0; },
+        codecName: function (codec) { return CODEC_NAMES[codec] || String(codec).toUpperCase(); },
     };
 })();

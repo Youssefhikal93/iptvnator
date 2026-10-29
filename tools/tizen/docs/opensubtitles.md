@@ -56,6 +56,15 @@ Tracks AVPlay leaves out (DTS, TrueHD) show as "Not supported on this TV". The l
 picked there is kept per show and as the latest pick (`js/audio-choice.js`, per profile),
 and the next episode or movie starts in it when the file has it.
 
+A file whose only sound the TV cannot decode (#54, `js/audio-route.js`) opens first on the
+provider's `.m3u8`, then `.ts` address for the same id, where many Xtream servers convert the
+sound. Each is opened alone, after the last one closed (ADR 0006), and kept only when AVPlay
+lists a sound track for it (within 4 s of playing). When none has one, the file plays and a
+message names the format. A file whose header could not be read gets the same try when AVPlay
+lists no sound five seconds in, from where the viewer was. What worked is kept per title in
+`iptvnator-tv:audio-route`. The Audio list offers "Converted sound (provider)" and, from there,
+"The file's own sound" for any Xtream movie or episode.
+
 Subtitles follow the current playback position on AVPlay and HTML video,
 including pause and seek, in the same subtitle style set in Settings. The player
 menu's **Off** hides them. Selecting an embedded subtitle track also turns

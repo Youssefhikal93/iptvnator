@@ -245,10 +245,16 @@ window.MediaSniff = (function () {
         }
     }
 
+    // The same id can be on two sources, so a file is known by its source too.
+    function key(request) {
+        return request.subtitleId || request.id;
+    }
+
     // What an earlier read found for this file: an array, null (no track list) or undefined (not read).
     function known(request) {
         if (!request || !request.id) return undefined;
-        return memory[request.id] !== undefined ? memory[request.id] : saved()[request.id];
+        var id = key(request);
+        return memory[id] !== undefined ? memory[id] : saved()[id];
     }
 
     function range(url, from, to, signal) {
@@ -290,7 +296,7 @@ window.MediaSniff = (function () {
         }).then(function (audio) {
             Log.info(line(kind, audio));
             request.fileAudio = audio || null;
-            remember(request.id, request.fileAudio);
+            remember(key(request), request.fileAudio);
         }, function (error) {
             Log.info('media check skipped ' + (controller.signal.aborted ? 'timeout' : error.message === 'norange' ? 'norange' : 'error'));
         }).then(function () {

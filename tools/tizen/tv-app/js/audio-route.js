@@ -11,6 +11,11 @@ window.AudioRoute = (function () {
     var STORE = 'iptvnator-tv:audio-route';
     var KEEP = 200;
 
+    // The same id can be on two sources, so notes are kept per source too.
+    function key(request) {
+        return request.subtitleId || request.id;
+    }
+
     function saved() {
         try {
             var list = JSON.parse(Stored.text(STORE));
@@ -24,8 +29,8 @@ window.AudioRoute = (function () {
         if (!request || !request.id) return;
         try {
             var list = saved();
-            delete list[request.id];
-            list[request.id] = name;
+            delete list[key(request)];
+            list[key(request)] = name;
             var keys = Object.keys(list);
             keys.slice(0, Math.max(0, keys.length - KEEP)).forEach(function (old) { delete list[old]; });
             Stored.save(STORE, list);
@@ -51,9 +56,12 @@ window.AudioRoute = (function () {
             return { name: route.name, url: route.url, needsSound: true, direct: route.name === 'm3u8' };
         });
         if (!others.length || !request || request.live || !request.id) return [file];
-        var before = saved()[request.id];
+        var before = saved()[key(request)];
         // The viewer chose the file's own sound in the Audio list.
-        if (request.audioRoute === 'original' || before === 'original') return [file];
+        if (request.audioRoute === 'original') return [file];
+        // Converted sound asked for (or a retry): saved notes do not stand in the way.
+        if (request.audioRetry) return others.concat([{ name: 'file', url: url, silent: true }]);
+        if (before === 'original') return [file];
         // A header that names a playable track outranks an old "no sound" note.
         var playable = Array.isArray(request.fileAudio) && request.fileAudio.length > 0 && !silentFile(request.fileAudio);
         // 'none' (no address had sound); an older 'file' note predates the
@@ -61,7 +69,7 @@ window.AudioRoute = (function () {
         if (before === 'none' && !playable) return [{ name: 'file', url: url, silent: true }];
         var worked = others.filter(function (route) { return route.name === before; })[0];
         if (worked) return [worked, { name: 'file', url: url, silent: true }];
-        if (request.audioRetry || silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);
+        if (silentFile(request.fileAudio)) return others.concat([{ name: 'file', url: url, silent: true }]);
         // A file whose header named a playable track is not second-guessed.
         file.retry = !Array.isArray(request.fileAudio) || !request.fileAudio.length;
         return [file];
@@ -72,8 +80,8 @@ window.AudioRoute = (function () {
         if (!request || !request.id) return;
         try {
             var list = saved();
-            if (!(request.id in list)) return;
-            delete list[request.id];
+            if (!(key(request) in list)) return;
+            delete list[key(request)];
             Stored.save(STORE, list);
         } catch (e) {
             // Without storage there is nothing to forget.

@@ -114,3 +114,16 @@ test('a file without a track list is remembered as unknown and not read again', 
     assert.deepEqual(lines, ['media unknown audio not found']);
     assert.equal(fake.reads.length, 1);
 });
+
+test('the same id on two sources is two files: each is read, and old id-only notes are ignored', async function () {
+    var lines = [];
+    var fake = server(function () { return fixture('tracks.mkv.head'); }, 9000000);
+    var sniffer = api(fake, lines, { 'iptvnator-tv:sniff-tracks': JSON.stringify({ 'movie:7': null }) });
+    var first = { id: 'movie:7', subtitleId: 'a|movie:7' };
+    var second = { id: 'movie:7', subtitleId: 'b|movie:7' };
+    await sniffer.prepare(first, 'http://a.test/7.mkv');
+    await sniffer.prepare(second, 'http://b.test/7.mkv');
+    assert.equal(fake.reads.length, 2);
+    assert.equal(first.fileAudio.length, 3);
+    assert.equal(second.fileAudio.length, 3);
+});

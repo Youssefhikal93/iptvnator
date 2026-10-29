@@ -68,6 +68,8 @@ window.Browser = function (hooks) {
         }
     });
     ParentalLock.onChange(function () {
+        // Recommendation rows were built for the old lock state.
+        BecauseRows.invalidate();
         if (!ParentalLock.isUnlocked()) {
             // A pending OK must not open an item from the old unlocked list.
             Keys.repeat(KEY.RETURN);
@@ -1778,6 +1780,10 @@ window.Browser = function (hooks) {
 
     // A kids profile with nothing ticked anywhere: the menu and a note, no Settings.
     function kidsWithoutSource() {
+        // An empty Home: never the grown-up's screen (Settings) left open.
+        state.section = 'home';
+        $('content').classList.add('home');
+        $('content').classList.remove('settings');
         setZone('rail');
         renderChrome();
         toast(I18n.t('kids.nothing'));
@@ -1945,7 +1951,8 @@ window.Browser = function (hooks) {
                 }
             } else if (code === enter || code === KEY.ENTER) {
                 settleRail();
-                setZone(contentZone());
+                // A section the profile cannot open keeps the focus in the menu.
+                if (available(state.section)) setZone(contentZone());
             }
             else if (Keys.isBack(code)) hooks.exit();
             else return false;

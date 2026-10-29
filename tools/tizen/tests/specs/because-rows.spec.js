@@ -116,3 +116,28 @@ test('a show opened from Home gives a TV show row; without a TMDB key there are 
     await expect(page.locator('.hm-hero-title')).toBeVisible();
     expect((await rowTitles(page)).filter((title) => title.startsWith('Because'))).toHaveLength(0);
 });
+
+test('a row built while the parental lock was open goes when it locks again', async ({ page }) => {
+    await tmdb(page);
+    await boot(page, seed());
+    await page.clock.install();
+    await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
+    await press(page, 'Enter');
+    await expect(page.locator('#player')).toBeVisible();
+    await page.waitForTimeout(1500);
+    for (let i = 0; i < 6 && await page.locator('#player').isVisible(); i++) await back(page);
+    await expect(page.locator('#player')).toBeHidden();
+    const row = page.locator('.hm-row').filter({ hasText: 'Because you watched Movie 25' });
+    for (let i = 0; i < 10 && !await row.count(); i++) await press(page, 'ArrowDown');
+    await expect(row).toHaveCount(1);
+    // Every movie category locked, and opened with the PIN: the row stays.
+    await page.evaluate(() => {
+        ParentalLock.setPin('1234');
+        for (let id = 1; id <= 40; id++) ParentalLock.lock('s1', 'movies', String(id));
+        ParentalLock.unlock('1234');
+    });
+    await expect(row).toHaveCount(1);
+    // The lock closes again after 15 minutes: the row and its titles go.
+    await page.clock.fastForward(900001);
+    await expect(row).toHaveCount(0);
+});

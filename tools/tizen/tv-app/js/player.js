@@ -928,17 +928,20 @@ window.Player = (function () {
             if (!av) return finish('AVPlay unavailable');
             usingAv = true;
             var mine = chain.session();
+            // The reads below belong to this request, even if another starts meanwhile.
+            var request = current;
+            var gone = function () { return chain.stale(mine) || current !== request; };
             var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
             target.then(function (address) {
-                if (chain.stale(mine)) return null;
+                if (gone()) return null;
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
                 // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
-                return MovieHash.prepare(current, address.url || address).then(function () {
-                    return MediaSniff.prepare(current, address.url || address);
+                return MovieHash.prepare(request, address.url || address).then(function () {
+                    return gone() ? null : MediaSniff.prepare(request, address.url || address);
                 }).then(function () { return address; });
             }).then(function (address) {
-                if (!address || chain.stale(mine) || address.error) return;
+                if (!address || gone() || address.error) return;
                 openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine, url);
             });
         };

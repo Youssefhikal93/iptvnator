@@ -193,3 +193,31 @@ test('the .m3u8 link goes to AVPlay as it is, so a redirect to an address withou
     expect(await opened(page)).toEqual(['2025.m3u8']);
     await expect(page.locator('#toast')).toBeHidden();
 });
+
+test('a movie left while its file is still being read never has its sound read under the next movie', async ({ page, request }) => {
+    await samsungPlayer(page, request, { file: 'tracks.mkv.head', converted: [] });
+    // Movie 25's subtitle-hash reads are slow; the two-byte address check is not.
+    await page.route('**/movie/**/2025.mkv', async (route) => {
+        const range = route.request().headers().range;
+        if (range && range !== 'bytes=0-1') await new Promise((resolve) => setTimeout(resolve, 4000));
+        await route.continue().catch(() => {});
+    });
+    await page.evaluate(() => {
+        // The subtitle hash reads the file only with an OpenSubtitles key.
+        Prefs.set('opensubtitlesApiKey', 'test-key');
+        window.sniffed = [];
+        const sniff = MediaSniff.prepare;
+        MediaSniff.prepare = (req, url) => { sniffed.push([String(req && req.id), String(url).split('/').pop()]); return sniff(req, url); };
+        const hash = MovieHash.prepare;
+        MovieHash.prepare = function (req) { window.hashing = window.hashing || req; return hash.apply(this, arguments); };
+    });
+    await openFirst(page, 'Movies');
+    await press(page, 'Enter');
+    await expect.poll(() => page.evaluate(() => !!window.hashing)).toBe(true);
+    // While Movie 25's file is still being read, Movie 24 starts.
+    await page.evaluate(() => Player.play(JSON.parse(JSON.stringify(window.hashing).split('2025').join('2024'))));
+    await page.waitForTimeout(5000);
+    const pairs = await page.evaluate(() => sniffed);
+    expect(pairs.length).toBeGreaterThan(0);
+    for (const [id, file] of pairs) expect(id.replace(/\D/g, '')).toBe(file.replace(/\D/g, ''));
+});

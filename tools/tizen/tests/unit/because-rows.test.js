@@ -88,3 +88,12 @@ test('#63 TMDB order wins over catalogue order, and saved lists stay small', fun
     assert.equal(data['movies:2025'].items.length, 20);
     assert.ok(!data['movies:2001']);
 });
+
+test('#63 a watched title the viewer may no longer see names no row, even with titles left to show', function () {
+    var env = scene();
+    env.BecauseRows.save('s1', 'movies', movie(25), movies(1, 6));
+    var hidden = function (section, title) { return title.stream_id !== 2025; };
+    assert.deepEqual(plain(env.BecauseRows.rows('s1', keepAll, hidden)), []);
+    env.BecauseRows.invalidate();
+    assert.equal(env.BecauseRows.rows('s1', keepAll, keepAll)[0].title.name, 'Movie 25');
+});

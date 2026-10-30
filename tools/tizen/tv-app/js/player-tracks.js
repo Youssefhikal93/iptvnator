@@ -1,5 +1,5 @@
-// What the player menu lists for the stream that plays: audio and subtitle
-// tracks, and the Stream info lines. The player reads each engine (AVPlay,
+// What the player menu lists for the stream that plays: its audio and
+// subtitle tracks. The player reads each engine (AVPlay,
 // hls.js, the <video> element) and hands the plain data over; nothing here
 // touches an engine, so the lists are unit-testable from fake engine output.
 //
@@ -165,69 +165,6 @@ window.PlayerTracks = (function () {
         return { audio: audio, text: text };
     }
 
-    // ---- Stream info ------------------------------------------------------
-
-    // The first non-empty field of an AVPlay extra_info object under any of
-    // these lower-case names; firmware spells them differently.
-    function pick(obj, names) {
-        for (var i = 0; i < names.length; i++) {
-            for (var key in obj) {
-                if (key.toLowerCase() === names[i] && obj[key]) return obj[key];
-            }
-        }
-        return '';
-    }
-
-    function bitrate(bps) {
-        bps = Number(bps);
-        if (!bps) return '';
-        return bps >= 1e6 ? (bps / 1e6).toFixed(1) + ' Mbps' : Math.round(bps / 1000) + ' kbps';
-    }
-
-    var ENGINE_NAMES = { avplay: 'Samsung AVPlay', hls: 'hls.js', mpegts: 'mpegts.js', video: 'HTML5 video' };
-
-    // data: engine ('avplay', 'hls', 'mpegts' or 'video'); for AVPlay, streams
-    // (getCurrentStreamInfo()); otherwise width and height of the <video> and,
-    // for hls.js, level, the playing quality level ({ bitrate }) or null.
-    function infoLines(data) {
-        var lines = [];
-        if (data.engine === 'avplay') {
-            (data.streams || []).forEach(function (info) {
-                var extra = {};
-                try {
-                    extra = JSON.parse(info.extra_info) || {};
-                } catch (e) {
-                    return;
-                }
-                var parts = [];
-                if (info.type === 'VIDEO') {
-                    var w = pick(extra, ['width']);
-                    var h = pick(extra, ['height']);
-                    if (w && h) parts.push(w + '×' + h);
-                    parts.push(pick(extra, ['codec', 'fourcc']));
-                    parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                    lines.push(I18n.t('player.info.video') + '  ' + parts.filter(Boolean).join(' · '));
-                } else if (info.type === 'AUDIO') {
-                    parts.push(languageName(pick(extra, ['language'])));
-                    parts.push(pick(extra, ['codec']));
-                    var ch = pick(extra, ['channels']);
-                    if (ch) parts.push(ch + ' ch');
-                    var rate = pick(extra, ['sample_rate']);
-                    if (rate) parts.push(rate + ' Hz');
-                    parts.push(bitrate(pick(extra, ['bit_rate', 'bitrate'])));
-                    lines.push(I18n.t('player.audio') + '  ' + parts.filter(Boolean).join(' · '));
-                }
-            });
-        } else {
-            if (data.width) lines.push(I18n.t('player.info.video') + '  ' + data.width + '×' + data.height);
-            if (data.engine === 'hls' && data.level) {
-                lines.push(I18n.t('player.info.bitrate') + '  ' + bitrate(data.level.bitrate));
-            }
-        }
-        lines.push(I18n.t('player.info.player') + '  ' + ENGINE_NAMES[data.engine]);
-        return lines;
-    }
-
     return {
         languageName: languageName,
         avCurrentIndex: avCurrentIndex,
@@ -236,7 +173,6 @@ window.PlayerTracks = (function () {
         native: native,
         nativeList: nativeList,
         nativeSubtitles: nativeSubtitles,
-        infoLines: infoLines,
         unsupported: function (codec) { return UNSUPPORTED.indexOf(codec) >= 0; },
         codecName: function (codec) { return CODEC_NAMES[codec] || String(codec).toUpperCase(); },
     };

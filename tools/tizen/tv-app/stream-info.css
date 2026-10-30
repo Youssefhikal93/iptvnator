@@ -1,0 +1,51 @@
+/* Stream info (#84): a small glass panel in the top right corner, the same
+   plate as Up next; it moves under the clock while the controls are up. */
+#pl-info {
+    position: absolute;
+    right: 96px;
+    top: 64px;
+    box-sizing: border-box;
+    width: 560px;
+    padding: 20px 28px;
+    border-radius: 22px;
+    background: var(--pc-glass);
+    border: 2px solid var(--pc-glass-border);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+}
+#player.controls-on #pl-info {
+    top: 200px;
+}
+.si-title {
+    margin-bottom: 8px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pc-cyan);
+}
+.si-row {
+    display: flex;
+    gap: 24px;
+    padding: 3px 0;
+    font-size: 24px;
+}
+.si-label {
+    flex: none;
+    width: 210px;
+    color: var(--pc-text-secondary);
+}
+.si-value {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.si-keys {
+    margin-top: 10px;
+    font-size: 22px;
+    color: var(--pc-text-secondary);
+}

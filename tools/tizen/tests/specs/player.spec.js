@@ -30,8 +30,8 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await expect(page.locator('#pl-menu')).toContainText('Find subtitles online…');
     await back(page);
     await playerGroup(page, 'Stream info');
-    await expect(page.locator('#pl-menu')).toContainText('HTML5 video');
-    await expect(page.locator('#pl-menu')).toContainText('320');
+    // Stream info shows in its own panel (#84); the group offers it.
+    await expect(page.locator('#pl-menu .pl-menu-item.focus')).toContainText('Show on screen');
     await press(page, 'ArrowLeft');
     await playerGroup(page, 'Playback speed');
     await moveTo(page, '.pl-menu-item.focus span:last-child', '1.5×');

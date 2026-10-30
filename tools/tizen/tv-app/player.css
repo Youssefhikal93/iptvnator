@@ -308,7 +308,8 @@
     display: none;
 }
 #pl-hint b,
-.zb-keys b {
+.zb-keys b,
+.si-keys b {
     display: inline-block;
     margin-right: 8px;
     padding: 0 12px;
@@ -319,7 +320,8 @@
     font-weight: 600;
 }
 #pl-hint span,
-.zb-keys span {
+.zb-keys span,
+.si-keys span {
     margin-right: 28px;
 }
 

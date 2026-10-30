@@ -551,6 +551,7 @@ I18n.tables.en = {
     'settings.relockClose': 'When the app closes',
     'settings.screenSaver': 'Screen saver',
     'settings.saverOurs': "This app's",
+    'settings.saverLogo': 'Logo and clock',
     'settings.saverTv': "The TV's own",
     'settings.screenSaverKind': 'Screen saver to use',
     'saver.hint': 'Press any key to go back',

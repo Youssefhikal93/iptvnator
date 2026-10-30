@@ -18,7 +18,18 @@
 #screen-saver .empty .ss-clock { top: 44%; right: 44%; color: rgba(255, 255, 255, 0.6); }
 #screen-saver .empty .ss-hint { color: rgba(255, 255, 255, 0.3); }
 
-@keyframes ss-in { from { opacity: 0; } to { opacity: 1; } }
+/* Logo and clock (#74): one block, centred at first, then jumping to a new
+   place every two minutes (screen-saver.js). Its width is fixed: the script
+   keeps it on screen by that width. */
+#screen-saver .ss-logo-stage { background: radial-gradient(ellipse at center, #14161c 0%, #05060a 60%, #000 100%); }
+#screen-saver .ss-logo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 720px; display: flex; flex-direction: column; align-items: center; text-align: center; opacity: 1; transition: opacity 0.7s ease; }
+#screen-saver .ss-logo.placed { transform: none; }
+#screen-saver .ss-logo.out { opacity: 0; }
+#screen-saver .ss-logo-icon { width: 150px; height: 150px; border-radius: 28px; }
+#screen-saver .ss-logo-clock { margin-top: 28px; font-size: 200px; font-weight: 300; line-height: 1; letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.9); }
+#screen-saver .ss-logo-date { margin-top: 20px; font-size: 38px; color: rgba(255, 255, 255, 0.6); }
+
+@keyframes ss-in{ from { opacity: 0; } to { opacity: 1; } }
 @keyframes ss-drift { from { transform: scale(1.08) translate(-1.2%, -0.8%); } to { transform: scale(1.08) translate(1.2%, 0.8%); } }
 
 /* Animations off (Settings > Display): the picture still changes every 20 s,
@@ -27,4 +38,5 @@
 [data-motion="off"] #screen-saver .ss-art,
 [data-motion="off"] #screen-saver .ss-poster { animation: none; }
 [data-motion="off"] #screen-saver .ss-clock,
-[data-motion="off"] #screen-saver .ss-info { transition: none; }
+[data-motion="off"] #screen-saver .ss-info,
+[data-motion="off"] #screen-saver .ss-logo { transition: none; }

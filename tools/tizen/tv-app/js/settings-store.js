@@ -37,7 +37,8 @@ window.Prefs = (function () {
         topBar: 'on',
         menuPosition: 'side',
         screenSaverMs: 600000,
-        // 'ours' or 'tv': the TV's own screen saver instead of the app's (#71).
+        // 'ours', 'logo' (logo and clock, #74) or 'tv': the TV's own screen saver
+        // instead of the app's (#71). Any other value counts as 'ours'.
         screenSaverKind: 'ours',
     };
 

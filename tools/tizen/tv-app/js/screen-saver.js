@@ -14,6 +14,15 @@ window.ScreenSaver = function (deps) {
 
     const { html } = UI;
     const SLIDE_MS = 20000;
+    // Logo and clock: the block (fixed width, see screen-saver.css) moves every
+    // two minutes and keeps a margin to the screen's edge.
+    const LOGO_MOVE_MS = 120000;
+    const LOGO_FADE_MS = 700;
+    const CLOCK_MS = 20000;
+    const LOGO_MARGIN = 60;
+    const LOGO_W = 720;
+    const LOGO_H = 560;
+    const LOGO_DATE = { weekday: 'long', day: 'numeric', month: 'long' };
     // The text and the clock move a little with every slide, so no pixel
     // stays lit in one place for hours.
     const SHIFTS = [[0, 0], [-36, 24], [28, -20], [-20, -32]];
@@ -23,6 +32,11 @@ window.ScreenSaver = function (deps) {
     let root = null;
     let list = [];
     let index = 0;
+    let kind = 'ours';
+    // Logo and clock: the block's place (null = centred), moved on a timer.
+    let logo = null;
+    let mover = 0;
+    let fader = 0;
 
     function samsung(ours) {
         try {
@@ -33,9 +47,12 @@ window.ScreenSaver = function (deps) {
         }
     }
 
-    // With "The TV's own" (#71) ours never starts and Samsung's runs.
+    // With "The TV's own" (#71) ours never starts and Samsung's runs. "Logo and
+    // clock" (#74) waits and starts like the slideshow; only the drawing differs.
     function read() {
-        const ours = Prefs.get('screenSaverKind') !== 'tv';
+        const chosen = Prefs.get('screenSaverKind');
+        kind = chosen === 'tv' || chosen === 'logo' ? chosen : 'ours';
+        const ours = kind !== 'tv';
         wait = ours ? Number(Prefs.get('screenSaverMs')) || 0 : 0;
         samsung(wait > 0);
     }
@@ -82,12 +99,52 @@ window.ScreenSaver = function (deps) {
         show();
     }
 
+    const LogoView = ({ spot, out, time, date }) => html`<div class="ss-stage ss-logo-stage">
+        <div class=${'ss-logo' + (spot ? ' placed' : '') + (out ? ' out' : '')} style=${spot ? { left: spot.x + 'px', top: spot.y + 'px' } : undefined}>
+            <img class="ss-logo-icon" src="icon.png" alt="" />
+            <div class="ss-logo-clock">${time}</div>
+            <div class="ss-logo-date">${date}</div>
+        </div>
+        <div class="ss-hint">${I18n.t('saver.hint')}</div>
+    </div>`;
+
+    function showLogo() {
+        const now = Date.now();
+        UI.render(html`<${LogoView} spot=${logo.spot} out=${logo.out} time=${I18n.time(now)} date=${I18n.date(now, LOGO_DATE)} />`, root);
+    }
+
+    // The block jumps to a new place that is fully on screen; with Animations
+    // Off at once, else after a short fade out, fading in at the new place.
+    function jump() {
+        const place = () => {
+            const block = root && root.querySelector ? root.querySelector('.ss-logo') : null;
+            const size = { w: LOGO_W, h: (block && block.offsetHeight) || LOGO_H };
+            const screen = { w: window.innerWidth || 1920, h: window.innerHeight || 1080 };
+            logo = { spot: ScreenSaver.spot(Math.random, screen, size, LOGO_MARGIN), out: false };
+            fader = 0;
+            showLogo();
+        };
+        if (document.documentElement.getAttribute('data-motion') === 'off') return place();
+        logo.out = true;
+        showLogo();
+        fader = setTimeout(place, LOGO_FADE_MS);
+    }
+
+    function startLogo() {
+        logo = { spot: null, out: false };
+        showLogo();
+        ticker = setInterval(showLogo, CLOCK_MS);
+        mover = setInterval(jump, LOGO_MOVE_MS);
+        Log.info('SAVER on (logo and clock)');
+    }
+
     function start() {
-        list = deps.slides();
-        index = 0;
         root = document.createElement('div');
         root.id = 'screen-saver';
         document.body.appendChild(root);
+        if (kind === 'logo') return startLogo();
+        list = deps.slides();
+        index = 0;
         show();
         ticker = setInterval(next, SLIDE_MS);
         Log.info('SAVER on (' + list.length + ' titles)');
@@ -95,7 +152,10 @@ window.ScreenSaver = function (deps) {
 
     function stop() {
         clearInterval(ticker);
-        ticker = 0;
+        clearInterval(mover);
+        clearTimeout(fader);
+        ticker = mover = fader = 0;
+        logo = null;
         UI.clear(root);
         root.remove();
         root = null;
@@ -124,6 +184,20 @@ window.ScreenSaver = function (deps) {
     arm();
 
     return { isOn: () => !!root };
+};
+
+// A place for the logo block that keeps it, and a margin, on screen.
+// random() -> [0, 1); screen and block are { w, h } in px; a block larger than
+// the room is put at the margin.
+ScreenSaver.spot = function (random, screen, block, margin) {
+    'use strict';
+
+    const roomX = screen.w - block.w - 2 * margin;
+    const roomY = screen.h - block.h - 2 * margin;
+    return {
+        x: margin + (roomX > 0 ? Math.floor(random() * (roomX + 1)) : 0),
+        y: margin + (roomY > 0 ? Math.floor(random() * (roomY + 1)) : 0),
+    };
 };
 
 // The slides for a list of Home rows: Continue watching, favorites and

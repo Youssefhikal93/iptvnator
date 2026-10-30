@@ -94,6 +94,7 @@ window.PlayerSeries = function (api) {
         if (previousIndex() >= 0) list.push({ id: 'previous', label: I18n.t('player.previous'), icon: 'previous', run: function () { playEpisode(previousIndex()); } });
         if (nextIndex() >= 0) list.push({ id: 'next', label: I18n.t('player.next'), icon: 'next', run: playNext });
         list.push({ id: 'startOver', label: I18n.t('detail.startOver'), icon: 'restart', run: startOver });
+        if (req.backToLive) list.push({ id: 'backToLive', label: I18n.t('player.backToLive'), icon: 'next', run: req.backToLive });
         list.push({ id: 'tracks', label: I18n.t('player.hint.audioSubs'), icon: 'subs', run: function () { api.openMenu('tracks'); } });
         if (episodes()) list.push({ id: 'episodes', label: I18n.t('player.episodes'), icon: 'episodes', run: openPanel });
         list.push({ id: 'gear', label: I18n.t('rail.settings'), icon: 'gear', gear: true, run: function () { api.openMenu('settings'); } });

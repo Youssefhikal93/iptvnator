@@ -183,6 +183,11 @@ _Avoid_: EPG (for this), guide
 Watching a channel's past programme, or restarting its current programme, when the source offers it.
 _Avoid_: Archive, replay, timeshift
 
+On a live catch-up channel, Yellow / Info offers Start over for the programme on now.
+Back to live is available in the catch-up controls and is offered when playback reaches now.
+`Player.startOver()` shares the action with the future programme banner; without a current
+playable programme it does nothing.
+
 **Guide**:
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
 _Avoid_: EPG grid (use TV guide only for the button label)

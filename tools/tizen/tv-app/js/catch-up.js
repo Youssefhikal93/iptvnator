@@ -54,6 +54,10 @@ window.CatchUp = (function () {
         };
     }
 
+    function livePosition(programme) {
+        return Math.max(0, Math.min(programme.end, Date.now()) - programme.start);
+    }
+
     function decorate(el, channel) {
         if (!available(channel)) return;
         var badge = document.createElement('span');
@@ -66,5 +70,5 @@ window.CatchUp = (function () {
         return I18n.time(time);
     }
 
-    return { available: available, days: days, playable: playable, request: request, decorate: decorate, clock: clock };
+    return { available: available, days: days, playable: playable, request: request, decorate: decorate, clock: clock, livePosition: livePosition };
 })();

@@ -68,7 +68,8 @@ window.PlayerEpg = function () {
     return {
         watchFromStart: function () {
             var programme = s.shown && s.shown.now;
-            return s.req && s.req.watchFromStart && programme ? function () { s.req.watchFromStart(programme); } : null;
+            return s.req && s.req.watchFromStart && programme && programme.start < Date.now() && Date.now() < programme.end ?
+                function () { s.req.watchFromStart(programme); } : null;
         },
         reset: reset,
         load: function (req) {

@@ -65,6 +65,7 @@ window.Sources = (function () {
     function remove(id) {
         if (window.ProgressMigration) ProgressMigration.removeSource(id);
         if (window.XmltvGuide) XmltvGuide.remove(id);
+        if (window.AutoRefresh) AutoRefresh.forget(id);
         write(
             LIST_KEY,
             all().filter(function (s) {

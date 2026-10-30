@@ -4,20 +4,22 @@ var test = require('node:test');
 var assert = require('node:assert/strict');
 var fixture = require('../fixtures/backup/desktop-backup.json');
 var load = require('./sandbox');
-var files = ['profile-store.js', 'sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'move-mode.js', 'list-order.js', 'channel-groups.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'];
+var files = ['profile-store.js', 'sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'move-mode.js', 'list-order.js', 'channel-groups.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'];
 
 function app() {
     return load(files, {}, { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } });
 }
 
-test('#87/#76 both source types round-trip category/channel order and group snapshots into the active profile', async function () {
+test('#87/#76 both source types round-trip category/channel order and group snapshots, with Recent channels (#80), into the active profile', async function () {
     var env = app(), g = env.globals;
     await g.Backup.apply(g.Backup.parse(fixture), 'replace');
     var sources = g.Sources.all();
     sources.forEach(function (source) {
         var id = g.ChannelGroups.create(source.id, 'Evening');
-        g.ChannelGroups.add(source.id, id, source.type === 'm3u' ? { name: 'News', url: 'https://fixture.invalid/live', group: 'News' } : { name: 'TV', stream_id: 1, category_id: '7' });
-        g.Stored.save(g.ProfileStore.key('list-order:' + source.id), { 'categories:live': ['2', id, '', '1'], 'channels:__fav': ['3', '1'] });
+        var channel = source.type === 'm3u' ? { name: 'News', url: 'https://fixture.invalid/live', group: 'News' } : { name: 'TV', stream_id: 1, category_id: '7' };
+        g.ChannelGroups.add(source.id, id, channel);
+        g.Stored.save(g.ProfileStore.key('recent-channels:' + source.id), [Object.assign({ watchedAt: 1000 }, channel)]);
+        g.Stored.save(g.ProfileStore.key('list-order:' + source.id), { 'categories:live': ['__recentch', '2', id, '', '1'], 'channels:__fav': ['3', '1'] });
     });
     var manifest = await g.Backup.build();
     var restored = app().globals;
@@ -30,6 +32,7 @@ test('#87/#76 both source types round-trip category/channel order and group snap
         assert.equal(groups[0].name, 'Evening');
         assert.equal(groups[0].channels[0].category_id || groups[0].channels[0].group, at === 2 ? 'News' : '7');
         assert.equal(JSON.stringify(restored.Stored.json(restored.ProfileStore.key('list-order:' + source.id))), JSON.stringify(manifest.playlists[at].tvState.order));
+        assert.equal(restored.Stored.json(restored.ProfileStore.key('recent-channels:' + source.id))[0].name, at === 2 ? 'News' : 'TV');
     });
     restored.ProfileStore.setActive('default');
     assert.equal(restored.ChannelGroups.list(restored.Sources.all()[0].id).length, 0);

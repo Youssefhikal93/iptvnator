@@ -17,7 +17,7 @@ window.TvGuide = function (hooks) {
 
     function renderRow(index) {
         if (index < state.first || index >= state.first + ROWS || index >= state.channels.length) return;
-        view.row({ channel: state.channels[index], index: index, selected: index === state.index,
+        view.row({ channel: state.channels[index], index: index, selected: index === state.index, sourceId: state.sourceId,
             programmes: programmes(index), time: state.time, start: state.start });
     }
 
@@ -78,7 +78,7 @@ window.TvGuide = function (hooks) {
 
     function open(options) {
         var now = Date.now();
-        state = { guide: options.guide, channels: options.channels, index: options.index,
+        state = { guide: options.guide, sourceId: options.sourceId, channels: options.channels, index: options.index,
             time: now, start: Math.floor(now / GuideTime.step) * GuideTime.step, first: 0, suspended: false, popup: false };
         view.open(options.title);
         render();
@@ -128,8 +128,21 @@ window.TvGuide = function (hooks) {
             hooks.play(state.channels[state.index]);
         } else {
             state.popup = programme;
-            view.details(programme, CatchUp.playable(state.channels[state.index], programme));
+            view.details(programme, CatchUp.playable(state.channels[state.index], programme), remindable(programme));
         }
+    }
+
+    // null for a programme that started, else whether a reminder is set.
+    function remindable(programme) {
+        return programme.start > Date.now() ? Reminders.has(state.sourceId, state.channels[state.index], programme) : null;
+    }
+
+    function toggleReminder() {
+        var channel = state.channels[state.index];
+        if (Reminders.has(state.sourceId, channel, state.popup)) Reminders.remove(state.sourceId, channel, state.popup);
+        else Reminders.add(state.sourceId, channel, state.popup);
+        view.details(state.popup, false, remindable(state.popup));
+        renderRow(state.index);
     }
 
     function key(code) {
@@ -146,6 +159,7 @@ window.TvGuide = function (hooks) {
                 hooks.catchUp(state.channels[state.index], programme);
                 return true;
             }
+            if (code === Keys.ENTER && remindable(state.popup) !== null) return toggleReminder() || true;
             if (Keys.isBack(code) || code === Keys.ENTER) {
                 state.popup = false;
                 view.closeDetails();
@@ -159,6 +173,12 @@ window.TvGuide = function (hooks) {
         else if (code === Keys.CH_DOWN || code === 34) moveChannel(ROWS);
         else if (code === Keys.LEFT || code === Keys.RIGHT) moveTime(code === Keys.LEFT ? -1 : 1);
         else if (code === Keys.ENTER) activate();
+        else if (code === Keys.BLUE) {
+            queue = [];
+            clearInterval(timer);
+            hooks.search(function () { if (state && !state.suspended) { render(); wantRows(); startTimer(); } });
+        }
+        else if (code === Keys.YELLOW) hooks.reminders(function () { if (state && !state.suspended) render(); });
         return true;
     }
 

@@ -40,7 +40,7 @@ window.GuideView = function (el) {
         timeline.appendChild(nowLine);
         body.appendChild(timeline);
         el.appendChild(body);
-        el.appendChild(node('p', 'gd-hints', I18n.t('guide.hints')));
+        el.appendChild(node('p', 'gd-hints', I18n.t('guide.hints') + ' \u00b7 ' + I18n.t('programmeSearch.shortcut')));
         popup = node('div', 'gd-popup hidden');
         popup.setAttribute('role', 'dialog');
         popup.setAttribute('aria-label', I18n.t('guide.programmeDetails'));
@@ -76,6 +76,11 @@ window.GuideView = function (el) {
             archive.setAttribute('aria-label', I18n.t('guide.catchUpAvailable'));
             tile.appendChild(archive);
         }
+        if (programme.start > Date.now() && Reminders.has(frame.sourceId, frame.channel, programme)) {
+            var bell = node('span', 'gd-bell', '🔔');
+            bell.setAttribute('aria-label', I18n.t('reminders.bell'));
+            tile.appendChild(bell);
+        }
         tile.appendChild(node('small', '', clock(programme.start) + ' - ' + clock(programme.end)));
         return tile;
     }
@@ -104,17 +109,20 @@ window.GuideView = function (el) {
         else rows.appendChild(strip);
     }
 
-    function details(programme, playable) {
+    // reminder: null when the programme started, else whether one is set.
+    function details(programme, playable, reminder) {
+        var remindable = reminder !== null && reminder !== undefined;
         popup.innerHTML = '';
         var card = node('div', 'gd-popup-card');
         card.appendChild(node('h2', '', programme.title));
         card.appendChild(node('p', 'gd-popup-time', day(programme.start) + ' \u00b7 ' + clock(programme.start) + ' - ' + clock(programme.end)));
         card.appendChild(node('p', 'gd-description', programme.desc || I18n.t('guide.noDescription')));
         if (playable) card.appendChild(node('button', 'state-button gd-watch', I18n.t('player.watchFromStart')));
-        card.appendChild(node('p', 'gd-hints', I18n.t(playable ? 'guide.popupHintPlay' : 'guide.popupHint')));
+        if (remindable) card.appendChild(node('button', 'state-button gd-watch gd-remind', I18n.t(reminder ? 'reminders.remove' : 'reminders.add')));
+        card.appendChild(node('p', 'gd-hints', I18n.t(playable ? 'guide.popupHintPlay' : remindable ? 'guide.popupHintRemind' : 'guide.popupHint')));
         popup.appendChild(card);
         popup.classList.remove('hidden');
-        if (playable) popup.querySelector('button').focus();
+        if (playable || remindable) popup.querySelector('button').focus();
     }
 
     return {

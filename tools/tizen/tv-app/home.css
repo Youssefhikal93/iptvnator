@@ -168,6 +168,16 @@
 #home {
     position: relative;
 }
+#programme-search {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    overflow: hidden;
+    background: var(--content-bg);
+}
+#programme-search .hm-card small {
+    white-space: normal;
+}
 .hm-search {
     padding: 32px 56px 8px;
 }

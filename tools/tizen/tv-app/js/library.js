@@ -7,6 +7,7 @@ window.Library = (function () {
     // ProfileStore adds the shared prefix and the profile segment.
     var PREFIX = '';
     var RECENT_MAX = 40;
+    var RECENT_CHANNELS_MAX = 10;
     var FIELDS = ['name', 'num', 'stream_id', 'stream_icon', 'container_extension', 'series_id', 'cover', 'logo', 'url', 'group', 'label', 'category_id', 'added', 'last_modified', 'rating_5based', 'rating'];
 
     function read(key, fallback) {
@@ -83,6 +84,31 @@ window.Library = (function () {
         },
         setLastChannel: function (sourceId, channel) {
             write(PREFIX + 'last-channel:' + sourceId, snapshot(channel));
+        },
+        // The last channels watched for 10 s or more (#80), newest first.
+        recentChannels: function (sourceId) {
+            var saved = read(PREFIX + 'recent-channels:' + sourceId, []);
+            return Array.isArray(saved) ? saved : [];
+        },
+        addRecentChannel: function (sourceId, channel) {
+            var entry = snapshot(channel);
+            entry.watchedAt = Date.now();
+            var list = without(Library.recentChannels(sourceId), 'live', entry);
+            write(PREFIX + 'recent-channels:' + sourceId, [entry].concat(list).slice(0, RECENT_CHANNELS_MAX));
+        },
+        clearRecentChannels: function (sourceId) {
+            write(PREFIX + 'recent-channels:' + sourceId, []);
+        },
+        // A backup's list joined to the saved one: no duplicates, newest first, at most 10.
+        mergeRecentChannels: function (saved, incoming) {
+            var byKey = {};
+            saved.concat(incoming).forEach(function (entry) {
+                var key = keyOf('live', entry);
+                if (!byKey[key] || (entry.watchedAt || 0) > (byKey[key].watchedAt || 0)) byKey[key] = entry;
+            });
+            return Object.keys(byKey).map(function (key) { return byKey[key]; }).sort(function (a, b) {
+                return (b.watchedAt || 0) - (a.watchedAt || 0);
+            }).slice(0, RECENT_CHANNELS_MAX);
         },
         keyOf: keyOf,
         snapshot: snapshot,

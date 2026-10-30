@@ -89,3 +89,37 @@ test('a failing source is skipped, a channel without any guide gives []', async 
     guide.stop();
     assert.equal(guide.peek({ url: 'http://a' }, 0, 10), undefined);
 });
+
+test('#81 search includes cached full schedules and now/next without fetching unloaded channels', async function () {
+    var calls = 0;
+    var env = load(['guide-data.js', 'settings-store.js', 'epg.js'], {}, { Log: { error: function () {} } }).globals;
+    var adapter = {
+        schedule: function () { calls++; return Promise.resolve([p('Full', 0, 10)]); },
+        nowNext: function () { calls++; return Promise.resolve([p('Short', 10, 20)]); },
+    };
+    var channels = [{ stream_id: 1 }, { stream_id: 2 }, { stream_id: 3 }];
+    var guide = env.GuideData({}, adapter);
+    var epg = env.Epg(adapter);
+    await guide.programmes(channels[0], 0, 10);
+    await epg.load(channels[1]);
+    var schedules = await guide.cached(channels, epg);
+    assert.equal(schedules.map(function (schedule) { return schedule.programmes.map(function (x) { return x.title; }).join(); }).join('|'), 'Full|Short|');
+    assert.equal(calls, 2);
+    guide.stop();
+    epg.stop();
+});
+
+test('#81 local XMLTV and provider cache respect source preference and fallback', async function () {
+    var env = load(['guide-data.js'], {}, {
+        XmltvGuide: function () { return { programmes: function () { throw new Error('network forbidden'); } }; },
+        XmltvStore: { cached: function () { return Promise.resolve({ 0: [p('Own', 0, 10)] }); } },
+    }).globals;
+    var channels = [{ stream_id: 1 }, { stream_id: 2 }];
+    var epg = { cached: function () { return [p('Provider', 0, 10)]; } };
+    for (var prefer of [true, false]) {
+        var guide = env.GuideData({ epgUrl: 'saved', epgPrefer: prefer }, {});
+        var schedules = await guide.cached(channels, epg);
+        assert.equal(schedules[0].programmes[0].title, prefer ? 'Own' : 'Provider');
+        assert.equal(schedules[1].programmes[0].title, 'Provider');
+    }
+});

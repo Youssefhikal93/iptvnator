@@ -34,6 +34,7 @@ window.Settings = function (hooks) {
     const rows = [
         { get group() { return I18n.t('settings.playback'); }, get label() { return I18n.t('settings.autoplay'); }, get hint() { return I18n.t('describe.autoplay'); }, key: 'autoplayMs', choices: [0, 5000, 8000, 15000], get labels() { return [I18n.t('common.off'), I18n.t('unit.seconds', { n: 5 }), I18n.t('unit.seconds', { n: 8 }), I18n.t('unit.seconds', { n: 15 })]; } },
         { get label() { return I18n.t('settings.programmeGuide'); }, get hint() { return I18n.t('describe.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return onOff(); } },
+        { get label() { return I18n.t('reminders.title'); }, get hint() { return I18n.t('describe.reminders'); }, run: () => hooks.reminders(render), text: () => I18n.t('reminders.count', { count: Reminders.list().length }) },
         { get label() { return I18n.t('settings.livePreview'); }, get hint() { return I18n.t('describe.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return onOff(); } },
         ...LanguageSettings.rows,
         placed(picture[4], null, 'picture.picture'),
@@ -68,11 +69,14 @@ window.Settings = function (hooks) {
 
     rows.unshift(...ProfileSettings.rows(hooks, render));
 
+    // Background refresh (#86): the last row of Sources, after Refresh content now.
+    const autoRefresh = { get label() { return I18n.t('settings.autoRefresh'); }, get hint() { return I18n.t('describe.autoRefresh'); }, key: 'autoRefresh', choices: ['night', 'twelve', 'off'], get labels() { return [I18n.t('settings.refreshNight'), I18n.t('settings.refreshTwelve'), I18n.t('common.off')]; } };
+
     // Sources come first (#51) and are read on every draw, as the list
     // changes. A row that names a group starts it.
     function groups() {
         const list = [];
-        SourceSettings.rows(hooks.sources).concat(rows).forEach((row) => {
+        SourceSettings.rows(hooks.sources).concat([autoRefresh], rows).forEach((row) => {
             if (row.hidden) return;
             const name = row.group;
             if (name || !list.length) list.push({ name, rows: [] });

@@ -53,13 +53,18 @@ Tracks element or the MP4 trak boxes in the first 64 KiB, reusing the block the 
 read (Matroska files without the list there also have their last 64 KiB read). Same 2 s budget;
 the result, or "no list found", is kept per title in `iptvnator-tv:sniff-tracks` (newest 50).
 Tracks AVPlay leaves out (DTS, TrueHD) show as "Not supported on this TV". The language
-picked there is kept per show and as the latest pick (`js/audio-choice.js`, per profile),
-and the next episode starts in that show's pick when the file has it. Otherwise,
-Settings → Playback → Preferred sound wins; when Not set, the latest pick is used.
-Preferred subtitles selects a matching loaded file track, or stays off if absent.
-Its Show subtitles condition can limit this to sound in neither preferred language
-(unknown sound languages count as not understood). Both preferences belong to the
-viewer profile, exclude live TV, and never search for or download subtitles.
+picked there is kept per show and live channel (#83, `js/audio-choice.js`, per profile).
+Subtitle track languages and explicit Off choices are also kept per show and channel,
+so the next episode or later visit uses that choice when available. A missing chosen
+language leaves the stream's default unchanged. Off also suppresses cached downloaded
+subtitles for the show. Unlabelled subtitle tracks do not replace a saved choice.
+Each of the four lists keeps the newest 100 choices; source ids keep channels and shows
+from different sources separate. The latest sound pick still applies to movies and new shows.
+Without a manual choice, Settings > Playback > Preferred sound wins; when Not set,
+movies and new shows use the latest sound pick. Preferred subtitles selects a
+matching loaded track. Its Show subtitles condition can limit this to sound in neither
+preferred language (unknown sound counts as not understood). Settings defaults apply to
+live TV too. These choices never search for or download subtitles automatically.
 
 A file whose only sound the TV cannot decode (#54, `js/audio-route.js`) opens first on the
 provider's `.m3u8`, then `.ts` address for the same id, where many Xtream servers convert the
@@ -69,6 +74,18 @@ message names the format. A file whose header could not be read gets the same tr
 lists no sound five seconds in, from where the viewer was. What worked is kept per title in
 `iptvnator-tv:audio-route`. The Audio list offers "Converted sound (provider)" and, from there,
 "The file's own sound" for any Xtream movie or episode.
+
+Faster starts (#70). Every film or episode open logs one line (`js/open-timing.js`), e.g.
+`OPEN timing film resolve=120 hash=cached sniff=cached prepare=1800 total=2020`, from the press
+of OK / Next to the first picture; `kind` is film, episode or next (opened from the player).
+Steps: resolve (redirect look-up), hash, sniff, prepare (the first address; later routes are
+named `m3u8`, `ts`, `file`, each after a `gap`). A step that was not needed shows why instead of
+milliseconds: `cached` (this file was read before), `show` (sniff only), `off` (no key). Only
+fixed words and numbers are logged. A show whose episodes gave the same sound tracks twice has
+its next episodes' tracks taken from `iptvnator-tv:sniff-shows` (newest 30 shows), and a converted
+address that worked for one episode is where the show's other episodes with no note of their own
+start (`show:<source>|<id>` in `iptvnator-tv:audio-route`), unless their own header lists playable
+sound. The 1 s pause between routes stays: the provider needs it to release the connection.
 
 Subtitles follow the current playback position on AVPlay and HTML video,
 including pause and seek, in the same subtitle style set in Settings. The player

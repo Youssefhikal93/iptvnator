@@ -37,12 +37,16 @@ test('hidden categories retain their slots when visible categories move and when
     assert.equal(ids(g.HiddenCategories.visible('s1', 'live', ordered)), '4,2,1,3');
 });
 
-test('late app rows retain their saved positions and a newly created own group starts above an existing category order', function () {
+test('late app rows retain their saved positions and a newly created own group starts after the library rows of an existing category order', function () {
     var g = load(files).globals, key = g.ListOrder.categoryKey;
     g.ListOrder.save('s1', 'categories:movies', rows(['1', '__added', '', '2']), key);
     assert.equal(ids(g.ListOrder.apply('s1', 'categories:movies', rows(['', '1', '2']), key)), '1,,2');
     assert.equal(ids(g.ListOrder.apply('s1', 'categories:movies', rows(['', '__added', '1', '2']), key)), '1,__added,,2');
     g.ListOrder.save('s1', 'categories:live', rows(['2', '1', '']), key);
-    g.ListOrder.prepend('s1', 'categories:live', '__group_new');
+    g.ListOrder.addGroup('s1', 'categories:live', '__group_new');
     assert.equal(ids(g.ListOrder.apply('s1', 'categories:live', rows(['__group_new', '', '1', '2']), key)), '__group_new,2,1,');
+    g.ListOrder.save('s1', 'categories:live', rows(['__fav', '2', '__recent', '1', '']), key);
+    assert.equal(ids(g.ListOrder.apply('s1', 'categories:live', rows(['__fav', '__recent', '__recentch', '', '1', '2']), key)), '__recentch,__fav,2,__recent,1,');
+    g.ListOrder.addGroup('s1', 'categories:live', '__group_b');
+    assert.equal(ids(g.ListOrder.apply('s1', 'categories:live', rows(['__recentch', '__fav', '__recent', '__group_b', '', '1', '2']), key)), '__recentch,__fav,__group_b,2,__recent,1,');
 });

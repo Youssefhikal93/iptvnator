@@ -60,12 +60,14 @@ window.Player = (function () {
     var usingAv = false;
     var chain = PlaybackChain();
     var current = null;
+    var opening = OpenTiming.off; // the timing of the open in progress (#70)
     var ready = false; // a stream is playing
     var channelListOpen = false;
     var box = null; // preview rectangle in screen pixels; null is full screen
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
     var playbackError = false;
+    var liveOffered = false;
     var errorFocus = 0;
     var speed = 1;
     var hideAt = 0;
@@ -243,6 +245,7 @@ window.Player = (function () {
 
     function seekTo(ms) {
         if (!current || current.live) return;
+        liveOffered = false;
         if (ms > 0) restoration.start(ms);
         else {
             restoration.cancel();
@@ -255,6 +258,8 @@ window.Player = (function () {
     function jumpTo(ms) {
         if (!current || current.live) return;
         restoration.cancel();
+        liveOffered = false;
+        if (current.catchUp && current.returnTo) ms = Math.min(ms, CatchUp.livePosition(current.catchUp));
         engineSeekTo(Math.max(0, ms));
     }
 
@@ -439,7 +444,18 @@ window.Player = (function () {
         return req.title + (req.subtitle ? '\n' + req.subtitle : '');
     }
 
+    // The provider cannot serve future programme time; offer live at that edge.
+    function offerLive() {
+        if (!current || !current.catchUp || !current.returnTo || !started || progressBlocked()) return;
+        if (position() < CatchUp.livePosition(current.catchUp) - 1000 || menu.open) return;
+        if (liveOffered) return;
+        liveOffered = true;
+        pause();
+        openMenu('caught-up');
+    }
+
     function tick() {
+        offerLive();
         if (current && current.catchUp && !ended && position() >= duration()) {
             pause();
             onCompleted();
@@ -483,6 +499,7 @@ window.Player = (function () {
         seek.last = now;
         var base = seek.target === null ? seek.origin : seek.target;
         var next = base + dir * SEEK_STEPS_S[tier] * 1000;
+        if (current.catchUp && current.returnTo) next = Math.min(next, CatchUp.livePosition(current.catchUp));
         seek.target = Math.max(0, dur > 0 ? Math.min(next, dur - 1000) : next);
         clearTimeout(seek.timer);
         seek.timer = setTimeout(commitSeek, SEEK_COMMIT_MS);
@@ -632,7 +649,7 @@ window.Player = (function () {
     // The groups each part of the menu keeps: Audio & subtitles has the
     // tracks and subtitle style; Settings has the rest.
     function menuPart(m) {
-        if (!menu.part) return m;
+        if (!menu.part || menu.part === 'caught-up') return m;
         var tracks = [I18n.t('player.audio'), I18n.t('picture.subtitles'), I18n.t('opensubs.timing'), I18n.t('picture.subtitleStyle')];
         var keep = false;
         return {
@@ -651,7 +668,7 @@ window.Player = (function () {
         var m = menuPart(whole);
         var tracks = getTracks();
         var watch = epg.watchFromStart();
-        if (watch) m.item(I18n.t('player.watchFromStart'), false, watch);
+        if (watch) m.item(I18n.t('player.startOver'), false, startOver);
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
@@ -663,7 +680,7 @@ window.Player = (function () {
         } else if (!tracks.audio.length) m.note(I18n.t('player.oneAudio'));
         m.head(I18n.t('picture.subtitles'));
         if (tracks.text.length > 1) tracks.text.forEach(function (t) {
-            m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
+            m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); AudioChoice.rememberSubtitle(current, t.ref === -1 || t.ref === null ? false : t.language); });
         });
         else if (current.live) m.note(I18n.t('player.noSubtitles'));
         subtitles.menuEntries(m.item, tracks.text.length > 1, m.head);
@@ -685,7 +702,10 @@ window.Player = (function () {
 
     var playerMenu = PlayerMenu(ui.menu, {
         build: menuEntries,
-        title: function () { return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs'); },
+        title: function () {
+            if (menu.part === 'caught-up') return I18n.t('player.caughtUp');
+            return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs');
+        },
         run: function (action) {
             try {
                 action();
@@ -833,6 +853,7 @@ window.Player = (function () {
         avSeekPending = false;
         started = false;
         ready = false;
+        liveOffered = false;
         playerEl.classList.remove('sub-on');
         ended = false;
         clearInterval(tickTimer);
@@ -931,18 +952,20 @@ window.Player = (function () {
             // The reads below belong to this request, even if another starts meanwhile.
             var request = current;
             var gone = function () { return chain.stale(mine) || current !== request; };
-            var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
+            var timing = opening;
+            var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : timing.run('resolve', '', function () { return AvResolve.final(url); });
             target.then(function (address) {
                 if (gone()) return null;
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
                 // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
-                return MovieHash.prepare(request, address.url || address).then(function () {
-                    return gone() ? null : MediaSniff.prepare(request, address.url || address);
+                // Each step is skipped when its answer is already known (#70).
+                return timing.run('hash', MovieHash.skipNote(request), function () { return MovieHash.prepare(request, address.url || address); }).then(function () {
+                    return gone() ? null : timing.run('sniff', MediaSniff.skipNote(request), function () { return MediaSniff.prepare(request, address.url || address); });
                 }).then(function () { return address; });
             }).then(function (address) {
                 if (!address || gone() || address.error) return;
-                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine, url);
+                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine, url, timing);
             });
         };
     }
@@ -952,8 +975,10 @@ window.Player = (function () {
     // open at a time (ADR 0006). `link` is the provider's own link: its
     // redirect is often good for one use, so a file opened after another
     // route asks for a fresh one.
-    function openRoute(av, routes, at, finish, mine, link) {
+    function openRoute(av, routes, at, finish, mine, link, timing) {
         var route = routes[at];
+        // The route's own time: its address look-up, prepare and sound check.
+        route.timed = timing.step(at === 0 ? 'prepare' : route.name);
         var request = current;
         var left = false;
         // Ended once this AVPlay attempt has (a timeout moves the chain on),
@@ -969,6 +994,7 @@ window.Player = (function () {
                 // AVPlay that a newer title now uses.
                 if (left || ended()) return;
                 left = true;
+                route.timed();
                 Log.info('AUDIO route ' + route.name + ' ' + why);
                 try {
                     av.stop();
@@ -981,8 +1007,10 @@ window.Player = (function () {
                     // Already closed.
                 }
                 // A provider allowing one connection needs a moment to let it go.
+                var gap = timing.step('gap');
                 setTimeout(function () {
-                    if (!ended()) openRoute(av, routes, at + 1, finish, mine, link);
+                    gap();
+                    if (!ended()) openRoute(av, routes, at + 1, finish, mine, link, timing);
                 }, ROUTE_GAP_MS);
             };
         }
@@ -1045,6 +1073,7 @@ window.Player = (function () {
                     // Older firmware.
                 }
                 checkSound(av, route, function (sound) {
+                    route.timed();
                     if (route.needsSound && !sound && route.next) return route.next('has no sound');
                     if (route.needsSound && sound) AudioRoute.remember(current, route.name);
                     avRoute = route.name || 'file';
@@ -1070,6 +1099,7 @@ window.Player = (function () {
                 });
             },
             function (err) {
+                route.timed();
                 if (route.next) return route.next('prepare ' + (err && err.name));
                 finish('prepare ' + (err && err.name));
             }
@@ -1097,6 +1127,7 @@ window.Player = (function () {
         if (!current) return;
         if (current.live) return streamLost('stream ended', I18n.t('player.stopped'));
         if (!started || progressBlocked()) return;
+        offerLive();
         ended = true;
         if (current.id) Progress.finish(current.id, duration() / 1000);
         started = false;
@@ -1158,6 +1189,7 @@ window.Player = (function () {
         playbackError = false;
         release();
         current = req;
+        opening = req.live ? OpenTiming.off : OpenTiming.begin(req.openKind || (req.episodes ? 'episode' : 'film'));
         languagePrefs = LanguageChoice.read();
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
@@ -1180,6 +1212,7 @@ window.Player = (function () {
             ready: function (name, ms) {
                 Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + ms + 'ms');
                 onReady();
+                opening.finish();
                 if (onAttempt) onAttempt(null);
             },
             failed: function (name, error, ms) {
@@ -1272,7 +1305,15 @@ window.Player = (function () {
         return true;
     }
 
+    // The programme banner can call this without knowing the playback request.
+    function startOver() {
+        if (!current || !current.live || !ready) return;
+        var watch = epg.watchFromStart();
+        if (watch) watch();
+    }
+
     return {
+        startOver: startOver,
         play: play,
         stop: stop,
         preview: preview,

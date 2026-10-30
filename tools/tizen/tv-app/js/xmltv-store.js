@@ -76,7 +76,35 @@ window.XmltvStore = (function () {
         });
     }
 
+    // One read for the published generation, rather than one transaction per channel.
+    function cached(source, channels) {
+        return manifest(source.id).then(function (saved) {
+            if (!saved) return {};
+            return open().then(function (db) {
+                return new Promise(function (resolve, reject) {
+                    var range = IDBKeyRange.bound([source.id, saved.generation], [source.id, saved.generation, []]);
+                    var req = db.transaction('programmes').objectStore('programmes').getAll(range);
+                    req.onsuccess = function () {
+                        var byChannel = Object.create(null);
+                        req.result.forEach(function (programme) {
+                            if (!byChannel[programme.channel]) byChannel[programme.channel] = [];
+                            byChannel[programme.channel].push(programme);
+                        });
+                        var schedules = {};
+                        channels.forEach(function (channel, index) {
+                            var id = XmltvParser.match(channel, saved.index);
+                            schedules[index] = id === null ? [] : byChannel[id] || [];
+                        });
+                        resolve(schedules);
+                    };
+                    req.onerror = function () { reject(req.error); };
+                });
+            });
+        });
+    }
+
     return {
+        cached: cached,
         programmes: programmes,
         batch: function (rows) {
             return transaction(['programmes'], function (tx) {

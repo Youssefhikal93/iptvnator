@@ -1,0 +1,42 @@
+/* "Use my phone" panel of the add-source form (#85). It covers the form and
+   reuses the form's heading, button and focus styles. */
+#form-phone-panel {
+    position: absolute;
+    inset: 0;
+    padding: 100px 0 0 calc(50% - 450px);
+    background: var(--content-bg);
+}
+.phone-body {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+    width: 900px;
+    margin-top: 24px;
+}
+#phone-qr {
+    flex: none;
+    width: 340px;
+    height: 340px;
+    image-rendering: pixelated;
+    border-radius: 12px;
+}
+.phone-info p {
+    margin: 0 0 18px;
+}
+#phone-code {
+    font-size: 56px;
+    font-weight: 700;
+    letter-spacing: 6px;
+}
+#phone-url {
+    word-break: break-all;
+    color: var(--muted);
+}
+#phone-note {
+    color: var(--muted);
+}
+/* As in the guide's dialogs, only the focused button has a frame. */
+#form-phone-panel button:not(:focus) {
+    border-color: transparent;
+    background: transparent;
+}

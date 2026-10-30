@@ -2,6 +2,8 @@
 window.ListOrder = (function () {
     'use strict';
 
+    var LIBRARY_ROWS = ['__recentch', '__fav', '__recent', '__added', '__continue'];
+
     function read(sourceId) {
         try {
             var saved = Stored.json(ProfileStore.key('list-order:' + sourceId));
@@ -19,6 +21,11 @@ window.ListOrder = (function () {
         var saved = read(sourceId);
         var ids = saved[scope];
         if (!Array.isArray(ids)) return MoveMode.reset(list);
+        // A library row new to a saved order (Recent channels, #80) starts at the top.
+        var unseen = list.map(function (item) { return String(key(item)); }).filter(function (id) {
+            return LIBRARY_ROWS.indexOf(id) >= 0 && ids.indexOf(id) < 0;
+        });
+        if (unseen.length) ids = unseen.concat(ids);
         var ordered = MoveMode.apply(list, ids, key);
         var fresh = ordered.map(function (item) { return String(key(item)); });
         // These rows can arrive after their provider list, even on a reload.
@@ -50,10 +57,15 @@ window.ListOrder = (function () {
         apply: apply,
         save: save,
         replace: replace,
-        prepend: function (sourceId, scope, id) {
+        // A new own group starts after the library rows at the top of the list.
+        addGroup: function (sourceId, scope, id) {
             var saved = read(sourceId);
             if (!Array.isArray(saved[scope])) return;
-            saved[scope] = [id].concat(saved[scope].filter(function (entry) { return entry !== id; }));
+            var ids = saved[scope].filter(function (entry) { return entry !== id; });
+            var at = 0;
+            while (at < ids.length && LIBRARY_ROWS.indexOf(ids[at]) >= 0) at++;
+            ids.splice(at, 0, id);
+            saved[scope] = ids;
             write(sourceId, saved);
         },
         changed: function (sourceId, scope) { return Array.isArray(read(sourceId)[scope]); },

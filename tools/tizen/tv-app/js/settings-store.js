@@ -40,6 +40,8 @@ window.Prefs = (function () {
         // 'ours', 'logo' (logo and clock, #74) or 'tv': the TV's own screen saver
         // instead of the app's (#71). Any other value counts as 'ours'.
         screenSaverKind: 'ours',
+        // Refresh sources and guides in the background (#86): 'off', 'night' or 'twelve'.
+        autoRefresh: 'night',
     };
 
     function read(key, fallback) {

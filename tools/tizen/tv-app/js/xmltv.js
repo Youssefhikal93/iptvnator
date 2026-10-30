@@ -153,6 +153,11 @@ window.XmltvGuide = (function () {
         if (source.epgUrl && Date.now() - last >= FRESH) refresh(source);
     };
     guide.refresh = refresh;
+    // When the guide last downloaded, and when a download last failed.
+    guide.times = function (id) {
+        var saved = status(id);
+        return { updatedAt: saved.updatedAt || 0, failedAt: saved.failedAt || 0 };
+    };
     guide.revision = function (id) { return revisions[id] || 0; };
     guide.onChange = function (listener) { listeners.push(listener); };
     guide.remove = function (id) {

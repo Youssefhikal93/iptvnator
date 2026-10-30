@@ -114,11 +114,13 @@ their slots; fresh provider categories append to a saved order and removed
 ones drop out. Kids profiles filter the ordered lists by their allow lists.
 
 Hold OK on a live channel to Add to group, then choose a group or New group.
-Own groups start before the other Live TV categories and can move with them.
+Live TV lists the library rows (Recent channels, Favorites, Recently watched)
+first, then own groups, then the provider's categories; all of them can move.
 Their menus rename/delete them; channel menus remove members. Own groups and
 live Favorites use the same Move controls for channel order. Playback keeps
 that order for zapping, including live preview, and the channel list shows
-groups and the saved category order. Group members retain their provider
+groups and the saved category order, with Recent channels in its saved place
+once it has channels. Group members retain their provider
 category for Kids and parental restrictions. Opening a group resolves its
 channels against the current live catalogue before applying those restrictions.
 Movies and series have no own groups.
@@ -210,9 +212,22 @@ _Avoid_: EPG (for this), guide
 Watching a channel's past programme, or restarting its current programme, when the source offers it.
 _Avoid_: Archive, replay, timeshift
 
+On a live catch-up channel, Yellow / Info offers Start over for the programme on now.
+Back to live is available in the catch-up controls and is offered when playback reaches now.
+`Player.startOver()` shares the action with the future programme banner; without a current
+playable programme it does nothing.
+
 **Guide**:
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
 _Avoid_: EPG grid (use TV guide only for the button label)
+
+**Search programmes**:
+Blue from the Guide or Home Search opens the existing TV input and grouped
+programme rows: On now, Later today, Coming days and Past (catch-up). It
+searches a snapshot of loaded schedules, saved XMLTV and now/next caches in
+the current source, across visible channels allowed for the active profile.
+Reopen it to include newly loaded programmes. Typing makes no guide requests;
+OK offers live viewing, available catch-up or future-programme reminders.
 
 **Guide link**:
 An optional XMLTV file link saved per source, supplying programmes with a viewer-set time offset.

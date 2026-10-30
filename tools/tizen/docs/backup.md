@@ -15,6 +15,14 @@ keep the existing entry, even if the incoming position is further along.
 Writes are checked, with an in-memory snapshot used to roll back a failed write.
 Successful imports restart the app to discard the old source and library views.
 Existing settings, guide configuration and catalogue rows are retained.
+The active profile's audio and subtitle choices are included in `tvState.audioChoice`:
+`shows` / `channels` hold sound languages, `textShows` / `textChannels` hold subtitle
+languages or `false` for Off, and `last` holds the latest sound pick. Import
+sanitizes and bounds each choice list to 100 entries, remaps exported source ids to
+restored ids, and ignores choices for absent sources. Replace restores the incoming
+choices (older backups without them clear the active profile's choices); Merge keeps
+existing picks on conflicts and adds missing ones. Other profiles retain their choices.
+The desktop importer ignores this TV extension.
 
 The format is the desktop version 1 `iptvnator-playlist-backup` manifest; the
 desktop contract remains [the upstream backup document](../../../docs/architecture/playlist-backup-restore.md).

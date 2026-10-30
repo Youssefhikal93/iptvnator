@@ -9,10 +9,12 @@
         <link rel="stylesheet" href="player.css" />
         <link rel="stylesheet" href="player-picture.css" />
         <link rel="stylesheet" href="subtitle-download.css" />
+        <link rel="stylesheet" href="phone-source.css" />
         <link rel="stylesheet" href="live-preview.css" />
         <link rel="stylesheet" href="library-all.css" />
         <link rel="stylesheet" href="pin-pad.css" />
         <link rel="stylesheet" href="catch-up.css" />
+        <link rel="stylesheet" href="reminders.css" />
         <link rel="stylesheet" href="backup.css" />
         <link rel="stylesheet" href="tmdb.css" />
         <link rel="stylesheet" href="profiles.css" />
@@ -53,11 +55,13 @@
         </main>
 
         <div id="detail" class="hidden"></div>
+        <section id="programme-search" class="hidden" data-i18n-label="programmeSearch.title"></section>
         <section id="guide" class="hidden" aria-label="TV guide" data-i18n-label="header.guide"></section>
         <div id="move-hint" class="mc-hint hidden" role="status"></div>
         <section id="manage" class="hidden" aria-label="Manage categories" data-i18n-label="manage.title"></section>
         <div id="menu" class="hidden"></div>
         <div id="toast" class="hidden"></div>
+        <div id="reminder-popup" class="rm-popup hidden" role="alertdialog" data-i18n-label="reminders.title"></div>
         <div id="load-error" class="hidden" role="alertdialog" aria-labelledby="load-message">
             <div id="load-message"></div>
             <p id="load-hint"></p>
@@ -98,9 +102,27 @@
             </div>
             <div class="form-buttons">
                 <button id="form-save" data-i18n="common.save">Save</button>
+                <button id="form-phone" data-i18n="phone.use">Use my phone</button>
                 <button id="form-cancel" data-i18n="common.cancel">Cancel</button>
             </div>
             <p id="form-msg"></p>
+            <div id="form-phone-panel" class="hidden">
+                <h1 data-i18n="phone.title">Add from your phone</h1>
+                <div class="phone-body">
+                    <canvas id="phone-qr" width="1" height="1"></canvas>
+                    <div class="phone-info">
+                        <p data-i18n="phone.scan">Scan the code with your phone, or open this link on the same Wi-Fi.</p>
+                        <p id="phone-code"></p>
+                        <p id="phone-url"></p>
+                        <p id="phone-status"></p>
+                        <p id="phone-note" data-i18n="phone.lifetime"></p>
+                    </div>
+                </div>
+                <div class="form-buttons">
+                    <button id="phone-new" class="hidden" data-i18n="phone.newCode">New code</button>
+                    <button id="phone-cancel" data-i18n="common.cancel">Cancel</button>
+                </div>
+            </div>
         </div>
 
         <div id="player" class="hidden">
@@ -220,6 +242,7 @@
         <script src="js/subsource.js"></script>
         <script src="js/subtitle-file.js"></script>
         <script src="js/subtitle-rank.js"></script>
+        <script src="js/open-timing.js"></script>
         <script src="js/movie-hash.js"></script>
         <script src="js/media-sniff.js"></script>
         <script src="js/subtitle-translate.js"></script>
@@ -284,6 +307,9 @@
         <script src="js/av-resolve.js"></script>
         <script src="js/player-menu.js"></script>
         <script src="js/player.js"></script>
+        <script src="js/qr.js"></script>
+        <script src="js/phone-source.js"></script>
+        <script src="js/form-phone.js"></script>
         <script src="js/form.js"></script>
         <script src="js/profile-dialog.js"></script>
         <script src="js/kids-picker.js"></script>
@@ -292,6 +318,7 @@
         <script src="js/rail-profile.js"></script>
         <script src="js/avatar-picker.js"></script>
         <script src="js/profile-settings.js"></script>
+        <script src="js/auto-refresh.js"></script>
         <script src="js/source-settings.js"></script>
         <script src="js/menu.js"></script>
         <script src="js/appearance-settings.js"></script>
@@ -315,6 +342,7 @@
         <script src="js/collection-view.js"></script>
         <script src="js/home.js"></script>
         <script src="js/live-channels.js"></script>
+        <script src="js/recent-channels.js"></script>
         <script src="js/settings.js"></script>
         <script src="js/backup-order.js"></script>
         <script src="js/backup-store.js"></script>
@@ -322,12 +350,17 @@
         <script src="js/backup.js"></script>
         <script src="js/backup-screen.js"></script>
         <script src="js/manage-categories.js"></script>
+        <script src="js/reminders.js"></script>
+        <script src="js/reminders-list.js"></script>
         <script src="js/guide-time.js"></script>
         <script src="js/guide-view.js"></script>
         <script src="js/guide.js"></script>
+        <script src="js/programme-match.js"></script>
+        <script src="js/programme-search.js"></script>
         <script src="js/browser.js"></script>
         <script src="js/channel-list.js"></script>
         <script src="js/live-preview.js"></script>
+        <script src="js/reminder-popup.js"></script>
         <script src="js/screen-saver.js"></script>
         <script src="js/app.js"></script>
     </body>

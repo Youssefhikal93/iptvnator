@@ -1,4 +1,4 @@
-const { test, expect, boot, press, back, section, setting, enterItems, holdOK, moveTo, toolbar } = require('./helpers');
+const { test, expect, boot, press, back, section, setting, enterItems, holdOK, moveTo, toolbar, playing, channel } = require('./helpers');
 
 async function digits(page, pin) {
     for (const digit of pin) await press(page, digit);
@@ -368,4 +368,24 @@ test('Return on Who is watching after turning the profile in use into a kids pro
     await expect(page.locator('#profiles')).toHaveCount(0);
     await expect(page.locator('#rail .rail-avatar .kids-badge')).toHaveText('KIDS');
     await expect(page.locator('#content')).not.toHaveClass(/settings/);
+});
+
+test('a kids profile has its own Recent channels: nothing of the grown-up\'s, and what it watches stays in its categories', async ({ page }) => {
+    // Channel 5 is not in a category Kids can see; Me watched it.
+    await boot(page, { storage: { 'p:default:recent-channels:s1': [{ ...channel(5), watchedAt: 1000 }] } });
+    await addKids(page);
+    await section(page, 'Live TV');
+    await moveTo(page, '#categories .focused .label', 'Recent channels', 'ArrowUp');
+    await expect(page.locator('#items')).toContainText('No recent channels');
+    await moveTo(page, '#categories .focused .label', 'get_live_categories cat 2', 'ArrowDown', 6);
+    await expect(page.locator('#items .row .epg-now').first()).toBeVisible();
+    await enterItems(page);
+    await press(page, 'Enter');
+    await playing(page);
+    await page.waitForTimeout(10500);
+    await back(page);
+    await press(page, 'ArrowLeft');
+    await moveTo(page, '#categories .focused .label', 'Recent channels', 'ArrowUp');
+    await expect(page.locator('#items .row')).toHaveCount(1);
+    await expect(page.locator('#items .row .label').first()).toContainText('(cat 2)');
 });

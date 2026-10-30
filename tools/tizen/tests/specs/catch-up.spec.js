@@ -108,9 +108,9 @@ test('now and next restarts the current programme, Return restores live and Back
     await enterItems(page);
     await press(page, 'Enter');
     await playing(page);
-    await expect(page.locator('#pl-epg')).toContainText('Watch from start');
+    await expect(page.locator('#pl-epg')).toContainText('Start over');
     await sendKeyCode(page, 405);
-    await expect(page.locator('.pl-menu-item.focus')).toHaveText('Watch from start');
+    await expect(page.locator('.pl-menu-item.focus')).toHaveText('Start over');
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-title')).toContainText(' · ');

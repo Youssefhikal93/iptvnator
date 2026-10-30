@@ -39,11 +39,13 @@ test('#76 create, add, order and play a live group; zap and drawer follow it; re
     await ownGroup(page, 'My TV');
     await press(page, 'ArrowLeft');
     await holdOK(page);
+    // A new group starts after the library rows; move it above Recently watched.
+    await expect(page.locator('#categories .row .label').nth(3)).toHaveText('My TV');
     await menuChoice(page, 'Move');
-    await press(page, 'ArrowDown');
+    await press(page, 'ArrowUp');
     await press(page, 'Enter');
-    await expect(page.locator('#categories .row .label').first()).toHaveText('Favorites');
-    await expect(page.locator('#categories .row .label').nth(1)).toHaveText('My TV');
+    await expect(page.locator('#categories .row .label').nth(1)).toHaveText('Favorites');
+    await expect(page.locator('#categories .row .label').nth(2)).toHaveText('My TV');
     await enterItems(page);
     await press(page, 'ArrowDown');
     await holdOK(page);

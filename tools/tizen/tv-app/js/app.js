@@ -4,7 +4,7 @@
     'use strict';
 
     var KEY = Keys;
-    var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'PreviousChannel', 'ColorF1Green', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'Info'];
+    var MEDIA_KEYS = ['ChannelUp', 'ChannelDown', 'PreviousChannel', 'ColorF1Green', 'MediaPlayPause', 'MediaPlay', 'MediaPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ColorF2Yellow', 'ColorF3Blue', 'Info'];
 
     var screen = 'browser';
     // The request on screen: live TV keeps ▲▼ for changing channel.
@@ -101,6 +101,13 @@
         },
     });
 
+    // A reminder (#75) shows over any screen except where it would cover a
+    // PIN pad or the choice of profile.
+    var reminderPopup = ReminderPopup({
+        allowed: function () { return !PinPad.isOpen() && !ProfileScreen.isOpen() && !ProfileDialog.isOpen() && screen !== 'form'; },
+        watch: function (reminder) { browser.watchReminder(reminder); },
+    });
+
     function onPlayerKey(code) {
         var live = !!playing && playing.live;
         var zapStep = code === KEY.CH_UP || code === KEY.UP ? 1 : code === KEY.CH_DOWN || code === KEY.DOWN ? -1 : 0;
@@ -135,6 +142,11 @@
     document.addEventListener('keydown', function (event) {
         if (PinPad.isOpen()) {
             PinPad.onKey(event.keyCode);
+            event.preventDefault();
+            return;
+        }
+        if (reminderPopup.isOpen()) {
+            reminderPopup.onKey(event.keyCode);
             event.preventDefault();
             return;
         }
@@ -208,6 +220,10 @@
     ScreenSaver({
         allowed: function () { return screen !== 'player' || Player.paused(); },
         slides: browser.saverSlides,
+    });
+
+    AutoRefresh.start({
+        busy: function () { return screen === 'player' || preview.active(); },
     });
 
     if (ProfileScreen.shouldAsk()) whoIsWatching();

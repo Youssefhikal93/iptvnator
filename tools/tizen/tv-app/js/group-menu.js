@@ -15,7 +15,7 @@ window.GroupMenu = function (hooks) {
         rows.push({ label: I18n.t('groups.new'), run: function () {
             name(I18n.t('groups.new'), '', function (text) {
                 var id = ChannelGroups.create(source, text);
-                ListOrder.prepend(source, 'categories:live', id);
+                ListOrder.addGroup(source, 'categories:live', id);
                 ChannelGroups.add(source, id, item);
             });
         } });

@@ -383,7 +383,7 @@ window.SubtitleDownload = function (hooks) {
         document.body.classList.add('subtitles-open');
         var saved = SubtitleStore.title(request.subtitleId || request.id);
         offset = isFinite(saved.offset) ? Number(saved.offset) : 0;
-        if (saved.file_id) {
+        if (saved.file_id && AudioChoice.subtitle(request) !== false) {
             var text = SubtitleStore.cached(saved.file_id);
             var stretch = Number(saved.scale);
             if (SubtitleFile.parse(text).length) apply(text, saved.file_id, stretch > 0.9 && stretch < 1.1 ? stretch : 1, saved.name);
@@ -406,7 +406,7 @@ window.SubtitleDownload = function (hooks) {
     // delay as its value (head is the menu's group starter).
     function menuEntries(item, embeddedChoices, head) {
         if (!current || current.live) return;
-        if (!embeddedChoices) item(I18n.t('common.off'), !cues.length, off);
+        if (!embeddedChoices) item(I18n.t('common.off'), !cues.length, function () { off(); AudioChoice.rememberSubtitle(current, false); });
         if (cues.length) item(name || I18n.t('opensubs.downloaded'), true, function () {});
         item(I18n.t('opensubs.download'), false, function () { hooks.closeMenu(); search(); });
         // Subsource and translation, used only when the first search finds nothing.

@@ -8,7 +8,7 @@ var PREFIX = 'iptvnator-tv:';
 
 function app(stored, overrides) {
     var records = Object.assign({}, stored);
-    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
+    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
         Object.assign({ URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } }, overrides));
 }
 
@@ -183,4 +183,40 @@ test('#34 a failed import rolls back scoped progress and leaves the other source
     assert.deepEqual(tv.stored, JSON.parse(before));
     assert.equal(tv.globals.Progress.of('movie:2025').position, 50);
     assert.equal(tv.globals.Progress.of('movie:2025', 'other').position, 300);
+});
+
+test('#83 backup remaps channel and show choices on Replace, keeps existing picks on Merge, and isolates profiles', async function () {
+    var tv = app();
+    var env = tv.globals;
+    env.Sources.replace([{ id: 'old', type: 'xtream', name: 'Saved TV', url: 'https://tv.invalid', user: 'viewer', pass: '' }]);
+    env.AudioChoice.remember({ live: true, channel: 'old|1001' }, 'en');
+    env.AudioChoice.rememberSubtitle({ live: true, channel: 'old|1001' }, false);
+    env.AudioChoice.remember({ episodes: { show: 'old|3001' } }, 'ar');
+    env.AudioChoice.rememberSubtitle({ episodes: { show: 'old|3001' } }, 'en');
+    var exported = await env.Backup.build();
+    assert.equal(exported.tvState.audioChoice.textChannels['old|1001'], false);
+    var restored = load(['profile-store.js', 'sources.js', 'progress-migration.js', 'library.js', 'progress.js',
+        'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], {}, { URL: URL }).globals;
+    await restored.Backup.apply(restored.Backup.parse(JSON.stringify(exported)), 'replace');
+    var source = restored.Sources.all()[0].id;
+    var channel = { live: true, channel: source + '|1001' };
+    var show = { episodes: { show: source + '|3001' } };
+    var tracks = [{ ref: 1, language: 'en' }, { ref: 2, language: 'ar' }];
+    assert.equal(restored.AudioChoice.pick(channel, tracks).ref, 1);
+    assert.equal(restored.AudioChoice.subtitle(channel), false);
+    assert.equal(restored.AudioChoice.pick(show, tracks).ref, 2);
+    assert.equal(restored.AudioChoice.subtitle(show), 'en');
+    restored.AudioChoice.rememberSubtitle(channel, 'ar');
+    await restored.Backup.apply(restored.Backup.parse(exported), 'merge');
+    assert.equal(restored.AudioChoice.subtitle(channel), 'ar');
+    var other = restored.ProfileStore.add('Other');
+    restored.ProfileStore.setActive(other.id);
+    assert.equal(restored.AudioChoice.subtitle(channel), undefined);
+    await restored.Backup.apply(restored.Backup.parse(exported), 'merge');
+    assert.equal(restored.AudioChoice.subtitle(channel), false);
+    restored.ProfileStore.setActive('default');
+    assert.equal(restored.AudioChoice.subtitle(channel), 'ar');
+    delete exported.tvState.audioChoice;
+    await restored.Backup.apply(restored.Backup.parse(exported), 'replace');
+    assert.equal(restored.AudioChoice.subtitle(channel), undefined, 'old backups remain supported');
 });

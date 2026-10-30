@@ -2,11 +2,16 @@
 window.LiveChannels = function (hooks) {
     'use strict';
 
+    var RECENT_ID = '__recentch';
     var current = null;
     var previous = null;
     var context = null;
     var zapList = [];
     var generation = 0;
+
+    function recent() {
+        return hooks.recent ? hooks.recent() : [];
+    }
 
     function indexOf(channels, channel) {
         var key = channel && Library.keyOf('live', channel);
@@ -53,7 +58,10 @@ window.LiveChannels = function (hooks) {
 
     return {
         play: play,
-        channels: hooks.channels,
+        // The drawer's Recent row (#80) lists the Recent channels, not a catalogue category.
+        channels: function (categoryId) {
+            return categoryId === RECENT_ID ? Promise.resolve(recent()) : hooks.channels(categoryId);
+        },
         indexOf: indexOf,
         current: function () {
             return current;
@@ -82,7 +90,15 @@ window.LiveChannels = function (hooks) {
                 categories = rows;
                 return locate();
             }).then(function (channel) {
-                var index = 0;
+                // Recent shows once there is something in it: in its saved
+                // place in the category order, or first.
+                var shown = recent();
+                var placed = categories.some(function (category) { return category.category_id === RECENT_ID; });
+                if (!placed) categories = [{ category_id: RECENT_ID }].concat(categories);
+                categories = categories.filter(function (category) { return category.category_id !== RECENT_ID || shown.length; }).map(function (category) {
+                    return category.category_id === RECENT_ID ? { category_id: RECENT_ID, category_name: I18n.t('recent.title'), recent: true, count: shown.length } : category;
+                });
+                var index = categories[0] && categories[0].recent ? 1 : 0;
                 categories.forEach(function (category, i) {
                     if (String(category.category_id) === '') index = i;
                 });

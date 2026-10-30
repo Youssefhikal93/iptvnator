@@ -212,5 +212,5 @@
 
     if (ProfileScreen.shouldAsk()) whoIsWatching();
     else browser.start();
-    Log.info('IPTVnator TV started');
+    Log.info('Jo-TV started');
 })();

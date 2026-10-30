@@ -68,8 +68,8 @@
         play: play,
         exit: function () { askExit(); },
         preview: {
-            open: function (item, list) {
-                return preview.open(item, list);
+            open: function (item, list, category) {
+                return preview.open(item, list, category);
             },
             active: function () {
                 return preview.active();

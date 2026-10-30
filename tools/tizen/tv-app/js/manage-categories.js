@@ -37,6 +37,8 @@ window.ManageCategories = function (hooks) {
     root.appendChild(pane);
     var hint = el('div', 'mc-hint', I18n.t('manage.hint'));
     root.appendChild(hint);
+    var move = MoveMode.controller(function (text) { hint.textContent = text || I18n.t('manage.hint'); });
+    var groups = GroupMenu({ sourceId: hooks.sourceId, changed: reload });
 
     var list = List(pane, {
         rows: 8,
@@ -48,6 +50,7 @@ window.ManageCategories = function (hooks) {
             return category.category_name;
         },
         badge: function (category) {
+            if (!HiddenCategories.isReal(category)) return '';
             return HiddenCategories.isHidden(hooks.sourceId(), s.section, category.category_id) ? I18n.t('manage.hidden') : I18n.t('manage.shown');
         },
         decorate: function (row, category) {
@@ -95,7 +98,7 @@ window.ManageCategories = function (hooks) {
     }
 
     function show(section, categories) {
-        s = { open: true, section: section, all: categories.filter(HiddenCategories.isReal), zone: 'list', tool: 0, typing: false, changed: false };
+        s = { open: true, section: section, full: categories, all: categories.filter(function (row) { return !row.virtual || row.virtual === 'group'; }), zone: 'list', tool: 0, typing: false, changed: false };
         input.value = '';
         title.textContent = I18n.t('manage.titleOf', { section: LABELS[section] });
         // Built once; follow the language chosen since.
@@ -103,7 +106,8 @@ window.ManageCategories = function (hooks) {
         all.textContent = I18n.t('manage.showAll');
         hint.textContent = I18n.t('manage.hint');
         root.classList.remove('hidden');
-        refresh(0);
+        var first = s.all.findIndex(HiddenCategories.isReal);
+        refresh(Math.max(0, first));
     }
 
     function typingKey(code) {
@@ -119,7 +123,7 @@ window.ManageCategories = function (hooks) {
 
     function toggle() {
         var category = list.item();
-        if (!category) return;
+        if (!HiddenCategories.isReal(category)) return;
         HiddenCategories.toggle(hooks.sourceId(), s.section, category.category_id);
         s.changed = true;
         list.select(list.index());
@@ -132,7 +136,42 @@ window.ManageCategories = function (hooks) {
         refresh(list.index());
     }
 
+    function changed(section) {
+        if (!s.open || s.section !== section) return hooks.changed(section);
+        s.changed = true;
+        refresh(list.index());
+    }
+
+    function reload() {
+        var row = list.item();
+        var section = s.section;
+        s.changed = true;
+        return hooks.load(section).then(function (rows) {
+            if (!s.open || s.section !== section) return;
+            s.full = rows;
+            s.all = rows.filter(function (entry) { return !entry.virtual || entry.virtual === 'group'; });
+            refresh(Math.max(0, matching().map(ListOrder.categoryKey).indexOf(ListOrder.categoryKey(row))));
+        }).catch(function () { hooks.toast(I18n.t('manage.loadFailed')); });
+    }
+
+    function orderMenu(row) {
+        var scope = 'categories:' + s.section;
+        var source = hooks.sourceId();
+        return OrderMenu({ list: list, row: row, key: ListOrder.categoryKey, controller: move,
+            save: function (rows) {
+                s.full = ListOrder.replace(s.full, rows, ListOrder.categoryKey);
+                ListOrder.save(source, scope, s.full, ListOrder.categoryKey);
+            },
+            changed: ListOrder.changed(source, scope),
+            reset: function () {
+                ListOrder.reset(source, scope);
+                // Reload the provider's original order, rather than the open list.
+            },
+            done: reload });
+    }
+
     function onKey(code) {
+        if (move.onKey(code)) return true;
         if (s.typing) return typingKey(code);
         if (Keys.isBack(code) || (code === KEY.LEFT && (s.zone === 'list' || s.tool === 0))) {
             close();
@@ -149,7 +188,14 @@ window.ManageCategories = function (hooks) {
         } else if (code === KEY.DOWN) list.move(1);
         else if (code === KEY.CH_UP) list.move(-list.pageSize());
         else if (code === KEY.CH_DOWN) list.move(list.pageSize());
-        else if (code === KEY.ENTER) toggle();
+        else if (code === KEY.ENTER) Keys.press(toggle, function () {
+            var row = list.item();
+            if (!row) return;
+            var options = menu(s.section, row, s.full).slice(0, -1).concat(orderMenu(row));
+            if (row.virtual === 'group') options = options.concat(groups.category(row));
+            options.push({ label: I18n.t('common.cancel') });
+            Menu.open(row.category_name, options);
+        });
         paint();
         return true;
     }
@@ -176,7 +222,7 @@ window.ManageCategories = function (hooks) {
                 run: function () {
                     HiddenCategories.hide(id, section, row.category_id);
                     hooks.toast(I18n.t('manage.toastHidden', { name: row.category_name }));
-                    hooks.changed(section);
+                    changed(section);
                 },
             });
             options.push({
@@ -184,7 +230,7 @@ window.ManageCategories = function (hooks) {
                 run: function () {
                     HiddenCategories.hideAllExcept(id, section, base, row.category_id);
                     hooks.toast(I18n.t('manage.toastHiddenOthers', { name: row.category_name }));
-                    hooks.changed(section);
+                    changed(section);
                 },
             });
         }

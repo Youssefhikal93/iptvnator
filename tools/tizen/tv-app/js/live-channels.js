@@ -4,6 +4,7 @@ window.LiveChannels = function (hooks) {
 
     var current = null;
     var previous = null;
+    var context = null;
     var zapList = [];
     var generation = 0;
 
@@ -28,10 +29,11 @@ window.LiveChannels = function (hooks) {
         });
     }
 
-    function play(channel, channels) {
+    function play(channel, channels, category) {
         if (hooks.allows && !hooks.allows(channel)) return null;
-        if (current && Library.keyOf('live', current) !== Library.keyOf('live', channel)) previous = current;
+        if (current && Library.keyOf('live', current) !== Library.keyOf('live', channel)) previous = { channel: current, channels: zapList, category: context };
         current = channel;
+        context = category === undefined ? null : category;
         generation++;
         zapList = channels || [];
         if (!channels) prepareZapping(channel);
@@ -56,28 +58,39 @@ window.LiveChannels = function (hooks) {
         current: function () {
             return current;
         },
+        reorder: function (category, channels) {
+            if (context === category) zapList = channels;
+        },
         reset: function () {
             generation++;
-            current = previous = null;
+            current = previous = context = null;
             zapList = [];
         },
         zap: function (delta) {
             if (hooks.allows) zapList = zapList.filter(hooks.allows);
             var index = indexOf(zapList, current);
             if (index < 0 || index + delta < 0 || index + delta >= zapList.length) return null;
-            return play(zapList[index + delta], zapList);
+            return play(zapList[index + delta], zapList, context);
         },
         previous: function () {
-            return previous ? play(previous) : null;
+            return previous ? play(previous.channel, previous.channels, previous.category) : null;
         },
         allows: function (channel) { return !hooks.allows || hooks.allows(channel); },
         view: function () {
-            return Promise.all([hooks.categories(), locate()]).then(function (parts) {
-                var categories = parts[0];
-                var channel = parts[1];
+            var categories;
+            return hooks.categories().then(function (rows) {
+                categories = rows;
+                return locate();
+            }).then(function (channel) {
                 var index = 0;
                 categories.forEach(function (category, i) {
+                    if (String(category.category_id) === '') index = i;
+                });
+                categories.forEach(function (category, i) {
                     if (channel && String(category.category_id) === categoryOf(channel)) index = i;
+                });
+                if (context !== null) categories.forEach(function (category, i) {
+                    if (String(category.category_id) === String(context)) index = i;
                 });
                 return { categories: categories, index: index, channel: channel };
             });

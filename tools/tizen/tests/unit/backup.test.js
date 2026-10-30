@@ -8,7 +8,7 @@ var PREFIX = 'iptvnator-tv:';
 
 function app(stored, overrides) {
     var records = Object.assign({}, stored);
-    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
+    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
         Object.assign({ URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } }, overrides));
 }
 

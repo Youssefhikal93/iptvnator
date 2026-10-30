@@ -26,7 +26,7 @@ _Avoid_: Tab, type, mode
 
 **Category**:
 A named group of items inside a section, supplied by the source or the app.
-_Avoid_: Group (except for M3U `group-title`), genre, folder
+_Avoid_: Group (except for own live groups and M3U `group-title`), genre, folder
 
 **Hidden category**:
 A category the viewer chose not to see, kept per source and section; Favorites, Recently added and All channels are never hidden.
@@ -103,6 +103,33 @@ _Avoid_: Unwatched episodes, updates
 **Continue watching**:
 Movies and episodes with progress that are not watched yet.
 _Avoid_: In progress, resume list
+
+### Ordering and own live groups
+
+Hold OK on a category to Move it with Up/Down, place with OK, or restore its
+previous position with Return. Move to top and Reset order use the same menu;
+Manage categories supports the same actions, including while searching.
+All channels, All movies and All series can move. Hidden categories retain
+their slots; fresh provider categories append to a saved order and removed
+ones drop out. Kids profiles filter the ordered lists by their allow lists.
+
+Hold OK on a live channel to Add to group, then choose a group or New group.
+Own groups start before the other Live TV categories and can move with them.
+Their menus rename/delete them; channel menus remove members. Own groups and
+live Favorites use the same Move controls for channel order. Playback keeps
+that order for zapping, including live preview, and the channel list shows
+groups and the saved category order. Group members retain their provider
+category for Kids and parental restrictions. Opening a group resolves its
+channels against the current live catalogue before applying those restrictions.
+Movies and series have no own groups.
+
+`js/move-mode.js` owns pure order operations and the lift transaction;
+`js/list-order.js` saves `list-order:<sourceId>` through ProfileStore and Stored,
+with `categories:live|movies|series` and `channels:<categoryId>` scopes.
+`js/channel-groups.js` stores `channel-groups:<sourceId>` as groups with stable
+IDs, names and channel snapshots. Both records belong to the active profile
+and are included in its backup (see [backup.md](./backup.md)). The list renderer
+uses existing focus colours for the lifted row and the shared motion-off rule.
 
 ### Screens
 

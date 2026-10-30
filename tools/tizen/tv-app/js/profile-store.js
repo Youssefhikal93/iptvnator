@@ -15,7 +15,7 @@ window.ProfileStore = (function () {
     var NAME_MAX = 20;
     var COLOURS = ['#78adff', '#f2a65a', '#7fd6a2', '#e58aa8', '#b79cf0', '#e2d36b'];
     // Per-viewer keys (without the prefix) written before profiles existed.
-    var VIEWER_KEY = /^(progress|settings|pin|view:.+|(favorites|recent|last-channel|sort|seen|hidden-categories|locked-categories|backup):.+)$/;
+    var VIEWER_KEY = /^(progress|settings|pin|view:.+|(favorites|recent|last-channel|sort|seen|hidden-categories|locked-categories|list-order|channel-groups|backup):.+)$/;
     var listeners = [];
     var profiles = [];
     var activeId = 'default';

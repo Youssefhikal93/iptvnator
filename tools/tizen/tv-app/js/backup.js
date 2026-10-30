@@ -122,6 +122,7 @@ window.Backup = (function () {
                 BackupM3u.parse(entry, target);
                 if (entry.tvState) { target.favorites = tvLists(entry.tvState.favorites); target.recent = tvLists(entry.tvState.recent); }
             } else return invalid();
+            target.browse = BackupOrder.parse(entry.tvState, tvItem);
             backup.sources.push(target);
         });
         if (manifest.playlists.length && !backup.sources.length) throw new Error('No supported sources. Use an Xtream or M3U playlist link backup.');
@@ -213,13 +214,13 @@ window.Backup = (function () {
                 var sourceProgress = BackupStore.read('progress:' + source.id, {}) || {};
                 var state = sourceState(source);
                 var metadata = BackupStore.read('backup:' + source.id, {}) || {};
-                if (source.type === 'xtream') return catalogueProgress(source, metadata, sourceProgress).then(function (known) { return buildXtream(source, state, sourceProgress, known); });
+                if (source.type === 'xtream') return catalogueProgress(source, metadata, sourceProgress).then(function (known) { return BackupOrder.build(source.id, buildXtream(source, state, sourceProgress, known)); });
                 var raw = window.Catalogue ? Catalogue.get(source.id, 'backup:m3u') : Promise.resolve(null);
                 return raw.then(function (saved) {
                     return saved && saved.url === source.url ? saved.text : SourceRequest(source.url, 'text');
                 }).then(function (text) {
                     if (!m3uText(text)) throw new Error('Could not export the M3U source.');
-                    return BackupM3u.build(source, state, text);
+                    return BackupOrder.build(source.id, BackupM3u.build(source, state, text));
                 });
             })).then(function (playlists) {
                 return { kind: KIND, version: 1, exportedAt: new Date().toISOString(), includeSecrets: true, playlists: playlists, tvState: { progress: progress } };

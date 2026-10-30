@@ -81,7 +81,7 @@ window.ProfileDialog = (function () {
             input.id = 'profile-name';
             input.maxLength = 20;
             input.autocomplete = 'off';
-            input.setAttribute('aria-label', I18n.t('profile.name'));
+            input.setAttribute('aria-label', opts.inputLabel || I18n.t('profile.name'));
             input.value = opts.value;
             root.appendChild(input);
         }

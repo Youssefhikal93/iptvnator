@@ -132,7 +132,7 @@ window.ChannelList = function (hooks) {
 
     function watch() {
         if (!channels[focus]) return;
-        var request = hooks.channels.play(channels[focus], channels);
+        var request = hooks.channels.play(channels[focus], channels, categories[categoryIndex].category_id);
         close();
         if (request) hooks.play(request);
     }

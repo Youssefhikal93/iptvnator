@@ -117,13 +117,13 @@ window.LivePreview = function (hooks) {
         },
         // Returns false when the viewer's setting (or the grid view) asks for
         // plain full-screen playback and the caller should open the channel.
-        open: function (item, list) {
+        open: function (item, list, category) {
             if (!enabled()) return false;
             if (s.shown && same(item, s.channel)) {
                 hooks.fullscreen(s.request);
                 return true;
             }
-            var request = hooks.live.play(item, list);
+            var request = hooks.live.play(item, list, category);
             if (!request) return true;
             s.channel = item;
             s.request = request;

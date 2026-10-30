@@ -171,6 +171,12 @@ window.Browser = function (hooks) {
             return state.catalogue.peek({ kind: 'show', id: show.series_id });
         },
         loadShow: loadShow,
+        // A title marked watched can name "Because you watched" (#72).
+        marked: function (item, section, title, ids) {
+            if (otherSource(item)) return;
+            BecauseRows.mark(sourceId(), section, title, ids);
+            learnSimilar();
+        },
         changed: function () {
             refreshLibrary();
             detail.refresh();

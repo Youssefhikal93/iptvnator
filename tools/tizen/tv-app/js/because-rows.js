@@ -8,6 +8,9 @@
 //   title, best match first.
 // ordered(found, credits) -> the items of Tmdb.inLibrary's entries in TMDB's
 //   order of `credits`.
+// mark(sourceId, section, title, ids) notes a title marked watched (#72): it
+//   counts like one played to the end while any of `ids` is still watched,
+//   so unmarking it needs no call.
 // wanted(sourceId) -> [{ section, item }] watched titles with no fresh list.
 // rows(sourceId, keep, shown) -> [{ section, title, items }] for Home;
 //   keep(section, item) leaves out hidden and finished titles, shown(section,
@@ -36,6 +39,40 @@ window.BecauseRows = (function () {
 
     function storeKey(sourceId) {
         return ProfileStore.key('because:' + sourceId);
+    }
+
+    function markedKey(sourceId) {
+        return ProfileStore.key('because-marked:' + sourceId);
+    }
+
+    function readMarked(sourceId) {
+        try {
+            var data = Stored.json(markedKey(sourceId));
+            return data && typeof data === 'object' ? data : {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    // A show keeps every episode marked, so unmarking one leaves the others.
+    function mark(sourceId, section, title, ids) {
+        var data = readMarked(sourceId);
+        var own = titleKey(section, title);
+        var before = data[own] && data[own].ids || [];
+        delete data[own];
+        data[own] = {
+            at: Date.now(),
+            title: Library.snapshot(title),
+            ids: before.concat(ids.filter(function (id) { return id && before.indexOf(id) === -1; })),
+        };
+        var oldest = Object.keys(data).sort(function (a, b) { return data[a].at - data[b].at; });
+        oldest.slice(0, Math.max(0, oldest.length - TITLES_MAX)).forEach(function (old) { delete data[old]; });
+        built = null;
+        try {
+            Stored.save(markedKey(sourceId), data);
+        } catch (e) {
+            // Left out of the rows; playing the title still counts.
+        }
     }
 
     function read(sourceId) {
@@ -91,20 +128,32 @@ window.BecauseRows = (function () {
         return !!p && (p.status === 'watched' || p.position >= WATCHED_S);
     }
 
-    // The section's titles watched for a few minutes, latest first: movies,
-    // or the shows of the episodes watched.
+    // The section's titles watched for a few minutes or marked watched, the
+    // latest play or mark first: movies, or the shows of the episodes.
     function watchedTitles(sourceId, section) {
-        var seen = {};
-        var list = [];
+        var found = [];
         Library.recent(sourceId, section).forEach(function (entry) {
             var title = section === 'series' ? entry.show : entry;
-            if (!title || seen[Library.keyOf(section, title)]) return;
             var id = section === 'series' ? entry.episode && Progress.episodeId(entry.episode) : Progress.id(section, entry);
-            if (!id || !watchedLong(id, sourceId)) return;
-            seen[Library.keyOf(section, title)] = true;
-            list.push(title);
+            if (title && id && watchedLong(id, sourceId)) found.push({ title: title, at: entry.watchedAt || 0 });
         });
-        return list;
+        var marked = readMarked(sourceId);
+        var done = Progress.watchedIds(sourceId);
+        Object.keys(marked).forEach(function (key) {
+            var entry = marked[key];
+            if (key.indexOf(section + ':') !== 0 || !entry || !entry.title) return;
+            if ((entry.ids || []).some(function (id) { return done[id]; })) found.push({ title: entry.title, at: entry.at || 0 });
+        });
+        // The index keeps equal times in their order; older TVs sort unstably.
+        found.forEach(function (entry, index) { entry.index = index; });
+        found.sort(function (a, b) { return b.at - a.at || a.index - b.index; });
+        var seen = {};
+        return found.filter(function (entry) {
+            var key = Library.keyOf(section, entry.title);
+            if (seen[key]) return false;
+            seen[key] = true;
+            return true;
+        }).map(function (entry) { return entry.title; });
     }
 
     function fresh(found) {
@@ -143,6 +192,7 @@ window.BecauseRows = (function () {
 
     return {
         save: save,
+        mark: mark,
         ordered: ordered,
         wanted: wanted,
         rows: rows,

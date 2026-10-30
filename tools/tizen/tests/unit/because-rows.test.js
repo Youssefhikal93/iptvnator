@@ -89,6 +89,42 @@ test('#63 TMDB order wins over catalogue order, and saved lists stay small', fun
     assert.ok(!data['movies:2001']);
 });
 
+test('#72 a title only marked watched names the row; the newest mark or play comes first', function () {
+    var env = scene();
+    var played = JSON.parse(env.localStorage.getItem('iptvnator-tv:recent:s1'));
+    played.movies[1].watchedAt = 1000;
+    env.Stored.save('iptvnator-tv:recent:s1', played);
+    env.Progress.mark(['movie:2030'], true, [5400], 's1');
+    env.BecauseRows.mark('s1', 'movies', movie(30), ['movie:2030']);
+    env.BecauseRows.save('s1', 'movies', movie(25), movies(1, 6));
+    env.BecauseRows.save('s1', 'movies', movie(30), movies(7, 12));
+    assert.equal(env.BecauseRows.rows('s1', keepAll)[0].title.name, 'Movie 30');
+    assert.equal(env.BecauseRows.rows('s1', keepAll)[0].title.stream_id, 2030);
+    // Movie 25 played after the mark: it names the row again.
+    played.movies[1].watchedAt = Date.now() + 1000;
+    env.Stored.save('iptvnator-tv:recent:s1', played);
+    env.BecauseRows.invalidate();
+    assert.equal(env.BecauseRows.rows('s1', keepAll)[0].title.name, 'Movie 25');
+});
+
+test('#72 unmarking takes the title away as a source; a show stays while an episode is still marked', function () {
+    var env = scene();
+    env.Progress.mark(['movie:2030'], true, [5400], 's1');
+    env.BecauseRows.mark('s1', 'movies', movie(30), ['movie:2030']);
+    env.Progress.mark(['episode:51', 'episode:52'], true, [2400, 2400], 's1');
+    env.BecauseRows.mark('s1', 'series', show(5), ['episode:51']);
+    env.BecauseRows.mark('s1', 'series', show(5), ['episode:52']);
+    var names = function () {
+        return plain(env.BecauseRows.wanted('s1').map(function (t) { return t.item.name; }));
+    };
+    assert.deepEqual(names(), ['Movie 30', 'Show 5']);
+    env.Progress.mark(['movie:2030'], false, null, 's1');
+    env.Progress.mark(['episode:51'], false, null, 's1');
+    assert.deepEqual(names(), ['Movie 25', 'Show 5']);
+    env.Progress.mark(['episode:52'], false, null, 's1');
+    assert.deepEqual(names(), ['Movie 25', 'Show 4']);
+});
+
 test('#63 a watched title the viewer may no longer see names no row, even with titles left to show', function () {
     var env = scene();
     env.BecauseRows.save('s1', 'movies', movie(25), movies(1, 6));

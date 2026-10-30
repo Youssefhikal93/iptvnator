@@ -132,13 +132,19 @@ test('#34 All sources snapshots, Continue watching and watched actions use the i
     var item = g.LibraryAll.recent('movies', 's1')[0];
     assert.equal(g.Progress.unfinished('movies', item).position, 240);
     assert.equal(g.Library.continueWatching('s2', 'movies').length, 1);
-    var watched = g.Watched({ changed: function () {} });
+    var marked = [];
+    var watched = g.Watched({ changed: function () {}, marked: function (from, section, title, ids) { marked.push([from, section, title, ids]); } });
     assert.equal(watched.isWatched(item, 'movies'), false);
     var options;
     g.Menu = { open: function (title, entries) { options = entries; } };
     watched.openItemMenu(item, 'movies', [], 'Movie');
     options[0].run();
     assert.equal(watched.isWatched(item, 'movies'), true);
+    // #72: the mark is offered to "Because you watched" with the item's source.
+    assert.equal(marked.length, 1);
+    assert.equal(marked[0][0], item);
+    assert.equal(marked[0][2], item);
+    assert.equal(marked[0][3].join(), 'movie:42');
     assert.equal(g.Progress.of('movie:42').duration, 1000);
     assert.equal(g.Library.continueWatching('s2', 'movies').length, 0);
 });

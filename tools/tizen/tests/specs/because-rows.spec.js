@@ -1,12 +1,13 @@
 const path = require('node:path');
-const { test, expect, boot, movie, show, press, back, moveTo } = require('./helpers');
+const { test, expect, boot, movie, show, press, back, moveTo, section, enterItems, holdOK, menuChoice } = require('./helpers');
 
 // TMDB knows Movie 25 and Show 4, each with similar titles the fake provider has
 // (and one it does not), in an order unlike the catalogue's.
 const similarMovies = [7, 3, 12, 99, 1, 5, 9].map((n) => ({ id: 100 + n, title: 'Movie ' + n }));
 const similarShows = [2, 9, 1, 3, 98, 5].map((n) => ({ id: 200 + n, name: 'Show ' + n }));
 
-async function tmdb(page) {
+// `alsoShow` names one more show TMDB knows, with Show 4's similar titles.
+async function tmdb(page, alsoShow = null) {
     const seen = [];
     await page.route('https://image.tmdb.org/**', (route) => route.fulfill({ path: path.join(__dirname, '../media/poster.jpg'), contentType: 'image/jpeg' }));
     await page.route('https://api.themoviedb.org/**', (route) => {
@@ -15,7 +16,7 @@ async function tmdb(page) {
         seen.push(endpoint);
         const query = url.searchParams.get('query');
         if (endpoint === '/search/movie') return route.fulfill({ json: { results: query === 'Movie 25' ? [{ id: 25, title: 'Movie 25' }] : [] } });
-        if (endpoint === '/search/tv') return route.fulfill({ json: { results: query === 'Show 4' ? [{ id: 4, name: 'Show 4' }] : [] } });
+        if (endpoint === '/search/tv') return route.fulfill({ json: { results: query === 'Show 4' || query === alsoShow ? [{ id: 4, name: query }] : [] } });
         if (endpoint === '/movie/25') return route.fulfill({ json: { id: 25, title: 'Movie 25', overview: 'A plot.', similar: { results: similarMovies } } });
         if (endpoint === '/tv/4') return route.fulfill({ json: { id: 4, name: 'Show 4', overview: 'A plot.', similar: { results: similarShows } } });
         return route.fulfill({ status: 404, json: { status_message: 'Not found' } });
@@ -140,4 +141,48 @@ test('a row built while the parental lock was open goes when it locks again', as
     // The lock closes again after 15 minutes: the row and its titles go.
     await page.clock.fastForward(900001);
     await expect(row).toHaveCount(0);
+});
+
+// Home's row titles, moving down. Nothing played means no hero.
+async function homeRows(page) {
+    await section(page, 'Home');
+    await expect(page.locator('.hm-row').first()).toBeVisible();
+    return rowTitles(page);
+}
+
+test('#72 a movie only marked watched names the row; unmarking it takes the row away', async ({ page }) => {
+    const seen = await tmdb(page);
+    await boot(page, { storage: { settings: { tmdbApiKey: 'test-key' } } });
+    await section(page, 'Movies');
+    await enterItems(page);
+    await expect(page.locator('#items .focused .card-title')).toHaveText('Movie 25');
+    await holdOK(page);
+    await menuChoice(page, 'Mark as watched');
+    await expect.poll(() => seen.includes('/movie/25')).toBe(true);
+    expect((await homeRows(page)).some((title) => title.startsWith('Because you watched Movie 25'))).toBe(true);
+    await section(page, 'Movies');
+    await enterItems(page);
+    await holdOK(page);
+    await menuChoice(page, 'Mark as unwatched');
+    expect((await homeRows(page)).filter((title) => title.startsWith('Because'))).toHaveLength(0);
+});
+
+test('#72 a season marked watched on the detail page names a TV show row', async ({ page }) => {
+    await boot(page, { storage: { settings: { tmdbApiKey: 'test-key' } } });
+    await section(page, 'Series');
+    await enterItems(page);
+    const name = (await page.locator('#items .focused .card-title').innerText()).trim();
+    const seen = await tmdb(page, name);
+    await press(page, 'Enter');
+    await expect(page.locator('#detail .dt-meta')).not.toContainText('Loading');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('.dt-ep.focus')).toBeVisible();
+    await holdOK(page);
+    await menuChoice(page, 'Mark season watched');
+    await expect.poll(() => seen.includes('/tv/4')).toBe(true);
+    await back(page);
+    await section(page, 'Home');
+    const row = page.locator('.hm-row').filter({ hasText: 'Because you watched ' + name });
+    for (let i = 0; i < 10 && !await row.count(); i++) await press(page, 'ArrowDown');
+    await expect(row.locator('.hm-pill')).toHaveText('TV show');
 });

@@ -271,7 +271,8 @@ window.Detail = function () {
         close: close,
         episodeSelection: function () {
             if (!s || s.zone !== 'episodes' || s.more) return null;
-            return s.page.episodes.selection();
+            var selection = s.page.episodes.selection();
+            return selection && Object.assign({ show: s.page.item }, selection);
         },
         // After playback or a library change: new Resume labels and progress.
         refresh: function () {

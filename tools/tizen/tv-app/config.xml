@@ -2,7 +2,7 @@
 <widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://iptvnator.app/tizen-tv" version="0.1.0" viewmodes="maximized">
     <tizen:application id="IPTVnTVApp.IPTVnator" package="IPTVnTVApp" required_version="3.0"/>
     <tizen:profile name="tv-samsung"/>
-    <name>IPTVnator</name>
+    <name>Jo-TV</name>
     <icon src="icon.png"/>
     <content src="index.html"/>
     <access origin="*" subdomains="true"/>

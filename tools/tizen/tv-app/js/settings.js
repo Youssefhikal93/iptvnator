@@ -60,7 +60,9 @@ window.Settings = function (hooks) {
         { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },
         { get label() { return I18n.t('settings.export'); }, backup: 'export', text: '' },
         ...TmdbSettings.rows,
-        { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('settings.version'); }, text: VERSION },
+        { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('settings.appName'); }, text: 'Jo-TV' },
+        { get label() { return I18n.t('settings.version'); }, text: VERSION },
+        { get label() { return I18n.t('settings.basedOn'); }, text: '' },
         { get label() { return I18n.t('settings.installGuide'); }, text: 'tools/tizen/INSTALLATION-TO-TV.md' },
     ];
 

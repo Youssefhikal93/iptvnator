@@ -155,7 +155,7 @@ test('a saved list that is not a list reads as empty', function () {
 
 test('the list is in the backup and comes back with it, joined to what is saved', async function () {
     var source = { id: 'old', type: 'xtream', name: 'Kept', url: 'https://tv.example.invalid/', user: 'fake-viewer', pass: 'keep-password' };
-    var files = ['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'];
+    var files = ['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'];
     var overrides = { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } };
     var first = load(files, {}, overrides);
     first.globals.Stored.save('iptvnator-tv:sources', [source]);
@@ -177,7 +177,7 @@ test('the list is in the backup and comes back with it, joined to what is saved'
 });
 
 test('a backup without the list, or with a damaged one, is handled', function () {
-    var plain = load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], {}, { URL: URL });
+    var plain = load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], {}, { URL: URL });
     var archive = JSON.parse(JSON.stringify(fixture));
     assert.deepEqual(ids(plain.globals.Backup.parse(archive).sources[0].recentChannels), []);
     archive.playlists[0].tvState = { recentChannels: 'nope' };

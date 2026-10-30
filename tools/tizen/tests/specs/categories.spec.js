@@ -10,7 +10,7 @@ test('hold OK on a category hides it, opens the next one and stays hidden after 
     await category(page, 'get_live_categories cat 1');
     await holdOK(page);
     await expect(page.locator('#menu .menu-title')).toHaveText('get_live_categories cat 1');
-    await expect(page.locator('#menu .menu-row')).toHaveText(['Hide category', 'Hide all except this', 'Manage categories', 'Set a PIN first', 'Cancel']);
+    await expect(page.locator('#menu .menu-row')).toHaveText(['Hide category', 'Hide all except this', 'Manage categories', 'Move', 'Move to top', 'Set a PIN first', 'Cancel']);
     await menuChoice(page, 'Hide category');
     await expect(focusedCategory(page)).toHaveText('get_live_categories cat 2');
     await expect(page.locator('#items .skeleton')).toHaveCount(0);
@@ -42,7 +42,7 @@ test('Hide all except this keeps one real category; virtual rows stay and cannot
     expect(saved).not.toContain('3');
     await category(page, 'Favorites');
     await holdOK(page);
-    await expect(page.locator('#menu .menu-row')).toHaveText(['Manage categories', 'Cancel']);
+    await expect(page.locator('#menu .menu-row')).toHaveText(['Manage categories', 'Move', 'Move to top', 'Cancel']);
     await back(page);
     await expect(page.locator('#menu')).toBeHidden();
 });
@@ -59,6 +59,8 @@ test('Manage categories toggles, searches and shows all; its choices carry into 
     await press(page, 'Enter');
     await expect(page.locator('#manage .row.focused .badge')).toHaveText('Hidden');
     await expect(page.locator('#manage .list-header')).toContainText('1 hidden');
+    // All movies precedes the provider categories.
+    await press(page, 'ArrowUp');
     // Remote typing: OK on the search box, type, OK again to reach the matches.
     await press(page, 'ArrowUp');
     await expect(page.locator('.mc-search')).toHaveClass(/focused/);
@@ -85,6 +87,7 @@ test('Manage categories toggles, searches and shows all; its choices carry into 
     await menuChoice(page, 'Manage categories');
     await expect(page.locator('#manage')).toBeVisible();
     await expect(page.locator('#manage .row.focused .badge')).toHaveText('Hidden');
+    await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
     await press(page, 'ArrowRight');
     await expect(page.locator('.mc-btn')).toHaveClass(/focused/);

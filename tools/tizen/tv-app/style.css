@@ -1090,6 +1090,9 @@ body.bar-off #header {
 .row.mc-off {
     opacity: 0.55;
 }
+.move-lifted { background: var(--selection-surface-strong); outline: 3px solid var(--focus-ring); }
+.move-marks { margin-left: auto; color: var(--selection); }
+#move-hint { z-index: 35; padding: 8px 16px; background: var(--widget-bg); }
 .mc-hint {
     position: absolute;
     left: 48px;

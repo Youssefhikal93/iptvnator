@@ -8,7 +8,7 @@ var PREFIX = 'iptvnator-tv:';
 
 function app(stored, overrides) {
     var records = Object.assign({}, stored);
-    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
+    return load(['sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], records,
         Object.assign({ URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } }, overrides));
 }
 
@@ -196,7 +196,7 @@ test('#83 backup remaps channel and show choices on Replace, keeps existing pick
     var exported = await env.Backup.build();
     assert.equal(exported.tvState.audioChoice.textChannels['old|1001'], false);
     var restored = load(['profile-store.js', 'sources.js', 'progress-migration.js', 'library.js', 'progress.js',
-        'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], {}, { URL: URL }).globals;
+        'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'], {}, { URL: URL }).globals;
     await restored.Backup.apply(restored.Backup.parse(JSON.stringify(exported)), 'replace');
     var source = restored.Sources.all()[0].id;
     var channel = { live: true, channel: source + '|1001' };

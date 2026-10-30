@@ -61,7 +61,9 @@ test('Recent channels lists channels watched 10 s or more, newest first, in the 
     await expect(page.locator('#pl-controls')).toBeHidden();
     await drawerRecent(page);
     await expect(page.locator('.pl-channel .pl-channel-name')).toHaveText([first]);
-    await press(page, 'ArrowRight');
+    // Past the drawer's Favorites (#76) to All channels.
+    for (let i = 0; i < 5 && !(await page.locator('.pl-channel-header').innerText()).includes('All channels'); i++) await press(page, 'ArrowRight');
+    await expect(page.locator('.pl-channel-header')).toContainText('All channels');
     await press(page, 'ArrowDown');
     const second = await page.locator('.pl-channel.focused .pl-channel-name').innerText();
     expect(second).not.toBe(first);

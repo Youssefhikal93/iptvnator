@@ -515,7 +515,17 @@ from step 8 must already be downloaded.
   another Return stops playback and returns to Home. The list closes after
   10 seconds without a key.
 - **Previous channel**: PRE-CH or Green switches between the current and
-  previously watched live channel. Yellow still opens Audio & subtitles.
+  previously watched live channel; without them, hold OK and choose
+  **Previous channel** at the top of the player menu. Yellow, Info or holding
+  OK opens the live player menu (Audio & subtitles, settings, Help).
+- **Help and coloured keys** (#89): Samsung's 2023 Smart Remote has no
+  coloured buttons (press **123** to show them on screen), so every coloured
+  key action also has a button or menu row. **?** opens Help, the keys of the
+  screen in view: in the top bar next to TV guide, left of Home's search icon,
+  in the TV guide's header, in the player menu and in **Settings → About**.
+  In the TV guide, UP from the first channel reaches **Search programmes**
+  (Blue), **Reminders** (Yellow) and **?**. In Home's search, RIGHT from the
+  bar reaches **Search programmes**. Hints show coloured keys as coloured dots.
 - **Last channel on start**: the last live channel is saved per source and
   plays on the next start if it is still in the catalogue. This is on by
   default; choose **Settings → On start open → Home** to disable it.

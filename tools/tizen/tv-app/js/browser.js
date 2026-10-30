@@ -220,6 +220,7 @@ window.Browser = function (hooks) {
     });
     var home = Home({
         search: find.search,
+        help: true,
         get programmes() { return state.guide ? openProgrammeSearch : null; },
         hero: function () {
             return state.adapter ? continueEntries().slice(0, 3) : [];
@@ -995,7 +996,8 @@ window.Browser = function (hooks) {
         });
         if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
-        return guideAvailable() ? tools.concat(['guide']) : tools;
+        // Help (#89) is always last, next to the TV guide.
+        return (guideAvailable() ? tools.concat(['guide']) : tools).concat(['help']);
     }
 
     function openSortMenu() {
@@ -1136,6 +1138,7 @@ window.Browser = function (hooks) {
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER && tool === 'genre') openGenreMenu();
         else if (code === KEY.ENTER && tool === 'guide') openGuide();
+        else if (code === KEY.ENTER && tool === 'help') KeyHelp.open(Browser.help(state.section, guideAvailable()));
         else if (code === KEY.ENTER && tool === 'view') openViewMenu();
         else return code === KEY.UP || code === KEY.RIGHT;
         renderChrome();
@@ -1252,6 +1255,7 @@ window.Browser = function (hooks) {
                 btn.querySelector('path').setAttribute('d', shown.icon);
             }
             if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
+            if (mode === 'help') btn.classList.toggle('hidden', !on);
             if (mode === 'genre') {
                 // The genre in use shows on the button.
                 btn.classList.toggle('hidden', tools.indexOf('genre') === -1);
@@ -2324,4 +2328,19 @@ window.Browser = function (hooks) {
             });
         },
     };
+};
+
+// Help for Live TV, Movies and Series (#89), beside the keys above: each
+// entry is [key, does] (i18n keys) for KeyHelp.
+window.Browser.help = function (section, guide) {
+    'use strict';
+    var list = [
+        ['help.key.arrows', 'help.lists.move'],
+        ['help.key.ok', section === 'live' ? 'help.lists.watch' : 'help.lists.open'],
+        ['help.key.holdOk', 'help.lists.options'],
+        ['help.key.chUpDown', 'help.lists.page'],
+        ['help.key.upTop', 'help.lists.toolbar'],
+    ];
+    if (guide) list.push(['help.key.guide', 'header.guide']);
+    return list.concat([['help.key.return', 'help.lists.back']]);
 };

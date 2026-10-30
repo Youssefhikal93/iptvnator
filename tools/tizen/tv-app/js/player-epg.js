@@ -41,7 +41,7 @@ window.PlayerEpg = function () {
         box.appendChild(bar);
         if (p.now.desc) box.appendChild(el('div', 'pl-epg-desc', p.now.desc));
         if (p.next) box.appendChild(row(I18n.t('epg.next'), p.next));
-        if (s.req.watchFromStart) box.appendChild(el('div', 'pl-epg-catch-up', I18n.t('epg.watchFromStart')));
+        if (s.req.watchFromStart) box.appendChild(KeyHelp.fill(el('div', 'pl-epg-catch-up'), I18n.t('epg.watchFromStart')));
         s.parts = { left: left, fill: fill };
         box.classList.remove('hidden');
     }

@@ -83,6 +83,8 @@ window.LiveChannels = function (hooks) {
         previous: function () {
             return previous ? play(previous.channel, previous.channels, previous.category) : null;
         },
+        // The channel previous() would play, without playing it (#89).
+        previousChannel: function () { return previous; },
         allows: function (channel) { return !hooks.allows || hooks.allows(channel); },
         view: function () {
             var categories;

@@ -27,7 +27,8 @@ window.Home = (api, element) => {
     });
     // With search, block 0 is the icon at the top right; the focus starts
     // on the block under it.
-    const fresh = () => ({ block: api.search ? 1 : 0, hero: 0, button: 0, rows: {}, details: {}, q: { open: false, text: '', typing: false, busy: false, found: null, token: 0 } });
+    // icon is 'search' or 'help' on block 0; q.button is Search programmes beside the bar.
+    const fresh = () => ({ block: api.search ? 1 : 0, icon: 'search', hero: 0, button: 0, rows: {}, details: {}, q: { open: false, text: '', typing: false, busy: false, found: null, token: 0, button: false } });
     let s = fresh();
 
     // Host and file name only: enough to tell which logo server fails.
@@ -299,6 +300,8 @@ window.Home = (api, element) => {
     const input = { current: null };
     const SearchIcon = ({ focused }) => html`<span class=${'hm-search-icon' + (focused ? ' focus' : '')} aria-label=${I18n.t('browser.search')}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>`;
+    // Help (#89) sits left of the search icon.
+    const HelpIcon = ({ focused }) => html`<span class=${'hm-help-icon' + (focused ? ' focus' : '')} role="button" aria-label=${I18n.t('help.title')}>?</span>`;
     const SearchBar = ({ focused }) => {
         const q = s.q;
         const note = q.busy ? I18n.t('find.searching')
@@ -306,12 +309,12 @@ window.Home = (api, element) => {
             : q.found && !q.found.length ? I18n.t('empty.search.title', { query: q.text.trim() }) + ' · ' + I18n.t('empty.search.hint')
             : '';
         return html`<div class="hm-search">
-            <div class=${'hm-search-bar' + (focused && !q.typing ? ' focused' : '') + (q.typing ? ' typing' : '')}>
+            <div class=${'hm-search-bar' + (focused && !q.typing && !q.button ? ' focused' : '') + (q.typing ? ' typing' : '')}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                 <input ref=${input} autocomplete="off" value=${q.text} placeholder=${I18n.t(api.searchPlaceholder || 'find.placeholder')} onInput=${typed} />
             </div>
             ${note ? html`<div class="hm-search-note">${note}</div>` : null}
-            ${api.programmes ? html`<button class="dt-btn small" onClick=${searchProgrammes}>${I18n.t('programmeSearch.shortcut')}</button>` : null}
+            ${api.programmes ? html`<button class=${'dt-btn small' + (focused && q.button ? ' focus' : '')} onClick=${searchProgrammes}>${KeyHelp.view(I18n.t('programmeSearch.shortcut'))}</button>` : null}
         </div>`;
     };
 
@@ -398,7 +401,8 @@ window.Home = (api, element) => {
         root.classList.toggle('backdrop', mode === 'backdrop');
         root.classList.toggle('searching', s.q.open);
         const list = blocks();
-        const icon = api.search && !s.q.open ? html`<${SearchIcon} key="search-icon" focused=${s.active && s.block === 0} />` : null;
+        const onIcons = s.active && s.block === 0 && api.search && !s.q.open;
+        const icon = api.search && !s.q.open ? html`${api.help ? html`<${HelpIcon} key="help-icon" focused=${onIcons && s.icon === 'help'} />` : null}<${SearchIcon} key="search-icon" focused=${onIcons && s.icon !== 'help'} />` : null;
         if (!list.filter((block) => !block.icon).length) {
             UI.render(html`<div class="hm-empty">${I18n.t('home.nothingHere')}<small>${I18n.t('home.nothingHint')}</small></div>`, root);
             return;
@@ -464,16 +468,24 @@ window.Home = (api, element) => {
         const block = list[s.block];
         if (code === KEY.UP && (!block || s.block === 0)) return 'up';
         if (!block) return code === KEY.LEFT ? 'left' : undefined;
-        if (code === KEY.UP && s.block > 0) {
-            s.block--;
+        if ((code === KEY.UP && s.block > 0) || (code === KEY.DOWN && s.block < list.length - 1)) {
+            s.block += code === KEY.UP ? -1 : 1;
             s.blockKey = null;
-        } else if (code === KEY.DOWN && s.block < list.length - 1) {
-            s.block++;
-            s.blockKey = null;
-        } else if (block.icon || block.box) {
-            if (code === KEY.ENTER && block.icon) return openSearch();
-            if (code === KEY.ENTER) return startTyping();
-            if (code === KEY.LEFT) return 'left';
+            s.icon = 'search';
+            s.q.button = false;
+        } else if (block.icon) {
+            // ◀ from the search icon reaches Help (#89); OK opens either.
+            const help = !!api.help && s.icon === 'help';
+            if (code === KEY.ENTER) return help ? KeyHelp.open(window.Home.help(!!api.programmes)) : openSearch();
+            if (code === KEY.LEFT && !help && api.help) s.icon = 'help';
+            else if (code === KEY.RIGHT && help) s.icon = 'search';
+            else if (code === KEY.LEFT) return 'left';
+        } else if (block.box) {
+            // ▶ from the bar reaches Search programmes, so Blue is never needed (#89).
+            if (code === KEY.ENTER) return s.q.button ? searchProgrammes() : startTyping();
+            if (code === KEY.RIGHT && api.programmes) s.q.button = true;
+            else if (code === KEY.LEFT && s.q.button) s.q.button = false;
+            else if (code === KEY.LEFT) return 'left';
         } else if (block.hero) {
             const out = heroKey(code, block.hero);
             render();
@@ -534,3 +546,13 @@ window.Home = (api, element) => {
         },
     };
 };
+
+// Home's keys for Help (#89), kept beside key() above; programmes when the
+// source has a guide, so search offers Search programmes.
+window.Home.help = (programmes) => [
+    ['help.key.arrows', 'help.home.move'],
+    ['help.key.ok', 'help.home.ok'],
+    ['help.key.holdOk', 'help.home.options'],
+].concat(programmes ? [['help.key.blue', 'help.home.programmes']] : [], [
+    ['help.key.return', 'help.lists.back'],
+]);

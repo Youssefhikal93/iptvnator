@@ -269,6 +269,7 @@ I18n.tables.ar = {
     'settings.relock': 'إعادة القفل بعد',
     'settings.screenSaver': 'شاشة التوقف',
     'settings.saverOurs': 'شاشة هذا التطبيق',
+    'settings.saverLogo': 'الشعار والساعة',
     'settings.saverTv': 'شاشة التلفاز',
     'settings.screenSaverKind': 'شاشة التوقف المستخدمة',
     'saver.hint': 'اضغط أي زر للرجوع',

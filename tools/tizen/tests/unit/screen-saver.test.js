@@ -10,7 +10,8 @@ function scene(options) {
     var keys = [];
     var renders = [];
     var samsung = [];
-    var prefs = { screenSaverMs: options.ms };
+    var prefs = { screenSaverMs: options.ms, screenSaverKind: options.kind };
+    var motion = options.motion || 'on';
     var prefListeners = [];
     var nextId = 1;
     function addTimer(fn, ms, repeat) {
@@ -31,6 +32,7 @@ function scene(options) {
         document: {
             hidden: false,
             body: body,
+            documentElement: { getAttribute: function () { return motion; } },
             addEventListener: function () {},
             createElement: function () {
                 return { remove: function () { body.children.splice(body.children.indexOf(this), 1); } };
@@ -76,6 +78,7 @@ function scene(options) {
         keys: keys,
         allow: function (value) { allowed = value; },
         slidesAsked: function () { return slidesAsked; },
+        setKind: function (value) { prefs.screenSaverKind = value; prefListeners.forEach(function (l) { l('screenSaverKind'); }); },
         setPref: function (ms) { prefs.screenSaverMs = ms; prefListeners.forEach(function (l) { l('screenSaverMs'); }); },
     };
 }
@@ -165,4 +168,68 @@ test('#61 at most forty slides', function () {
     for (var i = 0; i < 60; i++) entries.push({ section: 'movies', item: { name: 'M' + i, stream_id: i, stream_icon: i + '.jpg' } });
     var slides = env.ScreenSaver.slides([{ id: 'new-movies', title: 'New', entries: entries }], { details: function () { return null; }, progress: function () { return null; } });
     assert.equal(slides.length, 40);
+});
+
+test('#74 Logo and clock waits like the slideshow, asks for no titles, draws on a clock timer, and moves on another', function () {
+    var s = scene({ ms: 300000, kind: 'logo', allowed: false });
+    s.elapse('idle');
+    assert.equal(s.saver.isOn(), false);
+    s.allow(true);
+    s.elapse('idle');
+    assert.equal(s.saver.isOn(), true);
+    assert.equal(s.slidesAsked(), 0);
+    assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000, 120000]);
+    var event = s.press();
+    assert.equal(event.prevented, true);
+    assert.equal(event.stopped, true);
+    assert.equal(s.saver.isOn(), false);
+    assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [300000]);
+});
+
+test("#74 an unknown stored kind is the slideshow; the TV's own never starts ours", function () {
+    var s = scene({ ms: 300000, kind: 'sparkles' });
+    s.elapse('idle');
+    assert.equal(s.slidesAsked(), 1);
+    assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000]);
+    var tv = scene({ ms: 300000, kind: 'tv' });
+    assert.equal(tv.timers().length, 0);
+    assert.deepEqual(tv.samsung, [1]);
+});
+
+test('#74 every two minutes the block fades out, then jumps and fades in; with Animations Off it jumps at once', function () {
+    var s = scene({ ms: 300000, kind: 'logo' });
+    s.elapse('idle');
+    var before = s.renders.length;
+    s.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
+    assert.equal(s.renders.length, before + 1);
+    var fade = s.timers().filter(function (t) { return t.ms === 700; })[0];
+    assert.ok(fade);
+    fade.fn();
+    assert.equal(s.renders.length, before + 2);
+    var off = scene({ ms: 300000, kind: 'logo', motion: 'off' });
+    off.elapse('idle');
+    off.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
+    assert.equal(off.timers().filter(function (t) { return t.ms === 700; }).length, 0);
+});
+
+test('#74 the logo block always lands fully on screen, with a margin', function () {
+    var env = load(['screen-saver.js']).globals;
+    var screen = { w: 1920, h: 1080 };
+    var block = { w: 720, h: 560 };
+    var top = 1 - Number.EPSILON;
+    [0, 0.0001, 0.25, 0.5, 0.9999, top].forEach(function (a) {
+        [0, 0.5, top].forEach(function (b) {
+            var seq = [a, b];
+            var spot = env.ScreenSaver.spot(function () { return seq.shift(); }, screen, block, 60);
+            assert.ok(spot.x >= 60 && spot.x + block.w <= screen.w - 60, 'x ' + spot.x);
+            assert.ok(spot.y >= 60 && spot.y + block.h <= screen.h - 60, 'y ' + spot.y);
+        });
+    });
+    // The two extremes touch the margins exactly.
+    var low = env.ScreenSaver.spot(function () { return 0; }, screen, block, 60);
+    var high = env.ScreenSaver.spot(function () { return top; }, screen, block, 60);
+    assert.deepEqual([low.x, low.y, high.x + block.w, high.y + block.h], [60, 60, 1860, 1020]);
+    // A block with no room stays at the margin instead of leaving the screen.
+    var tight = env.ScreenSaver.spot(function () { return 0.7; }, { w: 700, h: 500 }, block, 60);
+    assert.deepEqual([tight.x, tight.y], [60, 60]);
 });

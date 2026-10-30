@@ -67,8 +67,24 @@ window.PlayerMenu = (root, hooks) => {
         </div>
         <div class="pl-menu-keys">${I18n.t('player.menuKeysBack')}</div>`;
 
+    // The label at i, else the first one like it: a row that arrives or leaves
+    // while the menu is open (live Start over after the guide loads) must not
+    // move the open group or the focus onto another row.
+    const follow = (list, label, i, wanted) => {
+        if (label === undefined || (list[i] && list[i].label === label && wanted(list[i]))) return i;
+        const found = list.findIndex((row) => row.label === label && wanted(row));
+        return found < 0 ? i : found;
+    };
+
     const render = () => {
+        const old = rows;
+        const openGroup = state.group >= 0 && old[state.group] ? old[state.group] : null;
+        const oldList = openGroup ? openGroup.items : old;
+        const focusLabel = oldList[state.focus] ? oldList[state.focus].label : undefined;
         rows = collect();
+        if (openGroup) state.group = follow(rows, openGroup.label, state.group, isGroup);
+        const list = state.group >= 0 && isGroup(rows[state.group]) ? rows[state.group].items : rows;
+        state.focus = follow(list, focusLabel, state.focus, () => true);
         if (state.group >= rows.length || (state.group >= 0 && !isGroup(rows[state.group]))) state = { group: -1, focus: 0 };
         const group = state.group >= 0 ? rows[state.group] : null;
         const count = group ? group.items.length : rows.length;
@@ -106,6 +122,7 @@ window.PlayerMenu = (root, hooks) => {
     return {
         reset: () => {
             state = { group: -1, focus: 0 };
+            rows = [];
         },
         render,
         key,

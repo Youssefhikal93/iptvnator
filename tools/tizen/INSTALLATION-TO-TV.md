@@ -247,6 +247,14 @@ from step 8 must already be downloaded.
   leaving the player with Return cancels it, including a return to live preview.
   The timer is never saved across app restarts.
 
+- **Use my phone** (#85): in the add-source form, show a QR code and a 6
+  character code; the phone opens a small page served by the TV itself
+  (a Tizen web service, `IPTVnTVApp.PhoneSource` in `config.xml`, port 8777,
+  listening only while the code is open) and its details fill the TV's form for
+  a final **Save**. The code works once and for 10 minutes. The details go from
+  the phone to the TV over the home network only (plain HTTP, no outside
+  server) and are neither logged nor stored apart from the saved source. The
+  service is part of the same `.wgt`, so installing and updating are unchanged.
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on
@@ -507,7 +515,17 @@ from step 8 must already be downloaded.
   another Return stops playback and returns to Home. The list closes after
   10 seconds without a key.
 - **Previous channel**: PRE-CH or Green switches between the current and
-  previously watched live channel. Yellow still opens Audio & subtitles.
+  previously watched live channel; without them, hold OK and choose
+  **Previous channel** at the top of the player menu. Yellow, Info or holding
+  OK opens the live player menu (Audio & subtitles, settings, Help).
+- **Help and coloured keys** (#89): Samsung's 2023 Smart Remote has no
+  coloured buttons (press **123** to show them on screen), so every coloured
+  key action also has a button or menu row. **?** opens Help, the keys of the
+  screen in view: in the top bar next to TV guide, left of Home's search icon,
+  in the TV guide's header, in the player menu and in **Settings → About**.
+  In the TV guide, UP from the first channel reaches **Search programmes**
+  (Blue), **Reminders** (Yellow) and **?**. In Home's search, RIGHT from the
+  bar reaches **Search programmes**. Hints show coloured keys as coloured dots.
 - **Last channel on start**: the last live channel is saved per source and
   plays on the next start if it is still in the catalogue. This is on by
   default; choose **Settings → On start open → Home** to disable it.

@@ -46,6 +46,11 @@ window.Browser = function (hooks) {
         stop: function () { hooks.preview.stop(); },
         refresh: refreshLibrary,
     });
+    var move = MoveMode.controller(function (text) {
+        $('move-hint').textContent = text;
+        $('move-hint').classList.toggle('hidden', !text);
+    });
+    var groupMenu = GroupMenu({ sourceId: sourceId, changed: function () { categoriesChanged('live'); } });
     // The Recent channels list (#80); a channel joins after 10 s on screen.
     var recentChannels = RecentChannels({
         sourceId: sourceId,
@@ -58,12 +63,15 @@ window.Browser = function (hooks) {
     var live = LiveChannels({
         categories: function () {
             return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
-                return visibility.categories('live', list);
+                return categoryRows(list, false, 'live').filter(function (row) { return !row.virtual || row.virtual === 'group' || row.virtual === 'favorites' || row.virtual === 'recent-channels'; });
             });
         },
         // Zapping and last-channel lists apply the lock only, not hidden categories.
         channels: function (categoryId) {
-            return loadCatalogue({ section: 'live', kind: 'items', id: categoryId }).then(function (list) {
+            var own = ChannelGroups.list(sourceId()).some(function (group) { return group.id === categoryId; });
+            if (categoryId === '__fav') return Promise.resolve(orderedChannels({ virtual: 'favorites', category_id: '__fav' }, libraryList('favorites', 'live')).filter(function (item) { return !otherSource(item) && visibility.allows('live', item, { withHidden: true }); }));
+            return loadCatalogue({ section: 'live', kind: 'items', id: own ? '' : categoryId }).then(function (list) {
+                if (own) list = orderedChannels({ virtual: 'group', category_id: categoryId }, ChannelGroups.items(sourceId(), categoryId, list));
                 return visibility.items('live', list, { withHidden: true });
             });
         },
@@ -129,12 +137,12 @@ window.Browser = function (hooks) {
         sortable: sortableSection,
         everySource: function () { return Prefs.get('librarySources') === 'all'; },
         chosenSort: function () { return Library.sort(sourceId(), state.section); },
-        favorites: function () { return libraryList('favorites', state.section); },
-        favoriteItems: function () { return Library.favoriteItems(sourceId(), state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []); },
-        recent: function () { return libraryList('recent', state.section); },
+        favorites: function (section) { return libraryList('favorites', section || state.section); },
+        favoriteItems: function (section) { section = section || state.section; return Library.favoriteItems(sourceId(), section, state.catalogue.peek({ section: section, kind: 'items' }) || []); },
+        recent: function (section) { return libraryList('recent', section || state.section); },
         recentChannels: function () { return recentChannels.list(); },
-        continued: function () { return Library.continueWatching(sourceId(), state.section); },
-        added: function () { return addedOf(state.section); },
+        continued: function (section) { return Library.continueWatching(sourceId(), section || state.section); },
+        added: function (section) { return addedOf(section || state.section); },
     });
     // The films' collections (#58): a category under Movies and a detail row.
     var collections = Collections({
@@ -171,7 +179,7 @@ window.Browser = function (hooks) {
     var manage = ManageCategories({
         sourceId: sourceId,
         load: function (section) {
-            return state.catalogue.load({ section: section, kind: 'categories' }, { screen: false });
+            return state.catalogue.load({ section: section, kind: 'categories' }, { screen: false }).then(function (list) { return categoryRows(list, true, section); });
         },
         changed: categoriesChanged,
         toast: toast,
@@ -212,6 +220,7 @@ window.Browser = function (hooks) {
     });
     var home = Home({
         search: find.search,
+        help: true,
         get programmes() { return state.guide ? openProgrammeSearch : null; },
         hero: function () {
             return state.adapter ? continueEntries().slice(0, 3) : [];
@@ -564,11 +573,17 @@ window.Browser = function (hooks) {
 
     // The catalogue's categories minus the hidden ones, after the virtual rows;
     // Collections comes after Recently added.
-    function categoryRows(list) {
-        var rows = libraryRows.build().concat(visibility.categories(state.section, list || state.base || []));
-        var shelf = state.section === 'movies' && collections.row();
+    function categoryRows(list, full, section) {
+        section = section || state.section;
+        var groups = section === 'live' ? ChannelGroups.rows(sourceId(), state.catalogue.peek({ section: 'live', kind: 'items' }), function (item) { return visibility.allows('live', item, { withHidden: true }); }) : [];
+        // Library rows first, then own groups, then the provider's categories.
+        var rows = libraryRows.build(section).concat(groups, list || state.base || []);
+        var shelf = section === 'movies' && collections.row();
         if (shelf) rows.splice(rows[1] && rows[1].virtual === 'added' ? 2 : 1, 0, shelf);
-        if (!hideOn || !hideAvailable()) return rows;
+        rows = ListOrder.apply(sourceId(), 'categories:' + section, rows, ListOrder.categoryKey);
+        if (full) return rows;
+        rows = visibility.categories(section, rows);
+        if (!hideOn || !hideAvailable() || section !== state.section) return rows;
         var all = state.catalogue.peek({ section: state.section, kind: 'items' }) || [];
         return hiddenList().counts(rows, visibility.items(state.section, all), function (row) {
             var cached = state.catalogue.peek({ section: state.section, kind: 'items', id: row.category_id });
@@ -578,6 +593,7 @@ window.Browser = function (hooks) {
 
     // keep: the focus stays on its row while rows come or go (Collections).
     function showCategories(index, keep) {
+        if (move.active()) return;
         hiddenSnapshot = null;
         state.movieShelf = null;
         var focused = keep && categories.item();
@@ -674,6 +690,24 @@ window.Browser = function (hooks) {
         return visibility.items(section, state.added[section] || []);
     }
 
+    function channelKey(item) {
+        return (item.sourceId && item.sourceId !== sourceId() ? item.sourceId + '|' : '') + Library.keyOf('live', item);
+    }
+
+    function playbackCategory() {
+        var row = state.section === 'live' && shownCategory();
+        return channelScope(row) ? row.category_id : undefined;
+    }
+
+    function channelScope(row) {
+        return row && (row.virtual === 'group' || row.virtual === 'favorites') ? 'channels:' + row.category_id : '';
+    }
+
+    function orderedChannels(row, channels) {
+        var scope = channelScope(row);
+        return scope ? ListOrder.apply(sourceId(), scope, channels, channelKey) : channels;
+    }
+
     function showVirtual(category, index) {
         currentList.begin();
         applyView();
@@ -682,9 +716,11 @@ window.Browser = function (hooks) {
         // Their tiles have no category; they come from films that already
         // passed the profile's rules (collectionMovies).
         var tiles = category.virtual === 'collections';
-        setItems(tiles ? category.list() : category.list().filter(function (item) {
+        var channels = state.section === 'live' ? orderedChannels(category, category.list()) : category.list();
+        setItems(tiles ? channels : channels.filter(function (item) {
             return visibility.allows(state.section, item, { sourceId: item.sourceId, withHidden: true });
         }), index || 0, category.empty, tiles);
+        if (state.section === 'live') live.reorder(category.category_id, items.items().filter(function (item) { return !otherSource(item); }));
         renderChrome();
     }
 
@@ -696,6 +732,7 @@ window.Browser = function (hooks) {
 
     // After playback or a favorite change: refresh counts and the open list.
     function refreshLibrary() {
+        if (move.active()) return;
         BecauseRows.invalidate();
         if (state.section === 'home') {
             state.favKeys = null;
@@ -760,6 +797,11 @@ window.Browser = function (hooks) {
             },
         };
         options.push(favorite);
+        if (section === 'live' && !KidsProfile.on() && !otherSource(item)) {
+            var row = state.section === 'live' ? shownCategory() : null;
+            options = options.concat(groupMenu.channel(item, row));
+            if (state.section === 'live' && channelScope(row)) options = options.concat(channelOrderMenu(item, row));
+        }
         var progressId = Progress.id(section, item);
         var progress = section === 'live' ? null : Progress.of(progressId, item.sourceId);
         if (progress && progress.status === 'continue') {
@@ -956,7 +998,8 @@ window.Browser = function (hooks) {
         });
         if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
-        return guideAvailable() ? tools.concat(['guide']) : tools;
+        // Help (#89) is always last, next to the TV guide.
+        return (guideAvailable() ? tools.concat(['guide']) : tools).concat(['help']);
     }
 
     function openSortMenu() {
@@ -1097,6 +1140,7 @@ window.Browser = function (hooks) {
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER && tool === 'genre') openGenreMenu();
         else if (code === KEY.ENTER && tool === 'guide') openGuide();
+        else if (code === KEY.ENTER && tool === 'help') KeyHelp.open(Browser.help(state.section, guideAvailable()));
         else if (code === KEY.ENTER && tool === 'view') openViewMenu();
         else return code === KEY.UP || code === KEY.RIGHT;
         renderChrome();
@@ -1134,12 +1178,20 @@ window.Browser = function (hooks) {
         });
     }
 
+    function itemId(item) {
+        if (!item) return undefined;
+        var fields = ['stream_id', 'series_id', 'category_id', 'id', 'url'];
+        for (var i = 0; i < fields.length; i++) {
+            if (item[fields[i]] !== undefined && item[fields[i]] !== null) return item[fields[i]];
+        }
+    }
+
     // Position of `item` in a refreshed list, matched by provider id.
     function indexIn(list, item, fallback) {
-        var id = item && (item.stream_id || item.series_id || item.category_id || item.id || item.url);
+        var id = itemId(item);
         for (var i = 0; id !== undefined && i < list.length; i++) {
             var other = list[i];
-            if ((other.stream_id || other.series_id || other.category_id || other.id || other.url) === id && (other.sourceId || '') === (item.sourceId || '')) return i;
+            if (itemId(other) === id && (other.sourceId || '') === (item.sourceId || '')) return i;
         }
         return fallback;
     }
@@ -1205,6 +1257,7 @@ window.Browser = function (hooks) {
                 btn.querySelector('path').setAttribute('d', shown.icon);
             }
             if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
+            if (mode === 'help') btn.classList.toggle('hidden', !on);
             if (mode === 'genre') {
                 // The genre in use shows on the button.
                 btn.classList.toggle('hidden', tools.indexOf('genre') === -1);
@@ -1454,9 +1507,26 @@ window.Browser = function (hooks) {
         return visibility.items(state.section, list, { withHidden: String(category.category_id) !== '' });
     }
 
+    // Resolve snapshots before applying Kids/lock rules, even when a saved
+    // order opens a group before All channels has loaded the catalogue.
+    function loadGroup() {
+        var token = currentList.begin();
+        applyView();
+        items.loading();
+        renderChrome();
+        return loadCatalogue({ section: 'live', kind: 'items' }).then(function () {
+            if (!currentList.isActive(token)) return;
+            showCategories(categories.index(), true);
+            showVirtual(categories.item());
+        }).catch(function (error) {
+            if (currentList.isActive(token)) fail(items, 'GROUP')(error);
+        });
+    }
+
     function loadItems() {
         var category = categories.item();
         if (!category) return;
+        if (category.virtual === 'group' && !state.catalogue.peek({ section: 'live', kind: 'items' })) return loadGroup();
         if (category.virtual) return showVirtual(category);
         if (ParentalLock.isLocked(sourceId(), state.section, category.category_id) && !ParentalLock.isUnlocked()) {
             currentList.begin();
@@ -1468,7 +1538,7 @@ window.Browser = function (hooks) {
         applyView();
         items.loading();
         renderChrome();
-        loadCatalogue(
+        return loadCatalogue(
             { section: section, kind: 'items', id: category.category_id },
             function (list) {
                 if (!currentList.isActive(token)) return;
@@ -1842,7 +1912,7 @@ window.Browser = function (hooks) {
         if (otherSource(item)) return libraryNavigation.open(item, function () { openEntry(item, section); });
         if (item.episode) return playSavedEpisode(item);
         if (section === 'live') {
-            return hooks.play(live.play(item, state.section === 'live' ? items.items().filter(function (channel) { return !otherSource(channel); }) : null));
+            return hooks.play(live.play(item, state.section === 'live' ? items.items().filter(function (channel) { return !otherSource(channel); }) : null, playbackCategory()));
         }
         if (section === 'movies') return openMovie(item);
         openShow(item);
@@ -1855,7 +1925,7 @@ window.Browser = function (hooks) {
         if (item.missing) return toast(I18n.t('collections.notAvailableHint'));
         if (otherSource(item)) return openEntry(item, state.section);
         // OK on a channel previews it beside the list (see live-preview.js).
-        if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items().filter(function (channel) { return !otherSource(channel); }))) return;
+        if (state.section === 'live' && !item.episode && hooks.preview.open(item, items.items().filter(function (channel) { return !otherSource(channel); }), playbackCategory())) return;
         openEntry(item, state.section);
     }
 
@@ -1895,7 +1965,7 @@ window.Browser = function (hooks) {
 
     function onCategoryMoved() {
         clearTimeout(state.timer);
-        state.timer = setTimeout(loadItems, 350);
+        state.timer = setTimeout(function () { state.timer = null; loadItems(); }, 350);
         renderChrome();
     }
 
@@ -1971,9 +2041,27 @@ window.Browser = function (hooks) {
     // Hold OK on a category: hide it, hide the rest, or manage them all.
     function openCategoryMenu(row) {
         if (KidsProfile.on()) return;
-        var options = manage.menu(state.section, row, state.base);
+        clearTimeout(state.timer);
+        var scope = 'categories:' + state.section;
+        var all = categoryRows(null, true);
+        var options = manage.menu(state.section, row, state.base).slice(0, -1);
+        options = options.concat(OrderMenu({ list: categories, row: row, key: ListOrder.categoryKey, controller: move,
+            save: function (rows) { ListOrder.save(sourceId(), scope, ListOrder.replace(all, rows, ListOrder.categoryKey), ListOrder.categoryKey); },
+            changed: ListOrder.changed(sourceId(), scope), reset: function () { ListOrder.reset(sourceId(), scope); },
+            done: function () { categoriesChanged(state.section); } }));
+        if (row.virtual === 'group') options = options.concat(groupMenu.category(row));
+        options.push({ label: I18n.t('common.cancel') });
         if (HiddenCategories.isReal(row)) options.splice(options.length - 1, 0, ParentalMenu.category(sourceId(), state.section, row));
         Menu.open(row.category_name, options);
+    }
+
+    function channelOrderMenu(item, row) {
+        var scope = channelScope(row);
+        var all = orderedChannels(row, row.list());
+        return OrderMenu({ list: items, row: item, key: channelKey, controller: move,
+            save: function (rows) { ListOrder.save(sourceId(), scope, ListOrder.replace(all, rows, channelKey), channelKey); },
+            changed: ListOrder.changed(sourceId(), scope), reset: function () { ListOrder.reset(sourceId(), scope); },
+            done: function () { refreshLibrary(); } });
     }
 
     function enterCategory() {
@@ -1981,6 +2069,17 @@ window.Browser = function (hooks) {
         if (row && ParentalLock.isLocked(sourceId(), state.section, row.category_id) && !ParentalLock.isUnlocked()) {
             return PinPad.open('unlock', function () {
                 setZone('items');
+            });
+        }
+        if (state.timer) {
+            clearTimeout(state.timer);
+            state.timer = null;
+            var section = state.section;
+            var adapter = state.adapter;
+            var loading = loadItems();
+            if (loading) return loading.then(function () {
+                var selected = categories.item();
+                if (state.zone === 'categories' && state.section === section && state.adapter === adapter && selected && String(selected.category_id) === String(row.category_id)) enterCategory();
             });
         }
         if (items.items().length || watchedEmpty) setZone('items');
@@ -2059,6 +2158,7 @@ window.Browser = function (hooks) {
         if (Keys.repeat(code)) return true;
         if (Menu.isOpen()) return Menu.onKey(code);
         if (manage.isOpen()) return manage.onKey(code);
+        if (move.onKey(code)) return true;
         if (Actor.isOpen()) return Actor.key(code);
         if (detail.isOpen()) {
             var selection = detail.episodeSelection();
@@ -2230,4 +2330,19 @@ window.Browser = function (hooks) {
             });
         },
     };
+};
+
+// Help for Live TV, Movies and Series (#89), beside the keys above: each
+// entry is [key, does] (i18n keys) for KeyHelp.
+window.Browser.help = function (section, guide) {
+    'use strict';
+    var list = [
+        ['help.key.arrows', 'help.lists.move'],
+        ['help.key.ok', section === 'live' ? 'help.lists.watch' : 'help.lists.open'],
+        ['help.key.holdOk', 'help.lists.options'],
+        ['help.key.chUpDown', 'help.lists.page'],
+        ['help.key.upTop', 'help.lists.toolbar'],
+    ];
+    if (guide) list.push(['help.key.guide', 'header.guide']);
+    return list.concat([['help.key.return', 'help.lists.back']]);
 };

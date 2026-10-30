@@ -3,7 +3,7 @@
 window.List = function (el, options) {
     'use strict';
 
-    var state = { items: [], index: 0, active: false, empty: '', grid: false, boxes: '', loading: false };
+    var state = { items: [], index: 0, active: false, empty: '', grid: false, boxes: '', loading: false, lifted: null };
     Prefs.onChange(function (name) {
         if (name === 'density') render();
     });
@@ -45,6 +45,15 @@ window.List = function (el, options) {
         };
         Art.prepare(img, src).src = src;
         return img;
+    }
+
+    function markMove(node, item) {
+        if (state.lifted !== item) return;
+        node.classList.add('move-lifted');
+        var marks = document.createElement('span');
+        marks.className = 'move-marks';
+        marks.textContent = '\u25b2\u25bc';
+        node.appendChild(marks);
     }
 
     function render() {
@@ -152,6 +161,7 @@ window.List = function (el, options) {
                 row.appendChild(badgeEl);
             }
             if (options.decorate) options.decorate(row, item);
+            markMove(row, item);
             el.appendChild(row);
         }
     }
@@ -252,6 +262,7 @@ window.List = function (el, options) {
             var card = document.createElement('div');
             card.className = (plates() ? 'card channel' : 'card') + (i >= shown ? ' peek' : '');
             if (i === state.index) card.className += state.active ? ' focused' : ' selected';
+            markMove(card, item);
             if (state.boxes && !plates()) {
                 box(item, card);
                 grid.appendChild(card);
@@ -286,6 +297,7 @@ window.List = function (el, options) {
     }
 
     return {
+        lift: function (item) { state.lifted = item; render(); },
         set: function (items, index, emptyText) {
             state.loading = false;
             state.items = items || [];

@@ -80,7 +80,8 @@ test('#81 Home Search reaches cached programmes, debounces typing and never requ
     await section(page, 'Home');
     await press(page, 'ArrowUp');
     await press(page, 'Enter');
-    await expect(page.locator('#home .hm-search')).toContainText('Blue: Search programmes');
+    await expect(page.locator('#home .hm-search .dt-btn')).toHaveText('Search programmes');
+    await expect(page.locator('#home .hm-search .dt-btn .key-dot-blue')).toHaveCount(1);
     await page.waitForLoadState('networkidle');
     const requests = [];
     page.on('request', request => {

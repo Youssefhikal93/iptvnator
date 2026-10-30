@@ -31,27 +31,27 @@ window.CategoryRows = function (deps) {
     }
 
     // Library rows, then All movies / All series and Recently added in front.
-    function build() {
+    function build(section) {
         if (!deps.ready()) return [];
-        var section = deps.section();
+        section = section || deps.section();
         var rows = [
-            row('__fav', I18n.t('browser.favorites'), 'favorites', deps.favorites(), {
+            row('__fav', I18n.t('browser.favorites'), 'favorites', deps.favorites(section), {
                 // The library of every source has no one catalogue to refresh from.
-                list: function () { return !deps.everySource() && deps.sortable() ? deps.favoriteItems() : deps.favorites(); },
+                list: function () { return !deps.everySource() && deps.sortable() ? deps.favoriteItems(section) : deps.favorites(section); },
                 get empty() { return [I18n.t('empty.favorites.title'), I18n.t('empty.favorites.hint')]; },
                 sort: function () { return deps.everySource() ? null : 'chosen'; },
                 fromCatalogue: true,
             }),
-            row('__recent', I18n.t('browser.recentlyWatched'), 'recent', deps.recent(), {
-                list: deps.recent,
+            row('__recent', I18n.t('browser.recentlyWatched'), 'recent', deps.recent(section), {
+                list: function () { return deps.recent(section); },
                 get empty() { return [I18n.t('empty.recent.title'), I18n.t('empty.recent.hint')]; },
                 sort: function () { return null; },
                 fromCatalogue: false,
             }),
         ];
         if (section !== 'live') {
-            rows.push(row('__continue', I18n.t('browser.continueWatching'), 'continue', deps.continued(), {
-                list: deps.continued,
+            rows.push(row('__continue', I18n.t('browser.continueWatching'), 'continue', deps.continued(section), {
+                list: function () { return deps.continued(section); },
                 get empty() { return [I18n.t('empty.continue.title'), I18n.t('empty.continue.hint')]; },
                 sort: function () { return null; },
                 fromCatalogue: false,
@@ -66,10 +66,10 @@ window.CategoryRows = function (deps) {
                 fromCatalogue: false,
             }));
         }
-        var added = deps.sortable() ? deps.added() : [];
+        var added = deps.sortable() ? deps.added(section) : [];
         if (added.length) {
             rows.unshift(row('__added', I18n.t('browser.recentlyAdded'), 'added', added, {
-                list: deps.added,
+                list: function () { return deps.added(section); },
                 get empty() { return [I18n.t('empty.added.title'), I18n.t('empty.added.hint')]; },
                 sort: function () { return 'newest'; },
                 fromCatalogue: true,

@@ -357,7 +357,7 @@ window.Player = (function () {
     // Live channels list their keys; movies and shows keep a plain bar.
     function hintHtml() {
         if (!current.live) return [];
-        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / Green', I18n.t('player.hint.previous')], ['Yellow', I18n.t('player.hint.audioSubs')],
+        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.audioSubs')],
             ['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]];
     }
 
@@ -365,7 +365,7 @@ window.Player = (function () {
         ui.hint.textContent = '';
         hintHtml().forEach(function (pair) {
             var item = el('span');
-            item.appendChild(el('b', '', pair[0]));
+            item.appendChild(KeyHelp.fill(el('b'), pair[0]));
             item.appendChild(document.createTextNode(pair[1]));
             ui.hint.appendChild(item);
         });
@@ -705,6 +705,7 @@ window.Player = (function () {
         var watch = epg.watchFromStart();
         if (watch) m.item(I18n.t('player.startOver'), false, startOver);
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
+        PlayerHelp.menuEntries(m.item, current);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
         var routes = usingAv && AudioRoute.offered(current);
@@ -1397,6 +1398,11 @@ window.Player = (function () {
         canOpenChannelList: function () {
             return ready && current.live && !menu.open && !resume.open && ui.controls.classList.contains('hidden') && ui.status.classList.contains('hidden');
         },
+        // Hold OK on live TV opens the menu (#89), when nothing else is open.
+        canHoldMenu: function () {
+            return ready && !!current && current.live && !menu.open && !resume.open && !playbackError && !channelListOpen && !Menu.isOpen();
+        },
+        openMenu: function () { openMenu(); },
         channelList: function (opened) {
             channelListOpen = opened;
             if (opened) hideControls();

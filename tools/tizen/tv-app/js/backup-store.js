@@ -76,7 +76,7 @@ window.BackupStore = (function () {
         var attributed = {};
         var catalogues = [];
         if (mode === 'replace') existing.forEach(function (source) {
-            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:'].forEach(function (kind) { writes[kind + source.id] = null; });
+            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:', 'list-order:', 'channel-groups:'].forEach(function (kind) { writes[kind + source.id] = null; });
         });
         backup.sources.forEach(function (entry, index) {
             var match = sources.filter(function (source) { return fingerprint(source) === fingerprint(entry.source); })[0];
@@ -89,6 +89,13 @@ window.BackupStore = (function () {
                 var key = kind + ':' + source.id;
                 var saved = writes[key] || (mode === 'merge' ? read(key, {}) : {});
                 writes[key] = lists(saved, entry[kind], kind);
+            });
+            var browse = entry.browse || { order: {}, groups: [] };
+            ['list-order', 'channel-groups'].forEach(function (kind) {
+                var key = kind + ':' + source.id;
+                var incoming = browse[kind === 'list-order' ? 'order' : 'groups'];
+                var saved = writes[key] || (mode === 'merge' ? read(key, null) : null);
+                writes[key] = saved ? BackupOrder.merge(saved, incoming) : incoming;
             });
             var channelsKey = 'recent-channels:' + source.id;
             var savedChannels = writes[channelsKey] || (mode === 'merge' ? read(channelsKey, []) : []);

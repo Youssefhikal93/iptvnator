@@ -97,6 +97,20 @@ or the first restored source on Replace). Explicit playlist positions take
 precedence over colliding ids in this extension. It does not represent other sources'
 M3U progress; standard Xtream positions remain attached to their own source.
 
+## Category order and own groups
+
+Each playlist may carry `tvState.order` (scope-to-ID arrays from
+`list-order:<sourceId>`) and `tvState.groups` (own live groups with ID, name
+and channel snapshots from `channel-groups:<sourceId>`). Export reads the
+active profile; import restores into the active profile under the resulting
+source ID. Both Xtream and M3U support these optional fields. M3U keeps its
+existing favorites/recent extension alongside them.
+
+Import validates both fields before writing. Replace restores them with the
+library; Merge keeps existing orders and existing groups with the same ID,
+and adds incoming scopes/groups with different IDs. The checked backup write
+and rollback covers these records too. Desktop import ignores this extension.
+
 ## Export transport
 
 Export first shows **Contains your passwords**, with Cancel focused, before

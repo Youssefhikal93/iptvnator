@@ -138,7 +138,7 @@
 
 /* Search (#31): an icon at the top right; OK opens a bar over the page
    and the results take the place of the rows. */
-.hm-search-icon {
+.hm-search-icon, .hm-help-icon {
     position: absolute;
     top: 28px;
     right: 56px;
@@ -158,7 +158,7 @@
     height: 40px;
     fill: var(--on-surface);
 }
-.hm-search-icon.focus {
+.hm-search-icon.focus, .hm-help-icon.focus {
     border-color: var(--focus-ring);
     background: var(--selection);
 }

@@ -61,7 +61,9 @@ window.Settings = function (hooks) {
         { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },
         { get label() { return I18n.t('settings.export'); }, backup: 'export', text: '' },
         ...TmdbSettings.rows,
-        { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('settings.appName'); }, text: 'Jo-TV' },
+        // Help (#89): the keys of Settings, and where the coloured keys are.
+        { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('help.title'); }, get hint() { return I18n.t('help.colourKeys'); }, run: () => KeyHelp.open(window.Settings.help()), text: '?' },
+        { get label() { return I18n.t('settings.appName'); }, text: 'Jo-TV' },
         { get label() { return I18n.t('settings.version'); }, text: VERSION },
         { get label() { return I18n.t('settings.basedOn'); }, text: '' },
         { get label() { return I18n.t('settings.installGuide'); }, text: 'tools/tizen/INSTALLATION-TO-TV.md' },
@@ -225,3 +227,10 @@ window.Settings = function (hooks) {
         },
     };
 };
+
+// Settings' keys for Help (#89), kept beside key() above.
+window.Settings.help = () => [
+    ['help.key.upDown', 'help.settings.move'],
+    ['help.key.okRight', 'help.settings.ok'],
+    ['help.key.leftReturn', 'help.settings.back'],
+];

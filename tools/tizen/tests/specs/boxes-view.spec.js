@@ -33,7 +33,7 @@ test('Wide boxes show the whole poster with the rating on it, the title on top, 
     await section(page, 'Series');
     await view(page, 'wide');
     await expect(page.locator('#items')).toHaveClass(/boxes-wide/);
-    const boxes = page.locator('#items .card.box.wide');
+    const boxes = page.locator('#items .card.box.wide:not(.peek)');
     await expect(boxes.first()).toBeVisible();
     // Compact density: 3 boxes a row, 4 rows on screen.
     await expect(boxes).toHaveCount(12);
@@ -63,7 +63,7 @@ test('Info boxes show the whole poster, the meta with a yellow rating and the pl
     const yellow = await page.evaluate(() => { const probe = document.createElement('span'); probe.style.color = 'var(--star)'; document.body.appendChild(probe); const color = getComputedStyle(probe).color; probe.remove(); return color; });
     expect(star).toBe(yellow);
     await expect(box.locator('.box-plot')).toContainText('a town keeps a secret');
-    await expect(page.locator('#items .card.box.info')).toHaveCount(6);
+    await expect(page.locator('#items .card.box.info:not(.peek)')).toHaveCount(6);
     await press(page, 'ArrowDown');
     await expect(page.locator('#items .count')).toHaveText(/^3 \//);
 
@@ -115,6 +115,20 @@ test('one View button: its menu ticks the layout in use; Live TV offers only Lis
     await press(page, 'Enter');
     await expect(page.locator('#menu')).toContainText('Wide boxes');
     await expect(page.locator('#menu')).toContainText('Info boxes');
+});
+
+test('the top of the next row shows dimmed under the grid and the boxes, so the list visibly goes on', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Movies');
+    const cards = page.locator('#items .card:not(.peek)');
+    const peek = page.locator('#items .card.peek');
+    await expect(cards.first()).toBeVisible();
+    // Compact Grid: 6 a row, 2 rows, then 6 dimmed.
+    await expect(cards).toHaveCount(12);
+    await expect(peek).toHaveCount(6);
+    expect(Number(await peek.first().evaluate(el => getComputedStyle(el).opacity))).toBeLessThan(1);
+    await view(page, 'wide');
+    await expect(page.locator('#items .card.box.peek')).toHaveCount(3);
 });
 
 // Storage reads and requests (other than artwork and the app's own log lines)

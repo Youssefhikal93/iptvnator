@@ -520,6 +520,8 @@ window.Browser = function (hooks) {
             state.collectionsTimer = null;
             if (state.section !== 'movies' || !state.base || state.searching) return;
             showCategories(categories.index(), true);
+            // A search in Collections keeps its results (shownCategory is
+            // false while they show).
             var row = shownCategory();
             if (row && row.virtual === 'collections' && !state.collection) showVirtual(row, items.index());
         }, 2000);

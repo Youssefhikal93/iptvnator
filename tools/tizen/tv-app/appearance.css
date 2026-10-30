@@ -59,6 +59,12 @@
    Chromium 88 have no aspect-ratio. */
 #items .card:not(.channel):not(.box) .poster { height: 0; padding-top: 150%; }
 #items .card:not(.channel):not(.box) .poster > .icon { position: absolute; top: 0; left: 0; }
+/* The top of the next row, dimmed and fading out, shows the list goes on. */
+#items .card.peek {
+    opacity: 0.55;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 60%);
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 60%);
+}
 .hm-row { height: var(--home-row-h); padding-right: 56px; }
 .hm-cards { display: grid; grid-template-columns: repeat(var(--home-cols), minmax(0, 1fr)); gap: var(--home-gap); padding: 14px 0; }
 .hm-card { box-sizing: border-box; width: auto; min-width: 0; }

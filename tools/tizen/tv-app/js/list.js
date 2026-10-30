@@ -227,14 +227,17 @@ window.List = function (el, options) {
         card.appendChild(caption);
     }
 
-    // Poster cards follow CSS columns; only the visible rows exist in the DOM.
+    // Poster cards follow CSS columns; only the visible rows exist in the DOM,
+    // and the top of the row after them, dimmed, so the viewer sees the
+    // list goes on (like Home's next row).
     function renderGrid(start, count, size) {
         var grid = document.createElement('div');
         grid.className = 'grid';
-        for (var i = start; i < Math.min(count, start + size.cols * size.rows); i++) {
+        var shown = start + size.cols * size.rows;
+        for (var i = start; i < Math.min(count, shown + size.cols); i++) {
             var item = state.items[i];
             var card = document.createElement('div');
-            card.className = plates() ? 'card channel' : 'card';
+            card.className = (plates() ? 'card channel' : 'card') + (i >= shown ? ' peek' : '');
             if (i === state.index) card.className += state.active ? ' focused' : ' selected';
             if (state.boxes && !plates()) {
                 box(item, card);

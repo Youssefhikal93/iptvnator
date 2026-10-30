@@ -13,7 +13,9 @@ window.Watched = function (api) {
         });
     }
 
-    function itemOption(item, section) {
+    // `title` is the movie, or the show of the episodes: a mark lets it name
+    // the "Because you watched" row (#72).
+    function itemOption(item, section, title) {
         var id = Progress.id(section, item);
         var done = Progress.isWatched(id, item.sourceId);
         return {
@@ -21,18 +23,21 @@ window.Watched = function (api) {
             glyph: '✓',
             run: function () {
                 Progress.mark([id], !done, [item.seconds], item.sourceId);
+                if (!done && title) api.marked(item, section, title, [id]);
                 api.changed();
             },
         };
     }
 
-    function episodesOption(label, episodes) {
+    function episodesOption(label, episodes, show) {
         var done = Progress.allWatched(episodes);
         return {
             label: I18n.t(label + (done ? '.unwatched' : '.watched')),
             glyph: '✓',
             run: function () {
-                Progress.mark(episodes.map(Progress.episodeId), !done, episodes.map(function (ep) { return ep.seconds; }));
+                var ids = episodes.map(Progress.episodeId);
+                Progress.mark(ids, !done, episodes.map(function (ep) { return ep.seconds; }));
+                if (!done && show) api.marked(show, 'series', show, ids);
                 api.changed();
             },
         };
@@ -43,7 +48,7 @@ window.Watched = function (api) {
         var current = Menu.open(title, [{ label: I18n.t('episodes.loading'), note: true }], 0, header);
         api.loadShow(item).then(function (info) {
             if (!current()) return;
-            if (info.episodes && info.episodes.length) options.push(episodesOption('watched.markShow', info.episodes));
+            if (info.episodes && info.episodes.length) options.push(episodesOption('watched.markShow', info.episodes, item));
             else api.toast(I18n.t('episodes.none'));
             Menu.open(title, options, 0, header);
         }).catch(function () {
@@ -55,7 +60,7 @@ window.Watched = function (api) {
 
     function openItemMenu(item, section, options, title, header) {
         if (section === 'series' && !item.episode) return openShowMenu(item, options, title, header);
-        if (section === 'movies' || item.episode) options.push(itemOption(item, section));
+        if (section === 'movies' || item.episode) options.push(itemOption(item, section, item.episode ? item.show : item));
         Menu.open(title, options, 0, header);
     }
 
@@ -65,8 +70,8 @@ window.Watched = function (api) {
             return episode.season === ep.season;
         });
         Menu.open(ep.label || ep.title, [
-            itemOption({ episode: ep, seconds: ep.seconds }, 'series'),
-            episodesOption('watched.markSeason', season),
+            itemOption({ episode: ep, seconds: ep.seconds }, 'series', selection.show),
+            episodesOption('watched.markSeason', season, selection.show),
         ]);
     }
 

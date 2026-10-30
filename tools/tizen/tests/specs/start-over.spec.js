@@ -28,7 +28,8 @@ test('Start over (#82) and Back to live release each stream before opening the n
     await enterItems(page);
     await press(page, 'Enter');
     await playing(page);
-    await expect(page.locator('#pl-epg')).toContainText('Yellow / Info');
+    await expect(page.locator('#pl-epg .pl-epg-catch-up')).toHaveText('/ Hold OK: Start over');
+    await expect(page.locator('#pl-epg .pl-epg-catch-up .key-dot-yellow')).toHaveCount(1);
     const requested = page.waitForRequest(request => new URL(request.url()).pathname.startsWith('/timeshift/'));
     await page.evaluate(() => { Player.startOver(); Player.startOver(); });
     expect(new URL((await requested).url()).pathname).toMatch(/\/60\/[^/]+\/1001\.ts$/);
@@ -61,7 +62,7 @@ test('reaching now offers Back to live and forward seeks stop at the live edge',
     await enterItems(page);
     await press(page, 'Enter');
     await playing(page);
-    await expect(page.locator('#pl-epg')).toContainText('Yellow / Info');
+    await expect(page.locator('#pl-epg')).toContainText('Hold OK: Start over');
     await sendKeyCode(page, 405);
     await expect(page.locator('.pl-menu-item.focus')).toHaveText(/Start over|Watch from start/);
     await press(page, 'Enter');

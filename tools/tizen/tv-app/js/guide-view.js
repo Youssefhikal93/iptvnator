@@ -22,9 +22,23 @@ window.GuideView = function (el) {
         return I18n.date(time, { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
+    // Search programmes, Reminders and Help (#89), in the order of TvGuide's ACTIONS.
+    function actionBar() {
+        var bar = node('div', 'gd-actions');
+        [['{blue} ' + I18n.t('programmeSearch.title'), 'search'], ['{yellow} ' + I18n.t('reminders.title'), 'reminders'], ['?', 'help']].forEach(function (action) {
+            var button = KeyHelp.fill(node('span', 'view-btn gd-action'), action[0]);
+            button.setAttribute('role', 'button');
+            button.setAttribute('data-action', action[1]);
+            if (action[1] === 'help') button.setAttribute('aria-label', I18n.t('help.title'));
+            bar.appendChild(button);
+        });
+        return bar;
+    }
+
     function build(title) {
         el.innerHTML = '';
         el.appendChild(node('h1', 'gd-title', I18n.t('header.guide')));
+        el.appendChild(actionBar());
         el.appendChild(node('p', 'gd-category', title));
         var header = node('div', 'gd-header');
         header.appendChild(node('div', 'gd-channel', I18n.t('player.hint.channel')));
@@ -40,7 +54,7 @@ window.GuideView = function (el) {
         timeline.appendChild(nowLine);
         body.appendChild(timeline);
         el.appendChild(body);
-        el.appendChild(node('p', 'gd-hints', I18n.t('guide.hints') + ' \u00b7 ' + I18n.t('programmeSearch.shortcut')));
+        el.appendChild(KeyHelp.fill(node('p', 'gd-hints'), I18n.t('guide.hints') + ' \u00b7 ' + I18n.t('programmeSearch.shortcut')));
         popup = node('div', 'gd-popup hidden');
         popup.setAttribute('role', 'dialog');
         popup.setAttribute('aria-label', I18n.t('guide.programmeDetails'));
@@ -137,6 +151,13 @@ window.GuideView = function (el) {
         empty: function () { rows.appendChild(node('p', 'gd-empty', I18n.t('guide.noChannels'))); },
         details: details,
         closeDetails: function () { popup.classList.add('hidden'); },
+        // The focused header button, or -1 while the focus is on the grid.
+        actions: function (focus) {
+            el.classList.toggle('on-actions', focus >= 0);
+            Array.prototype.forEach.call(el.querySelectorAll('.gd-action'), function (button, index) {
+                button.classList.toggle('focused', index === focus);
+            });
+        },
         hide: function () { el.classList.add('hidden'); },
         show: function () { el.classList.remove('hidden'); },
     };

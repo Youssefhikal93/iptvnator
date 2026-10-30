@@ -27,6 +27,7 @@ window.TvGuide = function (hooks) {
         view.clearRows();
         for (var i = state.first; i < Math.min(state.channels.length, state.first + ROWS); i++) renderRow(i);
         if (!state.channels.length) view.empty();
+        view.actions(state.action);
     }
 
     function wanted(index) {
@@ -79,7 +80,7 @@ window.TvGuide = function (hooks) {
     function open(options) {
         var now = Date.now();
         state = { guide: options.guide, sourceId: options.sourceId, channels: options.channels, index: options.index,
-            time: now, start: Math.floor(now / GuideTime.step) * GuideTime.step, first: 0, suspended: false, popup: false };
+            time: now, start: Math.floor(now / GuideTime.step) * GuideTime.step, first: 0, suspended: false, popup: false, action: -1 };
         view.open(options.title);
         render();
         wantRows();
@@ -166,19 +167,45 @@ window.TvGuide = function (hooks) {
             }
             return true;
         }
+        if (state.action >= 0) return actionKey(code);
         if (Keys.isBack(code)) close();
+        else if (code === Keys.UP && state.index <= 0) moveAction(0);
         else if (!state.channels.length) return true;
         else if (code === Keys.UP || code === Keys.DOWN) moveChannel(code === Keys.UP ? -1 : 1);
         else if (code === Keys.CH_UP || code === 33) moveChannel(-ROWS);
         else if (code === Keys.CH_DOWN || code === 34) moveChannel(ROWS);
         else if (code === Keys.LEFT || code === Keys.RIGHT) moveTime(code === Keys.LEFT ? -1 : 1);
         else if (code === Keys.ENTER) activate();
-        else if (code === Keys.BLUE) {
-            queue = [];
-            clearInterval(timer);
-            hooks.search(function () { if (state && !state.suspended) { render(); wantRows(); startTimer(); } });
-        }
-        else if (code === Keys.YELLOW) hooks.reminders(function () { if (state && !state.suspended) render(); });
+        else if (code === Keys.BLUE) searchProgrammes();
+        else if (code === Keys.YELLOW) reminders();
+        return true;
+    }
+
+    // The header's buttons (#89) reach the coloured keys' actions without
+    // colours: ▲ from the first channel, ◀ ▶ along them, ▼ or Return back.
+    var ACTIONS = [searchProgrammes, reminders, function () { KeyHelp.open(window.TvGuide.help()); }];
+
+    function searchProgrammes() {
+        queue = [];
+        clearInterval(timer);
+        hooks.search(function () { if (state && !state.suspended) { render(); wantRows(); startTimer(); } });
+    }
+
+    function reminders() {
+        hooks.reminders(function () { if (state && !state.suspended) render(); });
+    }
+
+    function moveAction(action) {
+        state.action = action;
+        view.actions(action);
+    }
+
+    function actionKey(code) {
+        if (code === Keys.LEFT || code === Keys.RIGHT) moveAction(Math.max(0, Math.min(ACTIONS.length - 1, state.action + (code === Keys.LEFT ? -1 : 1))));
+        else if (code === Keys.DOWN || Keys.isBack(code)) moveAction(-1);
+        else if (code === Keys.ENTER) ACTIONS[state.action]();
+        else if (code === Keys.BLUE) searchProgrammes();
+        else if (code === Keys.YELLOW) reminders();
         return true;
     }
 
@@ -199,4 +226,18 @@ window.TvGuide = function (hooks) {
             startTimer();
         },
     };
+};
+
+// The guide's keys for Help (#89), kept beside key() above.
+window.TvGuide.help = function () {
+    'use strict';
+    return [
+        ['help.key.arrows', 'help.guide.move'],
+        ['help.key.ok', 'help.guide.ok'],
+        ['help.key.chUpDown', 'help.lists.page'],
+        ['help.key.upTop', 'help.guide.buttons'],
+        ['help.key.yellow', 'reminders.title'],
+        ['help.key.blue', 'programmeSearch.title'],
+        ['help.key.return', 'help.guide.back'],
+    ];
 };

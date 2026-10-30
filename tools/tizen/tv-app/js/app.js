@@ -108,7 +108,22 @@
         watch: function (reminder) { browser.watchReminder(reminder); },
     });
 
+    // PRE-CH, Green and the menu's Previous channel row (#89).
+    function watchPrevious() {
+        var previous = browser.live.previous();
+        if (previous) play(previous);
+    }
+    PlayerHelp.init({ previous: function () { return browser.live.previousChannel(); }, watchPrevious: watchPrevious });
+
+    // Hold OK on live TV opens the player menu (#89), a tap does what OK did.
     function onPlayerKey(code) {
+        if (Keys.repeat(code)) return true;
+        if (code !== KEY.ENTER || !Player.canHoldMenu()) return playerKey(code);
+        Keys.press(function () { playerKey(code); }, Player.openMenu);
+        return true;
+    }
+
+    function playerKey(code) {
         var live = !!playing && playing.live;
         var zapStep = code === KEY.CH_UP || code === KEY.UP ? 1 : code === KEY.CH_DOWN || code === KEY.DOWN ? -1 : 0;
         if (channelList.key(code)) return true;
@@ -122,10 +137,8 @@
         if (handled === 'back') closePlayer();
         if (handled) return true;
         if (Keys.isBack(code) || code === KEY.STOP) closePlayer(code === KEY.STOP);
-        else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) {
-            var previous = browser.live.previous();
-            if (previous) play(previous);
-        } else if (live && zapStep) {
+        else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) watchPrevious();
+        else if (live && zapStep) {
             var next = browser.zap(zapStep);
             if (next) play(next);
         } else return false;

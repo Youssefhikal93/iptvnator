@@ -147,7 +147,11 @@ test('future programme details close with OK or Return and Guide Return restores
     await expect(popup.locator('.gd-popup-time')).toHaveText(/\d\d:\d\d - \d\d:\d\d/);
     await expect(popup.locator('.gd-description')).toContainText('Episode');
     await expect(page.locator('#player')).toBeHidden();
+    // OK sets a reminder (#75) and Return closes the details.
+    await expect(popup.locator('.gd-remind')).toBeFocused();
     await press(page, 'Enter');
+    await expect(popup.locator('.gd-remind')).toHaveText('Remove reminder');
+    await back(page);
     await expect(popup).toBeHidden();
     await press(page, 'Enter');
     await expect(popup).toBeVisible();

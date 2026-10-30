@@ -112,7 +112,9 @@ window.CollectionIndex = function (sourceId) {
 window.CollectionIndex.info = function (body) {
     'use strict';
     var parts = (body.parts || []).map(function (part) {
-        return { id: part.id, title: part.title || part.original_title || '', year: String(part.release_date || '').slice(0, 4), poster: part.poster_path || '' };
+        // The original title stays so a film named in another language than
+        // the app's still matches the provider's film.
+        return { id: part.id, title: part.title || part.original_title || '', original: part.original_title || '', year: String(part.release_date || '').slice(0, 4), poster: part.poster_path || '' };
     }).sort(function (a, b) { return (a.year || '9999').localeCompare(b.year || '9999'); });
     return { name: body.name || '', poster: body.poster_path || '', parts: parts, fetched: Date.now(), language: TmdbLanguage.tag(I18n.language()) };
 };

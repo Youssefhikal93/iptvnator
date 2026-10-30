@@ -307,7 +307,9 @@
 #pl-hint:empty {
     display: none;
 }
-#pl-hint b {
+#pl-hint b,
+.zb-keys b,
+.si-keys b {
     display: inline-block;
     margin-right: 8px;
     padding: 0 12px;
@@ -317,7 +319,9 @@
     color: var(--pc-text);
     font-weight: 600;
 }
-#pl-hint span {
+#pl-hint span,
+.zb-keys span,
+.si-keys span {
     margin-right: 28px;
 }
 

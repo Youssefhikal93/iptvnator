@@ -1,11 +1,12 @@
 // Now and Next on the live player overlay: titles, times, the current
 // programme's progress and description. A live request opts in with
 // `programmes()` -> Promise<{ now, next }> (built by the browser).
-window.PlayerEpg = function () {
+// changed() runs when an answer arrives (the zap banner shows it too).
+window.PlayerEpg = function (changed) {
     'use strict';
 
     var box = document.getElementById('pl-epg');
-    var s = { req: null, session: 0, shown: null, reloading: false, parts: null };
+    var s = { req: null, session: 0, shown: null, reloading: false, parts: null, asked: false };
 
     function el(tag, cls, text) {
         var node = document.createElement(tag);
@@ -49,11 +50,18 @@ window.PlayerEpg = function () {
     function fetchFor(req) {
         if (!Prefs.get('programmeGuide')) return;
         var mine = s.session;
+        s.asked = true;
         return req.programmes().then(function (programmes) {
             if (mine !== s.session || !Prefs.get('programmeGuide')) return;
             s.shown = programmes;
             s.reloading = false;
+            s.asked = false;
             build();
+            if (changed) changed();
+        }, function () {
+            if (mine !== s.session) return;
+            s.asked = false;
+            if (changed) changed();
         });
     }
 
@@ -62,10 +70,16 @@ window.PlayerEpg = function () {
         s.req = null;
         s.shown = null;
         s.reloading = false;
+        s.asked = false;
         build();
     }
 
     return {
+        // What the guide knows now: loading while the first answer is on its way.
+        programmes: function () {
+            var p = s.shown || {};
+            return { loading: s.asked && !s.shown, now: p.now || null, next: p.next || null };
+        },
         watchFromStart: function () {
             var programme = s.shown && s.shown.now;
             return s.req && s.req.watchFromStart && programme && programme.start < Date.now() && Date.now() < programme.end ?

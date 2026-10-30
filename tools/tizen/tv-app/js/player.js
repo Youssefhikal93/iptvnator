@@ -77,6 +77,7 @@ window.Player = (function () {
     var avAudio = -1;
     var avText = -1;
     var avRoute = 'file'; // the address AVPlay plays (audio-route.js)
+    var avBuffer = null; // AVPlay's last buffering percent, for Stream info (#84)
     var avSeekPending = false;
     var avSeekSerial = 0;
     var seek = { target: null, origin: 0, count: 0, dir: 0, last: 0, timer: null, holdPos: null, holdUntil: 0 };
@@ -97,7 +98,17 @@ window.Player = (function () {
         ready: canSeek,
         timeout: resumeFailed,
     });
-    var epg = PlayerEpg();
+    var epg = PlayerEpg(function () { banner.refresh(); });
+    // The channel banner on zapping (#79, zap-banner.js). zapEnd is what a zap
+    // shows once it plays: 'banner', 'quiet' after a key hid it; null otherwise.
+    var zapEnd = null;
+    var bannerRoot = el('div', 'hidden');
+    bannerRoot.id = 'pl-banner';
+    playerEl.appendChild(bannerRoot);
+    var banner = ZapBanner.create(bannerRoot, {
+        programmes: function () { return epg.programmes(); },
+        startOver: function () { return ready && !!epg.watchFromStart(); },
+    });
     var freeze = PlayerFreeze(video, $('pl-freeze'));
     // A live stream that drops reopens itself with backoff (player-reconnect.js).
     var reconnect = PlayerReconnect({
@@ -398,6 +409,7 @@ window.Player = (function () {
 
     function showControls() {
         if (!current || !ready || resume.open || channelListOpen) return;
+        banner.hide();
         ui.controls.classList.remove('hidden');
         playerEl.classList.add('controls-on');
         renderHint();
@@ -414,6 +426,7 @@ window.Player = (function () {
         $('pl-error-actions').classList.toggle('hidden', !error);
         if (error) {
             playbackError = true;
+            banner.hide();
             errorFocus = 0;
             clearInterval(tickTimer);
             hideControls();
@@ -633,16 +646,38 @@ window.Player = (function () {
         return LanguageChoice.apply(current, getTracks(true), languagePrefs);
     }
 
-    function streamInfoLines() {
+    // What the Stream info panel (#84, stream-info.js) reads every second.
+    function streamSample() {
         var kind = engineKind();
-        return PlayerTracks.infoLines({
-            engine: kind,
-            streams: kind === 'avplay' ? avRead('getCurrentStreamInfo') : null,
+        var sample = { engine: kind, route: avRoute, avBuffer: avBuffer };
+        if (kind === 'avplay') {
+            sample.streams = avRead('getCurrentStreamInfo');
+            return sample;
+        }
+        var quality = video.getVideoPlaybackQuality ? video.getVideoPlaybackQuality() : null;
+        var ahead = null;
+        for (var i = 0; i < video.buffered.length; i++) {
+            if (video.buffered.start(i) <= video.currentTime && video.currentTime <= video.buffered.end(i)) ahead = video.buffered.end(i) - video.currentTime;
+        }
+        sample.video = {
             width: video.videoWidth,
             height: video.videoHeight,
-            level: kind === 'hls' && lib.levels ? lib.levels[lib.currentLevel] : null,
-        });
+            buffered: ready ? ahead : null,
+            dropped: quality ? quality.droppedVideoFrames : null,
+            frames: quality ? quality.totalVideoFrames : null,
+        };
+        if (kind === 'hls' && lib.levels) sample.level = lib.levels[lib.currentLevel];
+        if (kind === 'mpegts') {
+            sample.media = lib.mediaInfo;
+            sample.stats = lib.statisticsInfo;
+        }
+        return sample;
     }
+
+    var infoRoot = el('div', 'hidden');
+    infoRoot.id = 'pl-info';
+    playerEl.appendChild(infoRoot);
+    var streamInfo = StreamInfo.create(infoRoot, streamSample);
 
     // ---- Menu -------------------------------------------------------------
 
@@ -697,8 +732,8 @@ window.Player = (function () {
         if (!current.live) series.introEntries(m.head, m.item);
         m.head(sleep.heading());
         sleep.choices(current).forEach(function (choice) { m.item(choice.label, choice.active, choice.select); });
-        m.head(I18n.t('player.streamInfo'));
-        streamInfoLines().forEach(m.info);
+        m.head(I18n.t('player.streamInfo'), I18n.t(streamInfo.shown() ? 'common.on' : 'common.off'));
+        m.item(I18n.t('player.info.show'), streamInfo.shown(), function () { streamInfo.toggle(); closeMenu(); });
     }
 
     var playerMenu = PlayerMenu(ui.menu, {
@@ -874,6 +909,7 @@ window.Player = (function () {
         epg.reset();
         avAudio = avText = -1;
         avRoute = 'file';
+        avBuffer = null;
         speed = 1;
         ui.speed.classList.add('hidden');
         if (lib) {
@@ -1053,9 +1089,16 @@ window.Player = (function () {
         av.open(url);
         av.setListener({
             onbufferingstart: function () {
+                avBuffer = 0;
                 if (ready) showStatus('', false);
             },
-            onbufferingcomplete: hideStatus,
+            onbufferingprogress: function (percent) {
+                avBuffer = Number(percent);
+            },
+            onbufferingcomplete: function () {
+                avBuffer = 100;
+                hideStatus();
+            },
             onerror: function (type) {
                 if (!ready && route.next) return route.next('error ' + type);
                 if (ready) streamLost(String(type), I18n.t('player.stoppedType', { type: type }));
@@ -1171,7 +1214,10 @@ window.Player = (function () {
         clearInterval(tickTimer);
         tickTimer = setInterval(tick, TICK_MS);
         if (current.live) reconnect.watch();
-        showControls();
+        // A channel change shows the banner (#79), not the full controls.
+        if (zapEnd === 'banner') banner.show(current.banner);
+        else if (zapEnd === null) showControls();
+        zapEnd = null;
     }
 
     var STARTERS = { mpegts: viaMpegts, hls: viaHls, avplay: viaAvPlay, video: viaVideo };
@@ -1181,7 +1227,13 @@ window.Player = (function () {
     function play(req, rect) {
         reconnect.cancel();
         freeze.clear();
-        return start(req, undefined, rect);
+        // A zap (#79) shows the channel banner while it opens and again once it
+        // plays, after start() has asked for this channel's guide.
+        zapEnd = req.live && req.zapped && req.banner ? 'banner' : null;
+        var run = start(req, undefined, rect);
+        if (zapEnd) banner.show(req.banner);
+        else banner.hide();
+        return run;
     }
 
     // One playback attempt chain. `onAttempt` is set by a reconnect try: it
@@ -1235,6 +1287,8 @@ window.Player = (function () {
         freeze.clear();
         chain.cancel();
         release();
+        banner.hide();
+        streamInfo.hide();
         current = null;
         hideStatus();
         hideControls();
@@ -1250,6 +1304,8 @@ window.Player = (function () {
         setBox(rect);
         closeMenu();
         hideControls();
+        banner.hide();
+        streamInfo.hide();
         return true;
     }
 
@@ -1266,6 +1322,19 @@ window.Player = (function () {
         showControls();
     }
 
+    // While the channel banner shows (#79): OK or Info opens the full
+    // controls, ▶ starts the programme over where it can; any other key
+    // (Return too) hides it and does what it always does.
+    function bannerKey(code) {
+        var again = code === KEY.RIGHT && ready && !!epg.watchFromStart();
+        if (zapEnd) zapEnd = 'quiet';
+        banner.hide();
+        if (again) startOver();
+        else if (code === KEY.ENTER || code === KEY.INFO) showControls();
+        else return false;
+        return true;
+    }
+
     // Returns true when consumed, or 'back' for OK on the error's Back button.
     // Return with hidden controls, Stop and live zapping are left to the caller.
     function key(code, live) {
@@ -1273,8 +1342,14 @@ window.Player = (function () {
         if (!current) return false;
         if (playbackError) return errorKey(code);
         if (resume.open) return resumeKey(code);
+        if (banner.shown() && bannerKey(code)) return true;
         if (!ready) return false;
         if (menu.open) return menuKey(code);
+        // Return hides Stream info (#84) before anything else.
+        if (Keys.isBack(code) && streamInfo.shown()) {
+            streamInfo.hide();
+            return true;
+        }
         // The first ◀ ▶ ▼ only brings the controls up, with play/pause focused.
         var arrow = code === KEY.LEFT || code === KEY.RIGHT || code === KEY.DOWN;
         if (!live && arrow && ui.controls.classList.contains('hidden')) {
@@ -1331,6 +1406,7 @@ window.Player = (function () {
         channelList: function (opened) {
             channelListOpen = opened;
             if (opened) hideControls();
+            if (opened) banner.hide();
         },
         isOpen: function () {
             return current !== null;

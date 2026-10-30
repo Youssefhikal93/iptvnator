@@ -63,7 +63,7 @@ function scene(settings, Hls) {
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js', 'key-help.js', 'player-help.js',
         'subtitle-file.js', 'subtitle-rank.js', 'open-timing.js', 'movie-hash.js', 'media-sniff.js', 'subtitle-store.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'playback-chain.js', 'player-tracks.js', 'player-reconnect.js',
-        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'audio-choice.js', 'language-choice.js', 'player.js',
+        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'zap-banner.js', 'stream-info.js', 'audio-choice.js', 'language-choice.js', 'player.js',
     ], { 'iptvnator-tv:settings': JSON.stringify(settings || {}) }, {
         Hls: Hls,
         UI: uiSandbox.UI,
@@ -93,6 +93,7 @@ function scene(settings, Hls) {
         video: video,
         controls: get('pl-controls'),
         hint: get('pl-hint'),
+        banner: function () { return get('player').children.find(function (node) { return node.id === 'pl-banner'; }); },
         request: function (live) { return { live: live, title: 'Fixture', sources: [{ via: 'video', url: 'https://example.test/fixture' }] }; },
         tick: function () {
             now += 6000;
@@ -185,4 +186,25 @@ test('#37 live zapping and fullscreen show controls again; preview Return still 
     s.player.fullscreen();
     assert.equal(s.player.key(s.keys.RETURN, true), true);
     assert.equal(s.player.key(s.keys.RETURN, true), false);
+});
+
+test('#79 a zap shows the channel banner instead of the controls; OK opens them, Return hides it and passes through', async function () {
+    var s = scene();
+    var zapped = Object.assign(s.request(true), { zapped: true, banner: { name: 'Fixture', num: 3, logo: '' } });
+    await s.player.play(zapped, null);
+    var banner = s.banner();
+    assert.equal(s.controls.classList.contains('hidden'), true);
+    assert.equal(banner.classList.contains('hidden'), false);
+    assert.equal(s.player.key(s.keys.ENTER, true), true);
+    assert.equal(banner.classList.contains('hidden'), true);
+    assert.equal(s.controls.classList.contains('hidden'), false);
+    await s.player.play(Object.assign({}, zapped), null);
+    assert.equal(banner.classList.contains('hidden'), false);
+    assert.equal(s.player.key(s.keys.RETURN, true), false);
+    assert.equal(banner.classList.contains('hidden'), true);
+    assert.equal(s.controls.classList.contains('hidden'), true);
+    // The first start of a channel keeps the full controls.
+    await s.player.play(s.request(true), null);
+    assert.equal(banner.classList.contains('hidden'), true);
+    assert.equal(s.controls.classList.contains('hidden'), false);
 });

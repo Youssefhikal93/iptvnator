@@ -496,6 +496,8 @@ window.Browser = function (hooks) {
     function liveRequest(channel) {
         var req = state.adapter.liveRequest(channel);
         req.channel = sourceId() + '|' + Library.keyOf('live', channel);
+        // What the zap banner shows (#79).
+        req.banner = { name: channel.name, num: channel.num, logo: channel.stream_icon || channel.logo || '' };
         if (state.source.type === 'xtream' && CatchUp.available(channel)) {
             req.watchFromStart = function (programme) {
                 var archive = catchUpRequest(channel, programme);

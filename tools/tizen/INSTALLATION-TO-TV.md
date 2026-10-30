@@ -247,6 +247,14 @@ from step 8 must already be downloaded.
   leaving the player with Return cancels it, including a return to live preview.
   The timer is never saved across app restarts.
 
+- **Use my phone** (#85): in the add-source form, show a QR code and a 6
+  character code; the phone opens a small page served by the TV itself
+  (a Tizen web service, `IPTVnTVApp.PhoneSource` in `config.xml`, port 8777,
+  listening only while the code is open) and its details fill the TV's form for
+  a final **Save**. The code works once and for 10 minutes. The details go from
+  the phone to the TV over the home network only (plain HTTP, no outside
+  server) and are neither logged nor stored apart from the saved source. The
+  service is part of the same `.wgt`, so installing and updating are unchanged.
 - **Guide link**: when adding an Xtream or M3U source, optionally enter a
   **Guide link (XMLTV)** (`.xml` or `.xml.gz`) and a time offset from -12 to
   +12 hours (LEFT/RIGHT adjusts it). For an existing source, hold **OK** on

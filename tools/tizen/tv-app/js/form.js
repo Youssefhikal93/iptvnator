@@ -18,7 +18,19 @@ window.Form = (function () {
         if (editing && !whole) inputs = [];
         inputs = inputs.concat(['form-epg-url', 'form-epg-offset']);
         if (type === 'xtream') inputs.push('form-epg-prefer');
-        return inputs.concat(['form-save', 'form-cancel']);
+        return inputs.concat(editing ? ['form-save', 'form-cancel'] : ['form-save', 'form-phone', 'form-cancel']);
+    }
+
+    // The phone's details go into the form like typed ones; Save checks them.
+    function fill(received) {
+        $('form-name').value = received.name || '';
+        $('form-url').value = received.url || '';
+        if (type === 'xtream') {
+            $('form-user').value = received.user || '';
+            $('form-pass').value = received.pass || '';
+        }
+        message(I18n.t('phone.received'));
+        $('form-save').focus();
     }
 
     function message(text) {
@@ -51,12 +63,14 @@ window.Form = (function () {
             $('form-user').value = editing.user || '';
             $('form-pass').value = editing.pass || '';
         }
+        $('form-phone').classList.toggle('hidden', !!editing);
         message('');
         $('form').classList.remove('hidden');
         $(editing && !whole ? 'form-epg-url' : whole ? 'form-name' : 'form-url').focus();
     }
 
     function close(source) {
+        FormPhone.close();
         $('form').classList.add('hidden');
         var done = onDone;
         onDone = null;
@@ -104,10 +118,11 @@ window.Form = (function () {
 
     // OK on a button is a native click; this handles moving between fields.
     function onKey(event) {
+        if (FormPhone.onKey(event)) return;
         var list = fields();
         var index = list.indexOf(document.activeElement && document.activeElement.id);
         var code = event.keyCode;
-        var onButtons = index >= list.length - 2;
+        var onButtons = index >= list.length - (editing ? 2 : 3);
         if ((code === KEY.LEFT || code === KEY.RIGHT) && document.activeElement.id === 'form-epg-offset') {
             $('form-epg-offset').value = Math.max(-12, Math.min(12, (Number($('form-epg-offset').value) || 0) + (code === KEY.LEFT ? -1 : 1)));
             return event.preventDefault();
@@ -128,6 +143,9 @@ window.Form = (function () {
     }
 
     $('form-save').addEventListener('click', save);
+    $('form-phone').addEventListener('click', function () {
+        FormPhone.open(type, fill);
+    });
     $('form-cancel').addEventListener('click', function () {
         close(null);
     });

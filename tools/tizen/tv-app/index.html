@@ -9,6 +9,7 @@
         <link rel="stylesheet" href="player.css" />
         <link rel="stylesheet" href="player-picture.css" />
         <link rel="stylesheet" href="subtitle-download.css" />
+        <link rel="stylesheet" href="phone-source.css" />
         <link rel="stylesheet" href="live-preview.css" />
         <link rel="stylesheet" href="library-all.css" />
         <link rel="stylesheet" href="pin-pad.css" />
@@ -100,9 +101,27 @@
             </div>
             <div class="form-buttons">
                 <button id="form-save" data-i18n="common.save">Save</button>
+                <button id="form-phone" data-i18n="phone.use">Use my phone</button>
                 <button id="form-cancel" data-i18n="common.cancel">Cancel</button>
             </div>
             <p id="form-msg"></p>
+            <div id="form-phone-panel" class="hidden">
+                <h1 data-i18n="phone.title">Add from your phone</h1>
+                <div class="phone-body">
+                    <canvas id="phone-qr" width="1" height="1"></canvas>
+                    <div class="phone-info">
+                        <p data-i18n="phone.scan">Scan the code with your phone, or open this link on the same Wi-Fi.</p>
+                        <p id="phone-code"></p>
+                        <p id="phone-url"></p>
+                        <p id="phone-status"></p>
+                        <p id="phone-note" data-i18n="phone.lifetime"></p>
+                    </div>
+                </div>
+                <div class="form-buttons">
+                    <button id="phone-new" class="hidden" data-i18n="phone.newCode">New code</button>
+                    <button id="phone-cancel" data-i18n="common.cancel">Cancel</button>
+                </div>
+            </div>
         </div>
 
         <div id="player" class="hidden">
@@ -282,6 +301,9 @@
         <script src="js/av-resolve.js"></script>
         <script src="js/player-menu.js"></script>
         <script src="js/player.js"></script>
+        <script src="js/qr.js"></script>
+        <script src="js/phone-source.js"></script>
+        <script src="js/form-phone.js"></script>
         <script src="js/form.js"></script>
         <script src="js/profile-dialog.js"></script>
         <script src="js/kids-picker.js"></script>

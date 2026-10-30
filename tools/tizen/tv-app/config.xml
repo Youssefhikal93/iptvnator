@@ -11,4 +11,11 @@
     <tizen:privilege name="http://tizen.org/privilege/application.info"/>
     <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
     <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+    <!-- #85: serves the "add a source from your phone" page while a code is open. -->
+    <tizen:service id="IPTVnTVApp.PhoneSource" auto-restart="false" on-boot="false">
+        <tizen:content src="service/phone-source.js"/>
+        <tizen:name>Jo-TV phone source</tizen:name>
+        <tizen:icon src="icon.png"/>
+        <tizen:description>Receives a source typed on a phone, on the home network only</tizen:description>
+    </tizen:service>
 </widget>

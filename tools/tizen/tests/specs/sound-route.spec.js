@@ -3,9 +3,9 @@ const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup } = 
 // #54: Samsung TVs cannot decode DTS. The fake AVPlay lists a sound track
 // for the file only when it is not DTS-only, and for the provider's
 // converted .m3u8 / .ts addresses only when `converted` says they have one.
-async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'], refused = false, slowFail = 0 } = {}) {
+async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'], refused = false, slowFail = 0, lateError = 0 } = {}) {
     await request.get('/__fail?file=' + file);
-    await page.addInitScript(({ dtsOnly, converted, refused, slowFail }) => {
+    await page.addInitScript(({ dtsOnly, converted, refused, slowFail, lateError }) => {
         const extra = (info) => JSON.stringify(info);
         window.nativePlayback = { state: 'NONE', url: '', opened: [], seeks: [], listener: {} };
         const ext = () => nativePlayback.url.split('.').pop();
@@ -23,6 +23,10 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
                 if (!['mkv', 'm3u8', 'ts'].includes(ext())) { nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE'); return error({ name: 'InvalidAccessError' }); }
                 // slowFail: the .m3u8 address fails only after that many ms.
                 if (slowFail && ext() === 'm3u8') return setTimeout(() => { nativePlayback.listener.onerror('PLAYER_ERROR_CONNECTION_FAILED'); error({ name: 'Error' }); }, slowFail);
+                // lateError: the .m3u8 address opens, then fails that many ms later.
+                if (lateError && ext() === 'm3u8') setTimeout(() => { if (ext() === 'm3u8') nativePlayback.listener.onerror('PLAYER_ERROR_CONNECTION_FAILED'); }, lateError);
+                // ...and the .ts address that follows lists sound but fails to prepare 3 s later.
+                if (lateError && ext() === 'ts') return setTimeout(() => { nativePlayback.listener.onerror('PLAYER_ERROR_CONNECTION_FAILED'); error({ name: 'Error' }); }, 3000);
                 if (!refused || ext() === 'mkv') return success();
                 nativePlayback.listener.onerror('PLAYER_ERROR_NOT_SUPPORTED_FILE');
                 error({ name: 'InvalidAccessError' });
@@ -41,7 +45,7 @@ async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', conver
             stop: () => { nativePlayback.state = 'IDLE'; },
             close: () => { nativePlayback.state = 'NONE'; },
         } };
-    }, { dtsOnly: file === 'dts-only.mkv.head', converted, refused, slowFail });
+    }, { dtsOnly: file === 'dts-only.mkv.head', converted, refused, slowFail, lateError });
     await boot(page);
 }
 
@@ -222,6 +226,15 @@ test('a movie left while its file is still being read never has its sound read u
     const pairs = await page.evaluate(() => sniffed);
     expect(pairs.length).toBeGreaterThan(0);
     for (const [id, file] of pairs) expect(id.replace(/\D/g, '')).toBe(file.replace(/\D/g, ''));
+});
+
+test('a silent .m3u8 that fails during its sound check does not judge the .ts address that replaced it', async ({ page, request }) => {
+    // The .m3u8 opens without sound and fails 1.5 s into its 4 s check. The
+    // .ts lists sound but is still preparing when that check is due, then fails.
+    await samsungPlayer(page, request, { converted: ['ts'], lateError: 1500 });
+    await startFirstMovie(page);
+    // The .m3u8's late check must not take the .ts for a working route: the file is tried.
+    await expect.poll(() => opened(page), { timeout: 15_000 }).toEqual(['2025.m3u8', '2025.ts', '2025.mkv']);
 });
 
 test('a converted address that fails just before the attempt times out does not reopen AVPlay after the fallback', async ({ page, request }) => {

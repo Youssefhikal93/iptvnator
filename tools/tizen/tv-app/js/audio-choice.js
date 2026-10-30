@@ -24,9 +24,22 @@ window.AudioChoice = (function () {
         return (request && request.episodes && request.episodes.show) || '';
     }
 
+    // Three-letter codes files use, for firmware without Intl.DisplayNames.
+    var TWO = {
+        ara: 'ar', eng: 'en', fre: 'fr', fra: 'fr', ger: 'de', deu: 'de', spa: 'es', ita: 'it', por: 'pt', rus: 'ru',
+        tur: 'tr', dut: 'nl', nld: 'nl', pol: 'pl', gre: 'el', ell: 'el', chi: 'zh', zho: 'zh', jpn: 'ja', kor: 'ko',
+        hin: 'hi', per: 'fa', fas: 'fa', heb: 'he', swe: 'sv', nor: 'no', dan: 'da', fin: 'fi', hun: 'hu', cze: 'cs',
+        ces: 'cs', slo: 'sk', slk: 'sk', rum: 'ro', ron: 'ro', bul: 'bg', hrv: 'hr', srp: 'sr', ukr: 'uk', bel: 'be',
+        alb: 'sq', sqi: 'sq', tha: 'th', vie: 'vi', ind: 'id', may: 'ms', msa: 'ms', urd: 'ur', ben: 'bn', tam: 'ta',
+        tel: 'te', kur: 'ku', est: 'et', lav: 'lv', lit: 'lt', slv: 'sl', mac: 'mk', mkd: 'mk', bos: 'bs', cat: 'ca',
+        baq: 'eu', eus: 'eu', glg: 'gl', ice: 'is', isl: 'is', tgl: 'tl', swa: 'sw', amh: 'am', som: 'so', pus: 'ps',
+        aze: 'az', kaz: 'kk', uzb: 'uz', geo: 'ka', kat: 'ka', arm: 'hy', hye: 'hy', mon: 'mn',
+    };
+
     // "eng", "en" and "en-GB" are one language.
     function name(code) {
         var primary = String(code || '').toLowerCase().split('-')[0];
+        if (Object.prototype.hasOwnProperty.call(TWO, primary)) primary = TWO[primary];
         try {
             return new Intl.DisplayNames(['en'], { type: 'language' }).of(primary).toLowerCase();
         } catch (e) {

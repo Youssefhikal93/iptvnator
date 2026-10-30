@@ -163,7 +163,7 @@ window.Browser = function (hooks) {
         changed: categoriesChanged,
         toast: toast,
     });
-    var settings = Settings({ toast: toast, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged, chrome: renderChrome, sources: sourceHooks() });
+    var settings = Settings({ toast: toast, reminders: openReminders, manage: openManage, hiddenText: hiddenText, profileChanged: profileChanged, chrome: renderChrome, sources: sourceHooks() });
     KidsProfile.setCatalogue(kidsCatalogue());
     var watched = Watched({
         knownShow: function (show) {
@@ -262,6 +262,7 @@ window.Browser = function (hooks) {
             hooks.play(req);
         },
         indexOf: live.indexOf,
+        reminders: openReminders,
         close: function (channel) {
             var index = live.indexOf(items.items(), channel);
             if (index >= 0) items.select(index);
@@ -287,9 +288,23 @@ window.Browser = function (hooks) {
             clearTimeout(state.timer);
             showVirtual(category, items.index());
         }
-        guide.open({ guide: state.guide, channels: items.items().slice(), index: items.index(),
+        guide.open({ guide: state.guide, sourceId: sourceId(), channels: items.items().slice(), index: items.index(),
             title: currentList.showingSearch() ? I18n.t('browser.searchResults') : category ? I18n.categoryName(category) : I18n.t('browser.allChannels') });
         return true;
+    }
+
+    function openReminders(done) {
+        RemindersList.open(toast, done);
+    }
+
+    // Watch now on a reminder's pop-up: the channel plays as from the
+    // library, so the profile's Kids and PIN rules still decide.
+    function watchReminder(reminder) {
+        var item = Object.assign({}, reminder.channel, { sourceId: reminder.sourceId });
+        if (!visibility.allows('live', item, { sourceId: reminder.sourceId, withHidden: true })) return toast(I18n.t('reminders.blocked'));
+        Menu.close();
+        if (guide.isOpen()) guide.close();
+        openEntry(item, 'live');
     }
 
     function itemLabel(it) {
@@ -2116,6 +2131,7 @@ window.Browser = function (hooks) {
             guide.resume(live.current());
         },
         live: live,
+        watchReminder: watchReminder,
         epg: function () { return state.epg; },
         zap: live.zap,
         // The screen saver's titles (#61): only details already loaded, so

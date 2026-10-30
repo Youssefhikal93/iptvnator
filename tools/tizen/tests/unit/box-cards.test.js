@@ -7,7 +7,11 @@ var load = require('./sandbox');
 function boxCards(cached) {
     var asked = [];
     var env = load(['box-cards.js'], {}, {
-        I18n: { t: function (key, p) { return key === 'unit.hoursMinutes' ? p.h + ' h ' + p.m + ' min' : p.m + ' min'; } },
+        I18n: { t: function (key, p) {
+            if (key === 'unit.season') return '1 season';
+            if (key === 'unit.seasons') return p.n + ' seasons';
+            return key === 'unit.hoursMinutes' ? p.h + ' h ' + p.m + ' min' : p.m + ' min';
+        } },
         Tmdb: {
             year: function (item) { var m = /\b(19|20)\d{2}\b/.exec(item.name || ''); return m ? m[0] : ''; },
             cached: function (item, type) { asked.push(type); return cached || null; },
@@ -25,7 +29,7 @@ function line(facts) {
 test('#66 box facts use the list item: year, score out of 10 and length', function () {
     var api = boxCards().cards;
     assert.equal(line(api.facts({ name: 'Heat (1995)', rating_5based: '3.7' }, 'movies')), '1995 · ★ 7.4');
-    assert.deepEqual(JSON.parse(JSON.stringify(api.facts({ name: 'Show', rating: '8.1', releaseDate: '2019-09-01', episode_run_time: '45' }, 'series'))), { year: '2019', score: '8.1', length: '45 min' });
+    assert.deepEqual(JSON.parse(JSON.stringify(api.facts({ name: 'Show', rating: '8.1', releaseDate: '2019-09-01', episode_run_time: '45' }, 'series'))), { year: '2019', score: '8.1', length: '45 min', seasons: '' });
     assert.equal(line(api.facts({ name: 'Long', episode_run_time: '112' }, 'series')), '1 h 52 min');
     // A collection keeps its own line.
     assert.equal(api.facts({ name: 'Trilogy', sub: '4 films · 3 available' }, 'movies').sub, '4 films · 3 available');
@@ -39,4 +43,21 @@ test('#66 box text falls back to a TMDB match already in memory, never asking fo
     assert.equal(made.cards.plot({ name: 'Show', plot: 'Own plot.' }, 'series'), 'Own plot.');
     made.cards.plot({ name: 'Show' }, 'series');
     assert.deepEqual(made.asked.slice(-1), ['tv']);
+});
+
+test('#73 seasons come from the episodes already loaded, else TMDB; a film\'s length falls back to TMDB', function () {
+    var made = boxCards({ number_of_seasons: 4, runtime: 112 });
+    var episodes = [{ season: 1 }, { season: 1 }, { season: 2 }, { season: 3 }];
+    assert.equal(made.cards.facts({ name: 'Show' }, 'series', { episodes: episodes }).seasons, '3 seasons');
+    assert.equal(made.cards.facts({ name: 'Show' }, 'series', { episodes: [{ season: 1 }] }).seasons, '1 season');
+    assert.equal(made.cards.facts({ name: 'Show' }, 'series', null).seasons, '4 seasons');
+    assert.equal(made.cards.facts({ name: 'Film' }, 'movies').length, '1 h 52 min');
+    // The list item's own length wins; a show's TMDB runtime is not a film length.
+    assert.equal(made.cards.facts({ name: 'Film', duration_secs: 5400 }, 'movies').length, '1 h 30 min');
+    assert.equal(made.cards.facts({ name: 'Show' }, 'series', null).length, '');
+    assert.equal(made.cards.facts({ name: 'Film' }, 'movies').seasons, '');
+    // Nothing known: no line.
+    var bare = boxCards().cards;
+    assert.equal(bare.facts({ name: 'Show' }, 'series', null).seasons, '');
+    assert.equal(bare.facts({ name: 'Film' }, 'movies').length, '');
 });

@@ -23,7 +23,9 @@ window.TmdbDetail = function (page, changed) {
     return {
         load: function (provider) {
             var lookup = Object.assign({}, page.item, { year: provider.year || page.item.year, tmdb_id: provider.tmdb_id || page.item.tmdb_id || page.item.tmdb });
-            Tmdb.match(lookup, page.episodes ? 'tv' : 'movie').then(function (body) {
+            var type = page.episodes ? 'tv' : 'movie';
+            Tmdb.match(lookup, type).then(function (body) {
+                if (body) Tmdb.remember(page.item, type, lookup);
                 if (!current() || !body) return;
                 var enriched = Object.assign({}, provider);
                 enriched.tmdb_id = body.id;

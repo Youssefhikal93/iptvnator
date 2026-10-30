@@ -617,6 +617,8 @@ I18n.tables.en = {
     'unit.hoursMinutes': '{h} h {m} min',
     'unit.minutes': '{n} min',
     'unit.minutesOnly': '{m} min',
+    'unit.season': '1 season',
+    'unit.seasons': '{n} seasons',
     'unit.seconds': '{n} s',
     'watched.loadFailed': 'Could not load episodes. Hold OK to try again.',
     'watched.markAs.unwatched': 'Mark as unwatched',

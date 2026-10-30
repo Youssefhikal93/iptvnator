@@ -1,4 +1,4 @@
-const { test, expect, boot, press, section, enterItems, toolbar, chooseView, setting } = require('./helpers');
+const { test, expect, boot, press, back, section, enterItems, toolbar, chooseView, setting } = require('./helpers');
 
 // Movies and Series as Wide picture boxes or Info boxes (#66), picked from
 // the one View button (#69).
@@ -150,6 +150,44 @@ async function moves(page) {
     page.off('request', seen);
     return { requests, reads: await page.evaluate(() => window.__reads) };
 }
+
+test('#73 a Wide box shows a show\'s seasons once its episodes are loaded, and a film\'s length from TMDB, each after an icon', async ({ page }) => {
+    await page.route('https://image.tmdb.org/**', (route) => route.fulfill({ status: 404 }));
+    await page.route('https://api.themoviedb.org/**', (route) => {
+        const url = new URL(route.request().url());
+        const endpoint = url.pathname.replace('/3', '');
+        if (endpoint === '/search/movie') return route.fulfill({ json: { results: url.searchParams.get('query') === 'Movie 25' ? [{ id: 25, title: 'Movie 25' }] : [] } });
+        if (endpoint === '/movie/25') return route.fulfill({ json: { id: 25, title: 'Movie 25', runtime: 112 } });
+        return route.fulfill({ status: 404, json: { status_message: 'Not found' } });
+    });
+    await boot(page, { storage: { settings: { tmdbApiKey: 'test-key' } } });
+    // Nothing known yet: a show's box has only its year line.
+    await section(page, 'Series');
+    await view(page, 'wide');
+    const firstShow = page.locator('#items .card.box.wide').first();
+    await expect(firstShow.locator('.box-fact')).toHaveCount(0);
+    // Its detail page loads the episodes; back on the list the box counts the seasons.
+    await press(page, 'Enter');
+    await expect(page.locator('#detail .dt-ep-pill').first()).toBeVisible();
+    const pills = await page.locator('#detail .dt-ep-pill').count();
+    await back(page);
+    await expect(firstShow.locator('.box-fact')).toHaveText(pills === 1 ? '1 season' : pills + ' seasons');
+    await expect(firstShow.locator('.box-fact svg')).toHaveCount(1);
+    await expect(page.locator('#items .card.box.wide .box-fact')).toHaveCount(1);
+
+    await section(page, 'Movies');
+    await enterItems(page);
+    await expect(page.locator('#items .focused .card-title')).toHaveText('Movie 25');
+    await press(page, 'Enter');
+    // The detail page has TMDB's answer once it shows the length.
+    await expect(page.locator('#detail .dt-meta')).toContainText('1 h 52 min');
+    await back(page);
+    await section(page, 'Movies');
+    await view(page, 'wide');
+    const film = page.locator('#items .card.box.wide').first();
+    await expect(film.locator('.box-fact')).toHaveText('1 h 52 min');
+    await expect(film.locator('.box-fact svg')).toHaveCount(1);
+});
 
 test('box views send no request and read storage no more than the poster grid while moving', async ({ page }) => {
     await boot(page);

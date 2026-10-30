@@ -174,6 +174,17 @@ window.List = function (el, options) {
         el.appendChild(strip);
     }
 
+    var CLOCK_ICON = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7z';
+    var SEASONS_ICON = 'M4 6H2v14a2 2 0 0 0 2 2h14v-2H4zm16-4H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 14H8V4h12z';
+
+    // A Wide box line with a small icon before its text.
+    function fact(icon, value) {
+        var node = text('box-meta box-fact', '');
+        node.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + icon + '"/></svg>';
+        node.appendChild(document.createTextNode(value));
+        return node;
+    }
+
     function text(cls, value) {
         var node = document.createElement('div');
         node.className = cls;
@@ -220,7 +231,9 @@ window.List = function (el, options) {
         if (facts.sub) caption.appendChild(text('box-meta', facts.sub));
         else if (wide) {
             if (facts.year) caption.appendChild(text('box-meta', facts.year));
-            if (facts.length) caption.appendChild(text('box-meta', facts.length));
+            // A show's seasons, else the length, each after its icon (#73).
+            if (facts.seasons) caption.appendChild(fact(SEASONS_ICON, facts.seasons));
+            else if (facts.length) caption.appendChild(fact(CLOCK_ICON, facts.length));
         } else if (facts.year || facts.score || facts.length) caption.appendChild(metaLine(facts));
         var plot = !wide && options.plot && options.plot(item);
         if (plot) caption.appendChild(text('box-plot', plot));

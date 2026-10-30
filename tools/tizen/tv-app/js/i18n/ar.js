@@ -289,6 +289,8 @@ I18n.tables.ar = {
     'unit.hoursMinutes': '{h} س {m} د',
     'unit.minutes': '{n} د',
     'unit.minutesOnly': '{m} د',
+    'unit.season': 'موسم واحد',
+    'unit.seasons': '{n} مواسم',
     'watched.markAs.unwatched': 'وضع علامة كغير مشاهد',
     'watched.markAs.watched': 'وضع علامة كمشاهد',
 };

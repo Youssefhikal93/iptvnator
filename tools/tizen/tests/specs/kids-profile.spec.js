@@ -100,6 +100,10 @@ test('a kids profile sees only ticked categories, has no Settings and leaves onl
     // Search and Home only find titles of the ticked category: in the fake
     // catalogue, Movie n is in category 1 + n % 3.
     const allowed = { has: (title) => /^Movie \d+/.test(title) && Number(title.match(/\d+/)[0]) % 3 === 0 };
+    // All movies searches the whole section (#69).
+    await moveTo(page, '#categories .focused .label', 'All movies', 'ArrowUp');
+    await expect(page.locator('#items .list-header')).toContainText('All movies');
+    await expect(page.locator('#items .skeleton')).toHaveCount(0);
     await enterItems(page);
     await toolbar(page, 'search');
     await press(page, 'Enter');

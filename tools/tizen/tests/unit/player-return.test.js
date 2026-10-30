@@ -188,7 +188,7 @@ test('#37 live zapping and fullscreen show controls again; preview Return still 
     assert.equal(s.player.key(s.keys.RETURN, true), false);
 });
 
-test('#79 a zap shows the channel banner instead of the controls; OK opens them, Return hides it and passes through', async function () {
+test('#79 a zap shows the channel banner instead of the controls; OK opens them, Return only hides it', async function () {
     var s = scene();
     var zapped = Object.assign(s.request(true), { zapped: true, banner: { name: 'Fixture', num: 3, logo: '' } });
     await s.player.play(zapped, null);
@@ -200,7 +200,7 @@ test('#79 a zap shows the channel banner instead of the controls; OK opens them,
     assert.equal(s.controls.classList.contains('hidden'), false);
     await s.player.play(Object.assign({}, zapped), null);
     assert.equal(banner.classList.contains('hidden'), false);
-    assert.equal(s.player.key(s.keys.RETURN, true), false);
+    assert.equal(s.player.key(s.keys.RETURN, true), true);
     assert.equal(banner.classList.contains('hidden'), true);
     assert.equal(s.controls.classList.contains('hidden'), true);
     // The first start of a channel keeps the full controls.

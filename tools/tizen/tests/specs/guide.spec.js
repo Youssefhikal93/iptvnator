@@ -126,6 +126,8 @@ test('OK on now reuses live playback, channel list and previous channel, and ret
     await playing(page);
     await expect(page.locator('#pl-title')).toHaveText('1. Channel 1 (cat all)');
     await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
+    // Return while the zap banner (#79) shows only hides it.
+    await expect(page.locator('#pl-banner .zb-name')).toBeHidden({ timeout: 10000 });
     await back(page);
     await expect(page.locator('#guide')).toBeVisible();
     await expect(page.locator('.gd-row.selected')).toHaveAttribute('data-channel', '1001');

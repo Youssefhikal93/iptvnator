@@ -86,9 +86,12 @@ test('#79 OK or Info on the banner opens the full controls; other keys, Return t
     await expect(banner(page).locator('.zb-name')).toHaveText('Channel 3 (cat 3)');
     await playing(page);
     await expect(banner(page)).toBeVisible();
-    // Return hides it and still leaves the player, as before the banner.
+    // Return only hides it, as it hid the controls a zap showed before the
+    // banner; the next Return leaves the player.
     await back(page);
     await expect(banner(page)).toBeHidden();
+    await expect(page.locator('#player')).toBeVisible();
+    await back(page);
     await expect(page.locator('#player')).toBeHidden();
 });
 

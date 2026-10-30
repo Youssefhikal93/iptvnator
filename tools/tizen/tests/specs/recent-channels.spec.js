@@ -48,6 +48,8 @@ test('Recent channels lists channels watched 10 s or more, newest first, in the 
     await expect(page.locator('#pl-title')).not.toHaveText(title);
     await page.waitForTimeout(3000);
     await expect(page.locator('#pl-controls')).toBeHidden();
+    // The zap banner (#79) goes by itself; Return while it shows only hides it.
+    await expect(page.locator('#pl-banner .zb-name')).toBeHidden();
     await back(page);
     await press(page, 'ArrowLeft');
     await recentRow(page);

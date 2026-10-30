@@ -1323,12 +1323,14 @@ window.Player = (function () {
     }
 
     // While the channel banner shows (#79): OK or Info opens the full
-    // controls, ▶ starts the programme over where it can; any other key
-    // (Return too) hides it and does what it always does.
+    // controls, ▶ starts the programme over where it can, Return only hides
+    // it (as it hides the controls a zap showed before #79); any other key
+    // hides it and does what it always does.
     function bannerKey(code) {
         var again = code === KEY.RIGHT && ready && !!epg.watchFromStart();
         if (zapEnd) zapEnd = 'quiet';
         banner.hide();
+        if (Keys.isBack(code)) return true;
         if (again) startOver();
         else if (code === KEY.ENTER || code === KEY.INFO) showControls();
         else return false;

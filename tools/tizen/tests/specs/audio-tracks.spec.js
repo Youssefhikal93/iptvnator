@@ -1,4 +1,4 @@
-const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup } = require('./helpers');
+const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup, moveTo, section, enterItems, sendKeyCode } = require('./helpers');
 
 // #55: the file holds Arabic AAC 2.0, English AC-3 5.1 and English DTS 5.1
 // (fixtures/audio/tracks.mkv.head). Like a Samsung TV, the fake AVPlay lists
@@ -160,4 +160,76 @@ test('#60 preferred sound is switched once AVPlay plays, as AVPlay refuses it be
     await expect(page.locator('#player')).toHaveClass(/av/);
     await expect(page.locator('#pl-status')).toBeHidden();
     await expect.poll(() => selected(page)).toEqual(['AUDIO:2']);
+});
+
+for (const subtitlesOff of [false, true]) {
+    test('#83 show subtitles ' + (subtitlesOff ? 'Off' : 'language') + ' follow Next and later visits', async ({ page, request }) => {
+        await samsungPlayer(page, request, 'language-tracks.mkv.head', { storage: {
+            settings: { preferredSubtitles: { language: subtitlesOff ? 'en' : '', when: 'always' } },
+        } });
+        await openFirst(page, 'Series');
+        await press(page, 'Enter');
+        await expect(page.locator('#pl-status')).toBeHidden();
+        await expect(page.locator('#pl-subtitle')).toContainText('S1 E1');
+        await playerMenu(page);
+        await playerGroup(page, 'Subtitles');
+        await press(page, subtitlesOff ? 'ArrowUp' : 'ArrowDown');
+        await press(page, 'Enter');
+        await expect(choices(page).nth(subtitlesOff ? 0 : 1)).toHaveClass(/active/);
+        await back(page);
+        await back(page);
+        await press(page, 'ArrowDown');
+        await moveTo(page, '#pl-buttons .focus', 'Next', 'ArrowRight');
+        await press(page, 'Enter');
+        await expect(page.locator('#pl-subtitle')).toContainText('S1 E2');
+        await expect(page.locator('#pl-status')).toBeHidden();
+        expect(await page.evaluate(() => nativePlayback.text)).toBe(subtitlesOff ? -1 : 3);
+        await page.reload();
+        await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+        await openFirst(page, 'Series');
+        await press(page, 'Enter');
+        await expect(page.locator('#pl-status')).toBeHidden();
+        expect(await page.evaluate(() => nativePlayback.text)).toBe(subtitlesOff ? -1 : 3);
+    });
+}
+
+test('#83 live audio and subtitles belong to the channel and Off survives a restart', async ({ page, request }) => {
+    // Force the Samsung route for live too; the fake device never opens a real stream.
+    await page.addInitScript(() => Object.defineProperty(window, 'Hls', { get: () => undefined, set: () => {} }));
+    await samsungPlayer(page, request, 'language-tracks.mkv.head');
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await press(page, 'Enter');
+    await expect(page.locator('#player')).toHaveClass(/av/);
+    await expect(page.locator('#pl-status')).toBeHidden();
+    await sendKeyCode(page, 405);
+    // The catch-up row arrives late and redraws the menu.
+    await expect(choices(page).first()).toContainText('Start over');
+    await playerGroup(page, 'Audio');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(choices(page).nth(1)).toHaveClass(/active/);
+    expect(await page.evaluate(() => nativePlayback.audio)).toBe(2);
+    await back(page);
+    await playerGroup(page, 'Subtitles');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    expect(await page.evaluate(() => [nativePlayback.audio, nativePlayback.text])).toEqual([2, 3]);
+    await sendKeyCode(page, 405);
+    await sendKeyCode(page, 427);
+    await expect(page.locator('#pl-title')).toContainText('2. Channel 2');
+    await expect(page.locator('#pl-status')).toBeHidden();
+    expect(await page.evaluate(() => [nativePlayback.audio, nativePlayback.text])).toEqual([1, -1]);
+    await sendKeyCode(page, 404);
+    await expect(page.locator('#pl-title')).toContainText('1. Channel 1');
+    await expect(page.locator('#pl-status')).toBeHidden();
+    expect(await page.evaluate(() => [nativePlayback.audio, nativePlayback.text])).toEqual([2, 3]);
+    await sendKeyCode(page, 405);
+    await playerGroup(page, 'Subtitles');
+    await press(page, 'ArrowUp');
+    await press(page, 'Enter');
+    await page.reload();
+    await expect(page.locator('#player')).toHaveClass(/av/);
+    await expect(page.locator('#pl-status')).toBeHidden();
+    expect(await page.evaluate(() => [nativePlayback.audio, nativePlayback.text])).toEqual([2, -1]);
 });

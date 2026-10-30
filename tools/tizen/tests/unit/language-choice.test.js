@@ -67,13 +67,13 @@ test('#60 Off, unavailable subtitles and understood sound stay off; unknown soun
     });
 });
 
-test('#60 subtitle condition uses the selected sound; live TV ignores both preferences', function () {
+test('#60 subtitle condition uses the selected sound, including live TV (#83)', function () {
     var s = scene('en', 'en', 'only');
     s.apply();
     assert.deepEqual(s.calls, ['audio:1']);
     s.calls.length = 0;
     s.apply({ live: true });
-    assert.deepEqual(s.calls, []);
+    assert.deepEqual(s.calls, ['audio:1']);
 });
 
 test('#60 native and AVPlay subtitle metadata survives, and Off leaves a showing subtitle on', function () {
@@ -99,4 +99,55 @@ test('#60 a refused sound switch is not done, so the player tries again later', 
     s.tracks.audio[1].select = function () { s.calls.push('audio:ok'); };
     assert.equal(env.LanguageChoice.apply({}, s.tracks, env.LanguageChoice.read()), true);
     assert.deepEqual(s.calls, ['audio:ok']);
+});
+
+for (var kind of ['show', 'channel']) {
+    test('#83 ' + kind + ' subtitle pick overrides Settings and Off disables a showing track', function () {
+        var s = scene('ar', 'en', 'only');
+        var request = kind === 'show' ? { episodes: { show: 's1|3001' } } : { live: true, channel: 's1|1001' };
+        s.env.AudioChoice.rememberSubtitle(request, 'en');
+        s.apply(request);
+        assert.deepEqual(s.calls, ['text:0'], 'manual choice ignores the only-ununderstood condition');
+        s.calls.length = 0;
+        s.tracks.text[0].active = false;
+        s.tracks.text[1].active = true;
+        s.env.AudioChoice.rememberSubtitle(request, false);
+        s.apply(request);
+        assert.deepEqual(s.calls, ['text:-1']);
+        s.calls.length = 0;
+        s.env.AudioChoice.rememberSubtitle(request, 'de');
+        s.apply(request);
+        assert.deepEqual(s.calls, [], 'an absent saved language leaves stream defaults alone');
+    });
+}
+
+test('#83 live Settings defaults apply without inheriting a movie or other channel pick', function () {
+    var s = scene('en', 'en', 'always');
+    s.env.AudioChoice.remember({}, 'ar');
+    s.env.AudioChoice.remember({ live: true, channel: 's1|1001' }, 'ar');
+    s.apply({ live: true, channel: 's1|1002' });
+    assert.deepEqual(s.calls, ['audio:1', 'text:0']);
+});
+
+test('#83 a refused subtitle switch is retried just like a refused audio switch', function () {
+    var s = scene('', '', 'always');
+    var request = { episodes: { show: 's1|3001' } };
+    s.env.AudioChoice.rememberSubtitle(request, 'en');
+    s.env.Log = { error: function () {} };
+    s.tracks.text[1].select = function () { throw new Error('InvalidStateError'); };
+    assert.equal(s.env.LanguageChoice.apply(request, s.tracks, s.env.LanguageChoice.read()), false);
+    s.tracks.text[1].select = function () { s.calls.push('text:ok'); };
+    assert.equal(s.env.LanguageChoice.apply(request, s.tracks, s.env.LanguageChoice.read()), true);
+    assert.deepEqual(s.calls, ['text:ok']);
+});
+
+test('#83 a saved subtitle absent from the first AVPlay list gets a later look', function () {
+    var s = scene('', '', 'always');
+    var request = { live: true, channel: 's1|1001' };
+    s.env.AudioChoice.rememberSubtitle(request, 'en');
+    var loadedText = s.tracks.text.pop();
+    assert.equal(s.env.LanguageChoice.apply(request, s.tracks, s.env.LanguageChoice.read()), false);
+    s.tracks.text.push(loadedText);
+    assert.equal(s.env.LanguageChoice.apply(request, s.tracks, s.env.LanguageChoice.read()), true);
+    assert.deepEqual(s.calls, ['text:0']);
 });

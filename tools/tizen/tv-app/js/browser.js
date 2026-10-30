@@ -411,6 +411,7 @@ window.Browser = function (hooks) {
 
     function liveRequest(channel) {
         var req = state.adapter.liveRequest(channel);
+        req.channel = sourceId() + '|' + Library.keyOf('live', channel);
         if (state.source.type === 'xtream' && CatchUp.available(channel)) {
             req.watchFromStart = function (programme) {
                 var archive = catchUpRequest(channel, programme);

@@ -53,13 +53,18 @@ Tracks element or the MP4 trak boxes in the first 64 KiB, reusing the block the 
 read (Matroska files without the list there also have their last 64 KiB read). Same 2 s budget;
 the result, or "no list found", is kept per title in `iptvnator-tv:sniff-tracks` (newest 50).
 Tracks AVPlay leaves out (DTS, TrueHD) show as "Not supported on this TV". The language
-picked there is kept per show and as the latest pick (`js/audio-choice.js`, per profile),
-and the next episode starts in that show's pick when the file has it. Otherwise,
-Settings → Playback → Preferred sound wins; when Not set, the latest pick is used.
-Preferred subtitles selects a matching loaded file track, or stays off if absent.
-Its Show subtitles condition can limit this to sound in neither preferred language
-(unknown sound languages count as not understood). Both preferences belong to the
-viewer profile, exclude live TV, and never search for or download subtitles.
+picked there is kept per show and live channel (#83, `js/audio-choice.js`, per profile).
+Subtitle track languages and explicit Off choices are also kept per show and channel,
+so the next episode or later visit uses that choice when available. A missing chosen
+language leaves the stream's default unchanged. Off also suppresses cached downloaded
+subtitles for the show. Unlabelled subtitle tracks do not replace a saved choice.
+Each of the four lists keeps the newest 100 choices; source ids keep channels and shows
+from different sources separate. The latest sound pick still applies to movies and new shows.
+Without a manual choice, Settings > Playback > Preferred sound wins; when Not set,
+movies and new shows use the latest sound pick. Preferred subtitles selects a
+matching loaded track. Its Show subtitles condition can limit this to sound in neither
+preferred language (unknown sound counts as not understood). Settings defaults apply to
+live TV too. These choices never search for or download subtitles automatically.
 
 A file whose only sound the TV cannot decode (#54, `js/audio-route.js`) opens first on the
 provider's `.m3u8`, then `.ts` address for the same id, where many Xtream servers convert the

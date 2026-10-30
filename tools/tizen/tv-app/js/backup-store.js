@@ -72,6 +72,7 @@ window.BackupStore = (function () {
         var existing = Sources.all();
         var sources = mode === 'merge' ? existing.slice() : [];
         var writes = {};
+        var sourceIds = Object.create(null);
         var attributed = {};
         var catalogues = [];
         if (mode === 'replace') existing.forEach(function (source) {
@@ -83,6 +84,7 @@ window.BackupStore = (function () {
             while (existing.concat(sources).some(function (source) { return source.id === id; })) id += '-new';
             var source = match || Object.assign({}, entry.source, { id: id });
             if (!match) sources.push(source);
+            sourceIds[entry.exportedId] = source.id;
             ['favorites', 'recent'].forEach(function (kind) {
                 var key = kind + ':' + source.id;
                 var saved = writes[key] || (mode === 'merge' ? read(key, {}) : {});
@@ -111,6 +113,7 @@ window.BackupStore = (function () {
             });
             writes[currentKey] = positions(currentProgress, fallback);
         }
+        writes['audio-choice'] = AudioChoice.merge(mode === 'merge' ? read('audio-choice', null) : null, backup.audioChoice, sourceIds);
         commit(writes, sources);
         // Raw playlists are catalogue data, never part of the localStorage library budget.
         return Promise.all(catalogues.map(function (catalogue) {

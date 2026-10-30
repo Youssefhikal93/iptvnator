@@ -26,7 +26,9 @@ Dark blue (`dark`, default), Dark black (`black`), Dark grey (`grey`) and Light 
 | `--text-sm`, `--text-meaning`, `--text-body` | 22px, 24px, 30px | 20px, 24px, 28px |
 
 Grid and Home columns share the row width (`minmax(0, 1fr)`), so both
-densities reach the right edge. Lists keep today's rows in both densities
+densities reach the right edge. In Movies and Series the Grid's poster box
+takes the poster's 2:3 shape from the card width instead of `--poster-h`
+(Live TV channel tiles keep it), so a poster is never cut (#69). Lists keep today's rows in both densities
 (`--row-h` 64px, `--item-row-h` 84px, 11 category and 9 item rows): source
 details and guide rows must fit. `List` and `Home` read the counts through
 `AppearanceLayout.count`, including after a density change. Nothing scrolls a

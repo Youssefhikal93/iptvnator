@@ -59,8 +59,6 @@ I18n.tables.ru = {
     'form.username': 'Имя пользователя',
     'guide.noChannels': 'В этой категории нет каналов',
     'guide.noInfo': 'Нет информации о программе',
-    'header.gridView': 'Вид сеткой',
-    'header.listView': 'Вид списком',
     'home.continueButton': '▶  Продолжить просмотр',
     'load.goToSources': 'Перейти к источникам',
     'manage.categories': 'Категории',

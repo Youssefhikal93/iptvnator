@@ -59,8 +59,6 @@ I18n.tables.zh = {
     'form.username': '用户名',
     'guide.noChannels': '此分类中没有频道',
     'guide.noInfo': '没有节目信息',
-    'header.gridView': '网格视图',
-    'header.listView': '列表视图',
     'home.continueButton': '▶  继续观看',
     'load.goToSources': '前往来源',
     'manage.categories': '分类',

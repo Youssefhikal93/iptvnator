@@ -59,8 +59,6 @@ I18n.tables.by = {
     'form.username': 'Імя карыстальніка',
     'guide.noChannels': 'У гэтай катэгорыі няма каналаў',
     'guide.noInfo': 'Няма інфармацыі аб праграме',
-    'header.gridView': 'Выгляд сеткай',
-    'header.listView': 'Выгляд спісам',
     'home.continueButton': '▶  Працягнуць прагляд',
     'load.goToSources': 'Перайсці да крыніц',
     'manage.categories': 'Катэгорыі',

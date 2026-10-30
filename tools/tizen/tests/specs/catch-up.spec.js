@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, toolbar, press, sendKeyCode, back, playing, playerMenu } = require('./helpers');
+const { test, expect, boot, section, enterItems, chooseView, press, sendKeyCode, back, playing, playerMenu } = require('./helpers');
 
 async function pastProgramme(page) {
     await sendKeyCode(page, 458);
@@ -13,8 +13,7 @@ test('archive badges appear on live rows and grid cards only for archive channel
     await expect(page.locator('#items .row').nth(0).locator('.catch-up-badge')).toHaveText('Catch-up 3 days');
     await expect(page.locator('#items .row').nth(1).locator('.catch-up-badge')).toHaveCount(0);
     await enterItems(page);
-    await toolbar(page, 'grid');
-    await press(page, 'Enter');
+    await chooseView(page, 'Grid');
     await expect(page.locator('#items .card').nth(0).locator('.catch-up-badge')).toHaveText('Catch-up 3 days');
     await expect(page.locator('#items .card').nth(1).locator('.catch-up-badge')).toHaveCount(0);
 });

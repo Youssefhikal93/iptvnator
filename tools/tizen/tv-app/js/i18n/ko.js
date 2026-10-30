@@ -59,8 +59,6 @@ I18n.tables.ko = {
     'form.username': '사용자 이름',
     'guide.noChannels': '이 카테고리에 채널이 없습니다',
     'guide.noInfo': '프로그램 정보 없음',
-    'header.gridView': '그리드 보기',
-    'header.listView': '목록 보기',
     'home.continueButton': '▶  이어서 시청',
     'load.goToSources': '소스로 이동',
     'manage.categories': '카테고리',

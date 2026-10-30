@@ -9,11 +9,12 @@ window.BoxCards = (function () {
         return Tmdb.cached(item, section === 'series' ? 'tv' : 'movie');
     }
 
-    function rating(item, tmdb) {
+    // Out of 10, one decimal: "7.4", or ''.
+    function score(item, tmdb) {
         var value = parseFloat(item.rating);
         if (!(value > 0) && parseFloat(item.rating_5based) > 0) value = parseFloat(item.rating_5based) * 2;
         if (!(value > 0) && tmdb) value = parseFloat(tmdb.vote_average);
-        return value > 0 ? '★ ' + (Math.round(value * 10) / 10) : '';
+        return value > 0 ? String(Math.round(value * 10) / 10) : '';
     }
 
     function length(item) {
@@ -31,12 +32,6 @@ window.BoxCards = (function () {
     }
 
     return {
-        // "2021 · ★ 7.4 · 1 h 52 min", or a collection's own line.
-        meta: function (item, section) {
-            if (item.sub) return item.sub;
-            var tmdb = saved(item, section);
-            return [year(item, tmdb), rating(item, tmdb), length(item)].filter(Boolean).join(' · ');
-        },
         plot: function (item, section) {
             var text = item.plot || item.description;
             if (!text) {
@@ -45,11 +40,12 @@ window.BoxCards = (function () {
             }
             return text ? String(text) : '';
         },
-        // A series' own backdrop when the provider sends one, else the poster.
-        picture: function (item) {
-            var backdrop = item.backdrop_path;
-            if (Array.isArray(backdrop)) backdrop = backdrop[0];
-            return (typeof backdrop === 'string' && /^https?:/.test(backdrop) && backdrop) || item.stream_icon || item.cover || null;
+        // A collection's own line as `sub`, else the year, the score out of
+        // 10 ("7.4") and the length, each placed by the box (#69).
+        facts: function (item, section) {
+            if (item.sub) return { sub: item.sub };
+            var tmdb = saved(item, section);
+            return { year: year(item, tmdb), score: score(item, tmdb), length: length(item) };
         },
     };
 })();

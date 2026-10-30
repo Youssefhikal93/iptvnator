@@ -59,8 +59,6 @@ I18n.tables.ja = {
     'form.username': 'ユーザー名',
     'guide.noChannels': 'このカテゴリーにチャンネルがありません',
     'guide.noInfo': '番組情報がありません',
-    'header.gridView': 'グリッド表示',
-    'header.listView': 'リスト表示',
     'home.continueButton': '▶  視聴を続ける',
     'load.goToSources': 'ソースへ移動',
     'manage.categories': 'カテゴリー',

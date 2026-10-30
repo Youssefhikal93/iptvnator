@@ -59,8 +59,6 @@ I18n.tables.fr = {
     'form.username': 'Nom d\'utilisateur',
     'guide.noChannels': 'Aucune chaîne dans cette catégorie',
     'guide.noInfo': 'Aucune information sur le programme',
-    'header.gridView': 'Vue en grille',
-    'header.listView': 'Vue en liste',
     'home.continueButton': '▶  Continuer à regarder',
     'load.goToSources': 'Aller aux Sources',
     'manage.categories': 'Catégories',

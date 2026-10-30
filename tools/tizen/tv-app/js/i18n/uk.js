@@ -59,8 +59,6 @@ I18n.tables.uk = {
     'form.username': 'Ім\'я користувача',
     'guide.noChannels': 'В цій категорії немає каналів',
     'guide.noInfo': 'Програма відсутня',
-    'header.gridView': 'Сітка',
-    'header.listView': 'Список',
     'home.continueButton': '▶  Продовжити перегляд',
     'load.goToSources': 'Перейти до Джерел',
     'manage.categories': 'Категорії',

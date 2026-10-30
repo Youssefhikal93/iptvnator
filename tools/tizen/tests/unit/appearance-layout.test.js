@@ -82,13 +82,15 @@ test('CSS column counts drive grid rendering, vertical moves, last rows and skel
     list.setActive(true);
     assert.equal(list.cols(), 5);
     assert.equal(list.pageSize(), 10);
-    assert.equal(pane.children[1].children.length, 10);
+    // Two rows, then the next row's top as a dimmed peek.
+    assert.equal(pane.children[1].children.length, 15);
+    assert.equal(pane.children[1].children.filter(function (card) { return /\bpeek\b/.test(card.className); }).length, 5);
     list.move(list.cols());
     assert.equal(list.item().name, 'Title 5');
     run.globals.Prefs.set('density', 'compact');
     assert.equal(list.cols(), 6);
     assert.equal(list.pageSize(), 12);
-    assert.equal(pane.children[1].children.length, 12);
+    assert.equal(pane.children[1].children.length, 18);
     assert.equal(list.item().name, 'Title 5');
     list.move(list.cols());
     assert.equal(list.item().name, 'Title 11');

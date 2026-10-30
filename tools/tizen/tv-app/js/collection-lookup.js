@@ -35,6 +35,9 @@ window.CollectionLookup = (function () {
         // source) is walked from its start; films already known are skipped.
         var walked = null;
         var failures = Object.create(null);
+        // Bumped by every start: an answer to an older pass (one asked before
+        // a Refresh) is dropped, so it can't settle a film the Refresh marked.
+        var gen = 0;
         var self = { deps: deps, done: 0, total: 0, finished: false };
 
         function later(ms) {
@@ -67,10 +70,10 @@ window.CollectionLookup = (function () {
 
         // `before`: the request count when this film's look-up began, so the
         // pause covers its search and details too.
-        function fetchCollection(id, before) {
+        function fetchCollection(id, before, mine) {
             if (before === undefined) before = Tmdb.fetches();
             return Tmdb.collection(id, deps.index.forced(id)).then(function (result) {
-                if (run !== self) return;
+                if (run !== self || mine !== gen) return;
                 if (result.status === 'failed') return failed('c' + id);
                 deps.index.setCollection(id, result.status === 'none' ? { none: true, fetched: Date.now() } : CollectionIndex.info(result.body));
                 deps.changed();
@@ -93,29 +96,31 @@ window.CollectionLookup = (function () {
             var item = nextFilm(movies);
             if (!item) {
                 var wanted = deps.index.stale(language(), MAX_AGE).filter(function (id) { return (failures['c' + id] || 0) < MAX_FAILURES; });
-                if (wanted.length) return fetchCollection(wanted[0]);
+                if (wanted.length) return fetchCollection(wanted[0], undefined, gen);
                 self.finished = true;
                 deps.index.save();
                 return deps.changed();
             }
             var before = Tmdb.fetches();
+            var mine = gen;
             // A film asked again by a Refresh skips its saved details.
             Tmdb.lookup(item, 'movie', deps.index.film(item) !== undefined).then(function (result) {
-                if (run !== self) return;
+                if (run !== self || mine !== gen) return;
                 if (result.status === 'failed') return failed(deps.index.filmKey(item));
                 var body = result.body || {};
                 var collection = body.belongs_to_collection && body.belongs_to_collection.id;
                 deps.index.setFilm(item, collection || 0, body.id || 0);
                 self.done++;
                 deps.changed();
-                if (collection && (!deps.index.collection(collection) || deps.index.forced(collection))) return fetchCollection(collection, before);
+                if (collection && (!deps.index.collection(collection) || deps.index.forced(collection))) return fetchCollection(collection, before, mine);
                 paced(before);
             }).catch(function () {
-                if (run === self) failed(deps.index.filmKey(item));
+                if (run === self && mine === gen) failed(deps.index.filmKey(item));
             });
         }
 
         self.start = function (fresh) {
+            gen++;
             self.finished = false;
             cursor = 0;
             walked = null;

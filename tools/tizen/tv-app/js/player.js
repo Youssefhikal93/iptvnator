@@ -965,7 +965,9 @@ window.Player = (function () {
         if (at + 1 < routes.length) {
             route.next = function (why) {
                 // The TV reports one failure twice (onerror and prepareAsync's error).
-                if (left) return;
+                // A cancelled attempt's late callback must not stop the
+                // AVPlay that a newer title now uses.
+                if (left || ended()) return;
                 left = true;
                 Log.info('AUDIO route ' + route.name + ' ' + why);
                 try {

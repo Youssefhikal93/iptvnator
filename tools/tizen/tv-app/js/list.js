@@ -181,33 +181,63 @@ window.List = function (el, options) {
         return node;
     }
 
-    // A Wide picture or Info box (#66): the picture, then title, meta and plot.
+    // "2021 · ★ 7.4 · 1 h 52 min" with the star part in the rating colour.
+    function metaLine(facts) {
+        var line = text('box-meta', '');
+        [facts.year, facts.score, facts.length].forEach(function (part, i) {
+            if (!part) return;
+            if (line.childNodes.length) line.appendChild(document.createTextNode(' · '));
+            if (i === 1) line.appendChild(Object.assign(document.createElement('span'), { className: 'box-star', textContent: '★ ' + part }));
+            else line.appendChild(document.createTextNode(part));
+        });
+        return line;
+    }
+
+    // A Wide picture or Info box (#66, #69): the whole poster and, beside it,
+    // the title on top, then the facts. Wide boxes stand on a blurred copy of
+    // the poster, with the rating on the poster and year and length on lines
+    // of their own; Info boxes add the plot.
     function box(item, card) {
+        var wide = state.boxes === 'wide';
         card.className += ' box ' + state.boxes;
+        var src = options.icon && options.icon(item);
+        var facts = (options.facts && options.facts(item)) || { sub: options.sub && options.sub(item) };
+        if (wide && src) {
+            var blur = document.createElement('div');
+            blur.className = 'box-blur';
+            blur.style.backgroundImage = 'url("' + String(src).replace(/"/g, '%22') + '")';
+            card.appendChild(blur);
+        }
         var picture = document.createElement('div');
         picture.className = 'poster';
-        var src = (options.picture && options.picture(item)) || (options.icon && options.icon(item));
         picture.appendChild(src ? logo(src, item) : placeholder(item));
+        if (wide && facts.score) picture.appendChild(text('box-rate', '★ ' + facts.score));
         if (options.decorate) options.decorate(picture, item);
         card.appendChild(picture);
         var caption = document.createElement('div');
         caption.className = 'box-text';
         caption.appendChild(text('card-title', options.label(item)));
-        var meta = options.meta ? options.meta(item) : options.sub && options.sub(item);
-        if (meta) caption.appendChild(text('box-meta', meta));
-        var plot = state.boxes === 'info' && options.plot && options.plot(item);
+        if (facts.sub) caption.appendChild(text('box-meta', facts.sub));
+        else if (wide) {
+            if (facts.year) caption.appendChild(text('box-meta', facts.year));
+            if (facts.length) caption.appendChild(text('box-meta', facts.length));
+        } else if (facts.year || facts.score || facts.length) caption.appendChild(metaLine(facts));
+        var plot = !wide && options.plot && options.plot(item);
         if (plot) caption.appendChild(text('box-plot', plot));
         card.appendChild(caption);
     }
 
-    // Poster cards follow CSS columns; only the visible rows exist in the DOM.
+    // Poster cards follow CSS columns; only the visible rows exist in the DOM,
+    // and the top of the row after them, dimmed, so the viewer sees the
+    // list goes on (like Home's next row).
     function renderGrid(start, count, size) {
         var grid = document.createElement('div');
         grid.className = 'grid';
-        for (var i = start; i < Math.min(count, start + size.cols * size.rows); i++) {
+        var shown = start + size.cols * size.rows;
+        for (var i = start; i < Math.min(count, shown + size.cols); i++) {
             var item = state.items[i];
             var card = document.createElement('div');
-            card.className = plates() ? 'card channel' : 'card';
+            card.className = (plates() ? 'card channel' : 'card') + (i >= shown ? ' peek' : '');
             if (i === state.index) card.className += state.active ? ' focused' : ' selected';
             if (state.boxes && !plates()) {
                 box(item, card);

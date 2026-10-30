@@ -1,4 +1,4 @@
-const { test, expect, boot, section, category, enterItems, toolbar, press } = require('./helpers');
+const { test, expect, boot, section, category, enterItems, toolbar, chooseView, press } = require('./helpers');
 
 test('Live TV, Movies and Series load provider categories and items', async ({ page }) => {
     await boot(page);
@@ -51,8 +51,7 @@ test('search filters titles and list/grid choice survives reload', async ({ page
     await boot(page);
     await section(page, 'Movies');
     await enterItems(page);
-    await toolbar(page, 'list');
-    await press(page, 'Enter');
+    await chooseView(page, 'List');
     await press(page, 'ArrowDown');
     await expect(page.locator('#items .row.focused')).toBeVisible();
     await toolbar(page, 'search');

@@ -59,8 +59,6 @@ I18n.tables.de = {
     'form.username': 'Nutzername',
     'guide.noChannels': 'Keine Sender in dieser Kategorie',
     'guide.noInfo': 'Keine Programminformationen',
-    'header.gridView': 'Rasteransicht',
-    'header.listView': 'Listenansicht',
     'home.continueButton': '▶  Weiterschauen',
     'load.goToSources': 'Zu Quellen wechseln',
     'manage.categories': 'Kategorien',

@@ -4,11 +4,18 @@ window.Browser = function (hooks) {
     'use strict';
 
     var KEY = Keys;
-    // Header toolbar: search, the genre filter (Movies and Series), list,
-    // grid, the Wide picture and Info boxes (Movies and Series, #66), then
-    // Sort or the Live TV guide.
-    var TOOLS = ['search', 'list', 'grid', 'wide', 'info', 'sort'];
+    // Header toolbar: search, the genre filter (Movies and Series), one View
+    // button whose menu picks the layout (#69), then Sort or the Live TV guide.
+    var TOOLS = ['search', 'view', 'sort'];
     var BOXES = ['wide', 'info'];
+    // The layouts in the View menu; the button shows the one in use. The
+    // Wide picture and Info boxes are for Movies and Series (#66).
+    var VIEWS = [
+        { mode: 'list', label: 'settings.list', icon: 'M3 13h2v-2H3zm0 4h2v-2H3zm0-8h2V7H3zm4 4h14v-2H7zm0 4h14v-2H7zM7 7v2h14V7z' },
+        { mode: 'grid', label: 'settings.grid', icon: 'M4 11h5V5H4zm0 7h5v-6H4zm6 0h5v-6h-5zm6 0h5v-6h-5zm-6-7h5V5h-5zm6-6v6h5V5z' },
+        { mode: 'wide', label: 'settings.wide', icon: 'M3 5h8v6H3zm10 0h8v6h-8zM3 13h8v6H3zm10 0h8v6h-8z' },
+        { mode: 'info', label: 'settings.info', icon: 'M3 4h6v7H3zm8 1h10v2H11zm0 3h7v2h-7zM3 13h6v7H3zm8 1h10v2H11zm0 3h7v2h-7z' },
+    ];
     var STEPS = {};
     STEPS[KEY.UP] = -1;
     STEPS[KEY.DOWN] = 1;
@@ -231,8 +238,7 @@ window.Browser = function (hooks) {
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
-        picture: BoxCards.picture,
-        meta: function (it) { return BoxCards.meta(it, state.section); },
+        facts: function (it) { return BoxCards.facts(it, state.section); },
         action: function () {
             return refreshAvailable() ? { label: I18n.t('collections.refresh'), focused: state.refreshFocus } : null;
         },
@@ -514,6 +520,8 @@ window.Browser = function (hooks) {
             state.collectionsTimer = null;
             if (state.section !== 'movies' || !state.base || state.searching) return;
             showCategories(categories.index(), true);
+            // A search in Collections keeps its results (shownCategory is
+            // false while they show).
             var row = shownCategory();
             if (row && row.virtual === 'collections' && !state.collection) showVirtual(row, items.index());
         }, 2000);
@@ -714,6 +722,25 @@ window.Browser = function (hooks) {
         renderChrome();
     }
 
+    function sectionViews() {
+        return VIEWS.filter(function (view) { return state.section !== 'live' || BOXES.indexOf(view.mode) === -1; });
+    }
+
+    // OK on the View button: the layouts with their icons, the one in use ticked.
+    function openViewMenu() {
+        var views = sectionViews();
+        var current = viewMode();
+        var at = views.map(function (view) { return view.mode; }).indexOf(current);
+        Menu.open(I18n.t('browser.view'), views.map(function (view) {
+            return {
+                icon: UI.html`<svg class="menu-view-icon" viewBox="0 0 24 24" aria-hidden="true"><path d=${view.icon} /></svg>`,
+                label: I18n.t(view.label),
+                check: view.mode === current,
+                run: function () { setView(view.mode); },
+            };
+        }), Math.max(0, at));
+    }
+
     // ---- Header toolbar and search ----
 
     function sortableSection() {
@@ -827,7 +854,7 @@ window.Browser = function (hooks) {
     function toolbarTools() {
         var sort = libraryRows.canSort(shownCategory());
         var tools = TOOLS.filter(function (tool) {
-            return tool === 'sort' ? sort : BOXES.indexOf(tool) === -1 || state.section !== 'live';
+            return tool === 'sort' ? sort : true;
         });
         if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
@@ -880,7 +907,31 @@ window.Browser = function (hooks) {
         $('search-input').blur();
     }
 
-    // Filters the section's full catalogue; an empty query restores the category.
+    // What the bar searches (#69): the row with no category id (All movies,
+    // All series, All channels) the whole section, Collections its
+    // collections, any other category or library row only its own items.
+    function searchScope() {
+        var row = categories.item();
+        if (!row || row.all || String(row.category_id) === '') return { all: true };
+        return { row: row, collections: row.virtual === 'collections' };
+    }
+
+    // The bar's placeholder names what it searches.
+    function searchPlaceholder() {
+        var scope = searchScope();
+        if (scope.collections) return I18n.t('browser.searchCollections');
+        if (scope.row) return I18n.t('browser.searchCategory', { category: I18n.categoryName(scope.row) });
+        return I18n.t(state.section === 'movies' ? 'browser.searchAllMovies' : state.section === 'series' ? 'browser.searchAllSeries' : 'browser.searchAllChannels');
+    }
+
+    function showResults(query, list, hint, raw) {
+        state.search.results = Find.rank(list, state.section, query);
+        setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), hint], raw);
+        renderChrome();
+        return state.search.results.length;
+    }
+
+    // Searches the category in use; an empty query restores it.
     function runSearch() {
         clearTimeout(state.searchTimer);
         var query = $('search-input').value.trim();
@@ -892,23 +943,25 @@ window.Browser = function (hooks) {
         var token = currentList.beginSearch();
         state.search = { section: section, query: query, results: [] };
         applyView();
-        // In Collections the bar finds collections by name: nothing is asked.
-        var shelf = categories.item();
-        if (shelf && shelf.virtual === 'collections') {
-            state.search.results = Find.rank(shelf.list(), section, query);
-            setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('collections.searchHint')], true);
-            renderChrome();
-            return Promise.resolve(state.search.results.length);
+        var scope = searchScope();
+        var row = scope.row;
+        // Collections and library rows are in memory: nothing is asked.
+        if (scope.collections) return Promise.resolve(showResults(query, row.list(), I18n.t('collections.searchHint'), true));
+        var onlyHere = row && I18n.t('empty.search.categoryHint', { category: I18n.categoryName(row) });
+        if (row && row.virtual) {
+            return Promise.resolve(showResults(query, row.list().filter(function (item) {
+                return visibility.allows(section, item, { sourceId: item.sourceId, withHidden: true });
+            }), onlyHere));
+        }
+        if (row && ParentalLock.isLocked(sourceId(), section, row.category_id) && !ParentalLock.isUnlocked()) {
+            return Promise.resolve(showResults(query, [], onlyHere));
         }
         items.loading();
-        return loadCatalogue({ section: section, kind: 'items' })
-            .then(function (all) {
+        return loadCatalogue(row ? { section: section, kind: 'items', id: row.category_id } : { section: section, kind: 'items' })
+            .then(function (list) {
                 if (!currentList.isActive(token)) return 0;
                 // Best matches first, like Home's search; no cap here.
-                state.search.results = Find.rank(visibility.items(section, all), section, query);
-                setItems(state.search.results, 0, [I18n.t('empty.search.title', { query: query }), I18n.t('empty.search.hint')]);
-                renderChrome();
-                return state.search.results.length;
+                return showResults(query, row ? shownItems(row, list) : visibility.items(section, list), onlyHere || I18n.t('empty.search.hint'));
             })
             .catch(function (err) {
                 if (currentList.isActive(token)) fail(items, 'SEARCH')(err);
@@ -946,7 +999,7 @@ window.Browser = function (hooks) {
         else if (code === KEY.ENTER && tool === 'sort') openSortMenu();
         else if (code === KEY.ENTER && tool === 'genre') openGenreMenu();
         else if (code === KEY.ENTER && tool === 'guide') openGuide();
-        else if (code === KEY.ENTER) setView(tool);
+        else if (code === KEY.ENTER && tool === 'view') openViewMenu();
         else return code === KEY.UP || code === KEY.RIGHT;
         renderChrome();
         return true;
@@ -1037,7 +1090,7 @@ window.Browser = function (hooks) {
         document.body.classList.toggle('bar-off', off);
         $('searchbar').classList.toggle('focused', focus === 'search');
         var input = $('search-input');
-        input.placeholder = on ? I18n.t('browser.searchIn', { section: sectionOf(state.section).label }) : I18n.t('browser.search');
+        input.placeholder = on ? searchPlaceholder() : I18n.t('browser.search');
         if (!state.searching) input.value = currentList.showingSearch() ? state.search.query : '';
         Array.prototype.forEach.call(document.querySelectorAll('#view-toggle .view-btn'), function (btn) {
             var mode = btn.getAttribute('data-mode');
@@ -1047,7 +1100,12 @@ window.Browser = function (hooks) {
                 btn.setAttribute('aria-pressed', String(hideOn));
                 btn.textContent = I18n.t('browser.hideWatched') + ': ' + I18n.t(hideOn ? 'common.on' : 'common.off');
             }
-            if (mode === 'sort' || BOXES.indexOf(mode) !== -1) btn.classList.toggle('hidden', !on || tools.indexOf(mode) === -1);
+            if (mode === 'sort' || mode === 'view') btn.classList.toggle('hidden', !on || tools.indexOf(mode) === -1);
+            if (mode === 'view') {
+                var shown = VIEWS.filter(function (view) { return view.mode === viewMode(); })[0] || VIEWS[0];
+                btn.setAttribute('data-view', shown.mode);
+                btn.querySelector('path').setAttribute('d', shown.icon);
+            }
             if (mode === 'guide') btn.classList.toggle('hidden', !guideAvailable());
             if (mode === 'genre') {
                 // The genre in use shows on the button.

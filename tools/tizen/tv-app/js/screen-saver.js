@@ -33,8 +33,10 @@ window.ScreenSaver = function (deps) {
         }
     }
 
+    // With "The TV's own" (#71) ours never starts and Samsung's runs.
     function read() {
-        wait = Number(Prefs.get('screenSaverMs')) || 0;
+        const ours = Prefs.get('screenSaverKind') !== 'tv';
+        wait = ours ? Number(Prefs.get('screenSaverMs')) || 0 : 0;
         samsung(wait > 0);
     }
 
@@ -110,7 +112,7 @@ window.ScreenSaver = function (deps) {
     }, true);
 
     Prefs.onChange((name) => {
-        if (name !== 'screenSaverMs') return;
+        if (name !== 'screenSaverMs' && name !== 'screenSaverKind') return;
         read();
         arm();
     });

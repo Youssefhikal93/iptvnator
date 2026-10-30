@@ -37,6 +37,8 @@ window.Prefs = (function () {
         topBar: 'on',
         menuPosition: 'side',
         screenSaverMs: 600000,
+        // 'ours' or 'tv': the TV's own screen saver instead of the app's (#71).
+        screenSaverKind: 'ours',
     };
 
     function read(key, fallback) {

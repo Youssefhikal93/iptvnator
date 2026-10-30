@@ -192,14 +192,15 @@ async function choose(page, value) {
     await expect(page.locator('#menu')).toBeVisible();
     // Where the wanted choice sits from the focused one, among the focused one's siblings.
     const steps = await page.locator('#menu .focused').evaluate((focused, value) => {
-        const plain = text => text.replace(/^✓\s*/, '').replace(/\s+/g, ' ').trim();
+        // The tick comes before the label, or after it on rows with an icon.
+        const plain = text => text.replace(/✓/g, '').replace(/\s+/g, ' ').trim();
         const options = [...focused.parentElement.children];
         const at = options.findIndex(option => plain(option.textContent) === plain(value));
         return at < 0 ? null : at - options.indexOf(focused);
     }, value);
     if (steps === null) throw new Error('No choice ' + JSON.stringify(value));
     for (let i = 0; i < Math.abs(steps); i++) await press(page, steps > 0 ? 'ArrowDown' : 'ArrowUp');
-    await expect(page.locator('#menu .focused')).toHaveText(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
+    await expect(page.locator('#menu .focused')).toHaveText(new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*✓?$'));
     await press(page, 'Enter');
     await expect(page.locator('#menu')).toBeHidden();
 }
@@ -243,6 +244,13 @@ async function toolbar(page, name) {
     }
 }
 
+// The View button's menu picks a layout (#69): 'List', 'Grid', 'Wide boxes'
+// or 'Info boxes'. Call from the first item (or the top category).
+async function chooseView(page, label) {
+    await toolbar(page, 'view');
+    await choose(page, label);
+}
+
 async function playing(page) {
     await expect(page.locator('#player')).toBeVisible();
     await expect(page.locator('#pl-status')).toBeHidden({ timeout: 30_000 });
@@ -258,4 +266,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };

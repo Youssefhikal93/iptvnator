@@ -60,6 +60,7 @@ window.Player = (function () {
     var usingAv = false;
     var chain = PlaybackChain();
     var current = null;
+    var opening = OpenTiming.off; // the timing of the open in progress (#70)
     var ready = false; // a stream is playing
     var channelListOpen = false;
     var box = null; // preview rectangle in screen pixels; null is full screen
@@ -931,18 +932,20 @@ window.Player = (function () {
             // The reads below belong to this request, even if another starts meanwhile.
             var request = current;
             var gone = function () { return chain.stale(mine) || current !== request; };
-            var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : AvResolve.final(url);
+            var timing = opening;
+            var target = current.live && !(source && source.resolve) ? Promise.resolve(url) : timing.run('resolve', '', function () { return AvResolve.final(url); });
             target.then(function (address) {
                 if (gone()) return null;
                 // A busy or offline answer goes to the chain's 503 handling.
                 if (address.error) return finish(address.error);
                 // The subtitle hash needs two small reads; finish them before AVPlay opens (ADR 0006).
-                return MovieHash.prepare(request, address.url || address).then(function () {
-                    return gone() ? null : MediaSniff.prepare(request, address.url || address);
+                // Each step is skipped when its answer is already known (#70).
+                return timing.run('hash', MovieHash.skipNote(request), function () { return MovieHash.prepare(request, address.url || address); }).then(function () {
+                    return gone() ? null : timing.run('sniff', MediaSniff.skipNote(request), function () { return MediaSniff.prepare(request, address.url || address); });
                 }).then(function () { return address; });
             }).then(function (address) {
                 if (!address || gone() || address.error) return;
-                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine, url);
+                openRoute(av, AudioRoute.plan(current, source, address.url || address), 0, finish, mine, url, timing);
             });
         };
     }
@@ -952,8 +955,10 @@ window.Player = (function () {
     // open at a time (ADR 0006). `link` is the provider's own link: its
     // redirect is often good for one use, so a file opened after another
     // route asks for a fresh one.
-    function openRoute(av, routes, at, finish, mine, link) {
+    function openRoute(av, routes, at, finish, mine, link, timing) {
         var route = routes[at];
+        // The route's own time: its address look-up, prepare and sound check.
+        route.timed = timing.step(at === 0 ? 'prepare' : route.name);
         var request = current;
         var left = false;
         // Ended once this AVPlay attempt has (a timeout moves the chain on),
@@ -969,6 +974,7 @@ window.Player = (function () {
                 // AVPlay that a newer title now uses.
                 if (left || ended()) return;
                 left = true;
+                route.timed();
                 Log.info('AUDIO route ' + route.name + ' ' + why);
                 try {
                     av.stop();
@@ -981,8 +987,10 @@ window.Player = (function () {
                     // Already closed.
                 }
                 // A provider allowing one connection needs a moment to let it go.
+                var gap = timing.step('gap');
                 setTimeout(function () {
-                    if (!ended()) openRoute(av, routes, at + 1, finish, mine, link);
+                    gap();
+                    if (!ended()) openRoute(av, routes, at + 1, finish, mine, link, timing);
                 }, ROUTE_GAP_MS);
             };
         }
@@ -1045,6 +1053,7 @@ window.Player = (function () {
                     // Older firmware.
                 }
                 checkSound(av, route, function (sound) {
+                    route.timed();
                     if (route.needsSound && !sound && route.next) return route.next('has no sound');
                     if (route.needsSound && sound) AudioRoute.remember(current, route.name);
                     avRoute = route.name || 'file';
@@ -1070,6 +1079,7 @@ window.Player = (function () {
                 });
             },
             function (err) {
+                route.timed();
                 if (route.next) return route.next('prepare ' + (err && err.name));
                 finish('prepare ' + (err && err.name));
             }
@@ -1158,6 +1168,7 @@ window.Player = (function () {
         playbackError = false;
         release();
         current = req;
+        opening = req.live ? OpenTiming.off : OpenTiming.begin(req.openKind || (req.episodes ? 'episode' : 'film'));
         languagePrefs = LanguageChoice.read();
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
@@ -1180,6 +1191,7 @@ window.Player = (function () {
             ready: function (name, ms) {
                 Log.info('PLAY OK ' + name + ' ' + req.title + ' in ' + ms + 'ms');
                 onReady();
+                opening.finish();
                 if (onAttempt) onAttempt(null);
             },
             failed: function (name, error, ms) {

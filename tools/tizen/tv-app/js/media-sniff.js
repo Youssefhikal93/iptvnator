@@ -12,6 +12,9 @@ window.MediaSniff = (function () {
     var BUDGET_MS = 2000;
     var STORE = 'iptvnator-tv:sniff-tracks';
     var KEEP = 50;
+    var SHOW_STORE = 'iptvnator-tv:sniff-shows';
+    var SHOW_KEEP = 30;
+    var SHARE_AFTER = 2;
     var memory = {};
 
     // Matroska CodecIDs (by prefix) and MP4 sample entry types, as the log and labels name them.
@@ -257,6 +260,53 @@ window.MediaSniff = (function () {
         return memory[id] !== undefined ? memory[id] : saved()[id];
     }
 
+    // A show whose episodes were read twice with the same sound tracks is
+    // taken to share them (#70): its next episodes are not read at all. An
+    // entry is { audio, n, last }: the tracks, how many different episodes
+    // gave them in a row, and the latest of those.
+    function shows() {
+        try {
+            var list = JSON.parse(Stored.text(SHOW_STORE));
+            return list && typeof list === 'object' && !Array.isArray(list) ? list : {};
+        } catch (e) { return {}; }
+    }
+
+    function showKey(request) {
+        return request && request.episodes && request.episodes.show;
+    }
+
+    // The tracks the show's episodes share, or undefined.
+    function shared(request) {
+        var entry = showKey(request) && shows()[showKey(request)];
+        return entry && entry.n >= SHARE_AFTER && Array.isArray(entry.audio) ? entry.audio : undefined;
+    }
+
+    function learnShow(request, audio) {
+        var name = showKey(request);
+        if (!name || !audio || !audio.length) return;
+        try {
+            var list = shows();
+            var entry = list[name];
+            var same = entry && JSON.stringify(entry.audio) === JSON.stringify(audio);
+            if (same && entry.last === key(request)) return;
+            delete list[name];
+            list[name] = { audio: audio, n: same ? entry.n + 1 : 1, last: key(request) };
+            var keys = Object.keys(list);
+            keys.slice(0, Math.max(0, keys.length - SHOW_KEEP)).forEach(function (old) { delete list[old]; });
+            Stored.save(SHOW_STORE, list);
+        } catch (e) {
+            // Without storage each episode is read.
+        }
+    }
+
+    // Why prepare() will not read the file ('cached': this file was read,
+    // 'show': its episodes share their tracks), or '' when it will.
+    function skipNote(request) {
+        if (!request || request.live || !request.id) return 'off';
+        if (known(request) !== undefined) return 'cached';
+        return shared(request) ? 'show' : '';
+    }
+
     function range(url, from, to, signal) {
         return fetch(url, { headers: { Range: 'bytes=' + from + '-' + to }, signal: signal }).then(function (res) {
             if (res.status !== 206) {
@@ -283,6 +333,12 @@ window.MediaSniff = (function () {
             request.fileAudio = before;
             return Promise.resolve();
         }
+        var alike = shared(request);
+        if (alike) {
+            request.fileAudio = JSON.parse(JSON.stringify(alike));
+            Log.info('media show audio ' + (alike.map(function (track) { return track.codec; }).join(',') || 'none'));
+            return Promise.resolve();
+        }
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, BUDGET_MS);
         var kind = 'unknown';
@@ -297,6 +353,7 @@ window.MediaSniff = (function () {
             Log.info(line(kind, audio));
             request.fileAudio = audio || null;
             remember(key(request), request.fileAudio);
+            learnShow(request, request.fileAudio);
         }, function (error) {
             Log.info('media check skipped ' + (controller.signal.aborted ? 'timeout' : error.message === 'norange' ? 'norange' : 'error'));
         }).then(function () {
@@ -304,5 +361,5 @@ window.MediaSniff = (function () {
         });
     }
 
-    return { tracks: tracks, prepare: prepare, known: known };
+    return { tracks: tracks, prepare: prepare, known: known, skipNote: skipNote };
 })();

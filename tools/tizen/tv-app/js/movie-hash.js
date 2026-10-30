@@ -73,6 +73,14 @@ window.MovieHash = (function () {
         return error && /^(http|norange|size)$/.test(error.message) ? error.message : 'error';
     }
 
+    // Why prepare() will not read the file ('off': no key or id, 'cached': the
+    // hash is known), or '' when it will (the open's timing line, #70).
+    function skipNote(request) {
+        if (!request || request.live || !request.id || !Prefs.get('opensubtitlesApiKey')) return 'off';
+        var id = request.subtitleId || request.id;
+        return (memory[id] !== undefined ? memory[id] : stored()[id]) !== undefined ? 'cached' : '';
+    }
+
     // Resolves to the hash or '' and never rejects. Sets request.movieHash.
     function prepare(request, url, options) {
         if (!request || request.live) return Promise.resolve('');
@@ -115,5 +123,5 @@ window.MovieHash = (function () {
         });
     }
 
-    return { compute: compute, prepare: prepare };
+    return { compute: compute, prepare: prepare, skipNote: skipNote };
 })();

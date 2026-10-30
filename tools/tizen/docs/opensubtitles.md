@@ -70,6 +70,18 @@ lists no sound five seconds in, from where the viewer was. What worked is kept p
 `iptvnator-tv:audio-route`. The Audio list offers "Converted sound (provider)" and, from there,
 "The file's own sound" for any Xtream movie or episode.
 
+Faster starts (#70). Every film or episode open logs one line (`js/open-timing.js`), e.g.
+`OPEN timing film resolve=120 hash=cached sniff=cached prepare=1800 total=2020`, from the press
+of OK / Next to the first picture; `kind` is film, episode or next (opened from the player).
+Steps: resolve (redirect look-up), hash, sniff, prepare (the first address; later routes are
+named `m3u8`, `ts`, `file`, each after a `gap`). A step that was not needed shows why instead of
+milliseconds: `cached` (this file was read before), `show` (sniff only), `off` (no key). Only
+fixed words and numbers are logged. A show whose episodes gave the same sound tracks twice has
+its next episodes' tracks taken from `iptvnator-tv:sniff-shows` (newest 30 shows), and a converted
+address that worked for one episode is where the show's other episodes with no note of their own
+start (`show:<source>|<id>` in `iptvnator-tv:audio-route`), unless their own header lists playable
+sound. The 1 s pause between routes stays: the provider needs it to release the connection.
+
 Subtitles follow the current playback position on AVPlay and HTML video,
 including pause and seek, in the same subtitle style set in Settings. The player
 menu's **Off** hides them. Selecting an embedded subtitle track also turns

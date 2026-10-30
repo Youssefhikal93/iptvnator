@@ -57,7 +57,7 @@ window.Collections = function (deps) {
 
     // Parts the index has not tied to a film yet are matched by title and year.
     function tmdbParts(info, films, movies) {
-        var credits = info.parts.map(function (part) { return { id: part.id, title: part.title, release_date: part.year, media_type: 'movie' }; });
+        var credits = info.parts.map(function (part) { return { id: part.id, title: part.title, original_title: part.original, release_date: part.year, media_type: 'movie' }; });
         var loose = info.parts.some(function (part) { return !films[part.id]; });
         var matched = loose ? Tmdb.inLibrary(credits, movies.map(function (item) { return { item: item, type: 'movie' }; })) : [];
         return info.parts.map(function (part) {

@@ -98,6 +98,34 @@ test('#58 the collection index keeps films for good and lists collections with t
     assert.equal(api.CollectionIndex('s2').film(films[0]), undefined);
 });
 
+test('#58 a collection fetched in another language still finds the provider\'s films by their original titles', async function () {
+    var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'tmdb.js', 'name-groups.js', 'collection-index.js', 'collection-lookup.js', 'collections.js'], {}, {
+        AbortController: AbortController,
+        Log: { info: function () {}, error: function () {} },
+        Player: { isOpen: function () { return false; } },
+        fetch: function () {
+            return reply(200, { id: 10, name: 'مجموعة العراب', parts: [
+                { id: 238, title: 'العراب', original_title: 'The Godfather', release_date: '1972-03-14' },
+                { id: 240, title: 'العراب: الجزء الثاني', original_title: 'The Godfather Part II', release_date: '1974-12-20' },
+            ] });
+        },
+    });
+    var g = env.globals;
+    g.Prefs.set('tmdbApiKey', 'test-key');
+    var films = [{ name: 'The Godfather (1972)', stream_id: 1 }, { name: 'The Godfather Part II (1974)', stream_id: 2 }];
+    var collections = g.Collections({
+        sourceId: function () { return 's1'; },
+        movies: function () { return films; },
+        all: function () { return films; },
+        changed: function () {},
+    });
+    var found = await collections.forFilm(films[0], { id: 238, belongs_to_collection: { id: 10 } }, function () {
+        return Promise.resolve(films.map(function (item) { return { item: item, type: 'movie' }; }));
+    });
+    assert.deepEqual(plain(found.parts.map(function (part) { return part.item && part.item.stream_id; })), [1, 2]);
+    g.CollectionLookup.stop();
+});
+
 function lookupClient(answers) {
     var asked = [];
     var collections = [];

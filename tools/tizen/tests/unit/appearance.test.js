@@ -43,6 +43,23 @@ test('a profile that chose the dropped Moroccan Arabic is moved to Arabic and ke
     assert.equal(app.attributes['data-theme'], 'light');
 });
 
+test('Moroccan Arabic still shows Arabic when the TV refuses to save the change', function () {
+    var records = { 'iptvnator-tv:p:default:settings': JSON.stringify({ language: 'ary', theme: 'light' }) };
+    var attributes = {};
+    var app = load(['profile-store.js', 'settings-store.js', 'i18n/ar.js', 'appearance.js'], {}, {
+        localStorage: {
+            getItem: function (key) { return records[key] === undefined ? null : records[key]; },
+            setItem: function () { throw new Error('QuotaExceededError'); },
+            removeItem: function () {},
+            key: function (index) { return Object.keys(records)[index] || null; },
+            get length() { return Object.keys(records).length; },
+        },
+        document: { documentElement: { setAttribute: function (name, text) { attributes[name] = text; } } },
+    });
+    assert.equal(app.globals.I18n.language(), 'ar');
+    assert.equal(attributes['data-theme'], 'light');
+});
+
 test('all four stored themes apply on startup and Prefs changes without rewriting saved values', function () {
     ['dark', 'black', 'grey', 'light', 'unknown'].forEach(function (theme) {
         var stored = { 'iptvnator-tv:p:default:settings': JSON.stringify({ theme: theme }) };

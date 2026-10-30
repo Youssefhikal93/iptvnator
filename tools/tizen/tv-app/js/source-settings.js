@@ -30,11 +30,18 @@ window.SourceSettings = (function () {
         Menu.open(source.name, options);
     }
 
+    // When the source's lists were last fetched again, by hand or by themselves (#86).
+    function refreshedText(source) {
+        var at = AutoRefresh.refreshedAt(source.id);
+        if (!at) return I18n.t('sources.neverRefreshed');
+        return I18n.t('sources.refreshedAt', { when: I18n.date(at, { day: 'numeric', month: 'short' }) + ' ' + I18n.time(at) });
+    }
+
     function rows(hooks) {
         var current = hooks.current();
         var list = Sources.all().map(function (source) {
             var entry = SourceAccount.row(source, !!current && source.id === current.id, XmltvGuide.subtitle(source));
-            return { label: source.name, source: source, sub: entry.detail, chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
+            return { label: source.name, source: source, sub: [entry.detail, refreshedText(source)].filter(Boolean).join(' \u00b7 '), chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
         });
         list = list.concat(['xtream', 'm3u'].map(function (kind) {
             return { label: I18n.t(kind === 'xtream' ? 'sources.addXtream' : 'sources.addM3u'), add: kind, text: '', run: function () { hooks.add(kind); } };

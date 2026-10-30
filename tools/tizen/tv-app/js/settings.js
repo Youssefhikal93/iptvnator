@@ -68,11 +68,14 @@ window.Settings = function (hooks) {
 
     rows.unshift(...ProfileSettings.rows(hooks, render));
 
+    // Background refresh (#86): the last row of Sources, after Refresh content now.
+    const autoRefresh = { get label() { return I18n.t('settings.autoRefresh'); }, get hint() { return I18n.t('describe.autoRefresh'); }, key: 'autoRefresh', choices: ['night', 'twelve', 'off'], get labels() { return [I18n.t('settings.refreshNight'), I18n.t('settings.refreshTwelve'), I18n.t('common.off')]; } };
+
     // Sources come first (#51) and are read on every draw, as the list
     // changes. A row that names a group starts it.
     function groups() {
         const list = [];
-        SourceSettings.rows(hooks.sources).concat(rows).forEach((row) => {
+        SourceSettings.rows(hooks.sources).concat([autoRefresh], rows).forEach((row) => {
             if (row.hidden) return;
             const name = row.group;
             if (name || !list.length) list.push({ name, rows: [] });

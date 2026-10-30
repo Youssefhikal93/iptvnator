@@ -1,10 +1,30 @@
 // The sound language the viewer picks in the player's Audio list (#55): kept
-// per show, so the next episode starts in it, and as the latest pick, which a
-// movie or a new show starts in when the file has that language. Per profile.
+// per show and live channel (#83), alongside subtitle languages or Off.
+// The latest sound pick also applies to new shows and movies. Per profile.
 window.AudioChoice = (function () {
     'use strict';
 
     var KEEP = 100;
+    var MAPS = ['shows', 'channels', 'textShows', 'textChannels'];
+
+    function language(code) {
+        return typeof code === 'string' && code.length > 0 && code.length <= 80;
+    }
+
+    // Old audio-only records and imported records use the same bounded shape.
+    function clean(saved) {
+        saved = saved && typeof saved === 'object' ? saved : {};
+        var copy = { last: language(saved.last) ? saved.last : '' };
+        MAPS.forEach(function (kind) {
+            var entries = saved[kind];
+            copy[kind] = Object.create(null);
+            if (!entries || typeof entries !== 'object' || Array.isArray(entries)) return;
+            Object.keys(entries).filter(function (id) {
+                return language(entries[id]) || kind.indexOf('text') === 0 && entries[id] === false;
+            }).slice(-KEEP).forEach(function (id) { copy[kind][id] = entries[id]; });
+        });
+        return copy;
+    }
 
     function key() {
         return ProfileStore.key('audio-choice');
@@ -12,12 +32,11 @@ window.AudioChoice = (function () {
 
     function read() {
         try {
-            var saved = JSON.parse(Stored.text(key()));
-            if (saved && typeof saved === 'object' && saved.shows && typeof saved.shows === 'object') return saved;
+            return clean(JSON.parse(Stored.text(key())));
         } catch (e) {
             // Nothing saved yet.
         }
-        return { shows: {}, last: '' };
+        return clean(null);
     }
 
     function showOf(request) {
@@ -47,29 +66,74 @@ window.AudioChoice = (function () {
         }
     }
 
-    function remember(request, language) {
-        if (!language) return;
-        var saved = read();
-        var show = showOf(request);
-        if (show) {
-            delete saved.shows[show];
-            saved.shows[show] = language;
-            var shows = Object.keys(saved.shows);
-            shows.slice(0, Math.max(0, shows.length - KEEP)).forEach(function (old) { delete saved.shows[old]; });
-        }
-        saved.last = language;
+    function scope(request) {
+        return request && request.live ? { audio: 'channels', text: 'textChannels', id: request.channel || '' } : { audio: 'shows', text: 'textShows', id: showOf(request) };
+    }
+
+    function save(saved) {
         try {
-            Stored.save(key(), saved);
+            Stored.save(key(), clean(saved));
         } catch (e) {
-            // Without storage the next episode starts in the file's own default.
+            // Without storage the next play uses its defaults.
         }
+    }
+
+    function update(entries, id, code) {
+        if (!id) return;
+        delete entries[id];
+        entries[id] = code;
+    }
+
+    function remember(request, code) {
+        if (!language(code)) return;
+        var saved = read();
+        var target = scope(request);
+        update(saved[target.audio], target.id, code);
+        saved.last = code;
+        save(saved);
+    }
+
+    function rememberSubtitle(request, code) {
+        var target = scope(request);
+        if (!target.id || code !== false && !language(code)) return;
+        var saved = read();
+        update(saved[target.text], target.id, code);
+        save(saved);
+    }
+
+    // Undefined means no choice; false is an explicit Off, not a default.
+    function subtitle(request) {
+        var target = scope(request);
+        return read()[target.text][target.id];
+    }
+
+    // Import remaps source ids. With no timestamps, existing choices win Merge.
+    function merge(saved, incoming, sources) {
+        saved = clean(saved);
+        incoming = clean(incoming);
+        var merged = { last: saved.last || incoming.last };
+        MAPS.forEach(function (kind) {
+            var entries = Object.create(null);
+            Object.keys(incoming[kind]).forEach(function (id) {
+                var split = id.indexOf('|');
+                var source = sources[id.slice(0, split)];
+                if (split >= 0 && source) entries[source + id.slice(split)] = incoming[kind][id];
+            });
+            Object.keys(saved[kind]).forEach(function (id) {
+                delete entries[id];
+                entries[id] = saved[kind][id];
+            });
+            merged[kind] = entries;
+        });
+        return clean(merged);
     }
 
     // Of PlayerTracks' audio rows, the playable one in the remembered
     // language when another one plays now; else null.
     function pick(request, rows, preferred) {
         var saved = read();
-        var want = saved.shows[showOf(request)] || preferred || saved.last;
+        var target = scope(request);
+        var want = saved[target.audio][target.id] || preferred || (!(request && request.live) && saved.last);
         if (!want) return null;
         var row = rows.filter(function (entry) {
             return entry.ref !== null && entry.language && name(entry.language) === name(want);
@@ -77,5 +141,5 @@ window.AudioChoice = (function () {
         return row && !row.active ? row : null;
     }
 
-    return { remember: remember, pick: pick, name: name };
+    return { remember: remember, pick: pick, name: name, rememberSubtitle: rememberSubtitle, subtitle: subtitle, clean: clean, merge: merge };
 })();

@@ -680,7 +680,7 @@ window.Player = (function () {
         } else if (!tracks.audio.length) m.note(I18n.t('player.oneAudio'));
         m.head(I18n.t('picture.subtitles'));
         if (tracks.text.length > 1) tracks.text.forEach(function (t) {
-            m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); });
+            m.item(t.label, t.active && !subtitles.active(), function () { subtitles.off(); t.select(); AudioChoice.rememberSubtitle(current, t.ref === -1 || t.ref === null ? false : t.language); });
         });
         else if (current.live) m.note(I18n.t('player.noSubtitles'));
         subtitles.menuEntries(m.item, tracks.text.length > 1, m.head);

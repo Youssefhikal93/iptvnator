@@ -5,7 +5,7 @@ var assert = require('node:assert/strict');
 var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'subtitle-download.js', 'language-settings.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-download.js', 'language-settings.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -548,4 +548,22 @@ test('with a TMDB key the subtitle search uses TMDB\'s English name and IMDb id,
     // TMDB knows only the Arabic name: the provider's title stays.
     env.globals.Tmdb.match = function () { return Promise.resolve({ id: 5, name: 'الحب أعمى حبيبي', original_name: 'الحب أعمى حبيبي' }); };
     assert.equal((await request.subtitleLookup()).title, 'Love is blind, Habibi- الحب أعمى حبيبي');
+});
+
+test('#83 show Off also suppresses a cached downloaded subtitle on the next episode', function () {
+    var env = fixture();
+    env.globals.Stored.save('iptvnator-tv:subtitle-cache', { 7: { text: FILE, at: 1 } });
+    env.globals.SubtitleStore.save('s1|episode:1', 7, 0);
+    env.globals.SubtitleStore.save('s1|episode:2', 7, 0);
+    var v = viewer(env);
+    var episodes = { show: 's1|3001' };
+    v.player.start({ id: 'episode:1', subtitleId: 's1|episode:1', episodes: episodes });
+    assert.equal(v.player.active(), true);
+    var choices = [];
+    v.player.menuEntries(function (label, active, run) { choices.push({ label: label, run: run }); }, false);
+    choices.find(function (row) { return row.label === 'Off'; }).run();
+    v.player.start({ id: 'episode:2', subtitleId: 's1|episode:2', episodes: episodes });
+    assert.equal(v.player.active(), false);
+    assert.equal(v.text, '');
+    v.player.stop();
 });

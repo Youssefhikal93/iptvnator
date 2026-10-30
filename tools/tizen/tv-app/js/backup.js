@@ -113,7 +113,7 @@ window.Backup = (function () {
         manifest.playlists.forEach(function (entry) {
             if (!entry || !text(entry.exportedId) || !text(entry.title) || !entry.userState) return invalid();
             if (entry.portalType === 'stalker' || entry.portalType === 'm3u' && entry.source && ['file', 'text'].indexOf(entry.source.kind) >= 0) { backup.skipped++; return; }
-            var target = { source: { type: entry.portalType, name: entry.title }, favorites: emptyLists(), recent: emptyLists(), recentChannels: [], progress: Object.create(null) };
+            var target = { exportedId: entry.exportedId, source: { type: entry.portalType, name: entry.title }, favorites: emptyLists(), recent: emptyLists(), recentChannels: [], progress: Object.create(null) };
             if (entry.portalType === 'xtream') {
                 if (!entry.connection || !text(entry.connection.username) || entry.connection.password !== undefined && typeof entry.connection.password !== 'string') return invalid();
                 target.source.url = address(entry.connection.serverUrl);
@@ -131,7 +131,10 @@ window.Backup = (function () {
             backup.sources.push(target);
         });
         if (manifest.playlists.length && !backup.sources.length) throw new Error('No supported sources. Use an Xtream or M3U playlist link backup.');
-        if (manifest.tvState) backup.progress = tvProgress(manifest.tvState.progress);
+        if (manifest.tvState) {
+            backup.progress = tvProgress(manifest.tvState.progress);
+            backup.audioChoice = AudioChoice.clean(manifest.tvState.audioChoice);
+        }
         return backup;
     }
 
@@ -230,7 +233,7 @@ window.Backup = (function () {
                     return BackupM3u.build(source, state, text);
                 });
             })).then(function (playlists) {
-                return { kind: KIND, version: 1, exportedAt: new Date().toISOString(), includeSecrets: true, playlists: playlists, tvState: { progress: progress } };
+                return { kind: KIND, version: 1, exportedAt: new Date().toISOString(), includeSecrets: true, playlists: playlists, tvState: { progress: progress, audioChoice: AudioChoice.clean(BackupStore.read('audio-choice', null)) } };
             });
         });
     }

@@ -10,9 +10,11 @@ window.LanguageChoice = (function () {
         return !!a && !!b && AudioChoice.name(a) === AudioChoice.name(b);
     }
 
-    // Only ever turns a track on: Off, no match or understood sound leave the
-    // subtitles as they are, so a downloaded subtitle for the title stays.
-    function subtitle(rows, sound, prefs) {
+    // Without a manual choice, defaults leave downloaded subtitles in place.
+    function subtitle(request, rows, sound, prefs) {
+        var chosen = AudioChoice.subtitle(request);
+        if (chosen === false) return rows.filter(function (row) { return row.ref === -1 || row.ref === null; })[0] || null;
+        if (chosen) return rows.filter(function (row) { return same(row.language, chosen); })[0] || null;
         var want = prefs.subtitles;
         if (!want.language) return null;
         if (want.when === 'only' && (same(sound, prefs.sound) || same(sound, want.language))) return null;
@@ -32,15 +34,15 @@ window.LanguageChoice = (function () {
     }
 
     function apply(request, tracks, prefs) {
-        if (request.live) return true;
         var playing = tracks.audio.filter(function (row) { return row.active; })[0];
         var sound = AudioChoice.pick(request, tracks.audio, prefs.sound);
         var refused = !!sound && !sound.active && !select(sound);
         if (sound && !refused) playing = sound;
-        select(subtitle(tracks.text, playing && playing.language, prefs));
-        // Done once the tracks are known and the wanted sound was not refused,
-        // so a refused switch is tried again later.
-        return !refused && tracks.audio.some(function (row) { return !!row.select; });
+        var text = subtitle(request, tracks.text, playing && playing.language, prefs);
+        if (text && !text.active && !select(text)) refused = true;
+        // AVPlay gets one later look for a missing saved subtitle or a refused switch.
+        var waiting = AudioChoice.subtitle(request) && !text;
+        return !refused && !waiting && tracks.audio.some(function (row) { return !!row.select; });
     }
 
     return { read: read, apply: apply };

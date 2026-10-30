@@ -1,0 +1,87 @@
+/* The channel banner on zapping (#79): a slim glass strip along the bottom,
+   the player's Now / Next rows (.pl-epg-*) beside the channel's plate. It
+   slides up and back down; Animations Off (appearance.css) shows it at once. */
+#pl-banner {
+    position: absolute;
+    left: 96px;
+    right: 96px;
+    bottom: 48px;
+    pointer-events: none;
+}
+.zb {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    padding: 26px 36px;
+    border-radius: 22px;
+    background: var(--pc-glass);
+    border: 2px solid var(--pc-glass-border);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    animation: zb-in 0.25s ease-out;
+    transition: transform 0.25s ease-in, opacity 0.25s ease-in;
+}
+#pl-banner.zb-out .zb {
+    transform: translateY(60px);
+    opacity: 0;
+}
+@keyframes zb-in {
+    from {
+        transform: translateY(60px);
+        opacity: 0;
+    }
+}
+.zb-plate {
+    flex: none;
+    width: 256px;
+    border-radius: 12px;
+}
+.zb-plate .plate-name {
+    font-size: 26px;
+}
+.zb-body {
+    flex: 1;
+    min-width: 0;
+}
+.zb-head {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 14px;
+}
+.zb-num {
+    flex: none;
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--pc-cyan);
+    font-variant-numeric: tabular-nums;
+}
+.zb-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 40px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.zb-clock {
+    flex: none;
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.zb .pl-epg-row {
+    font-size: 30px;
+}
+.zb .pl-epg-bar {
+    margin: 12px 0;
+}
+.zb-empty {
+    font-size: 30px;
+    color: var(--pc-text-secondary);
+}
+.zb-keys {
+    margin-top: 16px;
+    font-size: 22px;
+    color: var(--pc-text-secondary);
+}

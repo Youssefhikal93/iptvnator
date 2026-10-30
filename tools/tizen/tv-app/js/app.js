@@ -44,6 +44,12 @@
         channelList.sync();
     }
 
+    // A channel change from the player shows the channel banner (#79).
+    function zap(request) {
+        if (request) request.zapped = true;
+        play(request);
+    }
+
     // Return from full screen opened on a live preview goes back to the box,
     // with the stream still playing; STOP closes everything.
     function closePlayer(stopped) {
@@ -86,7 +92,7 @@
             }, mode);
         },
     });
-    var channelList = ChannelList({ channels: browser.live, epg: browser.epg, play: play, visibility: Player.channelList });
+    var channelList = ChannelList({ channels: browser.live, epg: browser.epg, play: zap, visibility: Player.channelList });
     preview = LivePreview({
         live: browser.live,
         start: Player.play,
@@ -124,10 +130,10 @@
         if (Keys.isBack(code) || code === KEY.STOP) closePlayer(code === KEY.STOP);
         else if (live && (code === KEY.PREVIOUS_CHANNEL || code === KEY.GREEN)) {
             var previous = browser.live.previous();
-            if (previous) play(previous);
+            if (previous) zap(previous);
         } else if (live && zapStep) {
             var next = browser.zap(zapStep);
-            if (next) play(next);
+            if (next) zap(next);
         } else return false;
         return true;
     }

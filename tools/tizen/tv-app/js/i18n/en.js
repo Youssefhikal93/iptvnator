@@ -426,6 +426,7 @@ I18n.tables.en = {
     'player.menuKeys': 'OK: choose · Return: close',
     'player.menuKeysBack': 'OK: choose · ◀ / Return: back',
     'player.backToLive': 'Back to live',
+    'player.banner.noProgramme': 'No programme information',
     'player.busy': 'This channel is offline or your connection is busy.',
     'player.endsAt': 'Ends {time}',
     'player.episodes': 'Episodes',

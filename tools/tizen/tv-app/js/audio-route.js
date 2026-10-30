@@ -16,6 +16,12 @@ window.AudioRoute = (function () {
         return request.subtitleId || request.id;
     }
 
+    // The show's note: what worked for one of its episodes.
+    function showKey(request) {
+        var show = request.episodes && request.episodes.show;
+        return show ? 'show:' + show : '';
+    }
+
     function saved() {
         try {
             var list = JSON.parse(Stored.text(STORE));
@@ -31,6 +37,12 @@ window.AudioRoute = (function () {
             var list = saved();
             delete list[key(request)];
             list[key(request)] = name;
+            // A converted address that worked is where the show's other episodes start (#70).
+            var show = showKey(request);
+            if (show && (name === 'm3u8' || name === 'ts')) {
+                delete list[show];
+                list[show] = name;
+            }
             var keys = Object.keys(list);
             keys.slice(0, Math.max(0, keys.length - KEEP)).forEach(function (old) { delete list[old]; });
             Stored.save(STORE, list);
@@ -56,7 +68,8 @@ window.AudioRoute = (function () {
             return { name: route.name, url: route.url, needsSound: true, direct: route.name === 'm3u8' };
         });
         if (!others.length || !request || request.live || !request.id) return [file];
-        var before = saved()[key(request)];
+        var notes = saved();
+        var before = notes[key(request)];
         // The viewer chose the file's own sound in the Audio list.
         if (request.audioRoute === 'original') return [file];
         // Converted sound asked for (or a retry): saved notes do not stand in the way.
@@ -64,6 +77,8 @@ window.AudioRoute = (function () {
         if (before === 'original') return [file];
         // A header that names a playable track outranks an old "no sound" note.
         var playable = Array.isArray(request.fileAudio) && request.fileAudio.length > 0 && !silentFile(request.fileAudio);
+        // An episode with no note of its own starts where its show's others worked.
+        if (before === undefined && !playable && showKey(request)) before = notes[showKey(request)];
         // 'none' (no address had sound); an older 'file' note predates the
         // direct .m3u8 try, so that file is checked again.
         if (before === 'none' && !playable) return [{ name: 'file', url: url, silent: true }];

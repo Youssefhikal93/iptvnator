@@ -61,7 +61,7 @@ function scene(settings, Hls) {
     video.load = function () {};
     var env = load([
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js',
-        'subtitle-file.js', 'subtitle-rank.js', 'movie-hash.js', 'media-sniff.js', 'subtitle-store.js', 'subtitle-download.js',
+        'subtitle-file.js', 'subtitle-rank.js', 'open-timing.js', 'movie-hash.js', 'media-sniff.js', 'subtitle-store.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'playback-chain.js', 'player-tracks.js', 'player-reconnect.js',
         'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-picture.js', 'player-menu.js', 'audio-choice.js', 'language-choice.js', 'player.js',
     ], { 'iptvnator-tv:settings': JSON.stringify(settings || {}) }, {

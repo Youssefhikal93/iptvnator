@@ -155,7 +155,9 @@ window.PlayerSeries = function (api) {
     function playEpisode(index) {
         var eps = episodes();
         reset();
-        api.play(eps.open(index));
+        var req = eps.open(index);
+        req.openKind = 'next'; // opened from the player, for the open's timing line (#70)
+        api.play(req);
     }
 
     function playNext() {

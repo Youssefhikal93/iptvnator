@@ -101,6 +101,26 @@ test('a reminder missing storage or holding junk reads as none', function () {
     assert.deepEqual(plain(setup(START, junk).api.list()), []);
 });
 
+test('the pop-up\'s check every second does not read storage again', async function () {
+    var t = setup(START - 30 * MINUTE);
+    t.api.add('s1', channel, programme(START));
+    var storage = t.env.globals.localStorage;
+    var get = storage.getItem;
+    var reads = 0;
+    storage.getItem = function (key) {
+        if (key === KEY) reads++;
+        return get.call(storage, key);
+    };
+    for (var i = 0; i < 5; i++) {
+        t.clock.now += 1000;
+        assert.equal(t.api.due(t.clock.now), null);
+        await Promise.resolve();
+    }
+    assert.equal(reads, 0);
+    t.clock.now = START - 30000;
+    assert.equal(t.api.due(t.clock.now).title, 'Match');
+});
+
 test('each profile has its own reminders', function () {
     var files = ['profile-store.js', 'library.js', 'reminders.js'];
     var t = setup(START - 30 * MINUTE, {}, files);

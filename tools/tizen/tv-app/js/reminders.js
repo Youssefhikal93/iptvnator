@@ -14,23 +14,33 @@ window.Reminders = (function () {
 
     var LEAD = 60000;
     var announced = {};
+    // The profile's list as last read or written. Only this module writes the
+    // record, and the pop-up asks due() every second, so storage is read once
+    // per profile instead of once a second.
+    var memo = { key: null, list: [] };
 
     function key() {
         return ProfileStore.key('reminders');
     }
 
     function read() {
+        var current = key();
+        if (memo.key === current) return memo.list;
+        var list;
         try {
-            var saved = Stored.json(key());
-            return Array.isArray(saved) ? saved : [];
+            var saved = Stored.json(current);
+            list = Array.isArray(saved) ? saved : [];
         } catch (e) {
-            return [];
+            list = [];
         }
+        memo = { key: current, list: list };
+        return list;
     }
 
     function write(list) {
+        memo = { key: key(), list: list };
         try {
-            Stored.save(key(), list);
+            Stored.save(memo.key, list);
         } catch (e) {
             // Without storage the reminders are lost at the next start.
         }

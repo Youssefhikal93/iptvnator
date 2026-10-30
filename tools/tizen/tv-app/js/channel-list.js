@@ -132,7 +132,9 @@ window.ChannelList = function (hooks) {
 
     function watch() {
         if (!channels[focus]) return;
-        var request = hooks.channels.play(channels[focus], channels);
+        // Zapping from Recent follows the channel's own category, not this short list.
+        var recent = categories[categoryIndex] && categories[categoryIndex].recent;
+        var request = hooks.channels.play(channels[focus], recent ? null : channels);
         close();
         if (request) hooks.play(request);
     }

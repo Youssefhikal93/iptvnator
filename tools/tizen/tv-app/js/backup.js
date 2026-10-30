@@ -62,6 +62,11 @@ window.Backup = (function () {
         return lists;
     }
 
+    function tvChannels(saved) {
+        if (!Array.isArray(saved)) return invalid();
+        return saved.map(tvItem);
+    }
+
     function xtreamItem(reference, snapshots) {
         if (!reference || !Object.prototype.hasOwnProperty.call(TYPES, reference.contentType) || !numeric(reference.xtreamId)) return invalid();
         var snapshot = reference.snapshot || reference.collectionItem || snapshots.filter(function (entry) {
@@ -108,7 +113,7 @@ window.Backup = (function () {
         manifest.playlists.forEach(function (entry) {
             if (!entry || !text(entry.exportedId) || !text(entry.title) || !entry.userState) return invalid();
             if (entry.portalType === 'stalker' || entry.portalType === 'm3u' && entry.source && ['file', 'text'].indexOf(entry.source.kind) >= 0) { backup.skipped++; return; }
-            var target = { source: { type: entry.portalType, name: entry.title }, favorites: emptyLists(), recent: emptyLists(), progress: Object.create(null) };
+            var target = { source: { type: entry.portalType, name: entry.title }, favorites: emptyLists(), recent: emptyLists(), recentChannels: [], progress: Object.create(null) };
             if (entry.portalType === 'xtream') {
                 if (!entry.connection || !text(entry.connection.username) || entry.connection.password !== undefined && typeof entry.connection.password !== 'string') return invalid();
                 target.source.url = address(entry.connection.serverUrl);
@@ -122,6 +127,7 @@ window.Backup = (function () {
                 BackupM3u.parse(entry, target);
                 if (entry.tvState) { target.favorites = tvLists(entry.tvState.favorites); target.recent = tvLists(entry.tvState.recent); }
             } else return invalid();
+            if (entry.tvState && entry.tvState.recentChannels !== undefined) target.recentChannels = tvChannels(entry.tvState.recentChannels);
             backup.sources.push(target);
         });
         if (manifest.playlists.length && !backup.sources.length) throw new Error('No supported sources. Use an Xtream or M3U playlist link backup.');
@@ -130,7 +136,8 @@ window.Backup = (function () {
     }
 
     function sourceState(source) {
-        var state = { favorites: emptyLists(), recent: emptyLists() };
+        var state = { favorites: emptyLists(), recent: emptyLists(), recentChannels: BackupStore.read('recent-channels:' + source.id, []) };
+        if (!Array.isArray(state.recentChannels)) throw new Error('Could not read the library.');
         ['favorites', 'recent'].forEach(function (kind) {
             var stored = BackupStore.read(kind + ':' + source.id, {});
             SECTIONS.forEach(function (section) {
@@ -180,7 +187,8 @@ window.Backup = (function () {
         });
         userState.recentlyViewed = recentTitles(userState.recentlyViewed);
         return { portalType: 'xtream', exportedId: source.id, title: source.name, autoRefresh: false,
-            connection: { serverUrl: source.url, username: source.user, password: source.pass || '' }, userState: userState };
+            connection: { serverUrl: source.url, username: source.user, password: source.pass || '' }, userState: userState,
+            tvState: { recentChannels: state.recentChannels } };
     }
 
     function catalogueProgress(source, metadata, progress) {

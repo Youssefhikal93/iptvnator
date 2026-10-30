@@ -16,6 +16,7 @@
 //       everySource() -> whether the library spans every source
 //       chosenSort() -> the viewer's Sort choice for the section
 //       favorites(), recent(), continued(), added() -> the items of each row
+//       recentChannels() -> Live TV's Recent channels row (optional)
 //       favoriteItems() -> favorites refreshed from the catalogue, in its order
 window.CategoryRows = function (deps) {
     'use strict';
@@ -52,6 +53,15 @@ window.CategoryRows = function (deps) {
             rows.push(row('__continue', I18n.t('browser.continueWatching'), 'continue', deps.continued(), {
                 list: deps.continued,
                 get empty() { return [I18n.t('empty.continue.title'), I18n.t('empty.continue.hint')]; },
+                sort: function () { return null; },
+                fromCatalogue: false,
+            }));
+        }
+        // Live TV's own short list of the channels watched last (#80), in front.
+        if (section === 'live' && deps.recentChannels) {
+            rows.unshift(row('__recentch', I18n.t('recent.title'), 'recent-channels', deps.recentChannels(), {
+                list: deps.recentChannels,
+                get empty() { return [I18n.t('recent.empty.title'), I18n.t('recent.empty.hint')]; },
                 sort: function () { return null; },
                 fromCatalogue: false,
             }));

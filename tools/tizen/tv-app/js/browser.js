@@ -46,6 +46,15 @@ window.Browser = function (hooks) {
         stop: function () { hooks.preview.stop(); },
         refresh: refreshLibrary,
     });
+    // The Recent channels list (#80); a channel joins after 10 s on screen.
+    var recentChannels = RecentChannels({
+        sourceId: sourceId,
+        playing: function (channel) {
+            var now = live.current();
+            return Player.isOpen() && !!now && Library.keyOf('live', now) === Library.keyOf('live', channel);
+        },
+        allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },
+    });
     var live = LiveChannels({
         categories: function () {
             return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
@@ -60,9 +69,11 @@ window.Browser = function (hooks) {
         },
         allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },
         request: liveRequest,
+        recent: function () { return recentChannels.list(); },
         record: function (channel) {
             record(channel, null, null, 'live');
             Library.setLastChannel(sourceId(), channel);
+            recentChannels.begin(channel);
         },
     });
     Prefs.onChange(function (name) {
@@ -120,6 +131,7 @@ window.Browser = function (hooks) {
         favorites: function () { return libraryList('favorites', state.section); },
         favoriteItems: function () { return Library.favoriteItems(sourceId(), state.section, state.catalogue.peek({ section: state.section, kind: 'items' }) || []); },
         recent: function () { return libraryList('recent', state.section); },
+        recentChannels: function () { return recentChannels.list(); },
         continued: function () { return Library.continueWatching(sourceId(), state.section); },
         added: function () { return addedOf(state.section); },
     });
@@ -706,12 +718,23 @@ window.Browser = function (hooks) {
                 },
             });
         }
+        var clearRecent = {
+            label: I18n.t('recent.clear'),
+            glyph: '✕',
+            run: function () {
+                recentChannels.clear();
+                toast(I18n.t('recent.cleared'));
+                refreshLibrary();
+            },
+        };
+        var shown = shownCategory();
+        if (section === 'live' && shown && shown.virtual === 'recent-channels') options.push(clearRecent);
         var header = {
             image: item.stream_icon || item.cover || item.logo || '',
             sub: [I18n.t(section === 'live' ? 'rail.live' : section === 'movies' ? 'rail.movies' : 'rail.series'), item.year].filter(Boolean).join('  ·  '),
         };
         // A kids profile (#62) keeps Favorite and Mark watched only.
-        if (KidsProfile.on()) options = [favorite];
+        if (KidsProfile.on()) options = options.indexOf(clearRecent) >= 0 ? [favorite, clearRecent] : [favorite];
         if (otherSource(item)) Menu.open(itemLabel(item), options, 0, header);
         else watched.openItemMenu(item, section, options, itemLabel(item), header);
     }
@@ -1239,6 +1262,7 @@ window.Browser = function (hooks) {
         LoadScreen.reset();
         currentList.begin();
         live.reset();
+        recentChannels.cancel();
         restoring = false;
         state.source = source;
         state.adapter = null;

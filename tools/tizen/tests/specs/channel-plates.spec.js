@@ -34,8 +34,10 @@ test('live rows and grid tiles show 16:9 plates: the logo, or the channel name w
 
     await enterItems(page);
     await chooseView(page, 'Grid');
-    const tiles = page.locator('#items .card.channel');
+    // Three full rows, and the next row peeking in dimmed (#69).
+    const tiles = page.locator('#items .card.channel:not(.peek)');
     await expect(tiles).toHaveCount(12);
+    await expect(page.locator('#items .card.channel.peek')).toHaveCount(4);
     await expect(tiles.nth(0).locator('.poster.plate .plate-logo')).toBeVisible();
     await expect(tiles.nth(1).locator('.poster.plate')).toHaveClass(/nologo/);
     await expect(tiles.nth(1).locator('.plate-name')).toHaveText('Channel 2 (cat all)');

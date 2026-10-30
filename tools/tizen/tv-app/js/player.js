@@ -955,12 +955,18 @@ window.Player = (function () {
     function openRoute(av, routes, at, finish, mine, link) {
         var route = routes[at];
         var request = current;
+        var left = false;
+        // Ended once this AVPlay attempt has (a timeout moves the chain on),
+        // so a late route never opens a second stream (ADR 0006).
+        var ended = function () { return chain.stale(mine) || current !== request || !!(finish.ended && finish.ended()); };
+        // A route handed over is stale too: its pending sound check must not
+        // judge the next route's stream.
+        route.stale = function () { return left || ended(); };
         if (at + 1 < routes.length) {
-            var moved = false;
             route.next = function (why) {
                 // The TV reports one failure twice (onerror and prepareAsync's error).
-                if (moved) return;
-                moved = true;
+                if (left) return;
+                left = true;
                 Log.info('AUDIO route ' + route.name + ' ' + why);
                 try {
                     av.stop();
@@ -974,13 +980,10 @@ window.Player = (function () {
                 }
                 // A provider allowing one connection needs a moment to let it go.
                 setTimeout(function () {
-                    if (!route.stale()) openRoute(av, routes, at + 1, finish, mine, link);
+                    if (!ended()) openRoute(av, routes, at + 1, finish, mine, link);
                 }, ROUTE_GAP_MS);
             };
         }
-        // Also stale once this AVPlay attempt has ended (a timeout moves the
-        // chain on), so a late route never opens a second stream (ADR 0006).
-        route.stale = function () { return chain.stale(mine) || current !== request || !!(finish.ended && finish.ended()); };
         var first = route.name === 'file' && (at === 0 || !link);
         if (route.direct) Log.info('AUDIO route ' + route.name + ' direct');
         var address = first || route.direct ? Promise.resolve({ url: route.url }) : AvResolve.final(route.name === 'file' ? link : route.url);

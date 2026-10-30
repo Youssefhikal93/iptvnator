@@ -2,10 +2,15 @@
 window.LiveChannels = function (hooks) {
     'use strict';
 
+    var RECENT_ID = '__recentch';
     var current = null;
     var previous = null;
     var zapList = [];
     var generation = 0;
+
+    function recent() {
+        return hooks.recent ? hooks.recent() : [];
+    }
 
     function indexOf(channels, channel) {
         var key = channel && Library.keyOf('live', channel);
@@ -51,7 +56,10 @@ window.LiveChannels = function (hooks) {
 
     return {
         play: play,
-        channels: hooks.channels,
+        // The drawer's Recent row (#80) lists the Recent channels, not a catalogue category.
+        channels: function (categoryId) {
+            return categoryId === RECENT_ID ? Promise.resolve(recent()) : hooks.channels(categoryId);
+        },
         indexOf: indexOf,
         current: function () {
             return current;
@@ -79,6 +87,12 @@ window.LiveChannels = function (hooks) {
                 categories.forEach(function (category, i) {
                     if (channel && String(category.category_id) === categoryOf(channel)) index = i;
                 });
+                // Recent comes first, once there is something in it.
+                var shown = recent();
+                if (shown.length) {
+                    categories = [{ category_id: RECENT_ID, category_name: I18n.t('recent.title'), recent: true, count: shown.length }].concat(categories);
+                    index++;
+                }
                 return { categories: categories, index: index, channel: channel };
             });
         },

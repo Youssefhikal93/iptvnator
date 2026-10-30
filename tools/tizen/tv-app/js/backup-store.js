@@ -75,7 +75,7 @@ window.BackupStore = (function () {
         var attributed = {};
         var catalogues = [];
         if (mode === 'replace') existing.forEach(function (source) {
-            ['favorites:', 'recent:', 'last-channel:', 'backup:', 'progress:'].forEach(function (kind) { writes[kind + source.id] = null; });
+            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:'].forEach(function (kind) { writes[kind + source.id] = null; });
         });
         backup.sources.forEach(function (entry, index) {
             var match = sources.filter(function (source) { return fingerprint(source) === fingerprint(entry.source); })[0];
@@ -88,6 +88,9 @@ window.BackupStore = (function () {
                 var saved = writes[key] || (mode === 'merge' ? read(key, {}) : {});
                 writes[key] = lists(saved, entry[kind], kind);
             });
+            var channelsKey = 'recent-channels:' + source.id;
+            var savedChannels = writes[channelsKey] || (mode === 'merge' ? read(channelsKey, []) : []);
+            writes[channelsKey] = Library.mergeRecentChannels(savedChannels, entry.recentChannels || []);
             var metadataKey = 'backup:' + source.id;
             var metadata = writes[metadataKey] || (mode === 'merge' ? read(metadataKey, {}) : {});
             writes[metadataKey] = {

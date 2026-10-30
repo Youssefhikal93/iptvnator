@@ -54,7 +54,7 @@ window.BackupM3u = (function () {
         return { portalType: 'm3u', exportedId: source.id, title: source.name, autoRefresh: false,
             source: { kind: 'url', url: source.url, rawM3u: raw },
             userState: { favorites: favorites, recentlyViewed: recent, hiddenGroupTitles: [] },
-            tvState: { favorites: state.favorites, recent: state.recent } };
+            tvState: { favorites: state.favorites, recent: state.recent, recentChannels: state.recentChannels } };
     }
 
     return { parse: parse, build: build };

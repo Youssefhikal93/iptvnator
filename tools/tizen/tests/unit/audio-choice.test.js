@@ -20,6 +20,14 @@ function rows(active) {
 
 var episode = function (show) { return { id: 'episode:1', episodes: { show: 's1|' + show } }; };
 
+test('without Intl.DisplayNames "ar" and "en" still match tracks tagged "ara" and "eng"', function () {
+    var api = load(['audio-choice.js'], {}, { Intl: {} }).globals.AudioChoice;
+    assert.equal(api.name('ara'), api.name('ar'));
+    assert.equal(api.name('eng'), api.name('en-GB'));
+    assert.notEqual(api.name('eng'), api.name('ara'));
+    assert.equal(api.pick({ id: 'movie:1' }, rows(1), 'en').ref, 2);
+});
+
 test('nothing picked yet keeps the file\'s own track', function () {
     assert.equal(choice().api.pick(episode('3001'), rows(1)), null);
 });

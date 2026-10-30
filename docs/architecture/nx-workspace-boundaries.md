@@ -276,6 +276,11 @@ see [TV architecture](tv-application.md). `shared-tmdb` exposes
 Its domain constraint permits only TMDB and shared contracts; the core has no
 Angular dependencies. Angular services retain injectable compatibility wrappers.
 
+`apps/tizen` (`tizen`: `scope:tizen`, `domain:tizen`, `type:app`) is unrelated
+to the TV application above: it wraps the Angular `web:build:tizen` output as a
+Samsung Tizen widget and imports no projects (implicit dependency on `web`).
+See its [README](../../apps/tizen/README.md).
+
 `workspace-shell-util` is a deliberate path/tag exception:
 `libs/workspace/shell/util` is tagged `type:data-access` because it exports
 injectable services that depend on `@iptvnator/services`. The web app imports

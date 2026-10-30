@@ -1169,3 +1169,8 @@ Web development and PWA use `baseHref="/"`; packaged Electron frontend uses
 `baseHref="./"` so file URLs resolve. In `apps/web/project.json`, `production`
 is the Electron frontend build, `pwa` is the web build, and `development` uses
 the index base. Do not ship the Electron frontend build as a PWA deployment.
+The `tizen` configuration (Samsung TV widget, `apps/tizen`, issue #18) writes
+`dist/apps/web-tizen` without a service worker, uses `baseHref="index.html"`
+and swaps `router-location.providers.ts` for hash routing: the widget runs from
+a `file:` origin, where the History API rejects path changes. Other builds keep
+path routing.

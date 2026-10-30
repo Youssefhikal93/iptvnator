@@ -1,0 +1,49 @@
+{
+    "name": "tizen",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/tizen/src",
+    "tags": ["scope:tizen", "domain:tizen", "type:app"],
+    "implicitDependencies": ["web"],
+    "targets": {
+        "build-web": {
+            "executor": "nx:run-commands",
+            "outputs": ["{workspaceRoot}/dist/apps/web-tizen"],
+            "options": {
+                "command": "nx run web:build:tizen"
+            }
+        },
+        "wrap": {
+            "dependsOn": ["build-web"],
+            "outputs": ["{workspaceRoot}/dist/apps/tizen/widget"],
+            "command": "node apps/tizen/scripts/wrap-widget.mjs"
+        },
+        "package": {
+            "dependsOn": ["wrap"],
+            "outputs": [
+                "{workspaceRoot}/dist/apps/tizen/IPTVnator-unsigned.wgt"
+            ],
+            "command": "node apps/tizen/scripts/package-wgt.mjs"
+        },
+        "compat-scan": {
+            "command": "node apps/tizen/scripts/compat-scan.mjs"
+        },
+        "file-origin-check": {
+            "command": "node apps/tizen/scripts/file-origin-check.mjs"
+        },
+        "measure-local": {
+            "command": "node apps/tizen/scripts/measure-local.mjs"
+        },
+        "test": {
+            "cache": true,
+            "inputs": [
+                "{projectRoot}/**/*",
+                { "externalDependencies": ["eslint"] }
+            ],
+            "command": "node --test apps/tizen/scripts/tizen-scripts.test.mjs"
+        },
+        "lint": {
+            "command": "eslint \"apps/tizen/**/*.{js,mjs}\""
+        }
+    }
+}

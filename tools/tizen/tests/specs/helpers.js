@@ -32,6 +32,9 @@ async function boot(page, seed = {}) {
     // The screen saver (#61) is off unless a spec opts in with { screenSaver:
     // true }, so specs that fast-forward the clock keep their next key.
     if (!seed.screenSaver) storage.settings = { screenSaverMs: 0, ...storage.settings };
+    // Automatic refresh (#86) is off unless a spec opts in with { autoRefresh: true },
+    // so a fast-forwarded clock does not start background requests.
+    if (!seed.autoRefresh) storage.settings = { autoRefresh: 'off', ...storage.settings };
     seed = { ...seed, storage };
     // Seed once per context; a reload must exercise the app's persisted state.
     await page.addInitScript((seed) => {

@@ -210,6 +210,10 @@
         slides: browser.saverSlides,
     });
 
+    AutoRefresh.start({
+        busy: function () { return screen === 'player' || preview.active(); },
+    });
+
     if (ProfileScreen.shouldAsk()) whoIsWatching();
     else browser.start();
     Log.info('Jo-TV started');

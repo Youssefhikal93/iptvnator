@@ -1198,6 +1198,7 @@ window.Browser = function (hooks) {
                 // Forget the saved lists; the next section opened reloads them.
                 var dropping = state.source && source.id === sourceId() ? state.catalogue.drop() : Catalogue.drop(source.id);
                 dropping.then(function () {
+                    AutoRefresh.mark(source.id);
                     toast(I18n.t('toast.reloading', { name: source.name }));
                     watch(source);
                 });

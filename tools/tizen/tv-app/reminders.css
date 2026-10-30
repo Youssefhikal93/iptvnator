@@ -8,6 +8,11 @@
     gap: 20px;
     margin-top: 28px;
 }
+/* Unfocused buttons in the guide's dialogs have no frame, like the other
+   dialogs' buttons; the focus ring alone marks the focused one. */
+.gd-popup-card .state-button:not(:focus) {
+    border-color: transparent;
+}
 .gd-bell {
     position: absolute;
     right: 8px;

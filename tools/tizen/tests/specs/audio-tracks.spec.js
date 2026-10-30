@@ -202,16 +202,9 @@ test('#83 live audio and subtitles belong to the channel and Off survives a rest
     await press(page, 'Enter');
     await expect(page.locator('#player')).toHaveClass(/av/);
     await expect(page.locator('#pl-status')).toBeHidden();
+    // The guide's Start over row may arrive while the menu is open; the
+    // menu keeps the open group and focus on the same rows (player-menu.test.js).
     await sendKeyCode(page, 405);
-    // A catch-up row may arrive late and redraw the menu (only when the
-    // programme on now has catch-up): wait until the menu stops changing.
-    let before = '';
-    await expect.poll(async () => {
-        const now = await page.locator('#pl-menu').innerHTML();
-        const settled = now === before;
-        before = now;
-        return settled;
-    }, { intervals: [700], timeout: 15000 }).toBe(true);
     await playerGroup(page, 'Audio');
     await press(page, 'ArrowDown');
     await press(page, 'Enter');

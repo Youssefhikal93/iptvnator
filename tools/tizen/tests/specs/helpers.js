@@ -133,14 +133,20 @@ async function openFirst(page, name) {
 async function playerGroup(page, group) {
     const rows = page.locator('#pl-menu .pl-menu-item');
     await expect(rows.first()).toBeVisible();
-    const where = await rows.evaluateAll((items, group) => items.findIndex((item) => {
-        const label = item.querySelector('.label');
-        return label && label.textContent.trim().startsWith(group);
-    }), group);
-    if (where < 0) throw new Error('No player menu group ' + JSON.stringify(group));
-    const now = await rows.evaluateAll((items) => items.findIndex((item) => item.classList.contains('focus')));
-    for (let i = now; i !== where; i += where > now ? 1 : -1) await press(page, where > now ? 'ArrowDown' : 'ArrowUp');
-    await expect(rows.nth(where)).toHaveClass(/focus/);
+    // Rows can arrive while the menu is open (live Start over): look again before each step.
+    const step = () => rows.evaluateAll((items, group) => {
+        const where = items.findIndex((item) => {
+            const label = item.querySelector('.label');
+            return label && label.textContent.trim().startsWith(group);
+        });
+        const now = items.findIndex((item) => item.classList.contains('focus'));
+        return where < 0 ? 'missing' : where === now ? null : where > now ? 'ArrowDown' : 'ArrowUp';
+    }, group);
+    for (let i = 0, key; i < 30 && (key = await step()); i++) {
+        if (key === 'missing') throw new Error('No player menu group ' + JSON.stringify(group));
+        await press(page, key);
+    }
+    await expect(page.locator('#pl-menu .pl-menu-group.focus .label')).toHaveText(new RegExp('^' + group));
     await press(page, 'Enter');
     await expect(page.locator('#pl-menu .pl-menu-title')).toContainText(group);
 }

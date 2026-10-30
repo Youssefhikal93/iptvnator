@@ -66,6 +66,7 @@ window.Player = (function () {
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
     var playbackError = false;
+    var liveOffered = false;
     var errorFocus = 0;
     var speed = 1;
     var hideAt = 0;
@@ -243,6 +244,7 @@ window.Player = (function () {
 
     function seekTo(ms) {
         if (!current || current.live) return;
+        liveOffered = false;
         if (ms > 0) restoration.start(ms);
         else {
             restoration.cancel();
@@ -255,6 +257,8 @@ window.Player = (function () {
     function jumpTo(ms) {
         if (!current || current.live) return;
         restoration.cancel();
+        liveOffered = false;
+        if (current.catchUp && current.returnTo) ms = Math.min(ms, CatchUp.livePosition(current.catchUp));
         engineSeekTo(Math.max(0, ms));
     }
 
@@ -439,7 +443,18 @@ window.Player = (function () {
         return req.title + (req.subtitle ? '\n' + req.subtitle : '');
     }
 
+    // The provider cannot serve future programme time; offer live at that edge.
+    function offerLive() {
+        if (!current || !current.catchUp || !current.returnTo || !started || progressBlocked()) return;
+        if (position() < CatchUp.livePosition(current.catchUp) - 1000 || menu.open) return;
+        if (liveOffered) return;
+        liveOffered = true;
+        pause();
+        openMenu('caught-up');
+    }
+
     function tick() {
+        offerLive();
         if (current && current.catchUp && !ended && position() >= duration()) {
             pause();
             onCompleted();
@@ -483,6 +498,7 @@ window.Player = (function () {
         seek.last = now;
         var base = seek.target === null ? seek.origin : seek.target;
         var next = base + dir * SEEK_STEPS_S[tier] * 1000;
+        if (current.catchUp && current.returnTo) next = Math.min(next, CatchUp.livePosition(current.catchUp));
         seek.target = Math.max(0, dur > 0 ? Math.min(next, dur - 1000) : next);
         clearTimeout(seek.timer);
         seek.timer = setTimeout(commitSeek, SEEK_COMMIT_MS);
@@ -632,7 +648,7 @@ window.Player = (function () {
     // The groups each part of the menu keeps: Audio & subtitles has the
     // tracks and subtitle style; Settings has the rest.
     function menuPart(m) {
-        if (!menu.part) return m;
+        if (!menu.part || menu.part === 'caught-up') return m;
         var tracks = [I18n.t('player.audio'), I18n.t('picture.subtitles'), I18n.t('opensubs.timing'), I18n.t('picture.subtitleStyle')];
         var keep = false;
         return {
@@ -651,7 +667,7 @@ window.Player = (function () {
         var m = menuPart(whole);
         var tracks = getTracks();
         var watch = epg.watchFromStart();
-        if (watch) m.item(I18n.t('player.watchFromStart'), false, watch);
+        if (watch) m.item(I18n.t('player.startOver'), false, startOver);
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
@@ -685,7 +701,10 @@ window.Player = (function () {
 
     var playerMenu = PlayerMenu(ui.menu, {
         build: menuEntries,
-        title: function () { return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs'); },
+        title: function () {
+            if (menu.part === 'caught-up') return I18n.t('player.caughtUp');
+            return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs');
+        },
         run: function (action) {
             try {
                 action();
@@ -833,6 +852,7 @@ window.Player = (function () {
         avSeekPending = false;
         started = false;
         ready = false;
+        liveOffered = false;
         playerEl.classList.remove('sub-on');
         ended = false;
         clearInterval(tickTimer);
@@ -1097,6 +1117,7 @@ window.Player = (function () {
         if (!current) return;
         if (current.live) return streamLost('stream ended', I18n.t('player.stopped'));
         if (!started || progressBlocked()) return;
+        offerLive();
         ended = true;
         if (current.id) Progress.finish(current.id, duration() / 1000);
         started = false;
@@ -1272,7 +1293,15 @@ window.Player = (function () {
         return true;
     }
 
+    // The programme banner can call this without knowing the playback request.
+    function startOver() {
+        if (!current || !current.live || !ready) return;
+        var watch = epg.watchFromStart();
+        if (watch) watch();
+    }
+
     return {
+        startOver: startOver,
         play: play,
         stop: stop,
         preview: preview,

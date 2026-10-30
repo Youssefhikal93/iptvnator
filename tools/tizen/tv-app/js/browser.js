@@ -244,7 +244,10 @@ window.Browser = function (hooks) {
         icon: function (it) {
             return it.stream_icon || it.cover || it.logo || null;
         },
-        facts: function (it) { return BoxCards.facts(it, state.section); },
+        facts: function (it) {
+            var show = state.section === 'series' && !otherSource(it) ? state.catalogue.peek({ kind: 'show', id: it.series_id }) : null;
+            return BoxCards.facts(it, state.section, show);
+        },
         action: function () {
             return refreshAvailable() ? { label: I18n.t('collections.refresh'), focused: state.refreshFocus } : null;
         },

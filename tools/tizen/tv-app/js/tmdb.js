@@ -242,5 +242,12 @@ window.Tmdb = (function () {
             var known = matches[identity(item, type)];
             return known && TmdbStore.fresh(known) ? known.body : null;
         },
+        // A detail page matches with the provider's year and TMDB id added;
+        // the list item it came from gets the same answer, so its box can
+        // show it (#73).
+        remember: function (item, type, from) {
+            var known = matches[identity(from, type)];
+            if (known) matches[identity(item, type)] = known;
+        },
     };
 })();

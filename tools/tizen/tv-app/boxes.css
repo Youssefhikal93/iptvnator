@@ -37,6 +37,9 @@
 .card.box.wide { background: #0b0d12; color: #ffffff; }
 .card.box.wide .poster { position: relative; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
 .card.box.wide .box-meta { color: #d6dae2; }
+/* The length or seasons after a small icon (#73). */
+.box-fact { display: flex; align-items: center; gap: 8px; }
+.box-fact svg { flex: none; width: 1.05em; height: 1.05em; fill: currentColor; opacity: 0.85; }
 .card.box.wide .poster .watched-tick { top: auto; bottom: 8px; }
 .box-rate {
     position: absolute;

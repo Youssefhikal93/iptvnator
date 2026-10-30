@@ -173,6 +173,11 @@ window.TvGuide = function (hooks) {
         else if (code === Keys.CH_DOWN || code === 34) moveChannel(ROWS);
         else if (code === Keys.LEFT || code === Keys.RIGHT) moveTime(code === Keys.LEFT ? -1 : 1);
         else if (code === Keys.ENTER) activate();
+        else if (code === Keys.BLUE) {
+            queue = [];
+            clearInterval(timer);
+            hooks.search(function () { if (state && !state.suspended) { render(); wantRows(); startTimer(); } });
+        }
         else if (code === Keys.YELLOW) hooks.reminders(function () { if (state && !state.suspended) render(); });
         return true;
     }

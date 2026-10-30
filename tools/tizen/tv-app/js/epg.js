@@ -13,6 +13,7 @@ window.Epg = function (adapter, source) {
     var queue = [];
     var active = 0;
     var stopped = false;
+    var paused = false;
     var chain = [];
     var own = source && source.epgUrl ? XmltvGuide(source) : null;
     if (own && source.epgPrefer !== false) chain.push(own.programmes);
@@ -90,7 +91,7 @@ window.Epg = function (adapter, source) {
     }
 
     function pump(done) {
-        while (!stopped && Prefs.get('programmeGuide') && active < PARALLEL && queue.length) {
+        while (!stopped && !paused && Prefs.get('programmeGuide') && active < PARALLEL && queue.length) {
             var channel = queue.shift();
             if (peek(channel) !== undefined) continue;
             active++;
@@ -107,7 +108,16 @@ window.Epg = function (adapter, source) {
             stopped = true;
             queue = [];
         },
+        pause: function (on) {
+            paused = on;
+            if (on) queue = [];
+        },
         peek: peek,
+        // Search reads saved schedules even after their refresh deadline.
+        cached: function (channel) {
+            var entry = store[idOf(channel)];
+            return entry ? entry.list : [];
+        },
         // Programmes for one channel (the player), fetched if needed.
         load: function (channel) {
             var saved = peek(channel);
@@ -116,6 +126,7 @@ window.Epg = function (adapter, source) {
         // Fetches the last `limit` distinct channels asked for (the screen
         // the user stopped on); done() runs after each arrives.
         want: function (channels, limit, done) {
+            if (paused) return;
             var seen = {};
             queue = [];
             for (var i = channels.length - 1; i >= 0 && queue.length < limit; i--) {

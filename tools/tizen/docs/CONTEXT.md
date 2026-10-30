@@ -192,6 +192,14 @@ playable programme it does nothing.
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
 _Avoid_: EPG grid (use TV guide only for the button label)
 
+**Search programmes**:
+Blue from the Guide or Home Search opens the existing TV input and grouped
+programme rows: On now, Later today, Coming days and Past (catch-up). It
+searches a snapshot of loaded schedules, saved XMLTV and now/next caches in
+the current source, across visible channels allowed for the active profile.
+Reopen it to include newly loaded programmes. Typing makes no guide requests;
+OK offers live viewing, available catch-up or future-programme reminders.
+
 **Guide link**:
 An optional XMLTV file link saved per source, supplying programmes with a viewer-set time offset.
 _Avoid_: Custom EPG, external playlist

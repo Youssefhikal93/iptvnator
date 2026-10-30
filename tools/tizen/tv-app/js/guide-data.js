@@ -67,6 +67,20 @@ window.GuideData = function (source, adapter) {
             if (!entry || Date.now() >= entry.until) return undefined;
             return within(entry.list, from, to);
         },
+        // A local snapshot only: never call the guide source chain here.
+        cached: function (channels, epg) {
+            var saved = window.XmltvStore && source && source.epgUrl ? XmltvStore.cached(source, channels) : Promise.resolve({});
+            return saved.then(function (xmltv) {
+                return channels.map(function (channel, index) {
+                    var entry = store[keyOf(channel)];
+                    var provider = epg ? epg.cached(channel) : [];
+                    var own = xmltv[index] || [];
+                    var list = entry ? entry.list : source.epgPrefer === false ?
+                        (provider.length ? provider : own) : (own.length ? own : provider);
+                    return { channel: channel, programmes: list };
+                });
+            });
+        },
         stop: function () {
             stopped = true;
             store = {};

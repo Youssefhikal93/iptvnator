@@ -40,7 +40,7 @@ window.GuideView = function (el) {
         timeline.appendChild(nowLine);
         body.appendChild(timeline);
         el.appendChild(body);
-        el.appendChild(node('p', 'gd-hints', I18n.t('guide.hints')));
+        el.appendChild(node('p', 'gd-hints', I18n.t('guide.hints') + ' \u00b7 ' + I18n.t('programmeSearch.shortcut')));
         popup = node('div', 'gd-popup hidden');
         popup.setAttribute('role', 'dialog');
         popup.setAttribute('aria-label', I18n.t('guide.programmeDetails'));

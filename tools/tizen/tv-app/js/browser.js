@@ -92,6 +92,7 @@ window.Browser = function (hooks) {
             // A pending OK must not open an item from the old unlocked list.
             Keys.repeat(KEY.RETURN);
             if (detail.isOpen()) detail.close();
+            if (programmeSearch.isOpen()) programmeSearch.close();
             if (guide.isOpen()) guide.close();
             if (Menu.isOpen()) Menu.onKey(KEY.RETURN);
         }
@@ -211,6 +212,7 @@ window.Browser = function (hooks) {
     });
     var home = Home({
         search: find.search,
+        get programmes() { return state.guide ? openProgrammeSearch : null; },
         hero: function () {
             return state.adapter ? continueEntries().slice(0, 3) : [];
         },
@@ -275,12 +277,58 @@ window.Browser = function (hooks) {
         },
         indexOf: live.indexOf,
         reminders: openReminders,
+        search: openProgrammeSearch,
         close: function (channel) {
             var index = live.indexOf(items.items(), channel);
             if (index >= 0) items.select(index);
             setZone(items.items().length ? 'items' : 'categories');
         },
     });
+
+    var programmeSearch = ProgrammeSearch({
+        allows: function (channel) { return visibility.allows('live', channel); },
+        play: function (channel) { openEntry(channel, 'live'); },
+        catchUp: function (channel, programme) {
+            var req = catchUpRequest(channel, programme);
+            if (!req) return;
+            state.played = true;
+            hooks.play(req);
+        },
+    });
+
+    function openProgrammeSearch(done) {
+        if (!state.guide || !state.source) return;
+        hooks.preview.stop();
+        var source = state.source;
+        var savedGuide = state.guide;
+        var epg = state.epg;
+        clearTimeout(state.epgTimer);
+        state.epgWanted = [];
+        if (epg) epg.pause(true);
+        var known = state.catalogue.peek({ section: 'live', kind: 'items' });
+        var channels = known ? Promise.resolve(known) : Catalogue.entries(source.id).then(function (entries) {
+            var seen = Object.create(null);
+            var saved = [];
+            entries.filter(function (entry) { return entry.key.indexOf('live:items:') === 0; }).forEach(function (entry) {
+                entry.value.forEach(function (channel) {
+                    var key = Library.keyOf('live', channel);
+                    if (!seen[key]) { seen[key] = true; saved.push(channel); }
+                });
+            });
+            return saved;
+        });
+        var schedules = channels.then(function (all) {
+            if (state.source !== source) return [];
+            return savedGuide.cached(visibility.items('live', all || []), epg);
+        }).catch(function () {
+            toast(I18n.t('guide.failed'));
+            return [];
+        });
+        programmeSearch.open({ sourceId: source.id, schedules: schedules, done: function () {
+            if (epg) epg.pause(false);
+            if (typeof done === 'function') done();
+        } });
+    }
 
     function guideAvailable() {
         return state.section === 'live' && state.guide && state.guide.available;
@@ -2026,6 +2074,7 @@ window.Browser = function (hooks) {
             if (Keys.isBack(code)) libraryNavigation.cancel();
             return true;
         }
+        if (programmeSearch.isOpen()) return programmeSearch.key(code);
         if (guide.isOpen()) return guide.key(code);
         if (code === 458 && openGuide()) return true;
         if (state.searching) return onSearchKey(code);
@@ -2154,6 +2203,7 @@ window.Browser = function (hooks) {
             if (at >= 0) items.select(at);
             detail.refresh();
             guide.resume(live.current());
+            programmeSearch.resume();
         },
         live: live,
         watchReminder: watchReminder,

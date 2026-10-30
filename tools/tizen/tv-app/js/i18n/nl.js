@@ -59,8 +59,6 @@ I18n.tables.nl = {
     'form.username': 'Gebruikersnaam',
     'guide.noChannels': 'Geen zenders in deze categorie',
     'guide.noInfo': 'Geen programma-informatie',
-    'header.gridView': 'Rasterweergave',
-    'header.listView': 'Lijstweergave',
     'home.continueButton': '▶  Verder kijken',
     'load.goToSources': 'Naar Bronnen gaan',
     'manage.categories': 'Categorieën',

@@ -61,7 +61,7 @@ test('Back from a list, the toolbar or Settings goes straight to the menu', asyn
     await press(page, 'ArrowRight');
     await enterItems(page);
     await press(page, 'ArrowUp');
-    await toolbar(page, 'grid');
+    await toolbar(page, 'view');
     await back(page);
     await expect(focusedSection(page)).toHaveText('Movies');
 

@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, toolbar, press, playing, channel, sendKeyCode, back } = require('./helpers');
+const { test, expect, boot, section, enterItems, chooseView, press, playing, channel, sendKeyCode, back } = require('./helpers');
 
 // Channel 1 has a logo, channel 2 a dead link, channel 3 none (#44).
 const LOGO = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80"><rect width="200" height="80" fill="#e53935"/></svg>';
@@ -33,8 +33,7 @@ test('live rows and grid tiles show 16:9 plates: the logo, or the channel name w
     await expect(rows.nth(0).locator('.epg-left')).toHaveText(/min left/);
 
     await enterItems(page);
-    await toolbar(page, 'grid');
-    await press(page, 'Enter');
+    await chooseView(page, 'Grid');
     const tiles = page.locator('#items .card.channel');
     await expect(tiles).toHaveCount(12);
     await expect(tiles.nth(0).locator('.poster.plate .plate-logo')).toBeVisible();

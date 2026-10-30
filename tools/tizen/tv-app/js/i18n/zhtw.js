@@ -59,8 +59,6 @@ I18n.tables.zhtw = {
     'form.username': '使用者名稱',
     'guide.noChannels': '此分類中沒有頻道',
     'guide.noInfo': '沒有節目資訊',
-    'header.gridView': '格狀檢視',
-    'header.listView': '清單檢視',
     'home.continueButton': '▶  繼續觀看',
     'load.goToSources': '前往來源',
     'manage.categories': '類別',

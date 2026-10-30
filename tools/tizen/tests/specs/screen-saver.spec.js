@@ -94,3 +94,25 @@ test('Settings > Display > Screen saver: Off never starts it, 5 min starts soone
     // The waking OK did not open the choices.
     await expect(page.locator('#menu')).toBeHidden();
 });
+
+test("Screen saver to use: the TV's own never starts ours and hands idle to Samsung's; This app's brings ours back", async ({ page }) => {
+    await page.clock.install();
+    await page.addInitScript(() => {
+        window.__samsung = [];
+        window.webapis = Object.assign(window.webapis || {}, { appcommon: {
+            AppCommonScreenSaverState: { SCREEN_SAVER_OFF: 0, SCREEN_SAVER_ON: 1 },
+            setScreenSaver: (state) => window.__samsung.push(state),
+        } });
+    });
+    await boot(page, seed({ screenSaverKind: 'tv' }));
+    await page.clock.fastForward(30 * 60 * 1000);
+    await expect(saver(page)).toHaveCount(0);
+    // Samsung's screen saver is on.
+    expect(await page.evaluate(() => window.__samsung.slice(-1)[0])).toBe(1);
+    await setting(page, 'Screen saver to use');
+    await expect(page.locator('.st-row.focused .st-value')).toHaveText("The TV's own");
+    await choose(page, "This app's");
+    expect(await page.evaluate(() => window.__samsung.slice(-1)[0])).toBe(0);
+    await page.clock.fastForward(10 * 60 * 1000 + 1000);
+    await expect(saver(page)).toBeVisible();
+});

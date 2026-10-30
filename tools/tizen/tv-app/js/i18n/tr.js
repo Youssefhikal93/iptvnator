@@ -59,8 +59,6 @@ I18n.tables.tr = {
     'form.username': 'Kullanıcı Adı',
     'guide.noChannels': 'Bu kategoride kanal yok',
     'guide.noInfo': 'Program bilgisi yok',
-    'header.gridView': 'Izgara görünümü',
-    'header.listView': 'Liste görünümü',
     'home.continueButton': '▶  İzlemeye Devam Et',
     'load.goToSources': 'Kaynaklara git',
     'manage.categories': 'Kategoriler',

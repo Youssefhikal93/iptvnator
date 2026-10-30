@@ -59,8 +59,6 @@ I18n.tables.hu = {
     'form.username': 'Felhasználónév',
     'guide.noChannels': 'Ebben a kategóriában nincs csatorna',
     'guide.noInfo': 'Nincs műsorinformáció',
-    'header.gridView': 'Rácsnézet',
-    'header.listView': 'Listanézet',
     'home.continueButton': '▶  Megtekintés folytatása',
     'load.goToSources': 'Ugrás a Forrásokhoz',
     'manage.categories': 'Kategóriák',

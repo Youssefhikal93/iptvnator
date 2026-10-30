@@ -59,8 +59,6 @@ I18n.tables.pt = {
     'form.username': 'Nome de usuário',
     'guide.noChannels': 'Nenhum canal nesta categoria',
     'guide.noInfo': 'Sem informações do programa',
-    'header.gridView': 'Visualização em grade',
-    'header.listView': 'Visualização em lista',
     'home.continueButton': '▶  Continuar assistindo',
     'load.goToSources': 'Ir para Fontes',
     'manage.categories': 'Categorias',

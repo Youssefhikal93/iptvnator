@@ -59,8 +59,6 @@ I18n.tables.el = {
     'form.username': 'Όνομα χρήστη',
     'guide.noChannels': 'Δεν υπάρχουν κανάλια σε αυτήν την κατηγορία',
     'guide.noInfo': 'Δεν υπάρχουν πληροφορίες προγράμματος',
-    'header.gridView': 'Προβολή πλέγματος',
-    'header.listView': 'Προβολή λίστας',
     'home.continueButton': '▶  Συνέχεια παρακολούθησης',
     'load.goToSources': 'Μετάβαση στις Πηγές',
     'manage.categories': 'Κατηγορίες',

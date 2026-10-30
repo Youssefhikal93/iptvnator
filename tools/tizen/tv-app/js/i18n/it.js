@@ -59,8 +59,6 @@ I18n.tables.it = {
     'form.username': 'Utente',
     'guide.noChannels': 'Nessun canale in questa categoria',
     'guide.noInfo': 'Nessuna informazione sul programma',
-    'header.gridView': 'Vista griglia',
-    'header.listView': 'Vista elenco',
     'home.continueButton': '▶  Continua a guardare',
     'load.goToSources': 'Vai a Sorgenti',
     'manage.categories': 'Categorie',

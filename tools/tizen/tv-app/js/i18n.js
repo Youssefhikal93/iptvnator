@@ -28,6 +28,21 @@ window.I18n = (function () {
     var tables = {};
     var current = 'en';
     var listeners = [];
+    var TIME = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+    // One formatter per locale and options: building one costs far more than
+    // using it, and the guide formats every programme's times on each key.
+    var formatters = {};
+
+    function formatter(locale, kind, options) {
+        var key = locale + '|' + kind + '|' + JSON.stringify(options || {});
+        if (formatters[key]) return formatters[key];
+        try {
+            formatters[key] = new Intl.DateTimeFormat(locale, options);
+        } catch (e) {
+            formatters[key] = { format: function (date) { return kind === 'time' ? date.toLocaleTimeString(locale, options) : date.toLocaleDateString(locale, options); } };
+        }
+        return formatters[key];
+    }
 
     function find(code) {
         return LANGUAGES.filter(function (language) { return language.code === code; })[0];
@@ -109,11 +124,11 @@ window.I18n = (function () {
         },
         // 24-hour clock time in the chosen language, as the guide always showed it.
         time: function (when) {
-            return new Date(when).toLocaleTimeString(find(current).locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+            return formatter(find(current).locale, 'time', TIME).format(new Date(when));
         },
         // A date such as "Mon, 4 Mar" in the chosen language.
         date: function (when, options) {
-            return new Date(when).toLocaleDateString(find(current).locale, options);
+            return formatter(find(current).locale, 'date', options).format(new Date(when));
         },
         // Languages with a loaded table, English first.
         languages: function () {

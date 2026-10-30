@@ -100,6 +100,19 @@ test('time is a 24-hour clock and date follows the language', function () {
     assert.match(I18n.date(when, { month: 'long' }), /März/);
 });
 
+test('time and date read as before in every language, and switching language changes them', function () {
+    var I18n = load({ ar: {}, de: {}, ja: {}, zhtw: {} });
+    var when = new Date(2026, 2, 4, 21, 5).getTime();
+    var options = { weekday: 'short', month: 'short', day: 'numeric' };
+    ['en', 'ar', 'de', 'ja', 'zhtw', 'en'].forEach(function (code) {
+        I18n.setLanguage(code);
+        var locale = I18n.locale();
+        assert.equal(I18n.time(when), new Date(when).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }), code);
+        assert.equal(I18n.date(when, options), new Date(when).toLocaleDateString(locale, options), code);
+        assert.equal(I18n.date(when), new Date(when).toLocaleDateString(locale), code);
+    });
+});
+
 test('categoryName translates the saved "All channels" row by its empty id only', function () {
     var I18n = load({ de: { 'browser.allChannels': 'Alle Sender' } });
     I18n.setLanguage('de');

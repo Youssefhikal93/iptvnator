@@ -12,12 +12,12 @@
 //      programme(item) -> the programme on now for a channel, or null
 //      search(query) -> Promise of result rows (optional: without it Home
 //      has no search icon)
-window.Home = (api) => {
+window.Home = (api, element) => {
     'use strict';
 
     const KEY = Keys;
     const { html } = UI;
-    const root = document.getElementById('home');
+    const root = element || document.getElementById('home');
     // Cinema opens on a banner for what you were watching; Big first row
     // and Backdrop have none (Settings › Display › Home layout).
     const LAYOUTS = ['cinema', 'bigrow', 'backdrop'];
@@ -45,14 +45,14 @@ window.Home = (api) => {
         const show = item.show || item;
         return show.stream_icon || show.cover || show.logo || '';
     };
-    const titleOf = (entry) => (entry.item.show ? entry.item.show.name : entry.item.name);
+    const titleOf = (entry) => entry.programme ? entry.programme.title : (entry.item.show ? entry.item.show.name : entry.item.name);
     const episodeOf = (entry) => {
         const ep = entry.item.episode;
         return ep ? String(ep.label || '').replace(/\s+/g, ' ').trim() : '';
     };
     const entryKey = (entry) => {
         const item = entry.item.show || entry.item;
-        return entry.section + ':' + (item.series_id || item.stream_id);
+        return entry.section + ':' + (item.series_id || item.stream_id || item.url) + (entry.programme ? ':' + entry.programme.start + ':' + entry.programme.end + ':' + entry.programme.title : '');
     };
 
     // The continue row leaves out the title the hero is showing (#45).
@@ -205,7 +205,10 @@ window.Home = (api) => {
         const chip = item.sourceId && item.sourceId !== Sources.current().id ? html`<span class="source-chip">${item.sourceName}</span>` : null;
         let overlays;
         let sub;
-        if (live) {
+        if (entry.programme) {
+            const p = entry.programme;
+            sub = item.name + ' \u00b7 ' + I18n.date(p.start, { weekday: 'short', month: 'short', day: 'numeric' }) + ' \u00b7 ' + I18n.time(p.start) + ' - ' + I18n.time(p.end);
+        } else if (live) {
             const now = api.programme(item);
             sub = now && now.title;
             overlays = [chip, now && now.end > now.start ? bar('hm-bar live', (Date.now() - now.start) / (now.end - now.start)) : null];
@@ -222,7 +225,7 @@ window.Home = (api) => {
         }
         const name = titleOf(entry);
         const poster = live
-            ? html`<${Kit.Plate} cls="hm-poster" name=${name} logo=${src} onFail=${failed}>${overlays}</${Kit.Plate}>`
+            ? html`<${Kit.Plate} cls="hm-poster" name=${entry.programme ? item.name : name} logo=${src} onFail=${failed}>${overlays}</${Kit.Plate}>`
             : html`<${Poster} src=${src} initials=${name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()}>${overlays}</${Poster}>`;
         return { key: entryKey(entry), cls: 'hm-card' + (live ? ' live' : '') + (big ? ' big' : ''), poster, name, sub };
     };
@@ -299,15 +302,16 @@ window.Home = (api) => {
     const SearchBar = ({ focused }) => {
         const q = s.q;
         const note = q.busy ? I18n.t('find.searching')
-            : !q.text.trim() ? I18n.t('find.hint')
+            : !q.text.trim() ? I18n.t(api.searchHint || 'find.hint')
             : q.found && !q.found.length ? I18n.t('empty.search.title', { query: q.text.trim() }) + ' · ' + I18n.t('empty.search.hint')
             : '';
         return html`<div class="hm-search">
             <div class=${'hm-search-bar' + (focused && !q.typing ? ' focused' : '') + (q.typing ? ' typing' : '')}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input ref=${input} autocomplete="off" value=${q.text} placeholder=${I18n.t('find.placeholder')} onInput=${typed} />
+                <input ref=${input} autocomplete="off" value=${q.text} placeholder=${I18n.t(api.searchPlaceholder || 'find.placeholder')} onInput=${typed} />
             </div>
             ${note ? html`<div class="hm-search-note">${note}</div>` : null}
+            ${api.programmes ? html`<button class="dt-btn small" onClick=${searchProgrammes}>${I18n.t('programmeSearch.shortcut')}</button>` : null}
         </div>`;
     };
 
@@ -357,6 +361,7 @@ window.Home = (api) => {
         startTyping();
     };
     const closeSearch = () => {
+        clearTimeout(s.q.timer);
         if (input.current) input.current.blur();
         ++s.q.token;
         s.q = fresh().q;
@@ -364,6 +369,11 @@ window.Home = (api) => {
         s.blockKey = null;
         render();
     };
+
+    function searchProgrammes() {
+        stopTyping();
+        api.programmes();
+    }
 
     // While typing, keys other than these reach the bar (false).
     const typingKey = (code) => {
@@ -448,6 +458,7 @@ window.Home = (api) => {
     // Returns the edge the focus leaves Home by, 'left' or 'up', for the
     // menu; false while typing for a key the search bar should get.
     const key = (code) => {
+        if (s.q.open && code === KEY.BLUE && api.programmes) return searchProgrammes();
         if (s.q.typing) return typingKey(code);
         const list = blocks();
         const block = list[s.block];
@@ -480,6 +491,7 @@ window.Home = (api) => {
     };
 
     return {
+        openSearch,
         render,
         key,
         setActive: (active) => {
@@ -511,6 +523,8 @@ window.Home = (api) => {
         // start at the top.
         reset: (fromLibrary) => {
             const was = s;
+            clearTimeout(was.q.timer);
+            ++was.q.token;
             s = fresh();
             s.active = was.active;
             if (fromLibrary) {

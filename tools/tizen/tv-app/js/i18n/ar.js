@@ -2,6 +2,13 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ar = {
+    'programmeSearch.title': 'البحث عن البرامج',
+    'programmeSearch.hint': 'ابحث في البرامج المحفوظة على هذا التلفاز.',
+    'programmeSearch.shortcut': 'الأزرق: البحث عن البرامج',
+    'programmeSearch.now': 'يُعرض الآن',
+    'programmeSearch.today': 'لاحقاً اليوم',
+    'programmeSearch.coming': 'الأيام القادمة',
+    'programmeSearch.past': 'السابق (إعادة المشاهدة)',
     'kids.badge': 'أطفال',
     'kids.switch': 'ملف أطفال',
     'kids.switchHint': 'فقط الفئات التي تختارها. يلزم رمز PIN لتغييرها أو للخروج.',

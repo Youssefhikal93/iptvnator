@@ -7,7 +7,7 @@
 //
 // SubtitleSync.create(hooks): hooks.cues(), offset(), scale(), setOffset(ms)
 // (shows it, unsaved), keep() (saves), position(), jump(ms), play(), pause(),
-// paused(), root (the element the bar is drawn in; none in unit tests).
+// paused(), hideControls(), root (the element the bar is drawn in; none in\n// unit tests).
 window.SubtitleSync = (function () {
     'use strict';
 
@@ -56,7 +56,6 @@ window.SubtitleSync = (function () {
         var focus = 0;
         var before = 0; // The timing when the bar opened, for Return.
         var wasPaused = false;
-        var heard = null;
         var bar = null;
 
         function el(tag, className, text) {
@@ -104,13 +103,24 @@ window.SubtitleSync = (function () {
             render();
         }
 
-        function close(keep) {
+        // Playing and pausing bring the player controls back; the bar keeps them away.
+        function play() {
+            hooks.play();
+            if (hooks.hideControls) hooks.hideControls();
+        }
+
+        function pause() {
+            hooks.pause();
+            if (hooks.hideControls) hooks.hideControls();
+        }
+
+        // ending: playback is going away, so nothing is played again.
+        function close(keep, ending) {
             if (!state) return;
-            if (state === 'choose' && !wasPaused) hooks.play();
+            if (state === 'choose' && !wasPaused && !ending) play();
             if (keep) hooks.keep();
             else hooks.setOffset(before);
             state = null;
-            heard = null;
             Keys.cancel();
             render();
         }
@@ -132,7 +142,7 @@ window.SubtitleSync = (function () {
 
         function choose() {
             wasPaused = hooks.paused();
-            hooks.pause();
+            pause();
             focus = target;
             state = 'choose';
             render();
@@ -142,15 +152,16 @@ window.SubtitleSync = (function () {
         function pick() {
             var cue = hooks.cues()[focus];
             hooks.jump(startAt(cue, hooks.offset(), hooks.scale()));
-            hooks.play();
+            play();
             listenFor(focus);
         }
 
-        // OK heard the line: every line moves so this one starts then.
-        function align() {
-            var cue = hooks.cues()[target];
+        // OK heard the line: every line moves so it starts then. The line is
+        // the one shown at the press, even if the bar moved on before letting go.
+        function align(index, at) {
+            var cue = hooks.cues()[index];
             if (!cue) return;
-            hooks.setOffset(aligned(cue, heard, hooks.scale()));
+            hooks.setOffset(aligned(cue, at, hooks.scale()));
             state = 'tuned';
             render();
         }
@@ -164,7 +175,7 @@ window.SubtitleSync = (function () {
                 return true;
             } else if (Keys.isBack(code)) {
                 state = 'listen';
-                if (!wasPaused) hooks.play();
+                if (!wasPaused) play();
             } else return true;
             focus = Math.max(0, Math.min(last, focus));
             render();
@@ -173,12 +184,18 @@ window.SubtitleSync = (function () {
 
         function key(code) {
             if (!state) return false;
+            // Stop closes the bar without saving and still stops the video.
+            if (code === Keys.STOP) {
+                close(false);
+                return false;
+            }
             if (state === 'choose') return chooseKey(code);
             if (code === Keys.ENTER) {
                 // The moment counts from the press, not from letting go.
-                heard = hooks.position();
+                var at = hooks.position();
+                var line = target;
                 Keys.press(function () {
-                    if (state === 'listen') align();
+                    if (state === 'listen') align(line, at);
                     else close(true);
                 }, choose, function () { return bar; });
             } else if (code === Keys.LEFT || code === Keys.RIGHT) move(code === Keys.LEFT ? -100 : 100);
@@ -195,7 +212,10 @@ window.SubtitleSync = (function () {
             if (state !== 'listen') return;
             var cues = hooks.cues();
             var due = cues[target] && shows(cues[target], hooks.offset(), hooks.scale()) + MISSED_MS;
-            if (due && hooks.position() > due) listenFor(upcoming(cues, hooks.position(), hooks.offset(), hooks.scale()));
+            if (!due || hooks.position() <= due) return;
+            // The last line has nothing after it: the bar stays as it is.
+            var next = upcoming(cues, hooks.position(), hooks.offset(), hooks.scale());
+            if (next !== target) listenFor(next);
         }
 
         return {
@@ -205,7 +225,7 @@ window.SubtitleSync = (function () {
             isOpen: function () { return !!state; },
             state: function () { return state; },
             // Playback ended or changed: nothing is saved.
-            stop: function () { if (state) close(false); },
+            stop: function () { if (state) close(false, true); },
         };
     }
 

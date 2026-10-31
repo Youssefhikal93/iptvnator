@@ -629,6 +629,54 @@ test('SubtitleSync.family drops the episode number so a release is recognised ac
     assert.notEqual(family('Mona.Lisa.S01E02.1080p.WEB-GRP'), family('Mona.Lisa.S01E02.720p.HDTV-OTHER'));
 });
 
+test('Sync subtitles: Stop closes the bar unsaved and still stops; the line shown at the press is the one aligned', function () {
+    var env = syncFixture();
+    var v = syncViewer(env);
+    var K = env.globals.Keys;
+    var S = env.globals.SubtitleSync;
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.key(K.RIGHT);
+    assert.equal(v.key(K.STOP), false, 'Stop is left to the player');
+    assert.equal(v.player.syncing(), false);
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 0);
+    // OK goes down while the Arabic line (5 s) shows; before it is let go the bar moves on.
+    v.row('Sync subtitles').run();
+    v.position = 24000;
+    v.key(K.ENTER);
+    v.position = 26000;
+    env.tick();
+    env.keyup();
+    v.ok();
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 24000 - S.REACTION_MS - 5000);
+    v.player.stop();
+});
+
+test('an episode that already had a subtitle, or a file without a release name, keeps its own timing', async function () {
+    var results = [{ language: 'en', release: 'Mona.Lisa.S01E01.1080p.WEB-GRP', fps: 23.976, files: [{ file_id: 7 }] }];
+    var env = fixture(alignServer(results, { 7: LINES, 8: LINES, 9: LINES }));
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    var v = syncViewer(env);
+    var lookup = function () { return Promise.resolve({ title: 'Mona Lisa', video: { avg_frame_rate: '24000/1001' } }); };
+    var episode = function (n) { return { id: 'episode:' + n, subtitleId: 's1|episode:' + n, subtitleShow: 's1|show:9', title: 'Mona Lisa', subtitleLookup: lookup }; };
+    await searchAndPick(env, v, episode(1));
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.position = 8000;
+    v.ok();
+    v.ok();
+    // Episode 2 was watched with a subtitle before and its timing was put back to none.
+    env.globals.SubtitleStore.save('s1|episode:2', 3, 0, 1, 'English · Old');
+    results[0] = { language: 'en', release: 'Mona.Lisa.S01E02.1080p.WEB-GRP', fps: 23.976, files: [{ file_id: 8 }] };
+    await searchAndPick(env, v, episode(2));
+    assert.equal(env.globals.SubtitleStore.title('s1|episode:2').offset, 0);
+    results[0] = { language: 'en', release: '', fps: 23.976, files: [{ file_id: 9 }] };
+    await searchAndPick(env, v, episode(3));
+    assert.equal(env.globals.SubtitleStore.title('s1|episode:3').offset || 0, 0);
+    v.player.stop();
+});
+
 test('#39 Try the next subtitle downloads the following result without searching again', async function () {
     var calls = 0;
     var server = alignServer([{ language: 'en', release: 'One', download_count: 900, files: [{ file_id: 7 }] },

@@ -93,6 +93,7 @@ window.SubtitleDownload = function (hooks) {
         play: function () { if (hooks.play) hooks.play(); },
         pause: function () { if (hooks.pause) hooks.pause(); },
         paused: function () { return !!(hooks.paused && hooks.paused()); },
+        hideControls: function () { if (hooks.hideControls) hooks.hideControls(); },
     });
 
     function closePicker() {
@@ -168,12 +169,14 @@ window.SubtitleDownload = function (hooks) {
                 if (mine === generation && alive()) Menu.retitle(I18n.t('opensubs.translating', { p: Math.round(done / total * 100) }));
             };
         }
+        // A first subtitle for this title, of a named release, may take the show's timing.
+        var firstFile = !SubtitleStore.title(current.subtitleId || current.id).file_id && !!String(match.release || '').trim();
         return SubtitleStore.obtain(match.file_id, match).then(function (result) {
             if (mine !== generation || !alive()) return;
             var stretch = ratio(match);
             apply(result.text, match.file_id, stretch, match.title || languageName(match.language) + ' · ' + match.release);
             // The next episode of a release synced before starts with that delay.
-            var reuse = offset ? 0 : showDelay();
+            var reuse = firstFile && !offset ? showDelay() : 0;
             if (reuse) {
                 offset = reuse;
                 lastText = null;

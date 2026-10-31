@@ -268,3 +268,9 @@ A jump of a fixed length near the start of an episode; providers do not mark int
 **Sleep timer**:
 A player choice that stops playback and closes the TV app after a duration or at the end of the current movie or episode.
 _Avoid_: Auto-off, shutdown timer
+
+## Feature guide
+
+Every ticket that adds or changes a user-visible feature must update
+[tools/tizen/FEATURES.md](../FEATURES.md) in the same commit: its feature section
+and "What's new" for the next TV install. Reviews check that both are up to date.

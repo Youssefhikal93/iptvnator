@@ -791,17 +791,25 @@ body.bar-off #header {
     font-size: 30px;
     font-weight: 600;
 }
+.menu-row:not(.rich):not(.with-icon) {
+    display: flex;
+    align-items: center;
+}
+#menu:lang(ar) {
+    direction: rtl;
+    text-align: right;
+}
 /* An option stays on one line ("Remove from Continue watching"). */
 .menu-row:not(.note):not(.rich) {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.menu-row[data-glyph]::before {
+.menu-row:not(.rich):not(.with-icon)::before {
     content: attr(data-glyph);
-    display: inline-block;
+    flex: none;
     width: 40px;
-    margin-right: 22px;
+    margin-inline-end: 22px;
     text-align: center;
     color: var(--muted);
 }
@@ -822,10 +830,13 @@ body.bar-off #header {
 /* A source's account details under its options; the focus passes over them. */
 .menu-row.note {
     margin-top: 0;
-    padding: 4px 20px;
+    padding: 4px 27px;
     border-width: 0;
     color: var(--muted);
     font-size: 22px;
+}
+.menu-row.note .menu-label {
+    white-space: normal;
 }
 .menu-row:not(.note) + .menu-row.note {
     margin-top: 14px;

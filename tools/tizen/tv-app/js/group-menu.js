@@ -10,26 +10,26 @@ window.GroupMenu = function (hooks) {
 
     function add(source, item) {
         var rows = ChannelGroups.list(source).map(function (group) {
-            return { label: group.name, run: function () { ChannelGroups.add(source, group.id, item); hooks.changed(); } };
+            return { label: group.name, glyph: '☰', run: function () { ChannelGroups.add(source, group.id, item); hooks.changed(); } };
         });
-        rows.push({ label: I18n.t('groups.new'), run: function () {
+        rows.push({ label: I18n.t('groups.new'), glyph: '⊞', run: function () {
             name(I18n.t('groups.new'), '', function (text) {
                 var id = ChannelGroups.create(source, text);
                 ListOrder.addGroup(source, 'categories:live', id);
                 ChannelGroups.add(source, id, item);
             });
         } });
-        rows.push({ label: I18n.t('common.cancel') });
+        rows.push({ label: I18n.t('common.cancel'), glyph: '✕' });
         Menu.open(I18n.t('groups.add'), rows);
     }
 
     return {
         channel: function (item, row) {
             var source = item.sourceId || hooks.sourceId();
-            var rows = [{ label: I18n.t('groups.add'), run: function () {
+            var rows = [{ label: I18n.t('groups.add'), glyph: '⊞', run: function () {
                 add(source, item);
             } }];
-            if (row && row.virtual === 'group') rows.push({ label: I18n.t('groups.removeChannel'), run: function () {
+            if (row && row.virtual === 'group') rows.push({ label: I18n.t('groups.removeChannel'), glyph: '✕', run: function () {
                 ChannelGroups.removeChannel(source, row.category_id, item);
                 hooks.changed();
             } });
@@ -38,10 +38,10 @@ window.GroupMenu = function (hooks) {
         category: function (row) {
             var source = hooks.sourceId();
             return [
-                { label: I18n.t('groups.rename'), run: function () {
+                { label: I18n.t('groups.rename'), glyph: '✎', run: function () {
                     name(I18n.t('groups.rename'), row.category_name, function (text) { ChannelGroups.rename(source, row.category_id, text); });
                 } },
-                { label: I18n.t('groups.delete'), run: function () {
+                { label: I18n.t('groups.delete'), glyph: '✕', run: function () {
                     ProfileDialog.open({ title: I18n.t('groups.delete'), text: row.category_name, ok: I18n.t('groups.delete'), done: function (confirmed) {
                         if (confirmed) {
                             ChannelGroups.remove(source, row.category_id);

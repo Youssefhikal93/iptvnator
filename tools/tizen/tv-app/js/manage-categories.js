@@ -193,7 +193,7 @@ window.ManageCategories = function (hooks) {
             if (!row) return;
             var options = menu(s.section, row, s.full).slice(0, -1).concat(orderMenu(row));
             if (row.virtual === 'group') options = options.concat(groups.category(row));
-            options.push({ label: I18n.t('common.cancel') });
+            options.push({ label: I18n.t('common.cancel'), glyph: '✕' });
             Menu.open(row.category_name, options);
         }, Keys.focusedIn('manage'));
         paint();
@@ -219,6 +219,7 @@ window.ManageCategories = function (hooks) {
         if (HiddenCategories.isReal(row)) {
             options.push({
                 label: I18n.t('manage.hide'),
+                glyph: '−',
                 run: function () {
                     HiddenCategories.hide(id, section, row.category_id);
                     hooks.toast(I18n.t('manage.toastHidden', { name: row.category_name }));
@@ -227,6 +228,7 @@ window.ManageCategories = function (hooks) {
             });
             options.push({
                 label: I18n.t('manage.hideOthers'),
+                glyph: '⊟',
                 run: function () {
                     HiddenCategories.hideAllExcept(id, section, base, row.category_id);
                     hooks.toast(I18n.t('manage.toastHiddenOthers', { name: row.category_name }));
@@ -234,8 +236,8 @@ window.ManageCategories = function (hooks) {
                 },
             });
         }
-        options.push({ label: I18n.t('manage.title'), run: function () { open(section); } });
-        options.push({ label: I18n.t('common.cancel') });
+        options.push({ label: I18n.t('manage.title'), glyph: '☰', run: function () { open(section); } });
+        options.push({ label: I18n.t('common.cancel'), glyph: '✕' });
         return options;
     }
 

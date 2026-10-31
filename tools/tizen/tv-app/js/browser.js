@@ -2094,7 +2094,7 @@ window.Browser = function (hooks) {
             changed: ListOrder.changed(sourceId(), scope), reset: function () { ListOrder.reset(sourceId(), scope); },
             done: function () { categoriesChanged(state.section); } }));
         if (row.virtual === 'group') options = options.concat(groupMenu.category(row));
-        options.push({ label: I18n.t('common.cancel') });
+        options.push({ label: I18n.t('common.cancel'), glyph: '✕' });
         if (HiddenCategories.isReal(row)) options.splice(options.length - 1, 0, ParentalMenu.category(sourceId(), state.section, row));
         Menu.open(row.category_name, options);
     }

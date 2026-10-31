@@ -158,8 +158,27 @@ window.XmltvParser = (function () {
         return sniff();
     }
 
+    // Quality, codec and copy words a provider adds to a name (#90).
+    var EXTRA = /^(?:uhd|fhd|hd|sd|hevc|h26[45]|x26[45]|low|backup|\d{3,4}p|\d{2}fps)$/;
+
+    // The words that name a channel, as providers and guides write them
+    // differently (#90): "Backup: Bein SP 7 H265 Low" and "beIN SPORTS 7.qa"
+    // are both bein sports 7. Words that tell channels apart stay: MAX 1 is
+    // not 1, and 4K stays when it is the name ("beIN 4K") rather than the
+    // quality after a channel number ("beIN SPORTS 1 4K").
+    function words(name) {
+        var text = String(name || '').toLowerCase()
+            .replace(/\.[a-z]{2}(?:@[\w-]+)?$/, '')
+            .replace(/^[^:|]{1,30}[:|](?=.*[\p{L}\p{N}])/u, '')
+            .replace(/h\.26([45])/g, 'h26$1');
+        var list = text.split(/[^\p{L}\p{N}]+/u).filter(function (word) { return word && !EXTRA.test(word); });
+        list = list.map(function (word) { return word === 'sp' ? 'sports' : word; });
+        var numbered = list.some(function (word) { return /^\d+$/.test(word); });
+        return list.filter(function (word) { return !(numbered && /^[48]k$/.test(word)); });
+    }
+
     function normalName(name) {
-        return String(name || '').toLowerCase().replace(/\b(?:uhd|fhd|hd|sd|4k|8k)\b/g, '').replace(/[^\p{L}\p{N}]/gu, '');
+        return words(name).join('');
     }
 
     function match(channel, index) {
@@ -169,5 +188,8 @@ window.XmltvParser = (function () {
         return Object.prototype.hasOwnProperty.call(index.names, name) ? index.names[name] : null;
     }
 
-    return { create: create, time: time, textStream: textStream, normalName: normalName, match: match };
+    // A guide saved with an older name index is downloaded again (xmltv.js).
+    var NAME_RULES = 2;
+
+    return { create: create, time: time, textStream: textStream, words: words, normalName: normalName, match: match, NAME_RULES: NAME_RULES };
 })();

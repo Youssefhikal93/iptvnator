@@ -68,15 +68,21 @@ window.GuideData = function (source, adapter) {
             return within(entry.list, from, to);
         },
         // A local snapshot only: never call the guide source chain here.
+        // The first guide with programmes for a channel wins, in the viewer's order (#90).
         cached: function (channels, epg) {
-            var saved = window.XmltvStore && source && source.epgUrl ? XmltvStore.cached(source, channels) : Promise.resolve({});
-            return saved.then(function (xmltv) {
+            var order = [];
+            if (source) GuideLinks.each(source, function (link) { order.push(link); }, true);
+            var saved = Promise.all(order.map(function (link) {
+                return link && window.XmltvStore ? XmltvStore.cached(link, channels) : Promise.resolve(null);
+            }));
+            return saved.then(function (schedules) {
                 return channels.map(function (channel, index) {
                     var entry = store[keyOf(channel)];
-                    var provider = epg ? epg.cached(channel) : [];
-                    var own = xmltv[index] || [];
-                    var list = entry ? entry.list : source.epgPrefer === false ?
-                        (provider.length ? provider : own) : (own.length ? own : provider);
+                    var list = entry ? entry.list : [];
+                    if (!entry) order.some(function (link, at) {
+                        list = link ? (schedules[at] && schedules[at][index]) || [] : epg ? epg.cached(channel) : [];
+                        return list.length > 0;
+                    });
                     return { channel: channel, programmes: list };
                 });
             });
@@ -93,17 +99,17 @@ window.GuideData.chain = function (source, adapter) {
     'use strict';
 
     var chain = [];
-    var own = window.XmltvGuide && source && source.epgUrl ? XmltvGuide(source) : null;
-    if (own && source.epgPrefer !== false) chain.push(own);
     // The provider's full schedule (#6).
-    if (adapter && adapter.schedule) {
-        chain.push({
-            name: 'provider',
-            programmes: function (channel) {
-                return adapter.schedule(channel);
-            },
-        });
-    }
-    if (own && source.epgPrefer === false) chain.push(own);
+    var provider = {
+        name: 'provider',
+        programmes: function (channel) {
+            return adapter.schedule(channel);
+        },
+    };
+    if (!source || !window.XmltvGuide) return adapter && adapter.schedule ? [provider] : [];
+    // The guide links and the provider in the viewer's order (#90).
+    GuideLinks.each(source, function (link) {
+        chain.push(link ? XmltvGuide(link) : provider);
+    }, !!(adapter && adapter.schedule));
     return chain;
 };

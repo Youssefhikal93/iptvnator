@@ -84,10 +84,32 @@ test('matching prefers case-insensitive ids, then normalises names and quality t
     [
         [{ epg_channel_id: 'C1', name: 'Nyheter på TV HD' }, 'c1'],
         [{ tvg_id: 'C1' }, 'c1'],
-        [{ epg_channel_id: 'unknown', name: 'Nyheter-på TV (FHD) 4K SD' }, 'c2'],
+        [{ epg_channel_id: 'unknown', name: 'Nyheter-på TV (FHD) SD' }, 'c2'],
         [{ name: 'missing' }, null],
         [{}, null],
     ].forEach(function (row) { assert.equal(parser.match(row[0], index), row[1]); });
+});
+
+test('names pair across providers and guides, but MAX, XTRA and a 4K name stay apart (#90)', function () {
+    var same = [
+        ['beIN SP 1 HD', 'beIN SPORTS 1.qa'],
+        ['beIN SP 1 SD', 'beIN SPORTS 1'],
+        ['Backup: Bein Sports 7 H265 Low', 'beIN SPORTS 7.qa'],
+        ['beIN SP XTRA 2 FHD', 'beIN SPORTS XTRA 2.qa'],
+        ['beIN SPORTS 1 4K', 'beIN SPORTS 1'],
+        ['AR: MBC 1 HD', 'MBC 1.ae@SD'],
+        ['beIN 4K', 'beIN 4K.qa'],
+    ];
+    same.forEach(function (pair) { assert.equal(parser.normalName(pair[0]), parser.normalName(pair[1]), pair.join(' = ')); });
+    var apart = [
+        ['beIN SP MAX 1', 'beIN SPORTS 1'],
+        ['beIN SP XTRA 1', 'beIN SPORTS 1'],
+        ['beIN SPORTS 1 AFC', 'beIN SPORTS 1'],
+        ['beIN 4K', 'beIN'],
+        ['beIN SPORTS 4K', 'beIN SPORTS'],
+    ];
+    apart.forEach(function (pair) { assert.notEqual(parser.normalName(pair[0]), parser.normalName(pair[1]), pair.join(' != ')); });
+    assert.equal(parser.words('Backup: Bein SP 7 H.265 Low').join(' '), 'bein sports 7');
 });
 
 test('M3U tvg-id survives import without changing channel names or groups', async function () {

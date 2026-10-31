@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, back, sources, sourceMenu, menuChoice, enterItems, playing } = require('./helpers');
+const { test, expect, boot, section, press, back, sources, sourceMenu, menuChoice, moveTo, enterItems, playing } = require('./helpers');
 
 async function guideLink(page, path, prefer = 'yes') {
     await sourceMenu(page);
@@ -31,7 +31,15 @@ test('own gzip guide, provider-first fallback, player, saved reload and removal'
     await expect(liveRow(page, 3).locator('.epg-now')).toContainText('XMLTV show');
 
     await sourceMenu(page);
-    await menuChoice(page, 'Prefer my guide: On');
+    // The provider's guide moved first in Guide order (#90).
+    await moveTo(page, '#menu .focused', 'Guide order');
+    await press(page, 'Enter');
+    await moveTo(page, '#menu .focused', "2. Provider's guide");
+    await press(page, 'Enter');
+    await moveTo(page, '#menu .focused', 'Move up');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu .menu-row').first()).toHaveText("1. Provider's guide");
+    await back(page);
     await section(page, 'Live TV');
     await expect(liveRow(page, 1).locator('.epg-now')).toHaveText('Nyheter på svenska 1001');
     await expect(liveRow(page, 3).locator('.epg-now')).toContainText('XMLTV show');
@@ -51,7 +59,7 @@ test('own gzip guide, provider-first fallback, player, saved reload and removal'
     await expect(liveRow(page, 3).locator('.epg-now')).toContainText('XMLTV show');
     expect(downloads).toBe(1);
     await sourceMenu(page);
-    await menuChoice(page, 'Remove guide link');
+    await menuChoice(page, 'Remove guide links');
     await expect(page.locator('#settings')).not.toContainText('Guide:');
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:sources'))[0].epgUrl)).toBe('');
     await expect.poll(() => page.evaluate(() => localStorage.getItem('iptvnator-tv:guide:s1'))).toBe(null);
@@ -135,6 +143,11 @@ test('guide edit remote fields clamp offsets and Return or Cancel preserves the 
     await sourceMenu(page);
     await menuChoice(page, 'Guide link…');
     await expect(page.locator('#form-epg-url')).toBeFocused();
+    // Guide links 2 and 3 (#90) come before the offset.
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#form-epg-url2')).toBeFocused();
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#form-epg-url3')).toBeFocused();
     await press(page, 'ArrowDown');
     await expect(page.locator('#form-epg-offset')).toBeFocused();
     await page.locator('#form-epg-offset').fill('12');

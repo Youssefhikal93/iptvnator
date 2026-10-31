@@ -14,14 +14,18 @@ window.Epg = function (adapter, source) {
     var active = 0;
     var stopped = false;
     var paused = false;
+    // The source's guide links and the provider, in the viewer's order (#90).
     var chain = [];
-    var own = source && source.epgUrl ? XmltvGuide(source) : null;
-    if (own && source.epgPrefer !== false) chain.push(own.programmes);
-    if (adapter.nowNext) chain.push(function (channel) { return adapter.nowNext(channel); });
-    if (own && source.epgPrefer === false) chain.push(own.programmes);
+    if (source) {
+        GuideLinks.each(source, function (link) {
+            if (link) chain.push(XmltvGuide(link).programmes);
+            else chain.push(function (channel) { return adapter.nowNext(channel); });
+        }, !!adapter.nowNext);
+    } else if (adapter.nowNext) chain.push(function (channel) { return adapter.nowNext(channel); });
 
     function revision() {
-        return source && window.XmltvGuide ? XmltvGuide.revision(source.id) : 0;
+        if (!source || !window.XmltvGuide) return 0;
+        return GuideLinks.ids(source.id).reduce(function (sum, id) { return sum + XmltvGuide.revision(id); }, 0);
     }
 
     // The first guide source with programmes wins. A source that failed

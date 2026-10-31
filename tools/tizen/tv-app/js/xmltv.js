@@ -78,7 +78,7 @@ window.XmltvGuide = (function () {
             published = true;
             if (job.cancelled) return;
             revisions[source.id] = (revisions[source.id] || 0) + 1;
-            notify(source.id, { updatedAt: Date.now(), state: 'ready', channels: channels, programmes: programmes });
+            notify(source.id, { updatedAt: Date.now(), state: 'ready', channels: channels, programmes: programmes, nameRules: XmltvParser.NAME_RULES });
         }).catch(function () {
             if (job.reader) job.reader.cancel().catch(function () {});
             if (job.cancelled) return;
@@ -147,10 +147,19 @@ window.XmltvGuide = (function () {
 
     // Automatic downloads at most every 12 hours, counting failed ones;
     // Settings > Refresh guide still downloads at once.
+    // A guide saved before the name rules last changed (#90) is downloaded
+    // again at once, so its channels pair by the new rules.
     guide.ensure = function (source) {
         var saved = status(source.id);
         var last = Math.max(saved.updatedAt || 0, saved.failedAt || 0);
-        if (source.epgUrl && Date.now() - last >= FRESH) refresh(source);
+        var oldNames = saved.state === 'ready' && saved.nameRules !== XmltvParser.NAME_RULES;
+        if (source.epgUrl && (oldNames || Date.now() - last >= FRESH)) refresh(source);
+    };
+    // Something that changes which programmes a channel gets, such as a
+    // guide channel chosen by hand (#90), without a download.
+    guide.touch = function (id) {
+        revisions[id] = (revisions[id] || 0) + 1;
+        listeners.forEach(function (listener) { listener(id); });
     };
     guide.refresh = refresh;
     // When the guide last downloaded, and when a download last failed.
@@ -176,13 +185,23 @@ window.XmltvGuide = (function () {
             listeners.forEach(function (listener) { listener(id); });
         }).catch(function () { Log.error('Guide could not be removed'); });
     };
-    guide.subtitle = function (source) {
-        if (!source.epgUrl) return '';
-        var saved = status(source.id);
-        if (saved.state === 'updating' && jobs[source.id]) return I18n.t('guide.updating');
+    function linkText(link) {
+        var saved = status(link.id);
+        if (saved.state === 'updating' && jobs[link.id]) return I18n.t('guide.updating');
         if (saved.state === 'failed') return I18n.t('guide.failed');
         if (!saved.updatedAt || Date.now() - saved.updatedAt >= FRESH) return I18n.t('guide.stale');
         return I18n.t('guide.updated', { time: I18n.time(saved.updatedAt) });
+    }
+
+    // One line for all of a source's links (#90): one still downloading, then
+    // the ones that failed by number, else how the first one stands.
+    guide.subtitle = function (source) {
+        var links = GuideLinks.links(source);
+        if (links.length < 2) return links.length ? linkText(links[0]) : '';
+        if (links.some(function (link) { return status(link.id).state === 'updating' && jobs[link.id]; })) return I18n.t('guide.updating');
+        var failed = links.filter(function (link) { return status(link.id).state === 'failed'; });
+        if (failed.length) return I18n.t('guide.failedN', { n: failed.map(function (link) { return link.n; }).join(', ') });
+        return linkText(links[0]);
     };
     return guide;
 })();

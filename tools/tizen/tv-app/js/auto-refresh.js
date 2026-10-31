@@ -72,9 +72,11 @@ window.AutoRefresh = (function () {
         Sources.all().forEach(function (source) {
             var saved = read(source.id);
             list.push({ kind: 'source', source: source, last: saved.at, tried: saved.tried });
-            if (!source.epgUrl) return;
-            var guide = XmltvGuide.times(source.id);
-            list.push({ kind: 'guide', source: source, last: guide.updatedAt, tried: guide.failedAt });
+            // One item per guide link (#90); item.source is the link.
+            GuideLinks.links(source).forEach(function (link) {
+                var guide = XmltvGuide.times(link.id);
+                list.push({ kind: 'guide', source: link, last: guide.updatedAt, tried: guide.failedAt });
+            });
         });
         return list;
     }

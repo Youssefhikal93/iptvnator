@@ -56,10 +56,20 @@ window.XmltvStore = (function () {
         });
     }
 
+    // The guide channel for a channel: the one the viewer chose (#90), when it
+    // is in this link's guide, else pairing by id and name. A channel chosen
+    // from another link has no programmes here.
+    function matchIn(link, channel, index) {
+        var chosen = window.GuidePick ? GuidePick.get(link.owner || link.id, channel) : null;
+        if (!chosen) return XmltvParser.match(channel, index);
+        var id = String(chosen.id).toLowerCase();
+        return chosen.n === (link.n || 1) && Object.prototype.hasOwnProperty.call(index.ids, id) ? index.ids[id] : null;
+    }
+
     function programmes(source, channel) {
         return manifest(source.id).then(function (saved) {
             if (!saved) return null;
-            var id = XmltvParser.match(channel, saved.index);
+            var id = matchIn(source, channel, saved.index);
             if (!id) return null;
             return open().then(function (db) {
                 return new Promise(function (resolve, reject) {
@@ -92,7 +102,7 @@ window.XmltvStore = (function () {
                         });
                         var schedules = {};
                         channels.forEach(function (channel, index) {
-                            var id = XmltvParser.match(channel, saved.index);
+                            var id = matchIn(source, channel, saved.index);
                             schedules[index] = id === null ? [] : byChannel[id] || [];
                         });
                         resolve(schedules);
@@ -106,6 +116,12 @@ window.XmltvStore = (function () {
     return {
         cached: cached,
         programmes: programmes,
+        // The channel ids in a link's saved guide, for choosing one by hand (#90).
+        channels: function (source) {
+            return manifest(source.id).then(function (saved) {
+                return saved ? Object.keys(saved.index.ids) : [];
+            });
+        },
         batch: function (rows) {
             return transaction(['programmes'], function (tx) {
                 var store = tx.objectStore('programmes');

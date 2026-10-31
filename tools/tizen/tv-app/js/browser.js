@@ -117,7 +117,7 @@ window.Browser = function (hooks) {
     });
     XmltvGuide.onChange(function (id) {
         if (state.section === 'settings') settings.render();
-        if (!state.source || state.source.id !== id) return;
+        if (!state.source || state.source.id !== GuideLinks.owner(id)) return;
         if (state.guide) state.guide.stop();
         state.guide = Prefs.get('programmeGuide') ? GuideData(state.source, state.adapter) : null;
         if (state.section === 'live') items.select(items.index());
@@ -493,7 +493,7 @@ window.Browser = function (hooks) {
         clearTimeout(state.redrawTimer);
         state.epgWanted = [];
         if (state.epg) state.epg.stop();
-        state.epg = state.adapter && (state.adapter.nowNext || state.source.epgUrl) && Prefs.get('programmeGuide') ? Epg(state.adapter, state.source) : null;
+        state.epg = state.adapter && (state.adapter.nowNext || GuideLinks.any(state.source)) && Prefs.get('programmeGuide') ? Epg(state.adapter, state.source) : null;
         if (state.guide) state.guide.stop();
         // The full schedule (TV guide grid) from the guide sources in GuideData.chain.
         state.guide = state.adapter && Prefs.get('programmeGuide') ? GuideData(state.source, state.adapter) : null;
@@ -807,6 +807,7 @@ window.Browser = function (hooks) {
             var row = state.section === 'live' ? shownCategory() : null;
             options = options.concat(groupMenu.channel(item, row));
             if (state.section === 'live' && channelScope(row)) options = options.concat(channelOrderMenu(item, row));
+            options = options.concat(GuidePick.option(state.source, item));
         }
         var progressId = Progress.id(section, item);
         var progress = section === 'live' ? null : Progress.of(progressId, item.sourceId);
@@ -1405,7 +1406,7 @@ window.Browser = function (hooks) {
         Sources.setCurrent(source.id);
         boxLookup.reset();
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
-        XmltvGuide.ensure(source);
+        GuideLinks.links(source).forEach(XmltvGuide.ensure);
         updateEpg();
         var adapter = state.adapter;
         account = LoadScreen.run(source.id + ':account', function () {

@@ -41,7 +41,7 @@ test('after the idle time it shows the icon, a clock and the date, centred, with
     const icon = saver(page).locator('.ss-logo-icon');
     await expect(icon).toHaveAttribute('src', 'icon.png');
     await expect.poll(() => icon.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
-    expect((await icon.boundingBox()).width).toBe(150);
+    expect((await icon.boundingBox()).width).toBeCloseTo(300, -1);
     await expect(saver(page).locator('.ss-logo-clock')).toHaveText(/^\d\d:\d\d$/);
     await expect(saver(page).locator('.ss-logo-date')).toHaveText(/Wednesday.*4.*March|Wednesday.*March.*4/);
     await expect(saver(page).locator('.ss-hint')).toHaveText('Press any key to go back');
@@ -60,49 +60,73 @@ test('after the idle time it shows the icon, a clock and the date, centred, with
     await expect(page.locator('.hm-hero-buttons .focus')).toContainText('Continue watching');
 });
 
-test('every two minutes the block fades out and jumps to a new place that is fully on screen', async ({ page }) => {
+const scene = page => block(page).evaluate(el => el.className + '|' + el.style.getPropertyValue('--size') + '|' + el.querySelector('.ss-logo-icon').className);
+
+test('every two minutes the group leaves and returns as a new scene, a little off centre', async ({ page }) => {
     await page.clock.install();
     await boot(page, seed());
     await idle(page);
     await expect(block(page)).toBeVisible();
     const start = await block(page).boundingBox();
-    // Not yet: a minute and a half in, it has not moved.
+    const first = await scene(page);
+    // Not yet: a minute and a half in, nothing changed.
     await page.clock.fastForward(110 * 1000);
     await expect(block(page)).not.toHaveClass(/out/);
     expect(await block(page).boundingBox()).toEqual(start);
     await page.clock.fastForward(10 * 1000);
-    // Fading out first, then at the new place and fading back in.
+    // Leaving first, with the variant's animation, then back.
     await expect(block(page)).toHaveClass(/out/);
-    await page.clock.runFor(800);
+    await page.clock.runFor(1300);
     await expect(block(page)).not.toHaveClass(/out/);
-    await expect(block(page)).toHaveClass(/placed/);
-    await expect(block(page)).toHaveCSS('opacity', '1');
-    for (let i = 0; i < 4; i++) {
-        const box = await block(page).boundingBox();
-        expect(box.x).toBeGreaterThanOrEqual(60 - 1);
-        expect(box.y).toBeGreaterThanOrEqual(60 - 1);
-        expect(box.x + box.width).toBeLessThanOrEqual(1920 - 60 + 1);
-        expect(box.y + box.height).toBeLessThanOrEqual(1080 - 60 + 1);
+    await expect(block(page)).toHaveClass(/in/);
+    expect(await scene(page)).not.toEqual(first);
+    const seen = new Set([first]);
+    for (let i = 0; i < 5; i++) {
         await page.clock.fastForward(120 * 1000);
-        await page.clock.runFor(800);
+        await page.clock.runFor(1300);
+        await page.waitForTimeout(1400); // the CSS animation runs on real time
+        const now = await scene(page);
+        seen.add(now);
+        const box = await block(page).boundingBox();
+        // Within a twentieth of the screen of the middle, and fully on screen.
+        expect(Math.abs(box.x + box.width / 2 - 960)).toBeLessThanOrEqual(96 + 2);
+        expect(Math.abs(box.y + box.height / 2 - 540)).toBeLessThanOrEqual(54 + 2);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.y + box.height).toBeLessThanOrEqual(1080);
     }
-    const last = await block(page).boundingBox();
-    expect([last.x, last.y]).not.toEqual([start.x, start.y]);
+    // Sizes and motions differ from scene to scene.
+    expect(seen.size).toBeGreaterThanOrEqual(5);
+    const sizes = new Set([...seen].map(s => s.split('|')[1]));
+    const plays = new Set([...seen].map(s => s.split('|')[2]));
+    expect(sizes.size).toBeGreaterThan(2);
+    expect(plays.size).toBeGreaterThan(2);
 });
 
-test('with Animations Off the block jumps at once, with no fade', async ({ page }) => {
+test('the first scene has the icon at twice its old size, a smaller clock, and a slow icon motion that leaves the clock still', async ({ page }) => {
+    await page.clock.install();
+    await boot(page, seed());
+    await idle(page);
+    const icon = saver(page).locator('.ss-logo-icon');
+    expect((await icon.boundingBox()).width).toBeGreaterThan(280);
+    await expect(icon).toHaveCSS('animation-name', 'ss-float');
+    await expect(saver(page).locator('.ss-logo-clock')).toHaveCSS('animation-name', 'none');
+    expect(parseFloat(await saver(page).locator('.ss-logo-clock').evaluate(el => getComputedStyle(el).fontSize))).toBeLessThan(200);
+    expect(parseFloat(await saver(page).locator('.ss-logo-date').evaluate(el => getComputedStyle(el).fontSize))).toBeLessThan(38);
+});
+
+test('with Animations Off the next scene swaps at once, with no animation and no icon motion', async ({ page }) => {
     await page.clock.install();
     await boot(page, seed({ motion: 'off' }));
     await idle(page);
-    const start = await block(page).boundingBox();
+    const first = await scene(page);
+    await expect(saver(page).locator('.ss-logo-icon')).toHaveCSS('animation-name', 'none');
     await page.clock.fastForward(120 * 1000);
     await expect(block(page)).not.toHaveClass(/out/);
-    await expect(block(page)).toHaveClass(/placed/);
     await expect(block(page)).toHaveCSS('transition-duration', '0s');
-    const moved = await block(page).boundingBox();
-    expect([moved.x, moved.y]).not.toEqual([start.x, start.y]);
+    await expect(block(page)).toHaveCSS('animation-name', 'none');
+    await expect(saver(page).locator('.ss-logo-icon')).toHaveCSS('animation-name', 'none');
+    expect(await scene(page)).not.toEqual(first);
 });
-
 test('it needs no titles: it runs with no source at all', async ({ page }) => {
     await page.clock.install();
     await boot(page, { screenSaver: true, storage: { sources: [], settings: { screenSaverKind: 'logo' } } });

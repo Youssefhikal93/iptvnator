@@ -28,6 +28,7 @@ test('#91 a film\'s length and a show\'s seasons are kept per source and survive
     assert.equal(api.get('s1', 'series', { series_id: 3 }).seasons, 4);
     assert.equal(api.get('s2', 'movies', { stream_id: 7 }), null);
     assert.equal(api.get('s1', 'movies', { stream_id: 8 }), null, 'nothing useful, nothing kept');
+    api.flush();
     var again = facts(env.stored).globals.TitleFacts;
     assert.equal(again.get('s1', 'movies', { stream_id: 7 }).minutes, 112);
 });
@@ -45,11 +46,13 @@ test('#91 only the last 2000 titles are kept, and a removed source\'s titles go'
     for (var i = 0; i < 2005; i++) api.save('s1', 'movies', { stream_id: i }, { minutes: 90 });
     assert.equal(api.get('s1', 'movies', { stream_id: 4 }), null);
     assert.equal(api.get('s1', 'movies', { stream_id: 5 }).minutes, 90);
+    api.flush();
     assert.equal(JSON.parse(env.stored[KEY]).order.length, 2000);
     api.save('s2', 'series', { series_id: 1 }, { seasons: 2 });
     api.forget('s1');
     assert.equal(api.get('s1', 'movies', { stream_id: 2004 }), null);
     assert.equal(api.get('s2', 'series', { series_id: 1 }).seasons, 2);
+    api.flush();
     assert.deepEqual(JSON.parse(env.stored[KEY]).order, ['s2|series|1']);
 });
 
@@ -128,4 +131,41 @@ test('#91 no TMDB, the Kids profile, Live TV or another source\'s titles: nothin
     other.boxes.want([{ stream_id: 2, name: 'Channel' }], 'live');
     await settle();
     assert.deepEqual(other.asked, []);
+});
+
+test('#91 answers arriving together are written once, a second later, not once each', async function () {
+    var env = facts();
+    var writes = { n: 0 };
+    var set = env.globals.localStorage.setItem;
+    env.globals.localStorage.setItem = function (key, value) { if (key === KEY) writes.n++; set(key, value); };
+    var api = env.globals.TitleFacts;
+    for (var i = 0; i < 50; i++) api.save('s1', 'movies', { stream_id: i }, { minutes: 90 });
+    assert.equal(writes.n, 0);
+    await new Promise(function (resolve) { setTimeout(resolve, 1100); });
+    assert.equal(writes.n, 1);
+    assert.equal(JSON.parse(env.stored[KEY]).order.length, 50);
+});
+
+test('#91 a title TMDB cannot size is noted, kept across a restart, and not asked again for 30 days', async function () {
+    var made = lookup({ A: { runtime: 0 } });
+    made.boxes.want([{ stream_id: 1, name: 'A' }, { stream_id: 2, name: 'Nowhere' }], 'movies');
+    await settle();
+    assert.deepEqual(made.asked.sort(), ['movie:A', 'movie:Nowhere']);
+    var kept = made.env.globals.TitleFacts;
+    assert.equal(kept.missedLately('s1', 'movies', { stream_id: 1 }), true);
+    assert.equal(kept.get('s1', 'movies', { stream_id: 1 }), null);
+    kept.flush();
+    // After a restart (a new BoxLookup over the saved facts) neither is asked.
+    var restarted = load(['title-facts.js', 'box-cards.js', 'box-lookup.js'], made.env.stored, {
+        Log: LOG,
+        KidsProfile: { on: function () { return false; } },
+        Tmdb: { year: function () { return ''; }, cached: function () { return null; }, enabled: function () { return true; }, throttled: function () { return 0; },
+            lookup: function (item) { made.asked.push('again:' + item.name); return Promise.resolve({ status: 'none' }); } },
+    });
+    restarted.globals.BoxLookup({ sourceId: function () { return 's1'; }, redraw: function () {} }).want([{ stream_id: 1, name: 'A' }, { stream_id: 2, name: 'Nowhere' }], 'movies');
+    await settle();
+    assert.equal(made.asked.length, 2);
+    // A later answer with the number replaces the note.
+    kept.save('s1', 'movies', { stream_id: 1 }, { minutes: 95 });
+    assert.equal(kept.missedLately('s1', 'movies', { stream_id: 1 }), false);
 });

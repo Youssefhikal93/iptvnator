@@ -58,6 +58,7 @@ window.Browser = function (hooks) {
             var now = live.current();
             return Player.isOpen() && !!now && Library.keyOf('live', now) === Library.keyOf('live', channel);
         },
+        ready: function () { return Player.isPlaying(); },
         allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },
     });
     var live = LiveChannels({
@@ -2335,6 +2336,10 @@ window.Browser = function (hooks) {
             programmeSearch.resume();
         },
         live: live,
+        // A background refresh saved a source's sections again (auto-refresh.js).
+        catalogueRefreshed: function (id, entries) {
+            if (state.source && state.source.id === id && state.catalogue) state.catalogue.refreshed(entries);
+        },
         watchReminder: watchReminder,
         epg: function () { return state.epg; },
         zap: live.zap,

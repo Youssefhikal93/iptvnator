@@ -82,6 +82,19 @@ window.Catalogue = (function () {
                 store.put(value, keyOf(sourceId, key));
             });
         },
+        // A category's own list ("live:items:2"), once the whole section was
+        // fetched again in the background: the next visit asks for it anew.
+        dropCategoryItems: function (sourceId) {
+            return run('readwrite', function (store) {
+                var req = store.openCursor(IDBKeyRange.bound(keyOf(sourceId, ''), keyOf(sourceId, '￿')));
+                req.onsuccess = function () {
+                    var cursor = req.result;
+                    if (!cursor) return;
+                    if (/^[^:]+:items:.+$/.test(cursor.key.slice(sourceId.length + 1))) cursor.delete();
+                    cursor.continue();
+                };
+            });
+        },
         // Everything saved for a source (on remove or a manual refresh).
         drop: function (sourceId) {
             return run('readwrite', function (store) {

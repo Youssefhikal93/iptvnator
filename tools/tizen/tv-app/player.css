@@ -304,7 +304,8 @@
     color: var(--pc-text-secondary);
     opacity: 0.8;
 }
-#pl-hint:empty {
+#pl-hint:empty,
+#player.menu-on #pl-hint {
     display: none;
 }
 #pl-hint b,
@@ -335,7 +336,8 @@
     display: flex;
     flex-direction: column;
     padding: 70px 96px 54px 56px;
-    background: rgba(14, 17, 24, 0.94);
+    /* Opaque: the live controls behind the menu must not show through it. */
+    background: rgb(14, 17, 24);
     border-left: 2px solid var(--pc-glass-border);
     box-shadow: -30px 0 80px rgba(0, 0, 0, 0.5);
 }

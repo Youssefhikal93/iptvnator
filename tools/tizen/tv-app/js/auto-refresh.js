@@ -81,22 +81,27 @@ window.AutoRefresh = (function () {
         return list;
     }
 
+    // Playback started: the refresh stops and is due again at once. A busy
+    // provider (code 'busy', HTTP 429) is a failed try like any other.
     function stop() {
         var error = new Error('Playback started');
-        error.code = 'busy';
+        error.code = 'playing';
         return error;
     }
 
     // The lists of every section, one request after the other, saved as the
-    // app saves them when the viewer opens a section.
+    // app saves them when the viewer opens a section. Resolves with the
+    // saved { key, value } entries.
     function fetchSource(source, deps) {
         var adapter = source.type === 'xtream' ? XtreamSource(source, { quiet: true }) : M3uSource(source);
         var steps = [];
+        var saved = [];
         function step(section, kind) {
             steps.push(function () {
                 if (deps.busy()) throw stop();
                 var key = section + ':' + kind + (kind === 'items' ? ':' : '');
                 return (kind === 'items' ? adapter.items(section, '') : adapter.categories(section)).then(function (list) {
+                    saved.push({ key: key, value: list });
                     return Catalogue.put(source.id, key, list);
                 });
             });
@@ -108,14 +113,19 @@ window.AutoRefresh = (function () {
                 step(section, 'items');
             });
             return steps.reduce(function (done, next) { return done.then(next); }, Promise.resolve());
-        });
+        }).then(function () { return saved; });
     }
 
+    // The whole sections are new; a category's own saved list may be older,
+    // so it goes, and the open source's loader takes the new lists (deps.published).
     function refreshSource(source, deps) {
-        return fetchSource(source, deps).then(function () {
+        return fetchSource(source, deps).then(function (saved) {
             write(source.id, { at: Date.now() });
+            return Catalogue.dropCategoryItems(source.id).then(function () {
+                if (deps.published) deps.published(source.id, saved);
+            });
         }, function (err) {
-            if (err && err.code === 'busy') return;
+            if (err && err.code === 'playing') return;
             write(source.id, { at: read(source.id).at, tried: Date.now() });
             Log.error('AUTO REFRESH FAIL');
         });
@@ -141,6 +151,9 @@ window.AutoRefresh = (function () {
     return {
         plan: plan,
         start: start,
+        // One source's refresh as tick() runs it; deps as for start(), plus
+        // published(sourceId, entries) once its new lists are saved.
+        refreshSource: refreshSource,
         // A refresh the viewer asked for counts as the last one.
         mark: function (id) { write(id, { at: Date.now() }); },
         refreshedAt: function (id) { return read(id).at || 0; },

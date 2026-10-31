@@ -25,6 +25,7 @@ window.I18n = (function () {
         { code: 'zh', name: '\u4e2d\u6587 (\u7b80\u4f53)', locale: 'zh-CN' },
         { code: 'zhtw', name: '\u4e2d\u6587 (\u7e41\u9ad4)', locale: 'zh-TW' },
     ];
+    var RTL = { ar: true };
     var tables = {};
     var current = 'en';
     var listeners = [];
@@ -129,6 +130,12 @@ window.I18n = (function () {
         // A date such as "Mon, 4 Mar" in the chosen language.
         date: function (when, options) {
             return formatter(find(current).locale, 'date', options).format(new Date(when));
+        },
+        // In a right-to-left language, text kept in its own direction (a date,
+        // an English label, a "·"-joined part), so "31/10/2027" next to Arabic
+        // stays in order; unchanged otherwise.
+        isolate: function (text) {
+            return text && RTL[current] ? '⁨' + text + '⁩' : text;
         },
         // Languages with a loaded table, English first.
         languages: function () {

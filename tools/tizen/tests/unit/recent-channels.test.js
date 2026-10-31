@@ -15,14 +15,18 @@ function clock() {
     return {
         setTimeout: function (fn, ms) { timers.push({ at: now + ms, fn: fn, live: true }); return timers.length - 1; },
         clearTimeout: function (id) { if (timers[id]) timers[id].live = false; },
+        // Timers fire in time order, including ones set by a timer that fired.
         pass: function (ms) {
-            now += ms;
-            timers.forEach(function (timer) {
-                if (timer.live && timer.at <= now) {
-                    timer.live = false;
-                    timer.fn();
-                }
-            });
+            var end = now + ms;
+            for (;;) {
+                var due = timers.filter(function (timer) { return timer.live && timer.at <= end; });
+                if (!due.length) break;
+                var next = due.reduce(function (a, b) { return b.at < a.at ? b : a; });
+                next.live = false;
+                now = next.at;
+                next.fn();
+            }
+            now = end;
         },
     };
 }
@@ -31,10 +35,11 @@ function clock() {
 function app(files, stored) {
     var time = clock();
     var env = load(files || FILES, stored || {}, { setTimeout: time.setTimeout, clearTimeout: time.clearTimeout });
-    var screen = { source: 's1', channel: null, allowed: function () { return true; }, changes: 0 };
+    var screen = { source: 's1', channel: null, ready: true, allowed: function () { return true; }, changes: 0 };
     var tracker = env.globals.RecentChannels({
         sourceId: function () { return screen.source; },
         playing: function (channel) { return !!screen.channel && screen.channel.stream_id === channel.stream_id; },
+        ready: function () { return screen.ready; },
         allows: function (channel) { return screen.allowed(channel); },
         changed: function () { screen.changes++; },
     });
@@ -75,6 +80,19 @@ test('a channel left under 10 s is not added, whether zapped away, stopped or ne
     run.tracker.cancel();
     run.time.pass(20000);
     assert.deepEqual(ids(run.tracker.list()), [], 'a cancelled watch (source switch) adds nothing');
+});
+
+test('only time with a playing picture counts: a start that buffers or fails for 10 s is not added', function () {
+    var run = app();
+    run.screen.ready = false;
+    run.screen.watch(CHANNEL(1));
+    run.time.pass(15000);
+    assert.deepEqual(ids(run.tracker.list()), [], 'still starting after 15 s');
+    run.screen.ready = true;
+    run.time.pass(9000);
+    assert.deepEqual(ids(run.tracker.list()), []);
+    run.time.pass(1000);
+    assert.deepEqual(ids(run.tracker.list()), [1], '10 s of picture');
 });
 
 test('a channel is never listed twice: watching it again moves it to the top', function () {

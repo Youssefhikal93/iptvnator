@@ -243,6 +243,7 @@
 
     AutoRefresh.start({
         busy: function () { return screen === 'player' || preview.active(); },
+        published: browser.catalogueRefreshed,
     });
 
     if (ProfileScreen.shouldAsk()) whoIsWatching();

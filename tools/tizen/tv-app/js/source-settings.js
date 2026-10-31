@@ -34,14 +34,14 @@ window.SourceSettings = (function () {
     function refreshedText(source) {
         var at = AutoRefresh.refreshedAt(source.id);
         if (!at) return I18n.t('sources.neverRefreshed');
-        return I18n.t('sources.refreshedAt', { when: I18n.date(at, { day: 'numeric', month: 'short' }) + ' ' + I18n.time(at) });
+        return I18n.t('sources.refreshedAt', { when: I18n.isolate(I18n.date(at, { day: 'numeric', month: 'short' }) + ' ' + I18n.time(at)) });
     }
 
     function rows(hooks) {
         var current = hooks.current();
         var list = Sources.all().map(function (source) {
             var entry = SourceAccount.row(source, XmltvGuide.subtitle(source));
-            return { label: source.name, source: source, current: !!current && source.id === current.id, sub: [entry.detail, refreshedText(source)].filter(Boolean).join(' \u00b7 '), chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
+            return { label: source.name, source: source, current: !!current && source.id === current.id, sub: [entry.detail, refreshedText(source)].filter(Boolean).map(I18n.isolate).join(' \u00b7 '), chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
         });
         list = list.concat(['xtream', 'm3u'].map(function (kind) {
             return { label: I18n.t(kind === 'xtream' ? 'sources.addXtream' : 'sources.addM3u'), add: kind, text: '', run: function () { hooks.add(kind); } };

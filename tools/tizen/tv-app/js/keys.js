@@ -15,12 +15,16 @@ window.Keys = (function () {
 
     // A held OK shows how long is left: a small ring in the top corner of the
     // pressed card (larger, near the bottom of the player) fills clockwise
-    // over HOLD_MS and is gone when OK is let go or the hold fires. It floats
-    // above the page, so a screen that redraws during the hold cannot lose
-    // it; its box is read once per press.
+    // until the hold fires and is gone when OK is let go. It appears only
+    // after RING_DELAY_MS, so a plain tap draws nothing. It floats above the
+    // page, so a screen that redraws during the hold cannot lose it; its box
+    // is read once per press. On small art (a channel's logo plate, a Wide
+    // box's poster) it sits in the middle, clear of the corner badges.
     var CARD_RING = 44;
     var PLAYER_RING = 72;
     var PLAYER_GAP = 148;
+    var RING_DELAY_MS = 180;
+    var SMALL_ART = 3 * CARD_RING;
     // The arc is drawn by its dash: a circle of radius 18 in a 44 box.
     var RING = '<svg viewBox="0 0 44 44" aria-hidden="true"><circle class="hp-track" cx="22" cy="22" r="18"></circle>' +
         '<circle class="hp-arc" cx="22" cy="22" r="18" transform="rotate(-90 22 22)"></circle></svg>';
@@ -35,19 +39,21 @@ window.Keys = (function () {
     function showBar(target) {
         var node = typeof target === 'function' ? target() : target;
         if (!node || !node.getBoundingClientRect) return;
-        var art = (node.querySelector && node.querySelector('.hm-poster, .poster, .pf-avatar')) || node;
+        var art = (node.querySelector && node.querySelector('.hm-poster, .poster, .pf-avatar, .plate')) || node;
         var box = art.getBoundingClientRect();
         if (!box.width || !box.height) return;
         var player = box.width > 1200;
         var size = player ? PLAYER_RING : CARD_RING;
+        var small = !player && box.width < SMALL_ART;
         var inset = Math.round(Math.min(16, box.height / 8));
-        var left = player ? box.left + (box.width - size) / 2 : rightToLeft() ? box.left + inset : box.right - inset - size;
+        var left = player || small ? box.left + (box.width - size) / 2 : rightToLeft() ? box.left + inset : box.right - inset - size;
         // On the player, above the row of key hints along its bottom.
-        var top = player ? box.bottom - size - PLAYER_GAP : box.top + inset;
+        var top = player ? box.bottom - size - PLAYER_GAP : small ? box.top + (box.height - size) / 2 : box.top + inset;
         if (!bar) {
             bar = document.createElement('div');
             bar.id = 'hold-progress';
-            bar.style.setProperty('--hold-ms', HOLD_MS + 'ms');
+            // The ring fills over what is left of the hold once it shows.
+            bar.style.setProperty('--hold-ms', (HOLD_MS - RING_DELAY_MS) + 'ms');
             document.body.appendChild(bar);
         }
         bar.style.left = Math.round(left) + 'px';
@@ -66,7 +72,10 @@ window.Keys = (function () {
     }
 
     function cancel() {
-        if (pending) clearTimeout(pending.timer);
+        if (pending) {
+            clearTimeout(pending.timer);
+            clearTimeout(pending.ring);
+        }
         pending = null;
         hideBar();
     }
@@ -85,10 +94,11 @@ window.Keys = (function () {
             hold();
         }, HOLD_MS);
         pending = press;
-        if (target) showBar(target);
+        if (target) press.ring = setTimeout(function () { if (pending === press) showBar(target); }, RING_DELAY_MS);
     };
 
     keys.HOLD_MS = HOLD_MS;
+    keys.RING_DELAY_MS = RING_DELAY_MS;
 
     // The focused card or row of a screen, for the bar.
     keys.focusedIn = function (id) {

@@ -109,6 +109,23 @@ test('#81 search includes cached full schedules and now/next without fetching un
     epg.stop();
 });
 
+test('#81 search: a full schedule that came back empty does not hide the channel\'s cached now/next', async function () {
+    var env = load(['guide-data.js', 'settings-store.js', 'epg.js'], {}, { Log: { error: function () {} } }).globals;
+    var adapter = {
+        schedule: function () { return Promise.resolve([]); },
+        nowNext: function () { return Promise.resolve([p('Short', 10, 20)]); },
+    };
+    var channel = { stream_id: 1 };
+    var guide = env.GuideData({}, adapter);
+    var epg = env.Epg(adapter);
+    await guide.programmes(channel, 0, 10);
+    await epg.load(channel);
+    var schedules = await guide.cached([channel], epg);
+    assert.equal(schedules[0].programmes.map(function (x) { return x.title; }).join(), 'Short');
+    guide.stop();
+    epg.stop();
+});
+
 test('#81 local XMLTV and provider cache respect source preference and fallback', async function () {
     var env = load(['guide-data.js'], {}, {
         XmltvGuide: function () { return { programmes: function () { throw new Error('network forbidden'); } }; },

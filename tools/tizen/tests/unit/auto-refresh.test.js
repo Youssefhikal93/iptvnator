@@ -107,7 +107,7 @@ function refresh(options) {
             dropCategoryItems: function (id) { log.push('drop ' + id); return Promise.resolve(); },
         },
     });
-    var deps = { busy: function () { return !!options.busy; }, published: function (id, entries) { published.push({ id: id, entries: entries }); } };
+    var deps = { busy: function () { return !!options.busy; }, published: function (id, entries, adapter) { published.push({ id: id, entries: entries, adapter: adapter }); } };
     return env.globals.AutoRefresh.refreshSource({ id: 's2', type: 'xtream' }, deps).then(function () {
         return { log: log, published: published, saved: env.stored['iptvnator-tv:refreshed:s2'] && JSON.parse(env.stored['iptvnator-tv:refreshed:s2']) };
     });
@@ -119,6 +119,8 @@ test('a refreshed source drops its categories\' own saved lists after the whole 
     assert.equal(done.published.length, 1);
     assert.equal(done.published[0].id, 's2');
     assert.equal(done.published[0].entries.map(function (entry) { return entry.key; }).join(' '), 'live:categories live:items:');
+    // The adapter that fetched them goes along, for a playlist's open adapter to adopt.
+    assert.equal(typeof done.published[0].adapter.categories, 'function');
     assert.ok(done.saved.at > 0);
 });
 

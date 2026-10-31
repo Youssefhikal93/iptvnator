@@ -81,10 +81,13 @@ window.Reminders = (function () {
         list: function () {
             return pending(Date.now());
         },
+        // Announced per profile: the same programme set in two profiles is
+        // announced in each, keyed by the profile's own record.
         due: function (now) {
-            var found = pending(now).filter(function (entry) { return entry.start - LEAD <= now && !announced[entry.id]; })[0];
+            var profile = key();
+            var found = pending(now).filter(function (entry) { return entry.start - LEAD <= now && !announced[profile + '|' + entry.id]; })[0];
             if (!found) return null;
-            announced[found.id] = true;
+            announced[profile + '|' + found.id] = true;
             return found;
         },
     };

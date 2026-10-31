@@ -12,3 +12,10 @@ test('the TV app is named Jo-TV under its icon and in the page title, with the s
     assert.match(config, /<tizen:application id="IPTVnTVApp\.IPTVnator"/);
     assert.match(read('index.html'), /<title>Jo-TV<\/title>/);
 });
+
+test('the phone service can be woken: its id and the launch privilege are declared (#85)', () => {
+    const config = read('config.xml');
+    assert.match(config, /<tizen:service id="IPTVnTVApp\.PhoneSource"/);
+    assert.match(config, /<tizen:privilege name="http:\/\/tizen\.org\/privilege\/application\.launch"\/>/);
+    assert.match(read('js/phone-source.js'), /var SERVICE = 'IPTVnTVApp\.PhoneSource';/);
+});

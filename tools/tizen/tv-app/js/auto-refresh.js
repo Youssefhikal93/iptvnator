@@ -91,7 +91,7 @@ window.AutoRefresh = (function () {
 
     // The lists of every section, one request after the other, saved as the
     // app saves them when the viewer opens a section. Resolves with the
-    // saved { key, value } entries.
+    // saved { key, value } entries and the adapter that fetched them.
     function fetchSource(source, deps) {
         var adapter = source.type === 'xtream' ? XtreamSource(source, { quiet: true }) : M3uSource(source);
         var steps = [];
@@ -113,16 +113,16 @@ window.AutoRefresh = (function () {
                 step(section, 'items');
             });
             return steps.reduce(function (done, next) { return done.then(next); }, Promise.resolve());
-        }).then(function () { return saved; });
+        }).then(function () { return { saved: saved, adapter: adapter }; });
     }
 
     // The whole sections are new; a category's own saved list may be older,
     // so it goes, and the open source's loader takes the new lists (deps.published).
     function refreshSource(source, deps) {
-        return fetchSource(source, deps).then(function (saved) {
+        return fetchSource(source, deps).then(function (fetched) {
             write(source.id, { at: Date.now() });
             return Catalogue.dropCategoryItems(source.id).then(function () {
-                if (deps.published) deps.published(source.id, saved);
+                if (deps.published) deps.published(source.id, fetched.saved, fetched.adapter);
             });
         }, function (err) {
             if (err && err.code === 'playing') return;
@@ -152,7 +152,7 @@ window.AutoRefresh = (function () {
         plan: plan,
         start: start,
         // One source's refresh as tick() runs it; deps as for start(), plus
-        // published(sourceId, entries) once its new lists are saved.
+        // published(sourceId, entries, adapter) once its new lists are saved.
         refreshSource: refreshSource,
         // A refresh the viewer asked for counts as the last one.
         mark: function (id) { write(id, { at: Date.now() }); },

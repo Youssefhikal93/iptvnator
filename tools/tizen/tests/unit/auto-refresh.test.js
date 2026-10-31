@@ -89,6 +89,49 @@ test('a refresh the viewer asked for is the last refresh, and removing the sourc
     assert.equal(Refresh.refreshedAt('s1'), 0);
 });
 
+// One Xtream source refreshed with a stand-in provider; fail(section, kind) may reject.
+function refresh(options) {
+    var log = [];
+    var published = [];
+    var env = load(['auto-refresh.js'], {}, {
+        Log: { error: function () {} },
+        XtreamSource: function () {
+            return {
+                sections: ['live'],
+                categories: function () { return options.fail ? Promise.reject(options.fail) : Promise.resolve([{ category_id: '2' }]); },
+                items: function () { return Promise.resolve([{ stream_id: 9, name: 'Fresh' }]); },
+            };
+        },
+        Catalogue: {
+            put: function (id, key) { log.push('put ' + id + ' ' + key); return Promise.resolve(); },
+            dropCategoryItems: function (id) { log.push('drop ' + id); return Promise.resolve(); },
+        },
+    });
+    var deps = { busy: function () { return !!options.busy; }, published: function (id, entries) { published.push({ id: id, entries: entries }); } };
+    return env.globals.AutoRefresh.refreshSource({ id: 's2', type: 'xtream' }, deps).then(function () {
+        return { log: log, published: published, saved: env.stored['iptvnator-tv:refreshed:s2'] && JSON.parse(env.stored['iptvnator-tv:refreshed:s2']) };
+    });
+}
+
+test('a refreshed source drops its categories\' own saved lists after the whole sections, and hands the new lists on', async function () {
+    var done = await refresh({});
+    assert.deepEqual(done.log, ['put s2 live:categories', 'put s2 live:items:', 'drop s2']);
+    assert.equal(done.published.length, 1);
+    assert.equal(done.published[0].id, 's2');
+    assert.equal(done.published[0].entries.map(function (entry) { return entry.key; }).join(' '), 'live:categories live:items:');
+    assert.ok(done.saved.at > 0);
+});
+
+test('playback stopping a refresh is no failed try, but a busy provider (429) is, so the hour of waiting applies', async function () {
+    var playing = await refresh({ busy: true });
+    assert.equal(playing.saved, undefined);
+    assert.deepEqual(playing.log, []);
+    var throttled = Object.assign(new Error('Too many requests'), { code: 'busy' });
+    var busy = await refresh({ fail: throttled });
+    assert.ok(busy.saved.tried > 0);
+    assert.equal(busy.published.length, 0);
+});
+
 test('Prefs defaults to Daily at night', function () {
     var Prefs = load(['settings-store.js']).globals.Prefs;
     assert.equal(Prefs.get('autoRefresh'), 'night');

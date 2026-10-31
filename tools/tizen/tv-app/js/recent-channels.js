@@ -3,12 +3,14 @@
 // profile and source; this adds the 10 s rule and the viewer's filters.
 //
 // hooks: sourceId() -> the open source, playing(channel) -> whether that
-//   channel is still on screen, allows(channel) -> whether the profile may
-//   see it, changed() -> the list grew.
+//   channel is still on screen, ready() -> whether its picture plays (not
+//   still starting, buffering or failed; optional), allows(channel) ->
+//   whether the profile may see it, changed() -> the list grew.
 window.RecentChannels = function (hooks) {
     'use strict';
 
     var WATCHED_MS = 10000;
+    var STEP_MS = 1000;
     var timer = null;
 
     function cancel() {
@@ -19,16 +21,25 @@ window.RecentChannels = function (hooks) {
     return {
         WATCHED_MS: WATCHED_MS,
         cancel: cancel,
-        // A channel starts playing: it joins if it is still playing in 10 s.
+        // A channel is asked for: it joins once its picture has played for
+        // 10 s, counted a second at a time, so a start that only buffers or
+        // fails never joins; leaving the channel ends the count.
         begin: function (channel) {
             cancel();
             var id = hooks.sourceId();
-            timer = setTimeout(function () {
+            var played = 0;
+            function step() {
                 timer = null;
                 if (!hooks.playing(channel)) return;
+                if (!hooks.ready || hooks.ready()) played += STEP_MS;
+                if (played < WATCHED_MS) {
+                    timer = setTimeout(step, STEP_MS);
+                    return;
+                }
                 Library.addRecentChannel(id, channel);
                 if (hooks.changed) hooks.changed();
-            }, WATCHED_MS);
+            }
+            timer = setTimeout(step, STEP_MS);
         },
         list: function () {
             return Library.recentChannels(hooks.sourceId()).filter(hooks.allows);

@@ -113,6 +113,15 @@ test('time and date read as before in every language, and switching language cha
     });
 });
 
+test('isolate keeps a date in its own direction in Arabic only', function () {
+    var I18n = load({ ar: {} });
+    assert.equal(I18n.isolate('31/10/2027'), '31/10/2027');
+    I18n.setLanguage('ar');
+    assert.equal(I18n.isolate('31/10/2027'), '⁨31/10/2027⁩');
+    assert.equal(I18n.isolate(''), '');
+    I18n.setLanguage('en');
+});
+
 test('categoryName translates the saved "All channels" row by its empty id only', function () {
     var I18n = load({ de: { 'browser.allChannels': 'Alle Sender' } });
     I18n.setLanguage('de');

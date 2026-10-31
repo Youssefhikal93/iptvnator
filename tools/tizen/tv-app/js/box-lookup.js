@@ -43,10 +43,14 @@ window.BoxLookup = function (hooks) {
         var mine = generation;
         running++;
         Tmdb.lookup(job.item, type).then(function (result) {
-            if (result.status !== 'found') return;
-            var body = result.body;
-            TitleFacts.save(job.sourceId, job.section, job.item, type === 'tv' ? { seasons: body.number_of_seasons } : { minutes: body.runtime });
-            if (mine === generation) redraw();
+            // A failed request is asked again another time; "no such title"
+            // or an answer without the number is noted and left for 30 days.
+            if (result.status === 'failed') return;
+            var body = result.status === 'found' ? result.body : {};
+            var found = type === 'tv' ? { seasons: body.number_of_seasons } : { minutes: body.runtime };
+            var kept = TitleFacts.save(job.sourceId, job.section, job.item, found);
+            if (!kept && !known(job.item, job.section, job.sourceId)) TitleFacts.missing(job.sourceId, job.section, job.item);
+            if (kept && mine === generation) redraw();
         }).catch(function () {}).then(function () {
             running--;
             pump();
@@ -75,7 +79,7 @@ window.BoxLookup = function (hooks) {
             list.forEach(function (item) {
                 if (!item || item.sub || (item.sourceId && item.sourceId !== sourceId)) return;
                 var key = TitleFacts.key(sourceId, section, item);
-                if (asked[key] || known(item, section, sourceId)) return;
+                if (asked[key] || known(item, section, sourceId) || TitleFacts.missedLately(sourceId, section, item)) return;
                 asked[key] = true;
                 fresh.push({ item: item, section: section, sourceId: sourceId, key: key });
             });

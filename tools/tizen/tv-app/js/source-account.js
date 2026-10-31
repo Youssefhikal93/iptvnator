@@ -61,8 +61,9 @@ window.SourceAccount = (function () {
         return seconds > 0 ? seconds * 1000 : null;
     }
 
+    // Kept in order inside Arabic text.
     function day(ms) {
-        return I18n.date(ms);
+        return I18n.isolate(I18n.date(ms));
     }
 
     // Why an Xtream account cannot be used, or null. Expired, inactive and a
@@ -201,7 +202,8 @@ window.SourceAccount = (function () {
         return {
             chip: chip || (source.type === 'xtream' ? 'Xtream' : 'M3U'),
             warn: !!chip,
-            detail: parts.filter(Boolean).join(' · '),
+            // Each part keeps its own direction among Arabic and English ones.
+            detail: parts.filter(Boolean).map(I18n.isolate).join(' · '),
         };
     }
 

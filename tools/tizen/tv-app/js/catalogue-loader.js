@@ -159,8 +159,25 @@ window.CatalogueLoader = function (deps) {
         changedUpdating(0);
     }
 
+    // A background refresh saved whole sections again (auto-refresh.js):
+    // their lists replace the ones in memory, and a category's own list is
+    // forgotten so its next visit asks for it anew.
+    function refreshedSections(entries) {
+        entries.forEach(function (entry) {
+            memory[entry.key] = entry.value;
+            refreshed[entry.key] = true;
+        });
+        Object.keys(memory).forEach(function (key) {
+            if (/^[^:]+:items:.+$/.test(key)) {
+                delete memory[key];
+                delete refreshed[key];
+            }
+        });
+    }
+
     return {
         load: load,
+        refreshed: refreshedSections,
         peek: function (what) { return memory[keyOf(what)]; },
         drop: function () {
             forget();

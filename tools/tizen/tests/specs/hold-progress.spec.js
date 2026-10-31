@@ -17,7 +17,7 @@ function midHold(page, selector) {
             fill: arc ? 1 - parseFloat(getComputedStyle(arc).strokeDashoffset) / 113.1 : 0,
             box: card && card.getBoundingClientRect().toJSON(),
         });
-    }, 250)), selector);
+    }, 350)), selector);
 }
 
 // Holds OK, checks the ring part-way, then waits for what the hold opens.
@@ -34,7 +34,7 @@ async function holdWithRing(page, selector, opens, shot, corner) {
     expect(line.x + line.width).toBeLessThanOrEqual(box.x + box.width + 1);
     expect(line.y).toBeGreaterThanOrEqual(box.y);
     expect(line.y + line.height).toBeLessThanOrEqual(box.y + box.height + 1);
-    // Cards: in the top-right corner; the player: centred.
+    // Cards: in the top-right corner; the player and small art: centred.
     // (A card just focused may still be growing to its focus size.)
     if (corner) {
         expect(line.y - box.y).toBeLessThanOrEqual(30);
@@ -43,7 +43,7 @@ async function holdWithRing(page, selector, opens, shot, corner) {
     // Part-filled: the arc has grown, but not round to the start yet.
     expect(seen.fill).toBeGreaterThan(0.1);
     expect(seen.fill).toBeLessThan(0.95);
-    await page.waitForTimeout(550);
+    await page.waitForTimeout(450);
     await expect(page.locator(opens)).toBeVisible();
     await expect(ring(page)).toHaveCount(0);
     await page.keyboard.up('Enter');
@@ -91,4 +91,43 @@ test('holding OK on live TV fills a larger ring near the bottom of the picture u
     await press(page, 'Enter');
     await playing(page);
     await holdWithRing(page, '#player', '#pl-menu', 'live-player.png');
+    // The menu takes every key: the key hints go, and nothing shows through its panel.
+    await expect(page.locator('#pl-hint')).toBeHidden();
+    expect(await page.locator('#pl-menu').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(14, 17, 24)');
+    await back(page);
+    await expect(page.locator('#pl-menu')).toBeHidden();
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-hint')).toBeVisible();
+});
+
+// Whether the ring showed at any moment while ct ran.
+async function ringEverShown(page, act) {
+    await page.evaluate(() => {
+        window.__ringSeen = false;
+        new MutationObserver(() => { if (document.querySelector('#hold-progress.on')) window.__ringSeen = true; })
+            .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+    });
+    await act();
+    await page.waitForTimeout(300);
+    return page.evaluate(() => window.__ringSeen);
+}
+
+test('a plain OK tap never flashes the ring', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Movies');
+    await enterItems(page);
+    const seen = await ringEverShown(page, async () => {
+        await page.keyboard.down('Enter');
+        await page.waitForTimeout(90);
+        await page.keyboard.up('Enter');
+    });
+    expect(seen).toBe(false);
+    await expect(page.locator('#detail')).toBeVisible();
+});
+
+test('on a live channel row the ring sits on the channel plate, clear of the badges on the right', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await holdWithRing(page, '#items .row.focused .plate, #items .focused .plate', '#menu', 'live-row.png');
 });

@@ -431,6 +431,7 @@ window.Player = (function () {
             clearInterval(tickTimer);
             hideControls();
             ui.menu.classList.add('hidden');
+            playerEl.classList.remove('menu-on');
             ui.resume.classList.add('hidden');
             $('pl-error-actions').children[0].focus();
         }
@@ -762,6 +763,8 @@ window.Player = (function () {
         menu.part = typeof part === 'string' ? part : null;
         playerMenu.reset();
         ui.menu.classList.remove('hidden');
+        // The menu takes every key: the key hints below it would only mislead.
+        playerEl.classList.add('menu-on');
         renderMenu();
         showControls();
     }
@@ -769,6 +772,7 @@ window.Player = (function () {
     function closeMenu() {
         menu.open = false;
         ui.menu.classList.add('hidden');
+        playerEl.classList.remove('menu-on');
         scheduleHide();
     }
 
@@ -903,6 +907,7 @@ window.Player = (function () {
         resume.open = false;
         resume.failed = false;
         ui.menu.classList.add('hidden');
+        playerEl.classList.remove('menu-on');
         ui.resume.classList.add('hidden');
         clearSubs();
         series.reset();
@@ -1413,6 +1418,10 @@ window.Player = (function () {
         },
         isOpen: function () {
             return current !== null;
+        },
+        // The picture plays: not starting, reconnecting or failed.
+        isPlaying: function () {
+            return current !== null && ready && !playbackError;
         },
         paused: isPaused,
     };

@@ -32,6 +32,13 @@ window.AvResolve = (function () {
         var lookup = fetch(url, { headers: { Range: 'bytes=0-1' } }).then(function (res) {
             // Only two bytes were asked for; free the connection at once (ADR 0006).
             if (res.body && res.body.cancel) res.body.cancel().catch(function () {});
+            // Some servers refuse the app's own request (it carries the app's
+            // Origin) but not the TV's player: on 401 or 403 the player still
+            // opens the link itself, and its own answer decides.
+            if (res.status === 401 || res.status === 403) {
+                Log.info('AVPlay redirect check refused (HTTP ' + res.status + ') ' + host(url) + ', opening the link itself');
+                return { url: url };
+            }
             if (res.status >= 400) return { error: 'HTTP ' + res.status };
             if (!res.redirected || !res.url || res.url === url) return { url: url };
             Log.info('AVPlay redirect ' + host(url) + ' -> ' + host(res.url) + kind(res.url));

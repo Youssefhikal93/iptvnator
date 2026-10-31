@@ -30,6 +30,32 @@ test('without provider facts or codecs the line stays as before', function () {
     assert.equal(tracksLine([{ type: 'VIDEO', extra_info: 'plain text' }]), 'AVPlay tracks VIDEO:-');
 });
 
+function resolve(status) {
+    var lines = [];
+    var env = load(['av-resolve.js'], {}, {
+        Log: { info: function (text) { lines.push(text); }, error: function (text) { lines.push(text); } },
+        URL: URL,
+        fetch: function () { return Promise.resolve({ status: status, redirected: false, url: 'http://tv.example:8080/movie/u/p/1.mkv' }); },
+    });
+    return env.globals.AvResolve.final('http://tv.example:8080/movie/u/p/1.mkv').then(function (result) {
+        return { result: result, lines: lines };
+    });
+}
+
+test('a server that refuses the redirect check (401, 403) still gets the link opened by the player', async function () {
+    for (var status of [401, 403]) {
+        var seen = await resolve(status);
+        assert.equal(seen.result.url, 'http://tv.example:8080/movie/u/p/1.mkv');
+        assert.equal(seen.result.error, undefined);
+        assert.equal(seen.lines[0], 'AVPlay redirect check refused (HTTP ' + status + ') tv.example:8080, opening the link itself');
+    }
+});
+
+test('a busy or missing stream (503, 404) is still an error before the player opens', async function () {
+    assert.equal((await resolve(503)).result.error, 'HTTP 503');
+    assert.equal((await resolve(404)).result.error, 'HTTP 404');
+});
+
 test('a later look is marked as such', function () {
     var lines = [];
     var env = load(['av-resolve.js'], {}, { Log: { info: function (text) { lines.push(text); } } });

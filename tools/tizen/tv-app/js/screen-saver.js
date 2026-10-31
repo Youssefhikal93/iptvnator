@@ -14,14 +14,18 @@ window.ScreenSaver = function (deps) {
 
     const { html } = UI;
     const SLIDE_MS = 20000;
-    // Logo and clock: the block (fixed width, see screen-saver.css) moves every
-    // two minutes and keeps a margin to the screen's edge.
+    // Logo and clock: the group sits in the middle and every two minutes leaves
+    // and returns with the next of these animations (screen-saver.css), back
+    // within LOGO_DRIFT of the screen's size off centre against burn-in.
     const LOGO_MOVE_MS = 120000;
-    const LOGO_FADE_MS = 700;
+    const LOGO_FADE_MS = 1200;
+    const LOGO_DRIFT = 0.05;
+    // Each scene also has its own icon size (times the icon's 150 px; 2 is the
+    // usual) and one slow motion the icon plays while it shows.
+    const LOGO_SIZES = [2, 1.5, 2.5, 2, 1.75];
+    const LOGO_PLAYS = ['float', 'tilt', 'breathe', 'bounce'];
+    const LOGO_VARIANTS = ['fade', 'left', 'scale', 'right', 'rise'];
     const CLOCK_MS = 20000;
-    const LOGO_MARGIN = 60;
-    const LOGO_W = 720;
-    const LOGO_H = 560;
     const LOGO_DATE = { weekday: 'long', day: 'numeric', month: 'long' };
     // The text and the clock move a little with every slide, so no pixel
     // stays lit in one place for hours.
@@ -33,7 +37,7 @@ window.ScreenSaver = function (deps) {
     let list = [];
     let index = 0;
     let kind = 'ours';
-    // Logo and clock: the block's place (null = centred), moved on a timer.
+    // Logo and clock: the scene (variant, size, motion) and the group's offset from centre, on a timer.
     let logo = null;
     let mover = 0;
     let fader = 0;
@@ -99,9 +103,9 @@ window.ScreenSaver = function (deps) {
         show();
     }
 
-    const LogoView = ({ spot, out, time, date }) => html`<div class="ss-stage ss-logo-stage">
-        <div class=${'ss-logo' + (spot ? ' placed' : '') + (out ? ' out' : '')} style=${spot ? { left: spot.x + 'px', top: spot.y + 'px' } : undefined}>
-            <img class="ss-logo-icon" src="icon.png" alt="" />
+    const LogoView = ({ look, time, date }) => html`<div class="ss-stage ss-logo-stage">
+        <div class=${'ss-logo v-' + LOGO_VARIANTS[look.variant] + (look.out ? ' out' : look.moved ? ' in' : '')} style=${{ '--ox': look.dx + 'px', '--oy': look.dy + 'px', '--size': LOGO_SIZES[look.scene % LOGO_SIZES.length] }}>
+            <img class=${'ss-logo-icon p-' + LOGO_PLAYS[look.scene % LOGO_PLAYS.length]} src="icon.png" alt="" />
             <div class="ss-logo-clock">${time}</div>
             <div class="ss-logo-date">${date}</div>
         </div>
@@ -110,28 +114,28 @@ window.ScreenSaver = function (deps) {
 
     function showLogo() {
         const now = Date.now();
-        UI.render(html`<${LogoView} spot=${logo.spot} out=${logo.out} time=${I18n.time(now)} date=${I18n.date(now, LOGO_DATE)} />`, root);
+        UI.render(html`<${LogoView} look=${logo} time=${I18n.time(now)} date=${I18n.date(now, LOGO_DATE)} />`, root);
     }
 
-    // The block jumps to a new place that is fully on screen; with Animations
-    // Off at once, else after a short fade out, fading in at the new place.
+    // Every LOGO_MOVE_MS the group leaves with the next variant's animation and
+    // comes back, slightly off centre, from the other side (screen-saver.css
+    // does the animating); with Animations Off it swaps at once.
     function jump() {
-        const place = () => {
-            const block = root && root.querySelector ? root.querySelector('.ss-logo') : null;
-            const size = { w: LOGO_W, h: (block && block.offsetHeight) || LOGO_H };
+        const back = () => {
             const screen = { w: window.innerWidth || 1920, h: window.innerHeight || 1080 };
-            logo = { spot: ScreenSaver.spot(Math.random, screen, size, LOGO_MARGIN), out: false };
+            const off = ScreenSaver.offset(Math.random, screen, LOGO_DRIFT);
+            const scene = logo.scene + 1;
+            logo = { scene, variant: scene % LOGO_VARIANTS.length, dx: off.x, dy: off.y, out: false, moved: true };
             fader = 0;
             showLogo();
         };
-        if (document.documentElement.getAttribute('data-motion') === 'off') return place();
+        if (document.documentElement.getAttribute('data-motion') === 'off') return back();
         logo.out = true;
         showLogo();
-        fader = setTimeout(place, LOGO_FADE_MS);
+        fader = setTimeout(back, LOGO_FADE_MS);
     }
-
     function startLogo() {
-        logo = { spot: null, out: false };
+        logo = { scene: 0, variant: 0, dx: 0, dy: 0, out: false, moved: false };
         showLogo();
         ticker = setInterval(showLogo, CLOCK_MS);
         mover = setInterval(jump, LOGO_MOVE_MS);
@@ -186,20 +190,14 @@ window.ScreenSaver = function (deps) {
     return { isOn: () => !!root };
 };
 
-// A place for the logo block that keeps it, and a margin, on screen.
-// random() -> [0, 1); screen and block are { w, h } in px; a block larger than
-// the room is put at the margin.
-ScreenSaver.spot = function (random, screen, block, margin) {
+// How far off centre the logo group sits: within +-drift of the screen's size.
+// random() -> [0, 1); screen is { w, h } in px; returns whole px { x, y }.
+ScreenSaver.offset = function (random, screen, drift) {
     'use strict';
 
-    const roomX = screen.w - block.w - 2 * margin;
-    const roomY = screen.h - block.h - 2 * margin;
-    return {
-        x: margin + (roomX > 0 ? Math.floor(random() * (roomX + 1)) : 0),
-        y: margin + (roomY > 0 ? Math.floor(random() * (roomY + 1)) : 0),
-    };
+    const around = (size) => Math.round((random() * 2 - 1) * drift * size);
+    return { x: around(screen.w), y: around(screen.h) };
 };
-
 // The slides for a list of Home rows: Continue watching, favorites and
 // recently added, without live channels or repeats. A title shows its
 // backdrop, else its poster; one with no artwork is left out.

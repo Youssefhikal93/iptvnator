@@ -170,7 +170,7 @@ test('#61 at most forty slides', function () {
     assert.equal(slides.length, 40);
 });
 
-test('#74 Logo and clock waits like the slideshow, asks for no titles, draws on a clock timer, and moves on another', function () {
+test('#74 Logo and clock waits like the slideshow, asks for no titles, draws on a clock timer, and swaps on another', function () {
     var s = scene({ ms: 300000, kind: 'logo', allowed: false });
     s.elapse('idle');
     assert.equal(s.saver.isOn(), false);
@@ -196,40 +196,38 @@ test("#74 an unknown stored kind is the slideshow; the TV's own never starts our
     assert.deepEqual(tv.samsung, [1]);
 });
 
-test('#74 every two minutes the block fades out, then jumps and fades in; with Animations Off it jumps at once', function () {
+test('#74 every two minutes the group leaves, then returns as the next variant; with Animations Off it swaps at once', function () {
     var s = scene({ ms: 300000, kind: 'logo' });
     s.elapse('idle');
-    var before = s.renders.length;
+    var views = s.renders.length;
     s.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
-    assert.equal(s.renders.length, before + 1);
-    var fade = s.timers().filter(function (t) { return t.ms === 700; })[0];
-    assert.ok(fade);
-    fade.fn();
-    assert.equal(s.renders.length, before + 2);
+    assert.equal(s.renders.length, views + 1);
+    var leave = s.timers().filter(function (t) { return t.ms === 1200; })[0];
+    assert.ok(leave);
+    leave.fn();
+    assert.equal(s.renders.length, views + 2);
     var off = scene({ ms: 300000, kind: 'logo', motion: 'off' });
     off.elapse('idle');
+    var offViews = off.renders.length;
     off.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
-    assert.equal(off.timers().filter(function (t) { return t.ms === 700; }).length, 0);
+    assert.equal(off.renders.length, offViews + 1);
+    assert.equal(off.timers().filter(function (t) { return t.ms === 1200; }).length, 0);
 });
 
-test('#74 the logo block always lands fully on screen, with a margin', function () {
+test('#74 the logo group rests off centre by at most a twentieth of the screen', function () {
     var env = load(['screen-saver.js']).globals;
     var screen = { w: 1920, h: 1080 };
-    var block = { w: 720, h: 560 };
     var top = 1 - Number.EPSILON;
     [0, 0.0001, 0.25, 0.5, 0.9999, top].forEach(function (a) {
         [0, 0.5, top].forEach(function (b) {
             var seq = [a, b];
-            var spot = env.ScreenSaver.spot(function () { return seq.shift(); }, screen, block, 60);
-            assert.ok(spot.x >= 60 && spot.x + block.w <= screen.w - 60, 'x ' + spot.x);
-            assert.ok(spot.y >= 60 && spot.y + block.h <= screen.h - 60, 'y ' + spot.y);
+            var off = env.ScreenSaver.offset(function () { return seq.shift(); }, screen, 0.05);
+            assert.ok(Math.abs(off.x) <= 96, 'x ' + off.x);
+            assert.ok(Math.abs(off.y) <= 54, 'y ' + off.y);
         });
     });
-    // The two extremes touch the margins exactly.
-    var low = env.ScreenSaver.spot(function () { return 0; }, screen, block, 60);
-    var high = env.ScreenSaver.spot(function () { return top; }, screen, block, 60);
-    assert.deepEqual([low.x, low.y, high.x + block.w, high.y + block.h], [60, 60, 1860, 1020]);
-    // A block with no room stays at the margin instead of leaving the screen.
-    var tight = env.ScreenSaver.spot(function () { return 0.7; }, { w: 700, h: 500 }, block, 60);
-    assert.deepEqual([tight.x, tight.y], [60, 60]);
+    var mid = env.ScreenSaver.offset(function () { return 0.5; }, screen, 0.05);
+    assert.deepEqual([mid.x, mid.y], [0, 0]);
+    var low = env.ScreenSaver.offset(function () { return 0; }, screen, 0.05);
+    assert.deepEqual([low.x, low.y], [-96, -54]);
 });

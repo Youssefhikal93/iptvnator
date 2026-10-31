@@ -89,25 +89,35 @@ test('a refresh the viewer asked for is the last refresh, and removing the sourc
     assert.equal(Refresh.refreshedAt('s1'), 0);
 });
 
-// One Xtream source refreshed with a stand-in provider; fail(section, kind) may reject.
+// One Xtream source refreshed with a stand-in provider. Options: fail (every
+// categories call rejects with it), login (account() rejects with it),
+// sections, list(section, kind) for a stand-in answer, saved (the lists
+// already saved, by key) and busy (a flag, or a function asked each step).
 function refresh(options) {
     var log = [];
     var published = [];
     var env = load(['auto-refresh.js'], {}, {
         Log: { error: function () {} },
         XtreamSource: function () {
+            function answer(section, kind, fallback) {
+                var list = options.list ? options.list(section, kind) : fallback;
+                return list instanceof Error ? Promise.reject(list) : Promise.resolve(list);
+            }
             return {
-                sections: ['live'],
-                categories: function () { return options.fail ? Promise.reject(options.fail) : Promise.resolve([{ category_id: '2' }]); },
-                items: function () { return Promise.resolve([{ stream_id: 9, name: 'Fresh' }]); },
+                sections: options.sections || ['live'],
+                account: function () { log.push('account'); return options.login ? Promise.reject(options.login) : Promise.resolve({ auth: 1 }); },
+                categories: function (section) { return options.fail ? Promise.reject(options.fail) : answer(section, 'categories', [{ category_id: '2' }]); },
+                items: function (section) { return answer(section, 'items', [{ stream_id: 9, name: 'Fresh' }]); },
             };
         },
         Catalogue: {
+            get: function (id, key) { return Promise.resolve((options.saved || {})[key]); },
             put: function (id, key) { log.push('put ' + id + ' ' + key); return Promise.resolve(); },
             dropCategoryItems: function (id) { log.push('drop ' + id); return Promise.resolve(); },
         },
     });
-    var deps = { busy: function () { return !!options.busy; }, published: function (id, entries, adapter) { published.push({ id: id, entries: entries, adapter: adapter }); } };
+    var busy = typeof options.busy === 'function' ? options.busy : function () { return !!options.busy; };
+    var deps = { busy: busy, published: function (id, entries, adapter) { published.push({ id: id, entries: entries, adapter: adapter }); } };
     return env.globals.AutoRefresh.refreshSource({ id: 's2', type: 'xtream' }, deps).then(function () {
         return { log: log, published: published, saved: env.stored['iptvnator-tv:refreshed:s2'] && JSON.parse(env.stored['iptvnator-tv:refreshed:s2']) };
     });
@@ -115,7 +125,7 @@ function refresh(options) {
 
 test('a refreshed source drops its categories\' own saved lists after the whole sections, and hands the new lists on', async function () {
     var done = await refresh({});
-    assert.deepEqual(done.log, ['put s2 live:categories', 'put s2 live:items:', 'drop s2']);
+    assert.deepEqual(done.log, ['account', 'put s2 live:categories', 'put s2 live:items:', 'drop s2']);
     assert.equal(done.published.length, 1);
     assert.equal(done.published[0].id, 's2');
     assert.equal(done.published[0].entries.map(function (entry) { return entry.key; }).join(' '), 'live:categories live:items:');
@@ -127,11 +137,51 @@ test('a refreshed source drops its categories\' own saved lists after the whole 
 test('playback stopping a refresh is no failed try, but a busy provider (429) is, so the hour of waiting applies', async function () {
     var playing = await refresh({ busy: true });
     assert.equal(playing.saved, undefined);
-    assert.deepEqual(playing.log, []);
+    assert.deepEqual(playing.log, ['account']);
     var throttled = Object.assign(new Error('Too many requests'), { code: 'busy' });
     var busy = await refresh({ fail: throttled });
     assert.ok(busy.saved.tried > 0);
     assert.equal(busy.published.length, 0);
+});
+
+test('a rejected Xtream login (HTTP 200, auth 0) is a failed try that leaves the saved catalogue alone', async function () {
+    var rejected = Object.assign(new Error('Check the login'), { code: 'account', reason: 'login' });
+    // Such a server also answers every list empty; none of it may be saved.
+    var done = await refresh({ login: rejected, list: function () { return []; } });
+    assert.deepEqual(done.log, ['account']);
+    assert.equal(done.published.length, 0);
+    assert.ok(done.saved.tried > 0);
+    assert.equal(done.saved.at, undefined);
+});
+
+test('a refresh that fails midway saves none of its lists', async function () {
+    var down = Object.assign(new Error('HTTP 502'), { code: 'http' });
+    var done = await refresh({
+        sections: ['live', 'movies'],
+        list: function (section, kind) { return section === 'movies' && kind === 'categories' ? down : [{ category_id: '2', stream_id: 9 }]; },
+    });
+    assert.deepEqual(done.log, ['account']);
+    assert.equal(done.published.length, 0);
+    assert.ok(done.saved.tried > 0);
+});
+
+test('playback starting midway leaves every saved list as it was', async function () {
+    var asked = 0;
+    var done = await refresh({ sections: ['live', 'movies'], busy: function () { return ++asked > 2; } });
+    assert.deepEqual(done.log, ['account']);
+    assert.equal(done.saved, undefined);
+});
+
+test('a list that comes back empty where the saved one had entries is a failed try, not a wipe', async function () {
+    var done = await refresh({
+        list: function (section, kind) { return kind === 'items' ? [] : [{ category_id: '2' }]; },
+        saved: { 'live:items:': [{ stream_id: 1 }, { stream_id: 2 }] },
+    });
+    assert.deepEqual(done.log, ['account']);
+    assert.ok(done.saved.tried > 0);
+    // An empty list where nothing was saved before is simply saved.
+    var fresh = await refresh({ list: function (section, kind) { return kind === 'items' ? [] : [{ category_id: '2' }]; } });
+    assert.deepEqual(fresh.log, ['account', 'put s2 live:categories', 'put s2 live:items:', 'drop s2']);
 });
 
 test('Prefs defaults to Daily at night', function () {

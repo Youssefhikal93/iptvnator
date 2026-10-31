@@ -110,9 +110,11 @@ test('nothing is fetched while a channel plays; the refresh follows once playbac
 });
 
 test('a failed refresh shows no error and is tried again an hour later', async ({ page }) => {
-    await page.route('**/player_api.php?*username=other*', route => route.fulfill({ status: 503, body: 'down' }));
+    // Every request counts here: the account check comes first and fails, so no list is asked.
+    let asked = 0;
+    await page.route('**/player_api.php?*username=other*', route => { asked++; return route.fulfill({ status: 503, body: 'down' }); });
     await start(page);
-    const calls = watch(page);
+    const calls = { get list() { return { length: asked }; } };
     await idle(page);
     await expect.poll(async () => (await stored(page, 'refreshed:s2')).tried).toBeGreaterThan(NOW);
     expect((await stored(page, 'refreshed:s2')).at).toBe(NOW - 2 * DAY);

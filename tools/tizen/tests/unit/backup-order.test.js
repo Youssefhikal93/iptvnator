@@ -67,3 +67,27 @@ test('Merge retains existing choices, adds unrelated groups/scopes, and invalid 
         assert.equal(JSON.stringify(env.stored), before);
     });
 });
+
+test('#90 guide links, their order and hand-picked guide channels round-trip, picks and channel orders follow the new source ids', async function () {
+    var env = load(files.concat(['guide-pick.js']), {}, { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } });
+    var g = env.globals;
+    await g.Backup.apply(g.Backup.parse(fixture), 'replace');
+    var sources = g.Sources.all().map(function (source) { return Object.assign({}, source); });
+    sources[0] = Object.assign(sources[0], { epgUrl: 'https://guide.test/a.xml', epgUrl2: 'https://guide.test/b.xml.gz', epgOffset: 2, epgOrder: ['2', 'provider', '1'], epgPrefer: true });
+    g.Sources.replace(sources);
+    g.GuidePick.replaceAll(sources[0].id, { 'id:5': { n: 2, id: 'beinsports1.qa' } });
+    // Favorites across all sources name a channel of the second source.
+    g.Stored.save(g.ProfileStore.key('list-order:' + sources[0].id), { 'channels:__fav': [sources[1].id + '|2', '1'] });
+    var manifest = await g.Backup.build();
+    var restored = load(files.concat(['guide-pick.js']), {}, { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } }).globals;
+    restored.Sources.replace([{ id: sources[1].id, type: 'm3u', name: 'Taken id', url: 'https://other.test/list.m3u' }]);
+    await restored.Backup.apply(restored.Backup.parse(JSON.stringify(manifest)), 'replace');
+    var back = restored.Sources.all();
+    assert.equal(back[0].epgUrl, 'https://guide.test/a.xml');
+    assert.equal(back[0].epgUrl2, 'https://guide.test/b.xml.gz');
+    assert.equal(back[0].epgOffset, 2);
+    assert.equal(back[0].epgOrder.join(','), '2,provider,1');
+    assert.equal(JSON.stringify(restored.GuidePick.all(back[0].id)), JSON.stringify({ 'id:5': { n: 2, id: 'beinsports1.qa' } }));
+    assert.equal(JSON.stringify(restored.GuidePick.all(sources[1].id)), '{}');
+    assert.equal(restored.Stored.json(restored.ProfileStore.key('list-order:' + back[0].id))['channels:__fav'].join(','), back[1].id + '|2,1');
+});

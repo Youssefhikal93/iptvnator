@@ -169,3 +169,36 @@ test('#91 a title TMDB cannot size is noted, kept across a restart, and not aske
     kept.save('s1', 'movies', { stream_id: 1 }, { minutes: 95 });
     assert.equal(kept.missedLately('s1', 'movies', { stream_id: 1 }), false);
 });
+test('#91 a failed lookup is asked again after ten minutes, or at once after a new TMDB key', async function () {
+    var asked = [];
+    var listeners = [];
+    var now = Date.now();
+    var env = load(['title-facts.js', 'box-cards.js', 'box-lookup.js'], {}, {
+        Log: LOG,
+        Date: Object.assign(function () { return new Date(now); }, { now: function () { return now; } }),
+        Prefs: { onChange: function (listener) { listeners.push(listener); }, get: function () { return null; } },
+        KidsProfile: { on: function () { return false; } },
+        Tmdb: {
+            year: function () { return ''; },
+            cached: function () { return null; },
+            enabled: function () { return true; },
+            throttled: function () { return 0; },
+            lookup: function (item) { asked.push(item.name); return Promise.resolve({ status: 'failed' }); },
+        },
+    });
+    var boxes = env.globals.BoxLookup({ sourceId: function () { return 's1'; }, redraw: function () {} });
+    var films = [{ stream_id: 1, name: 'A' }];
+    boxes.want(films, 'movies');
+    await settle();
+    boxes.want(films, 'movies');
+    await settle();
+    assert.deepEqual(asked, ['A'], 'not asked again at once');
+    now += 11 * 60000;
+    boxes.want(films, 'movies');
+    await settle();
+    assert.deepEqual(asked, ['A', 'A'], 'asked again after ten minutes');
+    listeners.forEach(function (listener) { listener('tmdbApiKey'); });
+    boxes.want(films, 'movies');
+    await settle();
+    assert.deepEqual(asked, ['A', 'A', 'A'], 'asked again at once after a new key');
+});

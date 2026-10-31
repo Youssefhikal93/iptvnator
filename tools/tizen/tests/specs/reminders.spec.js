@@ -183,3 +183,18 @@ test('the Reminders list in Settings and the guide says it works while the app i
     await expect(page.locator('#menu')).toBeHidden();
     await expect(page.locator('#guide')).toBeVisible();
 });
+
+test('a reminder due while the screen saver shows ends the saver, so the pop-up is seen', async ({ page }) => {
+    await page.clock.install();
+    await boot(page, { screenSaver: true, storage: { settings: { screenSaverMs: 300000, screenSaverKind: 'logo' } } });
+    const start = await remindLater(page, 30);
+    await page.clock.fastForward(6 * MINUTE);
+    await expect(page.locator('#screen-saver')).toBeVisible();
+    await jumpTo(page, start, MINUTE);
+    await expect(popup(page)).toBeVisible();
+    await expect(page.locator('#screen-saver')).toHaveCount(0);
+    await expect(popup(page)).toContainText('Late film');
+    // While the pop-up waits, the saver does not come back over it.
+    await page.clock.fastForward(30 * 1000);
+    await expect(page.locator('#screen-saver')).toHaveCount(0);
+});

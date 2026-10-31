@@ -1419,6 +1419,10 @@ window.Player = (function () {
         isOpen: function () {
             return current !== null;
         },
+        // The request playing now, or null: what is on screen, not what was last asked for.
+        request: function () {
+            return current;
+        },
         // The picture plays: not starting, reconnecting or failed.
         isPlaying: function () {
             return current !== null && ready && !playbackError;

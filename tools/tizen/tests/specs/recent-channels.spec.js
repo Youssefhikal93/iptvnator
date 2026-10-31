@@ -104,3 +104,19 @@ test('Recent channels survive a restart and Clear recent channels empties them',
     await recentRow(page);
     await expect(page.locator('#items')).toContainText('No recent channels');
 });
+
+test('a film started right after a channel does not finish that channel\'s 10 s', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await press(page, 'Enter');
+    await playing(page);
+    // Within the first second a film takes over the player, the live list still naming the channel.
+    await page.evaluate(() => {
+        const film = XtreamSource(Sources.current()).movieRequest({ stream_id: 2025, name: 'Movie 25', container_extension: 'mkv' });
+        Player.play(film, null);
+    });
+    await playing(page);
+    await page.waitForTimeout(WATCHED_MS + 1000);
+    expect(await page.evaluate(() => Library.recentChannels(Sources.current().id).length)).toBe(0);
+});

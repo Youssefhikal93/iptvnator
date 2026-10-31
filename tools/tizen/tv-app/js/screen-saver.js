@@ -187,7 +187,11 @@ window.ScreenSaver = function (deps) {
     read();
     arm();
 
-    return { isOn: () => !!root };
+    return {
+        isOn: () => !!root,
+        // Something that must be seen now (a due reminder, #75) ends it and restarts the wait.
+        wake: () => (root ? stop() : arm()),
+    };
 };
 
 // How far off centre the logo group sits: within +-drift of the screen's size.

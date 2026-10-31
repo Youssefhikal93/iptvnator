@@ -703,8 +703,8 @@ window.Player = (function () {
         var m = menuPart(whole);
         var tracks = getTracks();
         var watch = epg.watchFromStart();
-        if (watch) m.item(I18n.t('player.startOver'), false, startOver);
-        if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
+        if (watch) m.item(I18n.t('player.startOver'), false, startOver, null, '\u21BA');
+        if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive, null, '\u25B6');
         PlayerHelp.menuEntries(m.item, current);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });

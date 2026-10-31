@@ -402,12 +402,13 @@
     box-shadow: -30px 0 80px rgba(0, 0, 0, 0.5);
 }
 .pl-menu-title {
-    margin: 0 0 26px 24px;
+    margin: 0 0 26px;
+    margin-inline-start: 24px;
     font-size: 42px;
     font-weight: 700;
 }
 .pl-menu-back {
-    margin-right: 18px;
+    margin-inline-end: 18px;
     color: var(--pc-text-secondary);
 }
 /* Room inside the clipped list for the focus ring, drawn 8px outside a row (#56). */
@@ -419,7 +420,8 @@
     overflow: hidden;
 }
 .pl-menu-keys {
-    margin: 24px 0 0 24px;
+    margin: 24px 0 0;
+    margin-inline-start: 24px;
     font-size: 22px;
     color: var(--pc-text-secondary);
 }
@@ -428,6 +430,10 @@
     box-sizing: border-box;
 }
 .pl-menu-action { min-height: 88px; box-sizing: border-box; }
+/* Arabic reads right to left: icons, labels and chevrons mirror, as in the hold menus. */
+#pl-menu:lang(ar) { direction: rtl; text-align: right; }
+#pl-menu:lang(ar) .chev,
+#pl-menu:lang(ar) .pl-menu-back { display: inline-block; transform: scaleX(-1); }
 .pl-menu-action .label,
 .pl-menu-group .label {
     flex: 1;

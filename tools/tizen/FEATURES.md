@@ -6,14 +6,10 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
-- Each source can have three guide links. Choose their order with the provider's guide, let empty guides fall through, or pick a channel's guide channel by name; matching also recognises SP as SPORTS and keeps MAX, XTRA and channel names such as 4K distinct.
-- Settings → Sources shows an Active badge beside the source in use.
-- Help, Previous channel and Start over are easier to find in the player menu. While watching live TV, ◀ opens the channel list even when the controls are showing.
-- Wide boxes and Info boxes show film length and season counts after you open a title; with TMDB on, these facts can also fill in while you browse.
-- A small ring fills while you hold OK. On a movie or show in the list, Details comes first in the options menu.
-- Logo and clock has a centred scene that changes every two minutes, with different logo sizes and movements.
-- Some links now play even when the provider blocks Jo-TV's first check of the link: the TV can try the link directly.
-- Background refresh keeps your saved catalogue when a login or download fails. It finishes fetching all lists before replacing them.
+- Multi-view: watch 2, 3 or 4 live channels at once. Press Blue while watching, or hold OK → Multi-view (see Live TV below).
+- The live player's menu is now called Options, and every action in it and in the hold-OK menus has an icon.
+- Arabic: the player menu is fully translated and reads right to left, category headings are translated, and channel numbers stay next to their names.
+- The channel list remembers keys pressed while its channels are still loading.
 
 ## Live TV
 
@@ -40,6 +36,10 @@ Live TV → Recent channels lists channels you watched for at least 10 seconds, 
 ### Your own live groups and channel order (#76)
 
 Hold OK on a live channel → Add to group, then choose a group or New group. Hold OK on an own group's category to Rename group or Delete group, or on one of its channels to Remove from group. In an own group or live Favorites, hold OK on a channel → Move, use ▲/▼ and press OK to place it or Return to cancel; changing channels follows your saved order.
+
+### Multi-view (#77)
+
+While watching a live channel, press Blue, or hold OK → Multi-view, and choose 2 tiles, 3 tiles or 4 tiles; the channel you were watching becomes tile 1. Use the arrows to move between tiles: only the selected tile has sound, and CH + / CH - change its channel. OK on an empty tile (+ Add channel) opens the channel list; OK on a playing tile offers Full screen, Change channel, Make main and Remove. Hold OK for Layout, Audio and subtitles of the selected tile, or Leave multi-view; Return leaves and plays the selected channel full screen. Hold OK → Resume multi-view brings back your last layout and channels. If the provider refuses one channel, only that tile shows Retry.
 
 ### Reconnect after a live interruption (#14)
 

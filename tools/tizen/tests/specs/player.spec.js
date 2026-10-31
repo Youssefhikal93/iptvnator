@@ -11,6 +11,34 @@ for (const [language, liveLabel, options] of [['en', 'Live TV', 'Options'], ['ar
         await expect(page.locator('#pl-hint')).toContainText(options);
         await sendKeyCode(page, 405);
         await expect(page.locator('#pl-menu .pl-menu-title')).toHaveText(options);
+        // Every action row above the groups has an icon, all in one column.
+        const actions = page.locator('#pl-menu .pl-menu-action');
+        expect(await actions.count()).toBeGreaterThanOrEqual(2);
+        const glyphs = await actions.locator('.menu-icon').evaluateAll(list => list.map(icon => icon.dataset.glyph || ''));
+        expect(glyphs).toHaveLength(await actions.count());
+        glyphs.forEach(glyph => expect(glyph.trim()).not.toBe(''));
+        const xs = await actions.locator('.menu-icon').evaluateAll(list => list.map(icon => Math.round(icon.getBoundingClientRect().x)));
+        expect(new Set(xs).size).toBe(1);
+        if (language !== 'ar') return;
+        // The icon leads on the reading-start side (right) and no English is left in the menu.
+        const rects = await actions.first().evaluate(row => ({ icon: row.querySelector('.menu-icon').getBoundingClientRect().x, label: row.querySelector('.label').getBoundingClientRect().x }));
+        expect(rects.icon).toBeGreaterThan(rects.label);
+        const english = text => text.replace(/OK|Return|CH|[0-9]/g, '').match(/[A-Za-z]{2,}/);
+        const seen = [];
+        const rowCount = await page.locator('#pl-menu .pl-menu-rows > *').count();
+        for (let i = 0; i < rowCount; i++) {
+            const row = page.locator('#pl-menu .pl-menu-rows > *').nth(i);
+            const isGroup = await row.evaluate(node => node.classList.contains('pl-menu-group'));
+            seen.push(...await row.locator('.label, .value, .pl-menu-note').allInnerTexts());
+            if (isGroup) {
+                await press(page, 'Enter');
+                seen.push(...await page.locator('#pl-menu .pl-menu-item, #pl-menu .pl-menu-empty, #pl-menu .pl-menu-note').allInnerTexts());
+                await back(page);
+            }
+            await press(page, 'ArrowDown');
+        }
+        expect(seen.length).toBeGreaterThan(6);
+        expect(seen.filter(english)).toEqual([]);
     });
 }
 

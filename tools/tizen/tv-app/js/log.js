@@ -1,5 +1,5 @@
 // Console logging with credential redaction, mirrored to an optional log
-// receiver on a developer PC (see tools/tizen/INSTALLATION-TO-TV.md).
+// receiver on a developer PC (see tools/tizen/TV-LOGS.md).
 window.Log = (function () {
     'use strict';
 

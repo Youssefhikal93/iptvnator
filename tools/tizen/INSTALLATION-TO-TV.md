@@ -559,7 +559,7 @@ Every TV needs its own setup, but the PC part is done once:
 Developer Mode allows only one host PC IP; if the PC's address changes, set it
 again on the TV (step 4). The remote log in `js/log.js` posts to the PC
 address it was written for; on another network it fails silently and the app
-works normally.
+works normally. To read it, see [TV-LOGS.md](TV-LOGS.md).
 
 ## 10. Use the probe app on the TV
 
@@ -582,9 +582,8 @@ with the file `probe.wgt` and the app id `IPTVnProbe.Probe`. It needs the same
 ### Reading the probe log on the PC
 
 The probe also posts every (redacted) line to `REMOTE_LOG_URL` in
-`probe.js` (`http://<PC-IP>:8765/log`). Run a small receiver on the PC that
-appends POST bodies to a file and allows CORS; allow Node through the
-Windows firewall when asked. When it is reachable, the probe runs the
+`probe.js` (`http://<PC-IP>:8765/log`). Run the receiver on the PC as
+described in [TV-LOGS.md](TV-LOGS.md). When it is reachable, the probe runs the
 Xtream test once on launch, so `tizen run` alone produces a full log.
 
 ## Troubleshooting

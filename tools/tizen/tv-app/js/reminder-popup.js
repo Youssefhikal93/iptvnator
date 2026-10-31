@@ -5,6 +5,7 @@
 // ReminderPopup(hooks) -> { isOpen, onKey }
 //   hooks.allowed() -> false while another screen must not be covered
 //   hooks.watch(reminder) plays the reminder's channel
+//   hooks.shown() is told when it appears, so the screen saver can make way
 window.ReminderPopup = function (hooks) {
     'use strict';
 
@@ -43,6 +44,7 @@ window.ReminderPopup = function (hooks) {
         focus = 0;
         el.classList.remove('hidden');
         draw();
+        if (hooks.shown) hooks.shown();
     }
 
     function tick() {

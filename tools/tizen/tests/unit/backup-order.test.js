@@ -91,3 +91,31 @@ test('#90 guide links, their order and hand-picked guide channels round-trip, pi
     assert.equal(JSON.stringify(restored.GuidePick.all(sources[1].id)), '{}');
     assert.equal(restored.Stored.json(restored.ProfileStore.key('list-order:' + back[0].id))['channels:__fav'].join(','), back[1].id + '|2,1');
 });
+
+test('#90 a full TV while restoring guide picks fails the import and keeps the old picks', async function () {
+    var env = load(files.concat(['guide-pick.js']), {}, { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } });
+    var g = env.globals;
+    await g.Backup.apply(g.Backup.parse(fixture), 'replace');
+    var sources = g.Sources.all().map(function (source) { return Object.assign({}, source); });
+    sources[0] = Object.assign(sources[0], { epgUrl: 'https://guide.test/a.xml' });
+    g.Sources.replace(sources);
+    g.GuidePick.replaceAll(sources[0].id, { 'id:5': { n: 1, id: 'beinsports1.qa' } });
+    var manifest = await g.Backup.build();
+    // The TV already holds a pick; the restore runs out of space on its guide picks.
+    var records = {};
+    var target = load(files.concat(['guide-pick.js']), records, { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } });
+    var t = target.globals;
+    t.Sources.replace([{ id: 'mine', type: 'm3u', name: 'Mine', url: 'https://mine.test/list.m3u', epgUrl: 'https://guide.test/mine.xml' }]);
+    t.GuidePick.replaceAll('mine', { 'id:9': { n: 1, id: 'mine.channel' } });
+    var setItem = t.localStorage.setItem;
+    var full = true;
+    // The first guide-pick write finds the TV full; the rollback frees the space again.
+    t.localStorage.setItem = function (key, value) {
+        if (full && key.indexOf('iptvnator-tv:guide-pick:') === 0) { full = false; throw new Error('QuotaExceededError'); }
+        return setItem.call(this, key, value);
+    };
+    assert.throws(function () { t.Backup.apply(t.Backup.parse(JSON.stringify(manifest)), 'replace'); }, /Could not save backup/);
+    t.localStorage.setItem = setItem;
+    assert.equal(t.Sources.all()[0].id, 'mine');
+    assert.equal(JSON.stringify(JSON.parse(target.stored['iptvnator-tv:guide-pick:mine'])), JSON.stringify({ 'id:9': { n: 1, id: 'mine.channel' } }));
+});

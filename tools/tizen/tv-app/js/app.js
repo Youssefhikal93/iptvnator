@@ -112,7 +112,10 @@
     var reminderPopup = ReminderPopup({
         allowed: function () { return !PinPad.isOpen() && !ProfileScreen.isOpen() && !ProfileDialog.isOpen() && screen !== 'form'; },
         watch: function (reminder) { browser.watchReminder(reminder); },
+        // A reminder due while the screen saver shows ends it, so the viewer sees it.
+        shown: function () { if (saver) saver.wake(); },
     });
+    var saver = null;
 
     // PRE-CH, Green and the menu's Previous channel row (#89).
     function watchPrevious() {
@@ -236,8 +239,8 @@
     // With two or more profiles, ask who is watching before anything loads.
     // Menus, a paused video and the live preview count as idle; a playing
     // full-screen video never does.
-    ScreenSaver({
-        allowed: function () { return screen !== 'player' || Player.paused(); },
+    saver = ScreenSaver({
+        allowed: function () { return !reminderPopup.isOpen() && (screen !== 'player' || Player.paused()); },
         slides: browser.saverSlides,
     });
 

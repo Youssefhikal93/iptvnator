@@ -5,10 +5,10 @@ window.BackupStore = (function () {
     var PREFIX = 'iptvnator-tv:';
     var SECTIONS = ['live', 'movies', 'series'];
 
-    // Sources are shared; everything else is the active profile's data.
+    // Sources and guide picks (#90) are shared; everything else is the active profile's data.
     function storageKey(key) {
         if (key === 'progress') return Progress.storageKey();
-        return key === 'sources' || key === 'current' ? PREFIX + key : ProfileStore.key(key);
+        return key === 'sources' || key === 'current' || key.indexOf('guide-pick:') === 0 ? PREFIX + key : ProfileStore.key(key);
     }
 
     function read(key, fallback) {
@@ -53,7 +53,7 @@ window.BackupStore = (function () {
         });
         try {
             Object.keys(writes).forEach(function (key) {
-                if (key.indexOf('progress:') === 0 && writes[key] === null) Stored.remove(storageKey(key));
+                if ((key.indexOf('progress:') === 0 || key.indexOf('guide-pick:') === 0) && writes[key] === null) Stored.remove(storageKey(key));
                 else Stored.save(storageKey(key), writes[key]);
             });
             Sources.replace(sources);
@@ -78,7 +78,7 @@ window.BackupStore = (function () {
         var orders = [];
         var picks = {};
         if (mode === 'replace') existing.forEach(function (source) {
-            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:', 'list-order:', 'channel-groups:'].forEach(function (kind) { writes[kind + source.id] = null; });
+            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:', 'list-order:', 'channel-groups:', 'guide-pick:'].forEach(function (kind) { writes[kind + source.id] = null; });
         });
         backup.sources.forEach(function (entry, index) {
             var match = sources.filter(function (source) { return fingerprint(source) === fingerprint(entry.source); })[0];
@@ -137,11 +137,11 @@ window.BackupStore = (function () {
             writes[currentKey] = positions(currentProgress, fallback);
         }
         writes['audio-choice'] = AudioChoice.merge(mode === 'merge' ? read('audio-choice', null) : null, backup.audioChoice, sourceIds);
+        // Guide picks (#90) are checked and rolled back with the rest.
+        Object.keys(picks).forEach(function (id) {
+            writes['guide-pick:' + id] = Object.keys(picks[id]).length ? picks[id] : null;
+        });
         commit(writes, sources);
-        if (window.GuidePick) {
-            if (mode === 'replace') existing.forEach(function (source) { GuidePick.remove(source.id); });
-            Object.keys(picks).forEach(function (id) { GuidePick.replaceAll(id, picks[id]); });
-        }
         // Raw playlists are catalogue data, never part of the localStorage library budget.
         return Promise.all(catalogues.map(function (catalogue) {
             return window.Catalogue ? Catalogue.put(catalogue.id, 'backup:m3u', { url: catalogue.url, text: catalogue.text }) : null;

@@ -54,9 +54,11 @@ window.Browser = function (hooks) {
     // The Recent channels list (#80); a channel joins after 10 s on screen.
     var recentChannels = RecentChannels({
         sourceId: sourceId,
+        // The player's own request must be this live channel: a film started
+        // before the next count must not finish a channel's 10 s.
         playing: function (channel) {
-            var now = live.current();
-            return Player.isOpen() && !!now && Library.keyOf('live', now) === Library.keyOf('live', channel);
+            var req = Player.request && Player.request();
+            return !!req && !!req.live && req.channel === sourceId() + '|' + Library.keyOf('live', channel);
         },
         ready: function () { return Player.isPlaying(); },
         allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },

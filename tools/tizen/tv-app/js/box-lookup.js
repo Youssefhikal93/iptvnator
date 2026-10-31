@@ -9,7 +9,10 @@ window.BoxLookup = function (hooks) {
 
     var PARALLEL = 2;
     var WAITING = 30;
+    // A failed request (no network, 429, a wrong key) may be asked again after this.
+    var RETRY_MS = 10 * 60000;
     var queue = [];
+    // key -> true once answered, or the time a failed one may be asked again.
     var asked = {};
     var running = 0;
     var timer = null;
@@ -18,7 +21,12 @@ window.BoxLookup = function (hooks) {
     // Whether TMDB is on, asked again only when its key changes or on reset:
     // the boxes call want() on every move, and the key is read from storage.
     var tmdbOn = null;
-    if (window.Prefs && Prefs.onChange) Prefs.onChange(function (name) { if (name === 'tmdbApiKey') tmdbOn = null; });
+    // A new key also lets the titles that failed under the old one be asked at once.
+    if (window.Prefs && Prefs.onChange) Prefs.onChange(function (name) {
+        if (name !== 'tmdbApiKey') return;
+        tmdbOn = null;
+        Object.keys(asked).forEach(function (key) { if (asked[key] !== true) delete asked[key]; });
+    });
 
     function enabled() {
         if (tmdbOn === null) tmdbOn = Tmdb.enabled();
@@ -42,16 +50,17 @@ window.BoxLookup = function (hooks) {
         var type = job.section === 'series' ? 'tv' : 'movie';
         var mine = generation;
         running++;
+        function failed() { asked[job.key] = Date.now() + RETRY_MS; }
         Tmdb.lookup(job.item, type).then(function (result) {
-            // A failed request is asked again another time; "no such title"
+            // A failed request is asked again after RETRY_MS; "no such title"
             // or an answer without the number is noted and left for 30 days.
-            if (result.status === 'failed') return;
+            if (result.status === 'failed') return failed();
             var body = result.status === 'found' ? result.body : {};
             var found = type === 'tv' ? { seasons: body.number_of_seasons } : { minutes: body.runtime };
             var kept = TitleFacts.save(job.sourceId, job.section, job.item, found);
             if (!kept && !known(job.item, job.section, job.sourceId)) TitleFacts.missing(job.sourceId, job.section, job.item);
             if (kept && mine === generation) redraw();
-        }).catch(function () {}).then(function () {
+        }).catch(failed).then(function () {
             running--;
             pump();
         });
@@ -79,7 +88,7 @@ window.BoxLookup = function (hooks) {
             list.forEach(function (item) {
                 if (!item || item.sub || (item.sourceId && item.sourceId !== sourceId)) return;
                 var key = TitleFacts.key(sourceId, section, item);
-                if (asked[key] || known(item, section, sourceId) || TitleFacts.missedLately(sourceId, section, item)) return;
+                if (asked[key] === true || asked[key] > Date.now() || known(item, section, sourceId) || TitleFacts.missedLately(sourceId, section, item)) return;
                 asked[key] = true;
                 fresh.push({ item: item, section: section, sourceId: sourceId, key: key });
             });

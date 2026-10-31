@@ -155,7 +155,12 @@ window.GuidePick = (function () {
         },
         // Backup (#90): every pick of a source, and putting them back.
         all: function (sourceId) { return Object.assign({}, read(sourceId)); },
-        replaceAll: function (sourceId, picks) { write(sourceId, Object.assign({}, picks || {})); },
+        // Unlike a pick by hand, a failed write here reaches the caller.
+        replaceAll: function (sourceId, picks) {
+            var all = Object.assign({}, picks || {});
+            if (Object.keys(all).length) Stored.save(PREFIX + sourceId, all);
+            else Stored.remove(PREFIX + sourceId);
+        },
         remove: function (sourceId) { Stored.remove(PREFIX + sourceId); },
     };
 })();

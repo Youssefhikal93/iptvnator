@@ -40,12 +40,13 @@ test('OK releases a tap before 600 ms and fires only hold at or beyond 600 ms', 
     });
 });
 
-// A page with one card, to see the hold bar drawn on it.
-function page() {
+// A page with one card, to see the hold ring drawn on it.
+function page(language) {
     var timer;
     var keyup;
     var body = { children: [], appendChild: function (node) { this.children.push(node); } };
-    var card = { getBoundingClientRect: function () { return { left: 100, top: 200, width: 240, height: 360, bottom: 560 }; }, querySelector: function () { return null; } };
+    var card = { getBoundingClientRect: function () { return { left: 100, top: 200, right: 340, width: 240, height: 360, bottom: 560 }; }, querySelector: function () { return null; } };
+    var screen = { getBoundingClientRect: function () { return { left: 0, top: 0, right: 1920, width: 1920, height: 1080, bottom: 1080 }; } };
     var document = {
         body: body,
         addEventListener: function (name, callback) { if (name === 'keyup') keyup = callback; },
@@ -53,15 +54,17 @@ function page() {
             return { style: { setProperty: function (name, value) { this[name] = value; } }, className: '', innerHTML: '' };
         },
     };
-    var app = load(['keys.js'], {}, {
+    var app = load(language ? ['i18n/' + language + '.js', 'keys.js'] : ['keys.js'], {}, {
         document: document,
         setTimeout: function (callback, delay) { timer = { callback: callback, delay: delay }; return timer; },
         clearTimeout: function () { timer = null; },
     });
     var keys = app.globals.Keys;
+    if (language) app.globals.I18n.setLanguage(language);
     return {
         keys: keys,
         card: card,
+        screen: screen,
         bar: function () { return body.children[0]; },
         delay: function () { return timer && timer.delay; },
         fire: function () { var callback = timer.callback; timer = null; callback(); },
@@ -69,18 +72,18 @@ function page() {
     };
 }
 
-test('a held OK draws a bar on the card that fills over the hold time and goes at the hold', function () {
+test('a held OK draws a ring on the card that fills over the hold time and goes at the hold', function () {
     var run = page();
     var actions = [];
     run.keys.press(function () { actions.push('tap'); }, function () { actions.push('hold:' + run.bar().className); }, run.card);
     var bar = run.bar();
     assert.equal(bar.id, 'hold-progress');
     assert.equal(bar.className, 'on');
-    assert.equal(bar.innerHTML, '<i></i>');
+    assert.match(bar.innerHTML, /^<svg viewBox="0 0 44 44"[^>]*><circle class="hp-track"[^>]*><\/circle><circle class="hp-arc"/);
     assert.equal(bar.style['--hold-ms'], run.keys.HOLD_MS + 'ms');
     assert.equal(run.delay(), run.keys.HOLD_MS);
-    // Inside the poster, 16px above its bottom edge.
-    assert.deepEqual([bar.style.left, bar.style.top, bar.style.width], ['116px', '538px', '208px']);
+    // 44px, in the poster's top-right corner, 16px in from both edges.
+    assert.deepEqual([bar.style.left, bar.style.top, bar.style.width, bar.style.height], ['280px', '216px', '44px', '44px']);
     run.fire();
     assert.deepEqual(actions, ['hold:']);
     assert.equal(bar.innerHTML, '');
@@ -88,7 +91,17 @@ test('a held OK draws a bar on the card that fills over the hold time and goes a
     assert.deepEqual(actions, ['hold:']);
 });
 
-test('letting go early taps and takes the bar away; no target draws no bar', function () {
+test('in Arabic the ring sits in the top-left corner; on the player it is larger and centred near the bottom', function () {
+    var arabic = page('ar');
+    arabic.keys.press(function () {}, function () {}, arabic.card);
+    assert.deepEqual([arabic.bar().style.left, arabic.bar().style.top], ['116px', '216px']);
+    var player = page();
+    player.keys.press(function () {}, function () {}, player.screen);
+    var ring = player.bar();
+    assert.deepEqual([ring.style.left, ring.style.top, ring.style.width, ring.style.height], ['924px', '860px', '72px', '72px']);
+});
+
+test('letting go early taps and takes the ring away; no target draws no ring', function () {
     var run = page();
     var actions = [];
     run.keys.press(function () { actions.push('tap:' + run.bar().className); }, function () { actions.push('hold'); }, function () { return run.card; });

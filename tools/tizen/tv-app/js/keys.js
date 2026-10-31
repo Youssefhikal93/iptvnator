@@ -13,11 +13,24 @@ window.Keys = (function () {
         FAST_FORWARD: 417, REWIND: 412, IME_DONE: 65376, IME_CANCEL: 65385,
     };
 
-    // A held OK shows how long is left: a thin bar on the pressed card (or
-    // along the bottom of the player) fills over HOLD_MS and is gone when OK
-    // is let go or the hold fires. It floats above the page, so a screen that
-    // redraws during the hold cannot lose it; its box is read once per press.
+    // A held OK shows how long is left: a small ring in the top corner of the
+    // pressed card (larger, near the bottom of the player) fills clockwise
+    // over HOLD_MS and is gone when OK is let go or the hold fires. It floats
+    // above the page, so a screen that redraws during the hold cannot lose
+    // it; its box is read once per press.
+    var CARD_RING = 44;
+    var PLAYER_RING = 72;
+    var PLAYER_GAP = 148;
+    // The arc is drawn by its dash: a circle of radius 18 in a 44 box.
+    var RING = '<svg viewBox="0 0 44 44" aria-hidden="true"><circle class="hp-track" cx="22" cy="22" r="18"></circle>' +
+        '<circle class="hp-arc" cx="22" cy="22" r="18" transform="rotate(-90 22 22)"></circle></svg>';
     var bar = null;
+
+    // The app does not mirror its layout yet; Arabic still puts the ring on the reading side.
+    function rightToLeft() {
+        var root = document.documentElement;
+        return (root && root.dir === 'rtl') || (!!window.I18n && I18n.language() === 'ar');
+    }
 
     function showBar(target) {
         var node = typeof target === 'function' ? target() : target;
@@ -25,19 +38,24 @@ window.Keys = (function () {
         var art = (node.querySelector && node.querySelector('.hm-poster, .poster, .pf-avatar')) || node;
         var box = art.getBoundingClientRect();
         if (!box.width || !box.height) return;
+        var player = box.width > 1200;
+        var size = player ? PLAYER_RING : CARD_RING;
         var inset = Math.round(Math.min(16, box.height / 8));
-        var width = box.width > 1200 ? 480 : box.width - 2 * inset;
+        var left = player ? box.left + (box.width - size) / 2 : rightToLeft() ? box.left + inset : box.right - inset - size;
+        // On the player, above the row of key hints along its bottom.
+        var top = player ? box.bottom - size - PLAYER_GAP : box.top + inset;
         if (!bar) {
             bar = document.createElement('div');
             bar.id = 'hold-progress';
             bar.style.setProperty('--hold-ms', HOLD_MS + 'ms');
             document.body.appendChild(bar);
         }
-        bar.style.left = Math.round(box.left + (box.width - width) / 2) + 'px';
-        bar.style.top = Math.round(box.bottom - inset - 6) + 'px';
-        bar.style.width = Math.round(width) + 'px';
-        // A new fill starts its animation from empty.
-        bar.innerHTML = '<i></i>';
+        bar.style.left = Math.round(left) + 'px';
+        bar.style.top = Math.round(top) + 'px';
+        bar.style.width = size + 'px';
+        bar.style.height = size + 'px';
+        // A new ring starts its animation from empty.
+        bar.innerHTML = RING;
         bar.className = 'on';
     }
 

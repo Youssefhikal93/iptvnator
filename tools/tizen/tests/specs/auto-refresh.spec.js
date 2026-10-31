@@ -66,6 +66,8 @@ test('an old source is fetched again in the background, one request at a time, a
     await section(page, 'Settings');
     await expect(page.locator('#settings .st-source').filter({ hasText: 'Other TV' })).toContainText('Last refreshed Mar 4 10:01');
     await expect(page.locator('#settings .st-source').filter({ hasText: 'Regression TV' })).toContainText('Last refreshed Mar 4 09:00');
+    // Opening Settings checks each account; its held request may still be in flight.
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
 });
 
 test('a source with a guide link refreshes its guide after its lists, one at a time', async ({ page }) => {

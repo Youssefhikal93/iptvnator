@@ -115,9 +115,11 @@ window.ChannelList = function (hooks) {
         if (hooks.unlock && hooks.unlock(category, function () {
             if (opened && mine === token) load(channel);
         })) {
+            // Waiting for the PIN (or it was cancelled): say why the list is empty.
             loading = false;
             pending = [];
-            return;
+            message = I18n.t('empty.locked.title');
+            return render();
         }
         hooks.channels.channels(category.category_id).then(function (loaded) {
             if (!opened || mine !== token) return;
@@ -171,6 +173,8 @@ window.ChannelList = function (hooks) {
     function key(code) {
         if (!opened) return false;
         touch();
+        // Picking for a multi-view tile: CH +/- must not zap the tile behind the list.
+        if (onPick && (code === KEY.CH_UP || code === KEY.CH_DOWN)) return true;
         if ([KEY.CH_UP, KEY.CH_DOWN, KEY.GREEN, KEY.PREVIOUS_CHANNEL, KEY.STOP].indexOf(code) >= 0) return false;
         if ([KEY.YELLOW, KEY.INFO].indexOf(code) >= 0) {
             close();

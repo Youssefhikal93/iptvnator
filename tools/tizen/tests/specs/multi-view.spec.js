@@ -174,6 +174,9 @@ test('adding from a locked category asks for the PIN and cancelling keeps existi
     await moveTo(page, '.pl-channel-header', '◀ get_live_categories cat 3 ▶', 'ArrowRight');
     await expect(page.locator('#pin-pad')).toBeVisible();
     await back(page);
+    // A cancelled PIN says why the list is empty instead of "Loading…".
+    await expect(page.locator('#pl-channels')).toContainText('Locked category');
+    await expect(page.locator('#pl-channels')).not.toContainText('Loading');
     await back(page); // close the channel list
     await expect(tile(page, 1)).toContainText('+ Add channel');
     await tilePlaying(page, 0);
@@ -185,6 +188,21 @@ test('adding from a locked category asks for the PIN and cancelling keeps existi
     await expect(page.locator('#pl-channels .pl-channel.focused')).toContainText('Channel 1');
     await press(page, 'Enter');
     await tilePlaying(page, 1);
+});
+
+test('CH + while picking a channel for a tile leaves the tile behind the list alone', async ({ page }) => {
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 406);
+    await layout(page, 2);
+    await tilePlaying(page, 0);
+    await press(page, 'Enter');
+    await choice(page, 'Change channel');
+    await expect(page.locator('#pl-channels')).toBeVisible();
+    await sendKeyCode(page, 427);
+    await sendKeyCode(page, 427);
+    await expect(page.locator('#pl-channels')).toBeVisible();
+    await expect(tile(page, 0).locator('.mv-label')).toContainText('Channel 1 (cat all)');
 });
 
 test('sleep timer keeps running across multi-view and the screen saver stays off', async ({ page }) => {

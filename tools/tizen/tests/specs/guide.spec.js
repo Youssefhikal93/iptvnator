@@ -177,6 +177,8 @@ test('Favorites and provider categories open their own channels', async ({ page 
     await expect(page.locator('#items .focused > .label')).toContainText('9. Channel 9');
     await press(page, 'ArrowLeft');
     await category(page, 'get_live_categories cat 1');
+    // The category's own channels must be listed before the guide opens on them.
+    await expect(page.locator('#items .label').first()).toContainText('Channel 1 (cat 1)');
     await openGuide(page);
     await expect(page.locator('#guide .gd-category')).toContainText('get_live_categories cat 1');
     await expect(page.locator('#guide .gd-row').first()).toContainText('Channel 1 (cat 1)');

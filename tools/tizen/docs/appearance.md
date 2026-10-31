@@ -5,6 +5,12 @@ Ticket #31's screen changes reuse `tv-app/theme-accents.css` and
 respectively. Keep screen layouts in their own stylesheets; these files own
 the shared tokens, focus language and main-screen safe area.
 
+Hold-OK options use `glyph` text symbols in a 40px column with a 22px gap,
+coloured with `--muted` or `--selection` when focused. Plain notes reserve
+the same column without drawing an icon. The options sheet reads right to
+left in Arabic, placing the icons before the labels on the right; theme
+tokens keep the same layout in Dark and Light.
+
 `Prefs` stores `theme`, `accent` and `density` in the active profile's settings,
 through the same path as Language. `Appearance` applies them at startup, on
 changes and on profile switches. Missing or unknown values display Dark blue,

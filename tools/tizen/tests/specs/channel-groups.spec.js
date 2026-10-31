@@ -1,6 +1,63 @@
-const { test, expect, boot, section, category, enterItems, press, back, holdOK, menuChoice, moveTo, playing, channel } = require('./helpers');
+const { test, expect, boot, section, category, enterItems, press, back, holdOK, menuChoice, moveTo, playing, channel, resumeSeed } = require('./helpers');
 
 const groups = page => page.evaluate(() => Stored.json(ProfileStore.key('channel-groups:s1')) || []);
+
+async function expectMenuIcons(page) {
+    const rows = page.locator('#menu .menu-row:not(.note)');
+    await expect(rows.first()).toBeVisible();
+    for (const row of await rows.all()) await expect(row).toHaveAttribute('data-glyph', /\S/);
+    const layout = await rows.evaluateAll(nodes => nodes.map(node => {
+        const label = node.querySelector('.menu-label').getBoundingClientRect();
+        const icon = getComputedStyle(node, '::before');
+        return { edge: getComputedStyle(node).direction === 'rtl' ? label.right : label.left,
+            iconWidth: icon.width, iconContent: icon.content };
+    }));
+    for (const row of layout) {
+        expect(Math.abs(row.edge - layout[0].edge)).toBeLessThan(1);
+        expect(row.iconWidth).toBe('40px');
+        expect(row.iconContent).not.toMatch(/^(none|normal|"")$/);
+    }
+}
+
+async function expectAlignedNote(page) {
+    await page.evaluate(() => Menu.open(I18n.t('menu.watch'), [
+        { label: I18n.t('menu.watch'), glyph: '▶' },
+        { label: I18n.t('episodes.loading'), note: true },
+    ]));
+    const note = page.locator('#menu .menu-row.note');
+    await expect(note).not.toHaveAttribute('data-glyph');
+    expect(await note.evaluate(node => getComputedStyle(node, '::before').content)).toBe('""');
+    const edges = await page.locator('#menu .menu-label').evaluateAll(labels => labels.map(label => {
+        const bounds = label.getBoundingClientRect();
+        return getComputedStyle(label).direction === 'rtl' ? bounds.right : bounds.left;
+    }));
+    expect(Math.abs(edges[0] - edges[1])).toBeLessThan(1);
+}
+
+for (const language of ['en', 'ar']) {
+    for (const theme of ['dark', 'light']) {
+        test(`live and movie hold menus have icons and aligned labels in ${language}, ${theme}`, async ({ page }) => {
+            await boot(page, { storage: { ...resumeSeed().storage, settings: { language, theme } } });
+            await section(page, language === 'ar' ? 'تلفزيون مباشر' : 'Live TV');
+            await expect(page.locator('#categories .focused')).toHaveCount(1);
+            await expect(page.locator('#items .row').first()).toBeVisible();
+            await expect(page.locator('#items .skeleton')).toHaveCount(0);
+            await enterItems(page);
+            await holdOK(page);
+            await expectMenuIcons(page);
+            await expect(page.locator('#menu')).toHaveCSS('direction', language === 'ar' ? 'rtl' : 'ltr');
+            await back(page);
+            await section(page, language === 'ar' ? 'الأفلام' : 'Movies');
+            await expect(page.locator('#categories .focused')).toHaveCount(1);
+            await expect(page.locator('#items .card').first()).toBeVisible();
+            await expect(page.locator('#items .skeleton')).toHaveCount(0);
+            await enterItems(page);
+            await holdOK(page);
+            await expectMenuIcons(page);
+            await expectAlignedNote(page);
+        });
+    }
+}
 
 async function nameGroup(page, name) {
     await expect(page.locator('#profile-dialog')).toBeVisible();
@@ -14,6 +71,7 @@ async function groupPicker(page) {
     await moveTo(page, '#menu .focused', 'Add to group');
     await press(page, 'Enter');
     await expect(page.locator('#menu .menu-title')).toHaveText('Add to group');
+    await expectMenuIcons(page);
 }
 
 async function ownGroup(page, name) {
@@ -39,6 +97,7 @@ test('#76 create, add, order and play a live group; zap and drawer follow it; re
     await ownGroup(page, 'My TV');
     await press(page, 'ArrowLeft');
     await holdOK(page);
+    await expectMenuIcons(page);
     // A new group starts after the library rows; move it above Recently watched.
     await expect(page.locator('#categories .row .label').nth(3)).toHaveText('My TV');
     await menuChoice(page, 'Move');
@@ -77,10 +136,12 @@ test('#76 create, add, order and play a live group; zap and drawer follow it; re
     await back(page);
     await back(page);
     await holdOK(page);
+    await expectMenuIcons(page);
     await menuChoice(page, 'Remove from group');
     await expect(page.locator('#items .row')).toHaveCount(1);
     await press(page, 'ArrowLeft');
     await holdOK(page);
+    await expectMenuIcons(page);
     await menuChoice(page, 'Rename group');
     await nameGroup(page, 'Evening');
     await expect(page.locator('#categories .focused .label')).toHaveText('Evening');

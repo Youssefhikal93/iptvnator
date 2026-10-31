@@ -12,11 +12,12 @@ window.ParentalMenu = (function () {
 
     function category(sourceId, section, row) {
         if (!ParentalLock.hasPin()) {
-            return { label: I18n.t('pin.setFirst'), run: function () { PinPad.open('set'); } };
+            return { label: I18n.t('pin.setFirst'), glyph: '⚿', run: function () { PinPad.open('set'); } };
         }
         var locked = ParentalLock.isLocked(sourceId, section, row.category_id);
         return {
             label: I18n.t(locked ? 'pin.unlockCategory' : 'pin.lockCategory'),
+            glyph: '⚿',
             run: function () {
                 if (locked) {
                     PinPad.open('verify', function () { ParentalLock.unlockCategory(sourceId, section, row.category_id); });

@@ -101,7 +101,7 @@ window.ProfileScreen = (() => {
                 if (moved.index !== undefined) focus = moved.index;
                 render();
             } else if (code === Keys.ENTER) {
-                if (profile) Keys.press(choose, () => options(profile));
+                if (profile) Keys.press(choose, () => options(profile), () => root && root.querySelector('.pf-tile.focused'));
                 else choose();
             } else if (Keys.isBack(code)) {
                 if (reload) return finish(true);

@@ -2162,7 +2162,8 @@ window.Browser = function (hooks) {
                 function () {
                     if (resumes) entryDetails(entry);
                     else openItemMenu(entry.item, entry.section);
-                }
+                },
+                Keys.focusedIn('home')
             );
         } else if (Keys.isBack(code) || leavesFor(home.key(code))) setZone('rail');
         // Home redraws itself; the chrome only when the focus left it.
@@ -2190,7 +2191,7 @@ window.Browser = function (hooks) {
                 detail.onKey(code);
             }, function () {
                 watched.openEpisodeMenu(selection);
-            });
+            }, Keys.focusedIn('detail'));
             return true;
         }
         var loadKey = LoadScreen.key(code);
@@ -2258,7 +2259,7 @@ window.Browser = function (hooks) {
                     enterCategory();
                 }, function () {
                     openCategoryMenu(row);
-                });
+                }, Keys.focusedIn('categories'));
             }
             else if (code === KEY.RIGHT || code === KEY.ENTER) enterCategory();
             else return code === KEY.RIGHT || code === KEY.ENTER;
@@ -2275,10 +2276,12 @@ window.Browser = function (hooks) {
             else if (code === KEY.ENTER && watchedEmpty) toggleWatched();
             else if (code === KEY.ENTER) {
                 // Holding OK opens the options menu; a short press opens on release.
+                // The bar shows only where holding does more than a tap.
+                var pressed = items.item();
                 Keys.press(activateItem, function () {
                     var held = items.item();
                     if (held && !held.collection && !held.missing) openItemMenu(held, state.section);
-                });
+                }, pressed && !pressed.collection && !pressed.missing ? Keys.focusedIn('items') : null);
             } else if (Keys.isBack(code) && state.collection) closeCollection();
             else if (Keys.isBack(code)) setZone('rail');
             else if (code === KEY.LEFT) setZone('categories');

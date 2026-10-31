@@ -195,7 +195,7 @@ window.ManageCategories = function (hooks) {
             if (row.virtual === 'group') options = options.concat(groups.category(row));
             options.push({ label: I18n.t('common.cancel') });
             Menu.open(row.category_name, options);
-        });
+        }, Keys.focusedIn('manage'));
         paint();
         return true;
     }

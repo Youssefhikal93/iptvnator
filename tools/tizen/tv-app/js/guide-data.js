@@ -73,9 +73,11 @@ window.GuideData = function (source, adapter) {
         cached: function (channels, epg) {
             var order = [];
             if (source) GuideLinks.each(source, function (link) { order.push(link); }, true);
+            // A fetched schedule that came back empty is no answer: the
+            // cached guides below may still have the channel.
             var lists = channels.map(function (channel) {
                 var entry = store[keyOf(channel)];
-                return entry ? entry.list : null;
+                return entry && entry.list.length ? entry.list : null;
             });
             var step = Promise.resolve();
             order.forEach(function (link) {

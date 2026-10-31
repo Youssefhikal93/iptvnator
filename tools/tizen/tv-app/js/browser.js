@@ -2342,8 +2342,12 @@ window.Browser = function (hooks) {
         },
         live: live,
         // A background refresh saved a source's sections again (auto-refresh.js).
-        catalogueRefreshed: function (id, entries) {
-            if (state.source && state.source.id === id && state.catalogue) state.catalogue.refreshed(entries);
+        // A playlist's open adapter takes the new download too, as its
+        // categories are read from it rather than from the catalogue.
+        catalogueRefreshed: function (id, entries, adapter) {
+            if (!state.source || state.source.id !== id) return;
+            if (state.adapter && state.adapter.adopt && adapter && adapter.playlist) state.adapter.adopt(adapter.playlist());
+            if (state.catalogue) state.catalogue.refreshed(entries);
         },
         watchReminder: watchReminder,
         epg: function () { return state.epg; },

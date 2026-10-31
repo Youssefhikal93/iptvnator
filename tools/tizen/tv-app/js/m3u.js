@@ -67,15 +67,19 @@ window.M3uSource = function (source) {
         return { title: title, poster: poster || '', backdrop: '', year: year, rating: 0, genre: group, seconds: 0, plot: '', cast: '', director: '', trailer: '' };
     }
 
+    // Movies and Series show in the rail only when the playlist has them.
+    function use(playlist) {
+        parsed = playlist;
+        api.sections = ['live'].concat(parsed.movies.all.length ? ['movies'] : [], parsed.series.all.length ? ['series'] : []);
+        return parsed;
+    }
+
     function load() {
         if (parsed) return Promise.resolve(parsed);
         return SourceRequest(source.url.trim(), 'text')
             .then(function (text) {
                 if (text.indexOf('#EXTINF') === -1) throw new Error('not an M3U playlist');
-                parsed = parse(text);
-                // Movies and Series show in the rail only when the playlist has them.
-                api.sections = ['live'].concat(parsed.movies.all.length ? ['movies'] : [], parsed.series.all.length ? ['series'] : []);
-                return parsed;
+                return use(parse(text));
             });
     }
 
@@ -100,6 +104,10 @@ window.M3uSource = function (source) {
     var api = {
         parse: parse,
         sections: ['live'],
+        // The parsed playlist, once downloaded; a background refresh hands it
+        // to the open source's adapter (adopt), so its categories are new too.
+        playlist: function () { return parsed; },
+        adopt: function (playlist) { if (playlist) use(playlist); },
         account: function () {
             return load().then(function (p) {
                 return {

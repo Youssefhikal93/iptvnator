@@ -134,3 +134,20 @@ test('each profile has its own reminders', function () {
     profiles.setActive(first);
     assert.deepEqual(titles(t.api.list()), ['Match']);
 });
+
+test('the same reminder in two profiles is announced in each profile', function () {
+    var files = ['profile-store.js', 'library.js', 'reminders.js'];
+    var t = setup(START - 30 * MINUTE, {}, files);
+    var profiles = t.env.globals.ProfileStore;
+    var first = profiles.active().id;
+    t.api.add('s1', channel, programme(START));
+    var second = profiles.add('Guest').id;
+    profiles.setActive(second);
+    t.api.add('s1', channel, programme(START));
+    profiles.setActive(first);
+    assert.equal(t.api.due(START - MINUTE).title, 'Match');
+    profiles.setActive(second);
+    var found = t.api.due(START - MINUTE + 1000);
+    assert.equal(found && found.title, 'Match', 'the other profile still gets its own announcement');
+    assert.equal(t.api.due(START - MINUTE + 2000), null, 'and only once');
+});

@@ -41,7 +41,7 @@ function twoUnfinished() {
     return seed;
 }
 
-test('OK in Continue watching plays on from where it stopped, and holding OK opens the details', async ({ page }) => {
+test('OK in Continue watching plays on from where it stopped; holding OK opens the menu with Details first', async ({ page }) => {
     await boot(page, twoUnfinished());
     await press(page, 'ArrowDown');
     await expect(page.locator('.hm-row.focused, .hm-row:has(.hm-card.focus) > h2').first()).toContainText('Continue watching');
@@ -53,14 +53,38 @@ test('OK in Continue watching plays on from where it stopped, and holding OK ope
     for (let i = 0; i < 6 && await page.locator('#player').isVisible(); i++) await back(page);
     await expect(page.locator('#player')).toBeHidden();
     await expect(page.locator('.hm-card.focus')).toContainText('Movie 24');
-    await holdOK(page, '#detail');
+    await holdOK(page);
+    await expect(page.locator('#menu .menu-row').nth(0)).toHaveText('Details');
+    await expect(page.locator('#menu .menu-row').nth(1)).toHaveText('Play');
+    await expect(page.locator('#menu .menu-row').nth(2)).toHaveText('Add to Favorites');
+    await expect(page.locator('#menu .menu-row.focused')).toHaveText('Details');
+    await press(page, 'Enter');
     await expect(page.locator('#detail')).toContainText('Movie 24');
-    // Elsewhere on Home, hold-OK still opens the item's menu.
     await back(page);
     await expect(page.locator('#detail')).toBeHidden();
+    // Play in the menu plays on from where it stopped, as OK does.
+    await holdOK(page);
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await playing(page);
+    await expect(page.locator('#pl-resume')).toBeHidden();
+    await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(95);
+    for (let i = 0; i < 6 && await page.locator('#player').isVisible(); i++) await back(page);
+    // Elsewhere on Home the menu also starts with Details.
     await press(page, 'ArrowDown');
     await expect(page.locator('.hm-card.focus')).toContainText('Movie 7');
     await holdOK(page);
+    await expect(page.locator('#menu .menu-row.focused')).toHaveText('Details');
+});
+
+test('holding OK on a series or an unfinished episode puts Details first, each row with its icon', async ({ page }) => {
+    await boot(page, twoUnfinished());
+    await section(page, 'Series');
+    await enterItems(page);
+    await holdOK(page);
+    await expect(page.locator('#menu .menu-row').first()).toHaveText('Details');
+    await expect(page.locator('#menu .menu-row', { hasText: 'Play' })).toHaveCount(0);
+    for (const row of await page.locator('#menu .menu-row').all()) await expect(row).toHaveAttribute('data-glyph', /./);
 });
 
 test('below the hero, the row above stays in view as the faded bottom edge of its tiles', async ({ page }) => {

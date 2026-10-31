@@ -57,14 +57,14 @@ function twoUnfinished() {
     return seed;
 }
 
-test('holding OK on a Continue watching card fills a ring on it until its details open; a tap leaves none', async ({ page }) => {
+test('holding OK on a Continue watching card fills a ring on it until its menu opens; a tap leaves none', async ({ page }) => {
     await boot(page, twoUnfinished());
     await press(page, 'ArrowDown');
     const card = page.locator('.hm-card.focus');
     await expect(card).toContainText('Movie 24');
-    await holdWithRing(page, '.hm-card.focus .hm-poster', '#detail', 'home-continue.png', true);
+    await holdWithRing(page, '.hm-card.focus .hm-poster', '#menu', 'home-continue.png', true);
     await back(page);
-    await expect(page.locator('#detail')).toBeHidden();
+    await expect(page.locator('#menu')).toBeHidden();
     await press(page, 'Enter');
     await playing(page);
     await expect(ring(page)).toHaveCount(0);

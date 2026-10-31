@@ -773,25 +773,31 @@ window.Browser = function (hooks) {
         refreshLibrary();
     }
 
-    // Hold OK on an item: play, favorite and library actions, like the
-    // desktop's item context menu.
-    function openItemMenu(item, section) {
+    // An episode's details are its show's page.
+    function itemDetails(item, section) {
+        if (!item.episode) return openEntry(item, section);
+        if (otherSource(item)) return libraryNavigation.open(item, function () { openShow(item.show); });
+        openShow(item.show);
+    }
+
+    // Hold OK on an item: a film's or show's details first (an episode's
+    // show), then play, favorite and library actions, like the desktop's
+    // item context menu. resume, when given, plays on from where it stopped
+    // (Continue watching on Home).
+    function openItemMenu(item, section, resume) {
         if (!item) return;
-        var options = [
-            {
-                label: I18n.t(section === 'live' ? 'menu.watch' : item.episode ? 'menu.play' : 'menu.details'),
-                glyph: section === 'live' || item.episode ? '▶' : 'ℹ',
-                run: function () {
-                    openEntry(item, section);
-                },
-            },
-        ];
-        if (section === 'movies' && !item.episode) {
+        var options = [];
+        if (section !== 'live') {
+            options.push({ label: I18n.t('menu.details'), glyph: 'ℹ', run: function () { itemDetails(item, section); } });
+        }
+        if (section === 'live' || section === 'movies' || item.episode) {
             options.push({
-                label: I18n.t('menu.play'),
+                label: I18n.t(section === 'live' ? 'menu.watch' : 'menu.play'),
                 glyph: '▶',
                 run: function () {
-                    playMovie(item);
+                    if (resume) resume();
+                    else if (section === 'movies' && !item.episode) playMovie(item);
+                    else openEntry(item, section);
                 },
             });
         }
@@ -2160,8 +2166,7 @@ window.Browser = function (hooks) {
                     else openEntry(entry.item, entry.section);
                 },
                 function () {
-                    if (resumes) entryDetails(entry);
-                    else openItemMenu(entry.item, entry.section);
+                    openItemMenu(entry.item, entry.section, resumes ? function () { resumeEntry(entry); } : null);
                 },
                 Keys.focusedIn('home')
             );

@@ -16,7 +16,7 @@ window.Form = (function () {
     function fields() {
         var inputs = type === 'xtream' ? ['form-name', 'form-url', 'form-user', 'form-pass'] : ['form-name', 'form-url'];
         if (editing && !whole) inputs = [];
-        inputs = inputs.concat(['form-epg-url', 'form-epg-offset']);
+        inputs = inputs.concat(['form-epg-url', 'form-epg-url2', 'form-epg-url3', 'form-epg-offset']);
         if (type === 'xtream') inputs.push('form-epg-prefer');
         return inputs.concat(editing ? ['form-save', 'form-cancel'] : ['form-save', 'form-phone', 'form-cancel']);
     }
@@ -54,6 +54,8 @@ window.Form = (function () {
         $('form-source').classList.toggle('hidden', !!editing && !whole);
         $('form-epg-preference').classList.toggle('hidden', !xtream);
         $('form-epg-url').value = editing && editing.epgUrl || '';
+        $('form-epg-url2').value = editing && editing.epgUrl2 || '';
+        $('form-epg-url3').value = editing && editing.epgUrl3 || '';
         $('form-epg-offset').value = editing && editing.epgOffset || 0;
         $('form-epg-prefer').value = editing && editing.epgPrefer === false ? 'no' : 'yes';
         if (editing) $('form-title').textContent = I18n.t(whole ? 'form.editSource' : 'form.guideTitle');
@@ -78,16 +80,22 @@ window.Form = (function () {
     }
 
     function save() {
-        var guideUrl = $('form-epg-url').value.trim();
+        // Up to three guide links (#90), each checked like the first.
+        var guideUrls = ['form-epg-url', 'form-epg-url2', 'form-epg-url3'].map(function (id) { return $(id).value.trim(); });
         var offset = Number($('form-epg-offset').value);
-        if (guideUrl && !/^https?:\/\//i.test(guideUrl)) return message(I18n.t('form.guideLinkScheme'));
+        if (guideUrls.some(function (url) { return url && !/^https?:\/\//i.test(url); })) return message(I18n.t('form.guideLinkScheme'));
         if (!isFinite(offset) || offset < -12 || offset > 12) return message(I18n.t('form.offsetRange'));
         var source = { type: type, name: $('form-name').value, url: $('form-url').value.trim() };
         if (editing) source = Object.assign({}, editing);
         var before = editing || {};
-        source.epgUrl = guideUrl;
+        source.epgUrl = guideUrls[0];
+        source.epgUrl2 = guideUrls[1];
+        source.epgUrl3 = guideUrls[2];
         source.epgOffset = offset;
-        source.epgPrefer = $('form-epg-prefer').value !== 'no';
+        var prefer = $('form-epg-prefer').value !== 'no';
+        // A changed Prefer my guide moves the provider in the guide order.
+        if (prefer !== (before.epgPrefer !== false)) source = GuideLinks.prefer(source, prefer);
+        source.epgPrefer = prefer;
         if (editing && !whole) return close(source);
         if (whole) {
             source.name = $('form-name').value.trim();

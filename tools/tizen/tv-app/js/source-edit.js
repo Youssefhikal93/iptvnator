@@ -14,16 +14,26 @@ window.SourceEdit = (function () {
     // `updated.id` is already resolved: it is the old id unless the edit moved to another source account.
     function plan(old, updated) {
         var rekeyed = old.id !== updated.id;
-        var guideChanged = rekeyed || old.epgUrl !== updated.epgUrl || old.epgOffset !== updated.epgOffset;
+        // Each guide link (#90) on its own: 'remove', 'refresh' or 'keep'.
+        var guides = {};
+        [1, 2, 3].forEach(function (n) {
+            var url = GuideLinks.url(updated, n);
+            var changed = rekeyed || GuideLinks.url(old, n) !== url || old.epgOffset !== updated.epgOffset;
+            // Link 1 is always cleared with its address; links 2 and 3 only when they had one.
+            var had = n === 1 || GuideLinks.url(old, n);
+            guides[n] = !url ? (had ? 'remove' : 'keep') : changed ? 'refresh' : 'keep';
+        });
         return {
             source: updated,
             previousId: old.id,
             rekeyed: rekeyed,
             // Another login or server means the saved lists may not be this provider's.
             reconnect: old.url !== updated.url || old.user !== updated.user || old.pass !== updated.pass,
-            guide: !updated.epgUrl ? 'remove' : guideChanged ? 'refresh' : 'keep',
+            guide: guides[1],
+            guides: guides,
             // The guide is stored under the id; once the source moves to a new id the old one is orphaned.
             staleGuideId: rekeyed ? old.id : null,
+            staleLinks: { 2: !!GuideLinks.url(old, 2), 3: !!GuideLinks.url(old, 3) },
         };
     }
 
@@ -31,9 +41,14 @@ window.SourceEdit = (function () {
         var source = change.source;
         Sources.rekey(change.previousId, source);
         if (change.reconnect) SourceAccount.forget(source.id);
-        if (change.staleGuideId) XmltvGuide.remove(change.staleGuideId);
-        if (change.guide === 'remove') XmltvGuide.remove(source.id);
-        else if (change.guide === 'refresh') XmltvGuide.refresh(source);
+        if (change.staleGuideId) GuideLinks.ids(change.staleGuideId).forEach(function (id, at) {
+            if (at === 0 || change.staleLinks[at + 1]) XmltvGuide.remove(id);
+        });
+        Object.keys(change.guides).forEach(function (n) {
+            var link = GuideLinks.link(source, Number(n));
+            if (change.guides[n] === 'remove') XmltvGuide.remove(link.id);
+            else if (change.guides[n] === 'refresh') XmltvGuide.refresh(link);
+        });
     }
 
     function commit(old, updated) {

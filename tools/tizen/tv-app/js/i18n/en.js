@@ -215,7 +215,7 @@ I18n.tables.en = {
     'epg.minLeft': '{m} min left',
     'epg.next': 'Next',
     'epg.now': 'Now',
-    'epg.watchFromStart': '{yellow} / Hold OK: Start over',
+    'epg.watchFromStart': '{yellow} / Hold OK: menu, then Start over',
     'episodes.continue': 'Continue {code}',
     'episodes.doneOf': '{done} of {total} watched',
     'episodes.loading': 'Loading episodes…',

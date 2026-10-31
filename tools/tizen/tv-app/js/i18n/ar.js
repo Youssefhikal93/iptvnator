@@ -333,7 +333,7 @@ I18n.tables.ar = {
     'player.watchFromStart': 'المشاهدة من البداية',
     'player.startOver': 'البدء من البداية',
     'player.caughtUp': 'لقد لحقت بالبث المباشر',
-    'epg.watchFromStart': '{yellow} / ضغط مطوّل على OK: البدء من البداية',
+    'epg.watchFromStart': '{yellow} / ضغط مطوّل على OK: القائمة ثم البدء من البداية',
     'rail.home': 'الرئيسية',
     'rail.live': 'تلفزيون مباشر',
     'rail.movies': 'الأفلام',

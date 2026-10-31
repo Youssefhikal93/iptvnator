@@ -49,6 +49,12 @@ window.PlayerMenu = (root, hooks) => {
         <span class="dot">${entry.active ? '●' : ''}</span><span>${entry.label}${entry.note ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
     </div>`;
 
+    // A row of its own among the groups (Help, Back to live) lines up with
+    // the group labels: no choice dot, the groups' size.
+    const Action = ({ entry, focused }) => html`<div class=${'pl-menu-item pl-menu-action' + (entry.run ? '' : ' unavailable') + (focused ? ' focus' : '')}>
+        <span class="label">${entry.label}${entry.note ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
+    </div>`;
+
     const Group = ({ group, focused }) => html`<div class=${'pl-menu-item pl-menu-group' + (focused ? ' focus' : '')}>
         <span class="label">${group.label}</span><span class="value">${valueOf(group)}</span><span class="chev">›</span>
     </div>`;
@@ -56,7 +62,7 @@ window.PlayerMenu = (root, hooks) => {
     const groupsView = () => html`<div class="pl-menu-title">${title ? title() : I18n.t('player.hint.audioSubs')}</div>
         <div class="pl-menu-rows">${rows.map((row, i) => (isGroup(row)
             ? html`<${Group} group=${row} focused=${i === state.focus} />`
-            : html`<${Choice} entry=${row} focused=${i === state.focus} />`))}</div>
+            : html`<${Action} entry=${row} focused=${i === state.focus} />`))}</div>
         <div class="pl-menu-keys">${I18n.t('player.menuKeys')}</div>`;
 
     const groupView = (group) => html`<div class="pl-menu-title"><span class="pl-menu-back">‹</span>${group.label}</div>

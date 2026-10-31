@@ -1397,8 +1397,9 @@ window.Player = (function () {
         preview: preview,
         fullscreen: fullscreen,
         key: key,
+        // Live controls have no use for ◀, so it opens the list even while they show.
         canOpenChannelList: function () {
-            return ready && current.live && !menu.open && !resume.open && ui.controls.classList.contains('hidden') && ui.status.classList.contains('hidden');
+            return ready && current.live && !menu.open && !resume.open && ui.status.classList.contains('hidden');
         },
         // Hold OK on live TV opens the menu (#89), when nothing else is open.
         canHoldMenu: function () {

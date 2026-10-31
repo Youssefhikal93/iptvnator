@@ -39,6 +39,19 @@ test('channel drawer previews focus, switches on OK, recalls previous and return
     await expect(page.locator('#items .focused > .label')).toContainText('2. Channel 2 (cat all)');
 });
 
+test('◀ opens the channel drawer while the live controls are showing', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await press(page, 'Enter');
+    await playing(page);
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-controls')).toBeVisible();
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('#pl-channels')).toBeVisible();
+    await expect(page.locator('#pl-controls')).toBeHidden();
+});
+
 test('default Last channel startup opens the saved channel', async ({ page }) => {
     await boot(page, { storage: { 'last-channel:s1': channel(7) } });
     await playing(page);

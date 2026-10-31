@@ -183,7 +183,7 @@ test('editing the account refreshes an unchanged guide under the new id and forg
     accounts[globals.SourceIdentity.fingerprint(updated)] = 's2';
     env.stored['iptvnator-tv:source-accounts'] = JSON.stringify(accounts);
     await assert.rejects(globals.SourceAccount.track({ id: 's2' }, Promise.reject({ code: 'account', reason: 'login' })));
-    assert.equal(globals.SourceAccount.row({ id: 's2', type: 'xtream' }, false, '').chip, 'Login failed');
+    assert.equal(globals.SourceAccount.row({ id: 's2', type: 'xtream' }, '').chip, 'Login failed');
     var saved;
     globals.SourceEdit(old, {
         openForm: function (initial, done, mode) {
@@ -197,7 +197,7 @@ test('editing the account refreshes an unchanged guide under the new id and forg
     assert.equal(guide.source, 's2');
     assert.equal(downloads, 1);
     assert.equal(globals.XmltvGuide.subtitle(updated).indexOf('Guide: updated'), 0);
-    assert.equal(globals.SourceAccount.row({ id: 's2', type: 'xtream' }, false, '').chip, 'Xtream');
+    assert.equal(globals.SourceAccount.row({ id: 's2', type: 'xtream' }, '').chip, 'Xtream');
     assert.equal(errors.length, 0);
     // The guide kept under the old id is not left behind.
     assert.deepEqual(removed, ['s1']);

@@ -25,7 +25,7 @@ test('own gzip guide, provider-first fallback, player, saved reload and removal'
     page.on('request', req => { if (new URL(req.url()).pathname === '/epg.xml.gz') downloads++; });
     await boot(page);
     await guideLink(page, '/epg.xml.gz');
-    await expect(page.locator('#settings')).toContainText('Active · Guide: updated');
+    await expect(page.locator('#settings')).toContainText('Guide: updated');
     await section(page, 'Live TV');
     await expect(liveRow(page, 1).locator('.epg-now')).toContainText('XMLTV show');
     await expect(liveRow(page, 3).locator('.epg-now')).toContainText('XMLTV show');
@@ -89,7 +89,7 @@ test('M3U add form accepts a guide and exposes XMLTV now/next on live rows and p
     await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await sources(page, 'Guided playlist');
-    await expect(page.locator('#settings')).toContainText('Active · Guide: updated');
+    await expect(page.locator('#settings')).toContainText('Guide: updated');
 });
 
 test('404 guide reports failure while catalogue and provider guide remain usable', async ({ page }) => {

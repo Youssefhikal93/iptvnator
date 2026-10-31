@@ -59,15 +59,15 @@ test('track records a good account and the reason for a failed one', async funct
     var account = sandbox();
     var source = { id: 's1', type: 'xtream' };
     await account.track(source, Promise.resolve(info()));
-    assert.equal(account.row(source, true, '').chip, 'Xtream');
+    assert.equal(account.row(source, '').chip, 'Xtream');
     var failure = Object.assign(new Error('x'), { code: 'account', reason: 'expired', info: info({ status: 'Expired', exp_date: inDays(-2) }) });
     await assert.rejects(account.track(source, Promise.reject(failure)));
-    var row = account.row(source, true, '');
+    var row = account.row(source, '');
     assert.equal(row.chip, 'Expired');
     assert.equal(row.warn, true);
-    assert.match(row.detail, /^Active · Expired /);
+    assert.match(row.detail, /^Expired /);
     await assert.rejects(account.track(source, Promise.reject(new Error('Source request timed out'))));
-    assert.equal(account.row(source, false, '').chip, 'Not responding');
+    assert.equal(account.row(source, '').chip, 'Not responding');
 });
 
 test('forget drops the check of an old login', async function () {
@@ -79,7 +79,7 @@ test('forget drops the check of an old login', async function () {
     account.forget('s1');
     late(info());
     await tracked;
-    assert.equal(account.row(source, false, '').detail, '');
+    assert.equal(account.row(source, '').detail, '');
 });
 
 test('rows show the guide, saved channel count and expiry; M3U shows no account', async function () {
@@ -93,9 +93,9 @@ test('rows show the guide, saved channel count and expiry; M3U shows no account'
     var changes = 0;
     account.refresh([xtream, m3u], function () { changes++; });
     await new Promise(function (resolve) { setTimeout(resolve, 20); });
-    assert.equal(account.row(xtream, true, 'Guide: failed').detail, 'Active · Guide: failed · 500 channels · Expires in 3 days');
-    assert.equal(account.row(m3u, false, '').detail, '12 channels');
-    assert.equal(account.row(m3u, false, '').chip, 'M3U');
+    assert.equal(account.row(xtream, 'Guide: failed').detail, 'Guide: failed · 500 channels · Expires in 3 days');
+    assert.equal(account.row(m3u, '').detail, '12 channels');
+    assert.equal(account.row(m3u, '').chip, 'M3U');
     assert.ok(changes >= 2);
     var labels = account.detailRows(xtream, null).map(function (r) { return r.label; });
     assert.equal(labels[0], 'Status: Active');

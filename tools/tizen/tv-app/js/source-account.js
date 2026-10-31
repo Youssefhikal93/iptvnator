@@ -189,11 +189,11 @@ window.SourceAccount = (function () {
     }
 
     // The fields a Sources row needs: a right-hand chip and a subtitle line.
-    function row(source, current, guide) {
+    // The source in use says so with its own badge, beside the name.
+    function row(source, guide) {
         var known = health[source.id];
         var info = known && known.info;
         var parts = [];
-        if (current) parts.push(I18n.t('account.active'));
         if (guide) parts.push(guide);
         parts.push(channelCount(source.id));
         if (source.type === 'xtream') parts.push(expiryText(info));

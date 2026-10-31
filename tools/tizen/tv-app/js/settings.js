@@ -111,10 +111,15 @@ window.Settings = function (hooks) {
         return html`<span class="st-value">${valueText(row)}</span>`;
     };
 
+    // The source in use is marked whether focused or not, so it stands out among several.
+    const Name = ({ row }) => (row.current
+        ? html`<span class="st-name"><span class="st-label">${row.label}</span><span class="st-badge">${I18n.t('account.active')}</span></span>`
+        : html`<span class="st-label">${row.label}</span>`);
+
     const Row = ({ row, focused }) => {
         const sub = row.source ? row.sub : row.hint;
-        return html`<div class=${classes('st-row', { 'st-source': !!row.source, 'st-add': !!row.add, warn: !!row.warn, focused })}>
-            <span class="st-text"><span class="st-label">${row.label}</span>${sub ? html`<span class="st-sub">${sub}</span>` : null}</span>
+        return html`<div class=${classes('st-row', { 'st-source': !!row.source, 'st-current': !!row.current, 'st-add': !!row.add, warn: !!row.warn, focused })}>
+            <span class="st-text"><${Name} row=${row} />${sub ? html`<span class="st-sub">${sub}</span>` : null}</span>
             <${Value} row=${row} />
         </div>`;
     };

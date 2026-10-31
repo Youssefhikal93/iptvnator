@@ -178,6 +178,25 @@
     color: #4ade80;
 }
 .st-source.warn .st-sub::before { color: var(--warn-fg); }
+/* The source in use: an accent edge, its name in the accent and an Active badge. */
+.st-current { box-shadow: inset 6px 0 var(--selection); }
+.st-current .st-label { color: var(--selection); }
+.st-row.st-current.focused .st-label { color: inherit; }
+.st-name {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+.st-badge {
+    flex: none;
+    padding: 2px 14px;
+    border-radius: 999px;
+    background: var(--selection);
+    color: var(--selection-on);
+    font-size: 20px;
+    font-weight: 700;
+}
 .st-add {
     background: transparent;
     border: 3px dashed var(--line);

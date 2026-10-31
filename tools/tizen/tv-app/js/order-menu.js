@@ -8,18 +8,18 @@ window.OrderMenu = function (options) {
     }
 
     var rows = [
-        { label: I18n.t('order.move'), run: function () {
+        { label: I18n.t('order.move'), glyph: '⇅', run: function () {
             var at = index();
             if (at < 0) return;
             list.select(at);
             options.controller.lift(list, options.save, options.done);
         } },
-        { label: I18n.t('order.top'), run: function () {
+        { label: I18n.t('order.top'), glyph: '↑', run: function () {
             var at = index();
             if (at > 0) options.save(MoveMode.top(list.items(), at));
             options.done();
         } },
     ];
-    if (options.changed) rows.push({ label: I18n.t('order.reset'), run: function () { options.reset(); options.done(); } });
+    if (options.changed) rows.push({ label: I18n.t('order.reset'), glyph: '↺', run: function () { options.reset(); options.done(); } });
     return rows;
 };

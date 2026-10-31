@@ -808,6 +808,17 @@ body.bar-off #header {
 .menu-row.focused[data-glyph]::before {
     color: var(--selection);
 }
+.menu-icon {
+    display: inline-block;
+    flex: none;
+    width: 40px;
+    text-align: center;
+    font-size: 30px;
+    color: var(--muted);
+}
+.menu-icon::before { content: attr(data-glyph); }
+.focused .menu-icon,
+.focus .menu-icon { color: var(--selection); }
 /* A source's account details under its options; the focus passes over them. */
 .menu-row.note {
     margin-top: 0;

@@ -547,6 +547,7 @@ I18n.tables.en = {
     'player.episodesHint': '◀ ▶ Season · ▲▼ Episode · OK Play · Return Close',
     'player.hide': 'Hide',
     'player.hint.audioSubs': 'Audio & subtitles',
+    'player.hint.options': 'Options',
     'player.hint.channel': 'Channel',
     'player.hint.channelList': 'Channel list',
     'player.hint.close': 'Close',

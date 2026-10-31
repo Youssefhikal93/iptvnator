@@ -5,7 +5,7 @@
 //
 // The player fills it on every render through build(entries), where
 // entries.head(label, value) starts a group (value, when given, is what its
-// row shows instead of the chosen choices), entries.item(label, active, run, note)
+// row shows instead of the chosen choices), entries.item(label, active, run, note, icon)
 // adds a choice (before the first group it is a row of its own, such as Back
 // to live; without run it cannot be picked and note says why), entries.note(text) says why a group has no choices and
 // entries.info(text) adds a line of stream information.
@@ -26,7 +26,7 @@ window.PlayerMenu = (root, hooks) => {
                 group = { label, value, items: [], notes: [], infos: [] };
                 list.push(group);
             },
-            item: (label, active, action, note) => (group ? group.items : list).push({ label, active, run: action, note }),
+            item: (label, active, action, note, icon) => (group ? group.items : list).push({ label, active, run: action, note, icon }),
             note: (text) => group && group.notes.push(text),
             info: (text) => group && group.infos.push(text),
         });
@@ -52,6 +52,7 @@ window.PlayerMenu = (root, hooks) => {
     // A row of its own among the groups (Help, Back to live) lines up with
     // the group labels: no choice dot, the groups' size.
     const Action = ({ entry, focused }) => html`<div class=${'pl-menu-item pl-menu-action' + (entry.run ? '' : ' unavailable') + (focused ? ' focus' : '')}>
+        ${entry.icon ? html`<${Kit.MenuIcon} glyph=${entry.icon} />` : null}
         <span class="label">${entry.label}${entry.note ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
     </div>`;
 
@@ -59,7 +60,7 @@ window.PlayerMenu = (root, hooks) => {
         <span class="label">${group.label}</span><span class="value">${valueOf(group)}</span><span class="chev">›</span>
     </div>`;
 
-    const groupsView = () => html`<div class="pl-menu-title">${title ? title() : I18n.t('player.hint.audioSubs')}</div>
+    const groupsView = () => html`<div class="pl-menu-title">${title ? title() : I18n.t('player.hint.options')}</div>
         <div class="pl-menu-rows">${rows.map((row, i) => (isGroup(row)
             ? html`<${Group} group=${row} focused=${i === state.focus} />`
             : html`<${Action} entry=${row} focused=${i === state.focus} />`))}</div>

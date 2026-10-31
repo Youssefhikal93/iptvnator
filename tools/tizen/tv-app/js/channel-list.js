@@ -55,7 +55,7 @@ window.ChannelList = function (hooks) {
         var node = element('div', 'pl-channel' + (index === focus ? ' focused' : ''));
         node.appendChild(Kit.plateNode({ cls: 'pl-channel-logo', name: channel.name || '?', logo: channel.stream_icon || channel.logo || '' }));
         var label = element('div', 'pl-channel-label');
-        label.appendChild(element('div', 'pl-channel-name', channel.name || I18n.t('player.hint.channel')));
+        label.appendChild(element('div', 'pl-channel-name', I18n.isolate(channel.name || I18n.t('player.hint.channel'))));
         programme(label, channel);
         node.appendChild(label);
         return node;

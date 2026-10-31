@@ -243,10 +243,10 @@
         }
     });
     document.addEventListener('player-sleep-warning', function () {
+        multiView.closeMenu();
         if (!multiView.active()) return;
         Menu.close();
         channelList.close();
-        multiView.closeMenu();
     });
 
     document.addEventListener('trailer-open', function () {

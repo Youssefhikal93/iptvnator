@@ -40,13 +40,15 @@ window.Kit = (() => {
     // Full-screen artwork with the shade that keeps text readable on it.
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;
 
+    const MenuIcon = ({ glyph }) => html`<span class="menu-icon" data-glyph=${glyph} aria-hidden="true"></span>`;
+
     // A titled list of options with one focused row. An option may carry an
     // icon before its label and a check mark after it, or a glyph that CSS
     // draws before it (so the row's text stays its label); a note is a line
     // of information the focus passes over.
     const MenuRow = ({ option, focused }) => (option.icon
         ? html`<div class=${classes('menu-row with-icon', { focused })}>
-            ${option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
+            ${typeof option.icon === 'string' ? html`<${MenuIcon} glyph=${option.icon} />` : option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
         </div>`
         : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view })} data-glyph=${option.glyph}>${option.view || option.label}</div>`);
 
@@ -89,5 +91,5 @@ window.Kit = (() => {
     // The plate as a node, for screens not yet in Preact.
     const plateNode = (props) => UI.node(html`<${Plate} ...${props} />`);
 
-    return { Tile, Row, Pill, Avatar, Backdrop, SideMenu, Plate, plateNode };
+    return { Tile, Row, Pill, Avatar, Backdrop, SideMenu, MenuIcon, Plate, plateNode };
 })();

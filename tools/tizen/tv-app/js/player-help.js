@@ -35,8 +35,8 @@ window.PlayerHelp = (function () {
         // Rows before the menu's first group, through the menu's item(label, active, run).
         menuEntries: function (item, current) {
             if (current.live && !current.catchUp && hooks.openMultiView) {
-                item(I18n.t('multi.title'), false, hooks.openMultiView);
-                if (hooks.canResumeMultiView()) item(I18n.t('multi.resume'), false, hooks.resumeMultiView);
+                item(I18n.t('multi.title'), false, hooks.openMultiView, null, '▦');
+                if (hooks.canResumeMultiView()) item(I18n.t('multi.resume'), false, hooks.resumeMultiView, null, '↻');
             }
             var previous = current.live && hooks.previous();
             if (previous) item(I18n.t('help.player.previousChannel', { name: previous.name }), false, hooks.watchPrevious);

@@ -356,7 +356,7 @@ window.Player = (function () {
     // Live channels list their keys; movies and shows keep a plain bar.
     function hintHtml() {
         if (!current.live) return [];
-        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.audioSubs')],
+        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.options')],
             ['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]];
     }
 
@@ -740,7 +740,8 @@ window.Player = (function () {
         build: menuEntries,
         title: function () {
             if (menu.part === 'caught-up') return I18n.t('player.caughtUp');
-            return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs');
+            if (menu.part === 'settings') return I18n.t('rail.settings');
+            return I18n.t(current.live ? 'player.hint.options' : 'player.hint.audioSubs');
         },
         run: function (action) {
             try {
@@ -1251,7 +1252,7 @@ window.Player = (function () {
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
         hideControls();
-        ui.title.textContent = req.title;
+        ui.title.textContent = req.live ? I18n.isolate(req.title) : req.title;
         ui.subtitle.textContent = req.subtitle || '';
         epg.load(req);
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);

@@ -54,7 +54,7 @@ window.LivePreview = function (hooks) {
 
     function renderInfo() {
         info.textContent = '';
-        info.appendChild(el('div', 'lp-title', s.request ? s.request.title : ''));
+        info.appendChild(el('div', 'lp-title', s.request ? I18n.isolate(s.request.title) : ''));
         var p = s.programmes;
         if (!p || !p.now) return;
         info.appendChild(programmeRow(I18n.t('epg.now'), p.now));

@@ -132,6 +132,7 @@ test('refusing one channel leaves other video playing; tile options retry only t
     await page.unroute('**/live/**/1002.*');
     await press(page, 'Enter');
     await expect(page.locator('#menu .menu-row')).toHaveText(['Retry', 'Full screen', 'Change channel', 'Make main', 'Remove']);
+    await expect(page.locator('#menu .menu-row').first().locator('.menu-icon')).toBeVisible();
     await press(page, 'Enter');
     await tilePlaying(page, 1);
     await tilePlaying(page, 0);
@@ -490,4 +491,86 @@ test('#77 round1 resume resolves each saved group and Favorites order before zap
     await sendKeyCode(page, 428);
     await expect(tile(page, 1).locator('.mv-label')).toContainText('Channel 3');
     await expect(tile(page, 0).locator('.mv-label')).toContainText('Channel 1');
+});
+
+for (const [name, categoryId] of [['Favorites', '__fav'], ['My TV', '__group_mv']]) {
+    test('#77 round2 Return from an empty first tile restores ' + name + ' zapping', async ({ page }) => {
+        await boot(page, { storage: {
+            'favorites:s1': { live: [channel(3), channel(1), channel(2)] },
+            'channel-groups:s1': [{ id: '__group_mv', name: 'My TV', channels: [channel(3), channel(1), channel(2)] }],
+            'p:default:multi-view:s1': { channels: [null, '1003'], categories: [null, categoryId] },
+        } });
+        await live(page);
+        await sendKeyCode(page, 405);
+        await row(page, 'Resume multi-view');
+        await expect(tile(page, 0)).toHaveClass(/focused/);
+        await expect(tile(page, 0)).toContainText('+ Add channel');
+        await back(page);
+        await playing(page);
+        await expect(page.locator('#pl-title')).toContainText('Channel 3');
+        await sendKeyCode(page, 427);
+        await expect(page.locator('#pl-title')).toContainText('Channel 1');
+        await playing(page);
+        await press(page, 'ArrowLeft');
+        await expect(page.locator('.pl-channel-header')).toContainText(name);
+    });
+}
+
+test('#77 round2 sleep warning closes the initial layout picker and owns the visible dialog', async ({ page }) => {
+    await page.clock.install();
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 405);
+    await playerGroup(page, 'Sleep timer');
+    await moveTo(page, '#pl-menu .focus span:last-child', '15 min');
+    await press(page, 'Enter');
+    await back(page);
+    await back(page);
+    await sendKeyCode(page, 406);
+    await expect(page.locator('#menu .menu-title')).toHaveText('Layout');
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await page.clock.fastForward(14 * 60000);
+    await expect(page.locator('#pl-sleep-warning')).toBeVisible();
+    await expect(page.locator('#menu')).toBeHidden();
+    expect(await page.locator('#pl-sleep-keep').evaluate(button => {
+        const box = button.getBoundingClientRect();
+        return button.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+    })).toBe(true);
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-sleep-warning')).toBeHidden();
+    await expect(tiles(page)).toHaveCount(0);
+    await expect(page.locator('#player')).toBeVisible();
+});
+
+async function icons(page, selector) {
+    const rows = page.locator(selector);
+    const count = await rows.count();
+    expect(count).toBeGreaterThan(0);
+    await expect(rows.locator('.menu-icon')).toHaveCount(count);
+    const drawn = await rows.locator('.menu-icon').evaluateAll(nodes => nodes.map(node => {
+        const box = node.getBoundingClientRect();
+        return { x: box.x, width: box.width, glyph: getComputedStyle(node, '::before').content };
+    }));
+    for (const icon of drawn) {
+        expect(icon.width).toBeGreaterThan(0);
+        expect(icon.x).toBe(drawn[0].x);
+        expect(icon.glyph).not.toMatch(/^(none|normal|"")$/);
+    }
+}
+
+test('#77 round2 multi-view action rows draw aligned glyph icons', async ({ page }) => {
+    await boot(page, { storage: {
+        'p:default:multi-view:s1': { channels: ['1001', '1002'] },
+    } });
+    await live(page);
+    await sendKeyCode(page, 405);
+    await icons(page, '#pl-menu .pl-menu-action:has-text("Multi-view"), #pl-menu .pl-menu-action:has-text("Resume multi-view")');
+    await row(page, 'Multi-view');
+    await icons(page, '#menu .menu-row');
+    await layout(page, 3);
+    await press(page, 'Enter');
+    await icons(page, '#menu .menu-row');
+    await back(page);
+    await sendKeyCode(page, 405);
+    await icons(page, '#pl-menu .pl-menu-action:has-text("Layout"), #pl-menu .pl-menu-action:has-text("Leave multi-view")');
 });

@@ -391,8 +391,8 @@ window.Browser = function (hooks) {
     }
 
     function itemLabel(it) {
-        if (it.label) return it.label;
-        return (it.num && state.section === 'live' ? it.num + '. ' : '') + it.name;
+        var label = it.label || (it.num && state.section === 'live' ? it.num + '. ' : '') + it.name;
+        return state.section === 'live' ? I18n.isolate(label) : label;
     }
 
     // ---- Library: favorites, recently watched, continue watching ----

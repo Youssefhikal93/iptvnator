@@ -27,8 +27,8 @@ window.LiveChannels = function (hooks) {
 
     function prepareZapping(channel, selection) {
         var mine = generation;
-        var category = selection && selection.category !== null ? selection.category : categoryOf(channel);
-        hooks.channels(category).then(function (channels) {
+        var category = selection ? selection.category : context;
+        hooks.channels(category === null ? categoryOf(channel) : category).then(function (channels) {
             if (mine !== generation) return;
             zapList = channels;
             if (selection) selection.channels = channels;

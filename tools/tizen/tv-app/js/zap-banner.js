@@ -36,7 +36,7 @@ window.ZapBanner = (() => {
             <div class="zb-body">
                 <div class="zb-head">
                     ${channel.num ? html`<span class="zb-num">${channel.num}</span>` : null}
-                    <span class="zb-name">${channel.name}</span>
+                    <span class="zb-name">${I18n.isolate(channel.name)}</span>
                     <span class="zb-clock">${I18n.time(now)}</span>
                 </div>
                 ${on ? html`<${Row} tag=${I18n.t('epg.now')} programme=${on} left=${I18n.t('epg.minLeft', { m: Math.max(1, Math.round((on.end - now) / 60000)) })} />

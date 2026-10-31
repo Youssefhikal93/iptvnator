@@ -220,12 +220,15 @@ Each tile keeps the channel list and category it was chosen from, including
 Favorites and own group order. A pick captures its target tile before opening
 the list. Arrows and OK pressed while that list loads are applied in order
 once its channels arrive; closing it discards pending input. Player sheets
-draw above playback and are cancelled on leaving it.
+draw above playback and are cancelled on leaving it or showing a sleep warning,
+including the initial Layout picker before any layout is chosen.
 The last layout and channel identities are saved per profile and source as
 `multi-view:<sourceId>` through ProfileStore and Stored. Resume resolves them
 against the current catalogue and checks Kids and parental restrictions again.
 New records also retain each tile's category; Resume loads that category's
 current order. Older records without categories use the channel's own category.
+Returning from an empty focused tile loads the first filled tile's saved
+category for full-screen zapping too.
 `js/multi-view-state.js` owns the single `MAX_TILES` limit; lowering it hides
 larger layout choices and truncates saved layouts. Tiles use hls.js or
 mpegts.js without AVPlay. See the explicit exception in [ADR 0006](./adr/0006-one-stream-at-a-time.md).

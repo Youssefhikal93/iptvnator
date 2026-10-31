@@ -9,7 +9,7 @@ window.MultiViewMenu = function (hooks) {
     function sheet(title, choices) {
         var mine = ++generation;
         owned = Menu.open(title, choices.map(function (choice) {
-            return { label: choice.label, run: function () {
+            return { label: choice.label, icon: choice.icon, run: function () {
                 if (mine === generation) choice.run();
             } };
         }));
@@ -20,7 +20,7 @@ window.MultiViewMenu = function (hooks) {
         Player.dismissMenu();
         close();
         sheet(I18n.t('multi.layout'), MultiViewState.layouts().map(function (count) {
-            return { label: I18n.t('multi.tiles', { n: count }), run: function () { hooks.layout(count); } };
+            return { label: I18n.t('multi.tiles', { n: count }), icon: '▦', run: function () { hooks.layout(count); } };
         }));
     }
 
@@ -28,12 +28,12 @@ window.MultiViewMenu = function (hooks) {
         var channel = hooks.channel();
         if (!channel) return hooks.pick();
         var choices = [
-            { label: I18n.t('multi.fullscreen'), run: hooks.leave },
-            { label: I18n.t('multi.change'), run: hooks.pick },
-            { label: I18n.t('multi.main'), run: hooks.main },
-            { label: I18n.t('multi.remove'), run: hooks.remove },
+            { label: I18n.t('multi.fullscreen'), icon: '⛶', run: hooks.leave },
+            { label: I18n.t('multi.change'), icon: '⇄', run: hooks.pick },
+            { label: I18n.t('multi.main'), icon: '★', run: hooks.main },
+            { label: I18n.t('multi.remove'), icon: '✕', run: hooks.remove },
         ];
-        if (hooks.refused()) choices.unshift({ label: I18n.t('multi.retry'), run: hooks.retry });
+        if (hooks.refused()) choices.unshift({ label: I18n.t('multi.retry'), icon: '↻', run: hooks.retry });
         sheet(I18n.isolate(channel.name), choices);
     }
 
@@ -51,8 +51,8 @@ window.MultiViewMenu = function (hooks) {
         title: function () { return I18n.t('multi.title'); },
         run: function (action) { action(); },
         build: function (entries) {
-            entries.item(I18n.t('multi.layout'), false, layout);
-            entries.item(I18n.t('multi.leave'), false, hooks.leave);
+            entries.item(I18n.t('multi.layout'), false, layout, null, '▦');
+            entries.item(I18n.t('multi.leave'), false, hooks.leave, null, '⛶');
             entries.item(I18n.t('help.title'), false, function () { owned = KeyHelp.open(help()); });
             trackEntries(entries, 'audio', 'player.audio', 'player.oneAudio');
             trackEntries(entries, 'text', 'picture.subtitles', 'player.noSubtitles');

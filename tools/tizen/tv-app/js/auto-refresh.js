@@ -89,42 +89,66 @@ window.AutoRefresh = (function () {
         return error;
     }
 
-    // The lists of every section, one request after the other, saved as the
-    // app saves them when the viewer opens a section. Resolves with the
-    // saved { key, value } entries and the adapter that fetched them.
+    // A list that comes back empty where the saved one had entries is taken
+    // as a provider fault, not news: servers that half-fail often answer an
+    // empty list with HTTP 200, and keeping yesterday's catalogue is better
+    // than wiping it. A refresh the viewer asks for still applies it.
+    function emptied(source, key, list) {
+        if (list && list.length) return Promise.resolve();
+        return Catalogue.get(source.id, key).then(function (old) {
+            if (old && old.length) throw Object.assign(new Error('Refreshed list is empty'), { code: 'empty' });
+        });
+    }
+
+    // The lists of every section, one request after the other. Nothing is
+    // saved here: the { key, value } entries are only kept, so a failure or
+    // playback midway leaves the saved catalogue as it was. The account is
+    // checked first, so a rejected login (Xtream answers it with HTTP 200 and
+    // empty lists) never replaces anything. Resolves with the entries and the
+    // adapter that fetched them.
     function fetchSource(source, deps) {
         var adapter = source.type === 'xtream' ? XtreamSource(source, { quiet: true }) : M3uSource(source);
         var steps = [];
-        var saved = [];
+        var fetched = [];
         function step(section, kind) {
             steps.push(function () {
                 if (deps.busy()) throw stop();
                 var key = section + ':' + kind + (kind === 'items' ? ':' : '');
                 return (kind === 'items' ? adapter.items(section, '') : adapter.categories(section)).then(function (list) {
-                    saved.push({ key: key, value: list });
-                    return Catalogue.put(source.id, key, list);
+                    return emptied(source, key, list).then(function () {
+                        fetched.push({ key: key, value: list });
+                    });
                 });
             });
         }
-        // A playlist knows its sections once it is downloaded.
-        return (source.type === 'xtream' ? Promise.resolve() : adapter.account()).then(function () {
+        // A playlist also knows its sections once it is downloaded.
+        return adapter.account().then(function () {
             adapter.sections.forEach(function (section) {
                 step(section, 'categories');
                 step(section, 'items');
             });
             return steps.reduce(function (done, next) { return done.then(next); }, Promise.resolve());
-        }).then(function () { return { saved: saved, adapter: adapter }; });
+        }).then(function () { return { saved: fetched, adapter: adapter }; });
     }
 
-    // The whole sections are new; a category's own saved list may be older,
-    // so it goes, and the open source's loader takes the new lists (deps.published).
+    // Every list arrived: they are saved together, then a category's own
+    // saved list, which may be older, goes, and the open source's loader
+    // takes the new lists (deps.published).
+    function commit(source, fetched) {
+        return fetched.saved.reduce(function (done, entry) {
+            return done.then(function () { return Catalogue.put(source.id, entry.key, entry.value); });
+        }, Promise.resolve());
+    }
+
     function refreshSource(source, deps) {
         return fetchSource(source, deps).then(function (fetched) {
-            write(source.id, { at: Date.now() });
-            return Catalogue.dropCategoryItems(source.id).then(function () {
+            return commit(source, fetched).then(function () {
+                write(source.id, { at: Date.now() });
+                return Catalogue.dropCategoryItems(source.id);
+            }).then(function () {
                 if (deps.published) deps.published(source.id, fetched.saved, fetched.adapter);
             });
-        }, function (err) {
+        }).catch(function (err) {
             if (err && err.code === 'playing') return;
             write(source.id, { at: read(source.id).at, tried: Date.now() });
             Log.error('AUTO REFRESH FAIL');

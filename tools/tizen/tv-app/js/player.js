@@ -87,6 +87,12 @@ window.Player = (function () {
         embeddedOff: function () { var tracks = getTracks(); if (tracks.text.length) tracks.text[0].select(); },
         closeMenu: closeMenu,
         pause: function () { if (!isPaused()) togglePause(true); },
+        // The Sync subtitles bar (subtitle-sync.js) plays, pauses and jumps.
+        play: function () { if (isPaused()) togglePause(false); },
+        paused: function () { return isPaused(); },
+        jump: function (ms) { jumpTo(ms); },
+        hideControls: function () { hideControls(); },
+        root: playerEl,
         toast: function (text) { document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: text })); },
     });
     var resume = { open: false, focus: 0, position: 0, failed: false };
@@ -1352,6 +1358,7 @@ window.Player = (function () {
         if (banner.shown() && bannerKey(code)) return true;
         if (!ready) return false;
         if (menu.open) return menuKey(code);
+        if (subtitles.syncing() && subtitles.syncKey(code)) return true;
         // Return hides Stream info (#84) before anything else.
         if (Keys.isBack(code) && streamInfo.shown()) {
             streamInfo.hide();

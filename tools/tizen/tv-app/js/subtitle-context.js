@@ -33,6 +33,8 @@ window.SubtitleContext = (function () {
 
     function attach(request, context) {
         request.subtitleId = context.sourceId + '|' + request.id;
+        // An episode's show keeps the delay its next episode starts with.
+        if (context.episode && context.item.series_id) request.subtitleShow = context.sourceId + '|show:' + context.item.series_id;
         // What the provider says the sound is; the play log compares it with AVPlay's tracks.
         request.audio = (context.episode || {}).audio || (context.details || {}).audio;
         request.subtitleLookup = function () {

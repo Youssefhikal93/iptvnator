@@ -90,8 +90,14 @@ sound. The 1 s pause between routes stays: the provider needs it to release the 
 Subtitles follow the current playback position on AVPlay and HTML video,
 including pause and seek, in the same subtitle style set in Settings. The player
 menu's **Off** hides them. Selecting an embedded subtitle track also turns
-downloaded subtitles off. **Subtitle delay −0.5 s / +0.5 s** adjusts their timing;
-a positive offset makes subtitles appear later. The menu shows the current offset.
+downloaded subtitles off. **Subtitle timing → Sync subtitles** opens a bar
+(`js/subtitle-sync.js`) over the playing video: OK when the shown line is heard
+sets the offset from that moment (less 250 ms for reaction), ◀ ▶ and ▲ ▼ move it
+by 0.1 s and 1 s, OK saves and Return restores the old offset. **Choose the line…**
+(or Hold OK in the bar) lists every cue, then plays from 15 s before the chosen one.
+A positive offset makes subtitles appear later; the menu shows the current offset.
+An episode's kept offset is also saved for its show with the release name minus the
+episode number; a file of the same release for another episode starts with it.
 
 The API's free allowance is 100 downloads per day (owner-verified API contract,
 2026-10-27). A successful download shows the remaining allowance when fewer than

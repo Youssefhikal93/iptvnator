@@ -75,8 +75,9 @@ window.KeyHelp = (function () {
     // Opens Help over any screen, the player too; onBack runs on Return.
     function open(entries, onBack) {
         var rows = options(entries);
-        Menu.open(I18n.t('help.title'), rows, rows.length - 1, null, onBack);
+        var current = Menu.open(I18n.t('help.title'), rows, rows.length - 1, null, onBack);
         document.getElementById('menu').classList.add('key-help');
+        return current;
     }
 
     return { parts: parts, colours: colours, plain: plain, fill: fill, view: view, open: open };

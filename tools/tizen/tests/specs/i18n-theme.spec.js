@@ -1,4 +1,33 @@
-const { test, expect, boot, section, press, back, moveTo, openFirst, setting, choose } = require('./helpers');
+const { test, expect, boot, section, press, back, moveTo, openFirst, setting, choose, enterItems, holdOK, playing } = require('./helpers');
+
+for (const name of ['تلفزيون مباشر', 'الأفلام', 'مسلسلات']) {
+    test('Arabic ' + name + ' categories heading is fully translated', async ({ page }) => {
+        await boot(page, { storage: { settings: { language: 'ar' } } });
+        await section(page, name);
+        await expect(page.locator('#categories .list-header')).toContainText('فئات ' + name);
+    });
+}
+
+test('Arabic numbered channel titles isolate the number with the name in lists, hold menus and playback', async ({ page }) => {
+    await boot(page, { storage: { settings: { language: 'ar' } } });
+    await section(page, 'تلفزيون مباشر');
+    await expect(page.locator('#items .row').first()).toBeVisible();
+    await expect(page.locator('#items .skeleton')).toHaveCount(0);
+    await enterItems(page);
+    const title = '\u20681. Channel 1 (cat all)\u2069';
+    expect(await page.locator('#items .focused .label').evaluate(label => label.firstChild.textContent)).toBe(title);
+    await holdOK(page);
+    await expect.soft(page.locator('#menu .menu-title')).toHaveText(title);
+    await back(page);
+    await press(page, 'Enter');
+    await playing(page);
+    await expect(page.locator('#pl-title')).toHaveText(title);
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('#pl-channels .focused .pl-channel-name')).toHaveText('\u2068Channel 1 (cat 2)\u2069');
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('.zb-name')).toHaveText('\u2068Channel 2 (cat 2)\u2069');
+});
 
 const RAIL_GERMAN = ['Startseite', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
 const RAIL_ENGLISH = ['Home', 'Live TV', 'Movies', 'Series', 'Settings'];

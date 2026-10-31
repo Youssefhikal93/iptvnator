@@ -25,10 +25,13 @@ window.LiveChannels = function (hooks) {
         return channel.category_id !== undefined && channel.category_id !== null ? String(channel.category_id) : channel.group || '';
     }
 
-    function prepareZapping(channel) {
+    function prepareZapping(channel, selection) {
         var mine = generation;
-        hooks.channels(categoryOf(channel)).then(function (channels) {
-            if (mine === generation) zapList = channels;
+        var category = selection ? selection.category : context;
+        hooks.channels(category === null ? categoryOf(channel) : category).then(function (channels) {
+            if (mine !== generation) return;
+            zapList = channels;
+            if (selection) selection.channels = channels;
         }).catch(function () {
             Log.error('LIVE CHANNELS FAIL');
         });
@@ -57,6 +60,8 @@ window.LiveChannels = function (hooks) {
     }
 
     return {
+        request: hooks.request,
+        catalogue: hooks.catalogue,
         play: play,
         // The drawer's Recent row (#80) lists the Recent channels, not a catalogue category.
         channels: function (categoryId) {
@@ -65,6 +70,17 @@ window.LiveChannels = function (hooks) {
         indexOf: indexOf,
         current: function () {
             return current;
+        },
+        // Each multi-view tile keeps its own ordered list and category (#77).
+        capture: function () {
+            return { channel: current, channels: zapList.length ? zapList.slice() : null, category: context };
+        },
+        focus: function (selection) {
+            generation++;
+            current = selection.channel;
+            context = selection.category;
+            zapList = selection.channels || [];
+            if (!selection.channels) prepareZapping(current, selection);
         },
         reorder: function (category, channels) {
             if (context === category) zapList = channels;

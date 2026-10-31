@@ -16,6 +16,7 @@ window.PlayerHelp = (function () {
             ['help.key.upDownCh', 'help.player.channel'],
             ['help.key.left', 'player.hint.channelList'],
             ['help.key.green', 'player.hint.previous'],
+            ['help.key.blue', 'multi.title'],
             ['help.key.return', 'player.hint.close'],
         ] : [
             ['help.key.ok', 'help.player.pause'],
@@ -33,9 +34,13 @@ window.PlayerHelp = (function () {
         init: function (given) { hooks = given; },
         // Rows before the menu's first group, through the menu's item(label, active, run).
         menuEntries: function (item, current) {
+            if (current.live && !current.catchUp && hooks.openMultiView) {
+                item(I18n.t('multi.title'), false, hooks.openMultiView, null, '\u25A6');
+                if (hooks.canResumeMultiView()) item(I18n.t('multi.resume'), false, hooks.resumeMultiView, null, '\u21BB');
+            }
             var previous = current.live && hooks.previous();
-            if (previous) item(I18n.t('help.player.previousChannel', { name: previous.name }), false, hooks.watchPrevious);
-            item(I18n.t('help.title'), false, function () { KeyHelp.open(help(!!current.live)); });
+            if (previous) item(I18n.t('help.player.previousChannel', { name: previous.name }), false, hooks.watchPrevious, null, '\u21C6');
+            item(I18n.t('help.title'), false, function () { KeyHelp.open(help(!!current.live)); }, null, '?');
         },
     };
 })();

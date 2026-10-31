@@ -1,5 +1,7 @@
 {
     "ar": {
+        "browser.categoriesOf": "فئات {section}",
+        "player.hint.options": "الخيارات",
         "settings.dark": "داكن أزرق",
         "settings.darkBlack": "داكن أسود",
         "settings.darkGrey": "داكن رمادي",

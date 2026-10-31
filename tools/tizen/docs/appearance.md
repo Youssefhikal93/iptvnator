@@ -238,13 +238,19 @@ The ▲ menu (`js/player-menu.js`) is a panel down the right edge. The player
 hands it entries on every render (`head` starts a group, `item` adds a
 choice, `note` and `info` add lines); its groups show their current value,
 OK or ▶ opens a group, ◀ or Return goes back and Return on the groups closes
-it. Specs open a group with `playerGroup(page, name)`.
+it. Live TV calls the menu Options; films and episodes keep the Audio &
+subtitles button and its track menu. Specs open a group with `playerGroup(page, name)`.
 
 Hold-OK options (`Menu`) are a sheet down the right that dims the rest of
 the screen. An item's options show its artwork, title and section; rows can
 carry a `glyph` that CSS draws before the label, so a row's text is still
 its label; Return closes the sheet, so there is no Cancel row. The profile
 switcher keeps its small list under the avatar.
+
+Multi-view sheets use the row's `icon` field with a glyph string; existing
+avatar nodes still work there. `Kit.MenuIcon` draws the glyph in a 40 px
+column, also used by player action rows through `item(label, active, run,
+note, icon)`. CSS draws the glyph so the row's text stays its label.
 
 Up next sits at the top right on the 96 px edge with the next episode's
 still, moves under the clock while the controls are up, and runs a bar down

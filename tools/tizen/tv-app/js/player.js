@@ -1,9 +1,8 @@
 // Full-screen playback with desktop-style controls. A request lists the
 // players to try in order (`sources: [{ via, url }]`): live TV uses mpegts.js
 // (as IPTVnator's web player does), then hls.js, then Samsung AVPlay; movies
-// and episodes (mp4/mkv) use AVPlay, then the <video> element. Only one stream
-// is open at a time: single-connection accounts answer 503 while another
-// stream is open, so release() always closes the previous one first.
+// and episodes (mp4/mkv) use AVPlay, then the <video> element. This player
+// releases its stream before MultiView opens independent HTML video tiles.
 //
 // Request fields: live, title, subtitle, id (stable key for saved progress),
 // sources, and for episodes an optional episodes list (see player-series.js).
@@ -130,7 +129,7 @@ window.Player = (function () {
         },
     });
     var sleep = PlayerSleep({
-        warn: closeMenu,
+        warn: function () { closeMenu(); document.dispatchEvent(new Event('player-sleep-warning')); },
         changed: function () {
             if (menu.open) renderMenu();
         },
@@ -357,7 +356,7 @@ window.Player = (function () {
     // Live channels list their keys; movies and shows keep a plain bar.
     function hintHtml() {
         if (!current.live) return [];
-        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.audioSubs')],
+        return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.options')],
             ['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]];
     }
 
@@ -704,8 +703,8 @@ window.Player = (function () {
         var m = menuPart(whole);
         var tracks = getTracks();
         var watch = epg.watchFromStart();
-        if (watch) m.item(I18n.t('player.startOver'), false, startOver);
-        if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive);
+        if (watch) m.item(I18n.t('player.startOver'), false, startOver, null, '\u21BA');
+        if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive, null, '\u25B6');
         PlayerHelp.menuEntries(m.item, current);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
@@ -741,7 +740,8 @@ window.Player = (function () {
         build: menuEntries,
         title: function () {
             if (menu.part === 'caught-up') return I18n.t('player.caughtUp');
-            return I18n.t(menu.part === 'settings' ? 'rail.settings' : 'player.hint.audioSubs');
+            if (menu.part === 'settings') return I18n.t('rail.settings');
+            return I18n.t(current.live ? 'player.hint.options' : 'player.hint.audioSubs');
         },
         run: function (action) {
             try {
@@ -1252,7 +1252,7 @@ window.Player = (function () {
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
         hideControls();
-        ui.title.textContent = req.title;
+        ui.title.textContent = req.live ? I18n.isolate(req.title) : req.title;
         ui.subtitle.textContent = req.subtitle || '';
         epg.load(req);
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
@@ -1396,6 +1396,23 @@ window.Player = (function () {
     }
 
     return {
+        // Keep the sleep timer while handing the picture to multi-view (#77).
+        suspend: function () {
+            reconnect.cancel();
+            chain.cancel();
+            release();
+            freeze.clear();
+            banner.hide();
+            streamInfo.hide();
+            hideStatus();
+            hideControls();
+            playerEl.classList.remove('av');
+        },
+        sleepEntries: function (entries) {
+            entries.head(sleep.heading());
+            sleep.choices(current).forEach(function (choice) { entries.item(choice.label, choice.active, choice.select); });
+        },
+        dismissMenu: closeMenu,
         startOver: startOver,
         play: play,
         stop: stop,

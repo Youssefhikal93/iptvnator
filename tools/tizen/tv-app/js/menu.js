@@ -30,7 +30,7 @@ window.Menu = (() => {
         close,
         open: (title, options, index, header, onBack) => {
             state = { options, index: index || 0, title, header: header || null, open: true, onBack: onBack || null };
-            el.classList.remove('profile-menu', 'key-help');
+            el.classList.remove('profile-menu', 'key-help', 'multi-view-sheet');
             render();
             el.classList.remove('hidden');
             const current = state;

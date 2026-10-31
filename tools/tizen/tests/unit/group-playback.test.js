@@ -4,6 +4,19 @@ var test = require('node:test');
 var assert = require('node:assert/strict');
 var load = require('./sandbox');
 
+test('#77 full-screen handoff loads an unresolved saved category before zapping', async function () {
+    var g = load(['library.js', 'live-channels.js']).globals;
+    var one = { stream_id: 1, category_id: '7' }, two = { stream_id: 2, category_id: '8' };
+    var live = g.LiveChannels({
+        channels: function (category) { return Promise.resolve(category === '__group_tv' ? [two, one] : [one, two]); },
+        request: function (channel) { return { channel: channel }; },
+        record: function () {},
+    });
+    live.play(two, null, '__group_tv');
+    await Promise.resolve();
+    assert.equal(live.zap(1).channel, one);
+});
+
 test('#76 zapping, drawer selection and Previous channel retain the originating group order', async function () {
     var g = load(['library.js', 'live-channels.js']).globals;
     var one = { stream_id: 1, category_id: '7' }, two = { stream_id: 2, category_id: '8' };

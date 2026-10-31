@@ -17,10 +17,12 @@ window.BoxCards = (function () {
         return value > 0 ? String(Math.round(value * 10) / 10) : '';
     }
 
-    // A film's length from TMDB when the list item has none (#73).
-    function length(item, tmdb) {
+    // A film's length: the list item's, else the one kept from its page or
+    // the boxes' lookup (#91), else TMDB's from this session (#73).
+    function length(item, known, tmdb) {
         var minutes = parseInt(item.episode_run_time, 10);
         if (!(minutes > 0) && item.duration_secs) minutes = Math.round(item.duration_secs / 60);
+        if (!(minutes > 0) && known) minutes = known.minutes;
         if (!(minutes > 0) && tmdb) minutes = parseInt(tmdb.runtime, 10);
         if (!(minutes > 0)) return '';
         var h = Math.floor(minutes / 60);
@@ -33,19 +35,27 @@ window.BoxCards = (function () {
         return /^\d{4}$/.test(found) ? found : '';
     }
 
-    // A show's seasons (#73): the provider's, when its episodes are already
-    // loaded (`show`), else TMDB's count; 0 when neither is known.
-    function seasons(show, tmdb) {
+    // The seasons among a show's loaded episodes; 0 when none are loaded.
+    function seasonCount(show) {
         var found = [];
         ((show && show.episodes) || []).forEach(function (ep) {
             if (found.indexOf(ep.season) === -1) found.push(ep.season);
         });
-        if (found.length) return found.length;
+        return found.length;
+    }
+
+    // A show's seasons (#73): the provider's, when its episodes are already
+    // loaded (`show`), else the count kept from its page or the boxes'
+    // lookup (#91), else TMDB's; 0 when none is known.
+    function seasons(show, known, tmdb) {
+        if (seasonCount(show)) return seasonCount(show);
+        if (known && known.seasons > 0) return known.seasons;
         var count = parseInt(tmdb && tmdb.number_of_seasons, 10);
         return count > 0 ? count : 0;
     }
 
     return {
+        seasonCount: seasonCount,
         plot: function (item, section) {
             var text = item.plot || item.description;
             if (!text) {
@@ -56,15 +66,17 @@ window.BoxCards = (function () {
         },
         // A collection's own line as `sub`, else the year, the score out of
         // 10 ("7.4"), the length and, for a show, "3 seasons", each placed by
-        // the box (#69, #73). `show` is the show's info already in memory.
-        facts: function (item, section, show) {
+        // the box (#69, #73). `show` is the show's info already in memory;
+        // `sourceId` the source whose kept facts apply (#91).
+        facts: function (item, section, show, sourceId) {
             if (item.sub) return { sub: item.sub };
             var tmdb = saved(item, section);
-            var count = section === 'series' ? seasons(show, tmdb) : 0;
+            var known = sourceId ? TitleFacts.get(sourceId, section, item) : null;
+            var count = section === 'series' ? seasons(show, known, tmdb) : 0;
             return {
                 year: year(item, tmdb),
                 score: score(item, tmdb),
-                length: length(item, section === 'movies' ? tmdb : null),
+                length: length(item, section === 'movies' ? known : null, section === 'movies' ? tmdb : null),
                 seasons: count ? I18n.t(count === 1 ? 'unit.season' : 'unit.seasons', { n: count }) : '',
             };
         },

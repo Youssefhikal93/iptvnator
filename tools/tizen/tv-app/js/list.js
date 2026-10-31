@@ -202,10 +202,11 @@ window.List = function (el, options) {
         return node;
     }
 
-    // "2021 · ★ 7.4 · 1 h 52 min" with the star part in the rating colour.
+    // "2021 · ★ 7.4 · 1 h 52 min" with the star part in the rating colour; a
+    // show's seasons take the length's place when known, as in Wide boxes (#91).
     function metaLine(facts) {
         var line = text('box-meta', '');
-        [facts.year, facts.score, facts.length].forEach(function (part, i) {
+        [facts.year, facts.score, facts.seasons || facts.length].forEach(function (part, i) {
             if (!part) return;
             if (line.childNodes.length) line.appendChild(document.createTextNode(' · '));
             if (i === 1) line.appendChild(Object.assign(document.createElement('span'), { className: 'box-star', textContent: '★ ' + part }));
@@ -244,7 +245,7 @@ window.List = function (el, options) {
             // A show's seasons, else the length, each after its icon (#73).
             if (facts.seasons) caption.appendChild(fact(SEASONS_ICON, facts.seasons));
             else if (facts.length) caption.appendChild(fact(CLOCK_ICON, facts.length));
-        } else if (facts.year || facts.score || facts.length) caption.appendChild(metaLine(facts));
+        } else if (facts.year || facts.score || facts.length || facts.seasons) caption.appendChild(metaLine(facts));
         var plot = !wide && options.plot && options.plot(item);
         if (plot) caption.appendChild(text('box-plot', plot));
         card.appendChild(caption);
@@ -257,6 +258,8 @@ window.List = function (el, options) {
         var grid = document.createElement('div');
         grid.className = 'grid';
         var shown = start + size.cols * size.rows;
+        // The boxes on screen, for the facts looked up in the background (#91).
+        if (state.boxes && !plates() && options.boxesShown) options.boxesShown(state.items.slice(start, Math.min(count, shown + size.cols)));
         for (var i = start; i < Math.min(count, shown + size.cols); i++) {
             var item = state.items[i];
             var card = document.createElement('div');

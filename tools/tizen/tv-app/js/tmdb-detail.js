@@ -37,6 +37,8 @@ window.TmdbDetail = function (page, changed) {
                 enriched.rating = Number(body.vote_average) || provider.rating;
                 enriched.genre = (body.genres || []).map(function (genre) { return genre.name; }).join(', ') || provider.genre;
                 enriched.seconds = (body.runtime || (body.episode_run_time || [])[0]) * 60 || provider.seconds;
+                // A show's season count, for its box (#91).
+                if (type === 'tv' && body.number_of_seasons > 0) enriched.seasons = body.number_of_seasons;
                 cast = ((body.credits || {}).cast || []).slice(0, 12);
                 changed(enriched);
                 findTrailer((body.videos || {}).results);

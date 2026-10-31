@@ -5,7 +5,7 @@ var assert = require('node:assert/strict');
 var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-download.js', 'language-settings.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'language-settings.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -19,10 +19,11 @@ function fixture(fetcher, stored, overrides) {
     var menu = node();
     var logs = [];
     var intervals = [];
+    var keyups = [];
     var env = load(FILES, stored, Object.assign({
         AbortController: AbortController,
         UI: uiSandbox.UI,
-        document: { body: node(), getElementById: function () { return menu; }, createElement: node, addEventListener: function () {} },
+        document: { body: node(), getElementById: function () { return menu; }, createElement: node, addEventListener: function (type, fn) { if (type === 'keyup') keyups.push(fn); } },
         fetch: fetcher || function () { throw new Error('Unexpected HTTP'); },
         Log: { info: function (text) { logs.push(text); }, error: function (text) { logs.push(text); } },
         setInterval: function (fn) { intervals.push(fn); return intervals.length; },
@@ -31,6 +32,7 @@ function fixture(fetcher, stored, overrides) {
     env.logs = logs;
     env.menu = menu;
     env.tick = function () { intervals.forEach(function (fn) { fn(); }); };
+    env.keyup = function () { keyups.forEach(function (fn) { fn({ keyCode: env.globals.Keys.ENTER }); }); };
     return env;
 }
 
@@ -146,7 +148,12 @@ test('no key explains Settings without any HTTP, while cached titles restore tim
     v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
     // Without a group starter the timing rows follow in the same list.
     assert.ok(items.some(function (item) { return item.label === 'Reset timing'; }));
-    items.find(function (item) { return item.label === 'Show later by 0.5 s'; }).run();
+    // Sync subtitles: ▶ five times moves them 0.5 s later, OK keeps it.
+    items.find(function (item) { return item.label === 'Sync subtitles'; }).run();
+    for (var step = 0; step < 5; step++) v.player.syncKey(env.globals.Keys.RIGHT);
+    v.player.syncKey(env.globals.Keys.ENTER);
+    env.keyup();
+    assert.equal(v.player.syncing(), false);
     assert.equal(v.text, '');
     v.player.start(request);
     assert.equal(v.text, '');
@@ -441,7 +448,39 @@ test('#39 matching or unknown frame rates leave the timing alone', async functio
     v.player.stop();
 });
 
-test('#39 the timing group shows the delay and moves it by 0.5 s or 5 s', function () {
+// A player for the Sync subtitles bar: remote keys go through key(), and a
+// short OK is let go (keyup) at once, as on the remote.
+function syncViewer(env) {
+    var calls = { paused: 0, played: 0, jumps: [] };
+    var v = viewer(env);
+    v.calls = calls;
+    v.isPaused = false;
+    v.player = env.globals.SubtitleDownload({ position: function () { return v.position; },
+        draw: function (text) { v.text = text; }, embeddedOff: function () {}, closeMenu: function () {},
+        pause: function () { calls.paused++; v.isPaused = true; }, play: function () { calls.played++; v.isPaused = false; },
+        paused: function () { return v.isPaused; }, jump: function (ms) { calls.jumps.push(ms); v.position = ms; },
+        toast: function (text) { v.toasts.push(text); } });
+    v.key = function (code) { return v.player.syncKey(code); };
+    v.ok = function () {
+        v.key(env.globals.Keys.ENTER);
+        env.keyup();
+    };
+    v.row = function (label) {
+        var items = [];
+        v.player.menuEntries(function (text, active, action) { items.push({ label: text, run: action }); }, false);
+        return items.find(function (item) { return item.label === label; });
+    };
+    return v;
+}
+
+function syncFixture() {
+    var env = fixture();
+    env.stored['iptvnator-tv:subtitle-cache'] = JSON.stringify({ 7: { text: LINES, at: 1 } });
+    env.globals.SubtitleStore.save('s1|movie:1', 7, 0);
+    return env;
+}
+
+test('the timing group offers Sync subtitles and Choose the line, and Reset timing once moved', function () {
     var env = fixture();
     env.stored['iptvnator-tv:subtitle-cache'] = JSON.stringify({ 7: { text: LINES, at: 1 } });
     env.globals.SubtitleStore.save('s1|movie:1', 7, 0);
@@ -451,51 +490,190 @@ test('#39 the timing group shows the delay and moves it by 0.5 s or 5 s', functi
     var labels = function () {
         var items = [];
         heads = [];
-        v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false,
-            function (label, value) { heads.push(label + ': ' + value); items.push({ label: '# ' + label }); });
+        v.player.menuEntries(function (label) { items.push(label); }, false,
+            function (label, value) { heads.push(label + ': ' + value); items.push('# ' + label); });
         return items;
     };
-    assert.deepEqual(labels().map(function (item) { return item.label; }), ['Off', 'Downloaded subtitles', 'Find subtitles online…', 'Backup search: On',
-        '# Subtitle timing', 'Sync to the line being spoken…', 'Show earlier by 5 s', 'Show earlier by 0.5 s', 'Show later by 0.5 s', 'Show later by 5 s']);
+    assert.deepEqual(labels(), ['Off', 'Downloaded subtitles', 'Find subtitles online…', 'Backup search: On',
+        '# Subtitle timing', 'Sync subtitles', 'Choose the line…']);
     assert.deepEqual(heads, ['Subtitle timing: No delay']);
-    labels().find(function (item) { return item.label === 'Show later by 5 s'; }).run();
-    // The group's value shows the delay, and Reset timing appears.
-    assert.ok(labels().some(function (item) { return item.label === 'Reset timing'; }));
-    assert.deepEqual(heads, ['Subtitle timing: +5.0 s']);
-    v.position = 6500;
-    env.tick();
-    assert.equal(v.text, 'Hello');
-    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 5000);
+    env.globals.SubtitleStore.save('s1|movie:1', 7, 2500);
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    assert.ok(labels().includes('Reset timing'));
+    assert.deepEqual(heads, ['Subtitle timing: +2.5 s']);
     v.player.stop();
 });
 
-test('#39 syncing to the spoken line pauses, starts on the nearest line and sets the delay from it', function () {
-    var env = fixture();
-    env.stored['iptvnator-tv:subtitle-cache'] = JSON.stringify({ 7: { text: LINES, at: 1 } });
-    env.globals.SubtitleStore.save('s1|movie:1', 7, 0);
-    var paused = 0;
-    var v = viewer(env);
-    v.player = env.globals.SubtitleDownload({ position: function () { return v.position; },
-        draw: function (text) { v.text = text; }, embeddedOff: function () {}, pause: function () { paused++; },
-        closeMenu: function () {}, toast: function (text) { v.toasts.push(text); } });
+test('Sync subtitles: OK when the next line is heard moves every line to it, ◀ ▶ fine-tune, OK keeps', function () {
+    var env = syncFixture();
+    var v = syncViewer(env);
+    var K = env.globals.Keys;
     v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
-    // The voice says the Arabic line at 25 s; the file has it at 5 s.
-    v.position = 25000;
-    var items = [];
-    v.player.menuEntries(function (label, active, action) { items.push({ label: label, run: action }); }, false);
-    items.find(function (item) { return item.label.indexOf('Sync to the line') === 0; }).run();
-    assert.equal(paused, 1);
-    assert.ok(env.globals.Menu.isOpen());
-    // Lines are listed with where they show now; the focus starts on the last (nearest) line.
-    var text = env.menu.children.map(function (child) { return child.textContent; }).join('|');
-    assert.ok(text.includes('0:01  \u2068Hello\u2069') && text.includes('0:05  \u2068مرحبا بك\u2069') && text.includes('0:09  \u2068Bye'), text.slice(0, 400));
-    env.globals.Menu.onKey(env.globals.Keys.UP);
-    env.globals.Menu.onKey(env.globals.Keys.ENTER);
-    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 20000);
-    assert.equal(v.text, 'مرحبا بك');
-    v.position = 29500;
+    // At 2 s the next line in the file is the Arabic one (5 s); it is spoken at 8 s.
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    assert.equal(v.player.syncing(), true);
+    v.position = 8000;
+    v.ok();
+    var moved = 8000 - env.globals.SubtitleSync.REACTION_MS - 5000;
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 0, 'nothing is saved before OK keeps it');
+    v.key(K.RIGHT);
+    v.key(K.UP);
+    v.ok();
+    assert.equal(v.player.syncing(), false);
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, moved + 100 + 1000);
+    assert.ok(v.toasts.includes('Subtitle timing saved'));
+    v.position = 5000 + moved + 1100 + 100;
     env.tick();
-    assert.equal(v.text, 'Bye');
+    assert.equal(v.text, 'مرحبا بك');
+    v.player.stop();
+});
+
+test('Sync subtitles: Return puts the timing back and saves nothing; play and pause still pass through', function () {
+    var env = syncFixture();
+    var v = syncViewer(env);
+    var K = env.globals.Keys;
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.key(K.LEFT);
+    v.key(K.DOWN);
+    assert.equal(v.key(K.PLAY_PAUSE), false);
+    assert.equal(v.key(K.YELLOW), true, 'other keys stay with the bar');
+    v.key(K.RETURN);
+    assert.equal(v.player.syncing(), false);
+    v.position = 5100;
+    env.tick();
+    assert.equal(v.text, 'مرحبا بك');
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 0);
+    v.player.stop();
+});
+
+test('Choose the line: every line of the file, then the video goes back before it and waits for OK', function () {
+    var env = syncFixture();
+    var v = syncViewer(env);
+    var K = env.globals.Keys;
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    v.position = 2000;
+    v.row('Choose the line…').run();
+    assert.equal(v.calls.paused, 1);
+    // The focus starts on the next line (index 1); ▼ past the end stays on the last line.
+    v.key(K.DOWN);
+    v.key(K.DOWN);
+    v.key(K.CH_UP);
+    v.key(K.CH_DOWN);
+    v.key(K.ENTER);
+    // "Bye" shows at 9 s: the video plays from 15 s before (clamped to 0).
+    assert.deepEqual(v.calls.jumps, [0]);
+    assert.equal(v.calls.played, 1);
+    v.position = 12000;
+    v.ok();
+    v.ok();
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 12000 - env.globals.SubtitleSync.REACTION_MS - 9000);
+    v.player.stop();
+});
+
+test('a line that is not heard makes way for the next one, and Return in the list goes back to listening', function () {
+    var env = syncFixture();
+    var v = syncViewer(env);
+    var K = env.globals.Keys;
+    var S = env.globals.SubtitleSync;
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.position = 26000; // 5 s + 20 s and more: the Arabic line was missed.
+    env.tick();
+    v.position = 27000;
+    v.ok();
+    // Nothing is left to come, so the last line ("Bye", 9 s) is the one aligned.
+    v.ok();
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 27000 - S.REACTION_MS - 9000);
+    v.row('Choose the line…').run();
+    v.key(K.RETURN);
+    assert.equal(v.player.syncing(), true);
+    assert.equal(v.calls.played, 1, 'the video plays again');
+    v.key(K.RETURN);
+    assert.equal(v.player.syncing(), false);
+    v.player.stop();
+});
+
+test('the next episode of the same release starts with the delay kept for the show', async function () {
+    var results = [{ language: 'en', release: 'Mona.Lisa.S01E01.1080p.WEB-GRP', fps: 23.976, files: [{ file_id: 7 }] }];
+    var env = fixture(alignServer(results, { 7: LINES, 8: LINES }));
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    var v = syncViewer(env);
+    var lookup = function () { return Promise.resolve({ title: 'Mona Lisa', video: { avg_frame_rate: '24000/1001' } }); };
+    await searchAndPick(env, v, { id: 'episode:1', subtitleId: 's1|episode:1', subtitleShow: 's1|show:9', title: 'Mona Lisa', subtitleLookup: lookup });
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.position = 8000;
+    v.ok();
+    v.ok();
+    var kept = env.globals.SubtitleStore.title('s1|episode:1').offset;
+    assert.ok(kept > 0);
+    results[0] = { language: 'en', release: 'Mona.Lisa.S01E02.1080p.WEB-GRP', fps: 23.976, files: [{ file_id: 8 }] };
+    await searchAndPick(env, v, { id: 'episode:2', subtitleId: 's1|episode:2', subtitleShow: 's1|show:9', title: 'Mona Lisa', subtitleLookup: lookup });
+    assert.equal(env.globals.SubtitleStore.title('s1|episode:2').offset, kept);
+    assert.ok(v.toasts.some(function (text) { return text.indexOf('Same subtitle timing as the last episode') === 0; }), v.toasts.join(' | '));
+    // Another release of the show does not take it.
+    results[0] = { language: 'en', release: 'Mona.Lisa.S01E03.720p.HDTV-OTHER', fps: 23.976, files: [{ file_id: 9 }] };
+    await searchAndPick(env, v, { id: 'episode:3', subtitleId: 's1|episode:3', subtitleShow: 's1|show:9', title: 'Mona Lisa', subtitleLookup: lookup });
+    assert.equal(env.globals.SubtitleStore.title('s1|episode:3').offset || 0, 0);
+    v.player.stop();
+});
+
+test('SubtitleSync.family drops the episode number so a release is recognised across episodes', function () {
+    var family = fixture().globals.SubtitleSync.family;
+    assert.equal(family('English · Mona.Lisa.S01E02.1080p.WEB-GRP'), family('English · Mona.Lisa.S01E07.1080p.WEB-GRP'));
+    assert.equal(family('Show 1x03 720p'), family('Show 1x04 720p'));
+    assert.notEqual(family('Mona.Lisa.S01E02.1080p.WEB-GRP'), family('Mona.Lisa.S01E02.720p.HDTV-OTHER'));
+});
+
+test('Sync subtitles: Stop closes the bar unsaved and still stops; the line shown at the press is the one aligned', function () {
+    var env = syncFixture();
+    var v = syncViewer(env);
+    var K = env.globals.Keys;
+    var S = env.globals.SubtitleSync;
+    v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.key(K.RIGHT);
+    assert.equal(v.key(K.STOP), false, 'Stop is left to the player');
+    assert.equal(v.player.syncing(), false);
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 0);
+    // OK goes down while the Arabic line (5 s) shows; before it is let go the bar moves on.
+    v.row('Sync subtitles').run();
+    v.position = 24000;
+    v.key(K.ENTER);
+    v.position = 26000;
+    env.tick();
+    env.keyup();
+    v.ok();
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 24000 - S.REACTION_MS - 5000);
+    v.player.stop();
+});
+
+test('an episode that already had a subtitle, or a file without a release name, keeps its own timing', async function () {
+    var results = [{ language: 'en', release: 'Mona.Lisa.S01E01.1080p.WEB-GRP', fps: 23.976, files: [{ file_id: 7 }] }];
+    var env = fixture(alignServer(results, { 7: LINES, 8: LINES, 9: LINES }));
+    env.globals.Prefs.set('opensubtitlesApiKey', 'test-key');
+    var v = syncViewer(env);
+    var lookup = function () { return Promise.resolve({ title: 'Mona Lisa', video: { avg_frame_rate: '24000/1001' } }); };
+    var episode = function (n) { return { id: 'episode:' + n, subtitleId: 's1|episode:' + n, subtitleShow: 's1|show:9', title: 'Mona Lisa', subtitleLookup: lookup }; };
+    await searchAndPick(env, v, episode(1));
+    v.position = 2000;
+    v.row('Sync subtitles').run();
+    v.position = 8000;
+    v.ok();
+    v.ok();
+    // Episode 2 was watched with a subtitle before and its timing was put back to none.
+    env.globals.SubtitleStore.save('s1|episode:2', 3, 0, 1, 'English · Old');
+    results[0] = { language: 'en', release: 'Mona.Lisa.S01E02.1080p.WEB-GRP', fps: 23.976, files: [{ file_id: 8 }] };
+    await searchAndPick(env, v, episode(2));
+    assert.equal(env.globals.SubtitleStore.title('s1|episode:2').offset, 0);
+    results[0] = { language: 'en', release: '', fps: 23.976, files: [{ file_id: 9 }] };
+    await searchAndPick(env, v, episode(3));
+    assert.equal(env.globals.SubtitleStore.title('s1|episode:3').offset || 0, 0);
     v.player.stop();
 });
 

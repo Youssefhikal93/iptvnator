@@ -10,6 +10,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 - The live player's menu is now called Options, and every action in it and in the hold-OK menus has an icon.
 - Arabic: the player menu is fully translated and reads right to left, category headings are translated, and channel numbers stay next to their names.
 - The channel list remembers keys pressed while its channels are still loading.
+- Sync subtitles: a bar over the playing video. Press OK when you hear the line it shows, then fine-tune with ◀ ▶ (0.1 s) and ▲ ▼ (1 s); Hold OK to choose any line of the file instead. The next episode of the same release starts with the same timing.
 
 ## Live TV
 
@@ -183,7 +184,7 @@ Settings → Subtitles → Backup search allows extra searches only when OpenSub
 
 ### Align downloaded subtitles with the voice (#39)
 
-With downloaded subtitles showing, open the player menu → Subtitle timing → Sync to the line being spoken… and choose the spoken line with OK. You can instead choose Show earlier by 0.5 s, Show later by 0.5 s or the matching 5 s choices; Reset timing removes the delay. The timing choice is remembered for that title.
+With downloaded subtitles showing, open the player menu → Subtitle timing → Sync subtitles. A bar at the top shows the next line; the video keeps playing, and when you hear that line you press OK. Then ◀ ▶ move the subtitles by 0.1 s and ▲ ▼ by 1 s while you watch; OK keeps the timing and Return puts it back. Hold OK in the bar, or choose Subtitle timing → Choose the line…, to pick any line of the file with ▲ ▼ (CH + / CH - for a page): the video goes back to just before it and waits for your OK. Reset timing removes the delay. The timing is remembered for that title, and the next episode of the same release starts with it.
 
 ### Subtitle style and picture shape (#26)
 

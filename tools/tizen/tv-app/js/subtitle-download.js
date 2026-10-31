@@ -4,12 +4,12 @@
 // search switch is on, Subsource is asked, and then a subtitle in another
 // language can be translated with DeepL. A subtitle
 // timed for another frame rate is stretched to the video's (scale); the
-// delay moves by 0.5 s or 5 s, or is set from the line being spoken; and
-// the next result can be tried without searching again.
+// delay is set with the Sync subtitles bar (subtitle-sync.js), and the next
+// episode of the same release starts with the delay chosen last; and the
+// next result can be tried without searching again.
 window.SubtitleDownload = function (hooks) {
     'use strict';
 
-    var SYNC_LINES = 6; // Lines listed on each side of "now" when syncing.
     var current = null;
     var cues = [];
     var offset = 0;
@@ -59,7 +59,42 @@ window.SubtitleDownload = function (hooks) {
         var text = SubtitleFile.at(cues, hooks.position(), offset, scale);
         if (text !== lastText) hooks.draw(text);
         lastText = text;
+        bar.tick();
     }
+
+    // The delay a show's next episode starts with: kept per show for files
+    // of the same release (subtitle-sync.js family), whatever the episode.
+    function rememberShow() {
+        if (current && current.subtitleShow) SubtitleStore.save(current.subtitleShow, null, offset, 1, SubtitleSync.family(name));
+    }
+
+    function showDelay() {
+        var saved = current && current.subtitleShow ? SubtitleStore.title(current.subtitleShow) : {};
+        return saved.name && saved.name === SubtitleSync.family(name) && isFinite(saved.offset) ? Number(saved.offset) : 0;
+    }
+
+    var bar = SubtitleSync.create({
+        root: hooks.root,
+        cues: function () { return cues; },
+        offset: function () { return offset; },
+        scale: function () { return scale; },
+        setOffset: function (ms) {
+            offset = ms;
+            lastText = null;
+            sync();
+        },
+        keep: function () {
+            remember();
+            rememberShow();
+            toast('timingSaved');
+        },
+        position: hooks.position,
+        jump: function (ms) { if (hooks.jump) hooks.jump(ms); },
+        play: function () { if (hooks.play) hooks.play(); },
+        pause: function () { if (hooks.pause) hooks.pause(); },
+        paused: function () { return !!(hooks.paused && hooks.paused()); },
+        hideControls: function () { if (hooks.hideControls) hooks.hideControls(); },
+    });
 
     function closePicker() {
         if (picker && picker()) Menu.close();
@@ -134,10 +169,21 @@ window.SubtitleDownload = function (hooks) {
                 if (mine === generation && alive()) Menu.retitle(I18n.t('opensubs.translating', { p: Math.round(done / total * 100) }));
             };
         }
+        // A first subtitle for this title, of a named release, may take the show's timing.
+        var firstFile = !SubtitleStore.title(current.subtitleId || current.id).file_id && !!String(match.release || '').trim();
         return SubtitleStore.obtain(match.file_id, match).then(function (result) {
             if (mine !== generation || !alive()) return;
             var stretch = ratio(match);
             apply(result.text, match.file_id, stretch, match.title || languageName(match.language) + ' · ' + match.release);
+            // The next episode of a release synced before starts with that delay.
+            var reuse = firstFile && !offset ? showDelay() : 0;
+            if (reuse) {
+                offset = reuse;
+                lastText = null;
+                remember();
+                sync();
+                toast('sameTiming', { shift: seconds(reuse) });
+            }
             // Chosen by hand: it shows again next time, even after an earlier Off.
             AudioChoice.forgetSubtitleOff(current);
             closePicker();
@@ -331,38 +377,18 @@ window.SubtitleDownload = function (hooks) {
         if (next && next.file_id !== fileId) choose(next);
     }
 
-    function clock(ms) {
-        var s = Math.floor(ms / 1000);
-        var h = Math.floor(s / 3600);
-        var m = Math.floor(s / 60) % 60;
-        return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (s % 60 < 10 ? '0' : '') + (s % 60);
-    }
-
-    // Pauses and lists the lines around "now"; the one picked starts now.
-    function syncToLine() {
+    // The Sync subtitles bar, over the video: 'listen' waits for the next
+    // line, 'choose' lists every line first.
+    function openSync(mode) {
         hooks.closeMenu();
-        if (hooks.pause) hooks.pause();
-        var now = (hooks.position() - offset) / scale;
-        var nearest = 0;
-        cues.forEach(function (cue, i) { if (Math.abs(cue.start - now) < Math.abs(cues[nearest].start - now)) nearest = i; });
-        var from = Math.max(0, nearest - SYNC_LINES);
-        var lines = cues.slice(from, nearest + SYNC_LINES + 1);
-        var options = lines.map(function (cue) {
-            var line = cue.text.replace(/\s+/g, ' ');
-            // The isolate marks keep an Arabic line's punctuation with its own text.
-            return { label: clock(cue.start * scale + offset) + '  \u2068' + (line.length > 70 ? line.slice(0, 69) + '…' : line) + '\u2069', run: function () {
-                offset = Math.max(-600000, Math.min(600000, hooks.position() - cue.start * scale));
-                remember();
-                lastText = null;
-                sync();
-            } };
-        });
-        // The focus starts on the line closest to now.
-        openPicker(I18n.t('opensubs.syncTitle'), options.concat([{ label: I18n.t('common.cancel') }]), nearest - from);
+        // The bar sits where the title and clock are; only the picture stays.
+        if (hooks.hideControls) hooks.hideControls();
+        bar.open(mode);
     }
 
     function stop() {
         generation++;
+        bar.stop();
         clearInterval(timer);
         timer = null;
         closePicker();
@@ -393,12 +419,6 @@ window.SubtitleDownload = function (hooks) {
         timer = setInterval(sync, 100);
     }
 
-    function shift(step) {
-        offset = Math.max(-600000, Math.min(600000, offset + step));
-        remember();
-        sync();
-    }
-
     function seconds(ms) {
         return (ms > 0 ? '+' : ms < 0 ? '−' : '') + (Math.abs(ms) / 1000).toFixed(1) + ' s';
     }
@@ -418,14 +438,19 @@ window.SubtitleDownload = function (hooks) {
         if (cues.length && found.length > 1) item(I18n.t('opensubs.next'), false, function () { hooks.closeMenu(); tryNext(); });
         if (!cues.length) return;
         if (head) head(I18n.t('opensubs.timing'), offset ? seconds(offset) : I18n.t('opensubs.inSync'));
-        item(I18n.t('opensubs.syncLine'), false, syncToLine);
-        [-5000, -500, 500, 5000].forEach(function (step) {
-            var size = Math.abs(step) >= 1000 ? '5' : '0.5';
-            item(I18n.t(step < 0 ? 'opensubs.earlier' : 'opensubs.later', { s: size }), false, function () { shift(step); });
+        item(I18n.t('opensubs.syncOpen'), false, function () { openSync('listen'); });
+        item(I18n.t('opensubs.syncLine'), false, function () { openSync('choose'); });
+        if (offset) item(I18n.t('opensubs.resetTiming'), false, function () {
+            offset = 0;
+            lastText = null;
+            remember();
+            rememberShow();
+            sync();
         });
-        if (offset) item(I18n.t('opensubs.resetTiming'), false, function () { shift(-offset); });
     }
 
     return { start: start, stop: stop, active: function () { return cues.length > 0; }, off: off,
-        menuEntries: menuEntries, search: search };
+        menuEntries: menuEntries, search: search,
+        // The Sync subtitles bar takes the remote while it shows.
+        syncing: function () { return bar.isOpen(); }, syncKey: bar.key };
 };

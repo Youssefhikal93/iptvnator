@@ -1,17 +1,28 @@
 // "Guide channel" in a live channel's options (#90): when no guide pairs
 // with a channel by itself, the viewer picks one of the guides' channels for
-// it. Kept per source; Automatic goes back to pairing by id and name.
+// it. Kept per source; Automatic goes back to pairing by id and name. A pick
+// whose guide link is gone, or whose guide no longer lists it, is ignored
+// (xmltv-store.js) and dropped when that link is removed or changed.
 window.GuidePick = (function () {
     'use strict';
 
     var PREFIX = 'iptvnator-tv:guide-pick:';
     var SHOWN = 40;
+    var ALL = 300;
+    var TICK = '✓ ';
 
     function read(sourceId) {
         try {
-            var saved = JSON.parse(Stored.text(PREFIX + sourceId));
+            var saved = Stored.json(PREFIX + sourceId);
             return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
         } catch (e) { return {}; }
+    }
+
+    function write(sourceId, all) {
+        try {
+            if (Object.keys(all).length) Stored.save(PREFIX + sourceId, all);
+            else Stored.remove(PREFIX + sourceId);
+        } catch (e) { Log.error('Guide channel could not be saved'); }
     }
 
     function keyOf(channel) {
@@ -25,20 +36,26 @@ window.GuidePick = (function () {
     }
 
     function set(sourceId, channel, chosen) {
-        var all = read(sourceId);
+        var all = Object.assign({}, read(sourceId));
         if (chosen) all[keyOf(channel)] = { n: chosen.n, id: chosen.id };
         else delete all[keyOf(channel)];
-        try { Stored.save(PREFIX + sourceId, all); }
-        catch (e) { Log.error('Guide channel could not be saved'); }
+        write(sourceId, all);
         XmltvGuide.touch(sourceId);
     }
 
+    // "Name (id)", or the id alone when the guide gave no name.
+    function title(entry) {
+        var id = entry.label || entry.id;
+        return entry.name && entry.name !== id ? entry.name + ' (' + id + ')' : id;
+    }
+
     // The guides' channels that share the most words with the channel's
-    // name, a matching number counting double; the rest are left out.
+    // name, by their names and ids, a matching number counting double; the
+    // rest are left out.
     function rank(name, entries) {
         var wanted = XmltvParser.words(name);
         return entries.map(function (entry) {
-            var words = XmltvParser.words(entry.id);
+            var words = XmltvParser.words(entry.name).concat(XmltvParser.words(entry.label || entry.id));
             var score = 0;
             wanted.forEach(function (word) {
                 if (words.indexOf(word) >= 0) score += /^\d+$/.test(word) ? 2 : 1;
@@ -49,30 +66,60 @@ window.GuidePick = (function () {
         }).slice(0, SHOWN).map(function (scored) { return scored.entry; });
     }
 
+    // Every guide channel by name, for when none is named alike.
+    function alphabetical(entries) {
+        return entries.slice().sort(function (a, b) {
+            var x = title(a).toLowerCase();
+            var y = title(b).toLowerCase();
+            return x < y ? -1 : x > y ? 1 : a.n - b.n;
+        });
+    }
+
+    function same(a, b) {
+        return !!a && !!b && a.n === b.n && String(a.id).toLowerCase() === String(b.id).toLowerCase();
+    }
+
+    function rows(source, channel, entries, chosen, several) {
+        return entries.map(function (entry) {
+            return {
+                label: (same(entry, chosen) ? TICK : '') + title(entry) + (several ? ' · ' + I18n.t('guide.linkN', { n: entry.n }) : ''),
+                run: function () { set(source.id, channel, entry); },
+            };
+        });
+    }
+
+    function focusOf(list) {
+        return Math.max(0, list.findIndex(function (row) { return String(row.label).indexOf(TICK) === 0; }));
+    }
+
+    function showAll(source, channel, all, chosen, several) {
+        var list = rows(source, channel, alphabetical(all).slice(0, ALL), chosen, several);
+        if (all.length > ALL) list.push({ label: I18n.t('guide.showingFirst', { shown: ALL, total: all.length }), note: true });
+        Menu.open(I18n.t('guide.pickTitle', { name: channel.name }), list, focusOf(list));
+    }
+
     function open(source, channel) {
         var links = GuideLinks.links(source);
         Promise.all(links.map(function (link) {
-            return XmltvStore.channels(link).then(function (ids) {
-                return ids.map(function (id) { return { n: link.n, id: id }; });
+            return XmltvStore.channels(link).then(function (list) {
+                return list.map(function (entry) { return Object.assign({ n: link.n }, entry); });
             }, function () { return []; });
         })).then(function (lists) {
             var all = [].concat.apply([], lists);
             var chosen = get(source.id, channel);
             var several = links.length > 1;
             var found = rank(channel.name, all);
-            if (chosen && !found.some(function (entry) { return entry.n === chosen.n && entry.id === chosen.id; })) found.unshift(chosen);
-            var rows = [{ label: (chosen ? '' : '✓ ') + I18n.t('guide.automatic'), run: function () { set(source.id, channel, null); } }];
-            found.forEach(function (entry) {
-                var on = !!chosen && entry.n === chosen.n && entry.id === chosen.id;
-                rows.push({
-                    label: (on ? '✓ ' : '') + entry.id + (several ? ' · ' + I18n.t('guide.linkN', { n: entry.n }) : ''),
-                    run: function () { set(source.id, channel, entry); },
-                });
-            });
-            if (!all.length) rows.push({ label: I18n.t('guide.noGuideChannels'), note: true });
-            else if (!found.length) rows.push({ label: I18n.t('guide.noSimilar'), note: true });
-            var focus = Math.max(0, rows.findIndex(function (row) { return row.label.indexOf('✓ ') === 0; }));
-            Menu.open(I18n.t('guide.pickTitle', { name: channel.name }), rows, focus);
+            if (chosen && !found.some(function (entry) { return same(entry, chosen); })) {
+                found.unshift(all.filter(function (entry) { return same(entry, chosen); })[0] || chosen);
+            }
+            var list = [{ label: (chosen ? '' : TICK) + I18n.t('guide.automatic'), run: function () { set(source.id, channel, null); } }];
+            list = list.concat(rows(source, channel, found, chosen, several));
+            if (!all.length) list.push({ label: I18n.t('guide.noGuideChannels'), note: true });
+            else {
+                if (!found.length) list.push({ label: I18n.t('guide.noSimilar'), note: true });
+                list.push({ label: I18n.t('guide.showAll', { count: all.length }), run: function () { showAll(source, channel, all, chosen, several); } });
+            }
+            Menu.open(I18n.t('guide.pickTitle', { name: channel.name }), list, focusOf(list));
         });
     }
 
@@ -85,12 +132,30 @@ window.GuidePick = (function () {
         option: function (source, channel) {
             if (!source || !GuideLinks.any(source)) return [];
             var chosen = get(source.id, channel);
+            if (chosen && !GuideLinks.url(source, chosen.n)) chosen = null;
             return [{
                 label: I18n.t('guide.pick', { name: chosen ? chosen.id : I18n.t('guide.automatic') }),
                 glyph: '☰',
                 run: function () { open(source, channel); },
             }];
         },
+        // A link removed or pointed at another guide (#90): its picks no longer apply.
+        forgetLink: function (sourceId, n) {
+            var all = read(sourceId);
+            var kept = {};
+            Object.keys(all).forEach(function (key) { if (all[key].n !== n) kept[key] = all[key]; });
+            if (Object.keys(kept).length !== Object.keys(all).length) write(sourceId, kept);
+        },
+        // A source that moved to another id keeps its picks.
+        move: function (fromId, toId) {
+            var all = read(fromId);
+            if (!Object.keys(all).length) return;
+            write(toId, Object.assign({}, read(toId), all));
+            Stored.remove(PREFIX + fromId);
+        },
+        // Backup (#90): every pick of a source, and putting them back.
+        all: function (sourceId) { return Object.assign({}, read(sourceId)); },
+        replaceAll: function (sourceId, picks) { write(sourceId, Object.assign({}, picks || {})); },
         remove: function (sourceId) { Stored.remove(PREFIX + sourceId); },
     };
 })();

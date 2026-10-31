@@ -16,8 +16,11 @@ window.SourceEdit = (function () {
         var rekeyed = old.id !== updated.id;
         // Each guide link (#90) on its own: 'remove', 'refresh' or 'keep'.
         var guides = {};
+        // Links removed or pointed at another guide: their hand-picked channels go.
+        var newLinks = [];
         [1, 2, 3].forEach(function (n) {
             var url = GuideLinks.url(updated, n);
+            if (GuideLinks.url(old, n) && GuideLinks.url(old, n) !== url) newLinks.push(n);
             var changed = rekeyed || GuideLinks.url(old, n) !== url || old.epgOffset !== updated.epgOffset;
             // Link 1 is always cleared with its address; links 2 and 3 only when they had one.
             var had = n === 1 || GuideLinks.url(old, n);
@@ -31,6 +34,7 @@ window.SourceEdit = (function () {
             reconnect: old.url !== updated.url || old.user !== updated.user || old.pass !== updated.pass,
             guide: guides[1],
             guides: guides,
+            newLinks: newLinks,
             // The guide is stored under the id; once the source moves to a new id the old one is orphaned.
             staleGuideId: rekeyed ? old.id : null,
             staleLinks: { 2: !!GuideLinks.url(old, 2), 3: !!GuideLinks.url(old, 3) },
@@ -41,6 +45,10 @@ window.SourceEdit = (function () {
         var source = change.source;
         Sources.rekey(change.previousId, source);
         if (change.reconnect) SourceAccount.forget(source.id);
+        if (window.GuidePick) {
+            if (change.rekeyed) GuidePick.move(change.previousId, source.id);
+            (change.newLinks || []).forEach(function (n) { GuidePick.forgetLink(source.id, n); });
+        }
         if (change.staleGuideId) GuideLinks.ids(change.staleGuideId).forEach(function (id, at) {
             if (at === 0 || change.staleLinks[at + 1]) XmltvGuide.remove(id);
         });

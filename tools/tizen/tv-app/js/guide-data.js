@@ -69,22 +69,38 @@ window.GuideData = function (source, adapter) {
         },
         // A local snapshot only: never call the guide source chain here.
         // The first guide with programmes for a channel wins, in the viewer's order (#90).
+        // Guides are read one after another, each only for the channels still without one.
         cached: function (channels, epg) {
             var order = [];
             if (source) GuideLinks.each(source, function (link) { order.push(link); }, true);
-            var saved = Promise.all(order.map(function (link) {
-                return link && window.XmltvStore ? XmltvStore.cached(link, channels) : Promise.resolve(null);
-            }));
-            return saved.then(function (schedules) {
-                return channels.map(function (channel, index) {
-                    var entry = store[keyOf(channel)];
-                    var list = entry ? entry.list : [];
-                    if (!entry) order.some(function (link, at) {
-                        list = link ? (schedules[at] && schedules[at][index]) || [] : epg ? epg.cached(channel) : [];
-                        return list.length > 0;
+            var lists = channels.map(function (channel) {
+                var entry = store[keyOf(channel)];
+                return entry ? entry.list : null;
+            });
+            var step = Promise.resolve();
+            order.forEach(function (link) {
+                step = step.then(function () {
+                    var waiting = [];
+                    lists.forEach(function (list, index) { if (list === null) waiting.push(index); });
+                    if (!waiting.length) return null;
+                    if (!link) {
+                        waiting.forEach(function (index) {
+                            var list = epg ? epg.cached(channels[index]) : [];
+                            if (list.length) lists[index] = list;
+                        });
+                        return null;
+                    }
+                    if (!window.XmltvStore) return null;
+                    return XmltvStore.cached(link, waiting.map(function (index) { return channels[index]; })).then(function (schedules) {
+                        waiting.forEach(function (index, at) {
+                            var list = schedules[at] || [];
+                            if (list.length) lists[index] = list;
+                        });
                     });
-                    return { channel: channel, programmes: list };
                 });
+            });
+            return step.then(function () {
+                return channels.map(function (channel, index) { return { channel: channel, programmes: lists[index] || [] }; });
             });
         },
         stop: function () {

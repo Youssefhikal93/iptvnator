@@ -556,6 +556,13 @@ body.bar-off #header {
 #form-msg {
     color: var(--muted);
 }
+/* One line under the guide links says what they are and how they are used (#90). */
+#form-guide-hint {
+    width: 900px;
+    margin: 10px 0 0;
+    font-size: 22px;
+    color: var(--muted);
+}
 .form-columns {
     display: flex;
     gap: 24px;

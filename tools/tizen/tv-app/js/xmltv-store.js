@@ -56,70 +56,87 @@ window.XmltvStore = (function () {
         });
     }
 
-    // The guide channel for a channel: the one the viewer chose (#90), when it
-    // is in this link's guide, else pairing by id and name. A channel chosen
-    // from another link has no programmes here.
-    function matchIn(link, channel, index) {
-        var chosen = window.GuidePick ? GuidePick.get(link.owner || link.id, channel) : null;
-        if (!chosen) return XmltvParser.match(channel, index);
+    function has(map, key) {
+        return Object.prototype.hasOwnProperty.call(map, key);
+    }
+
+    // The guide channel the viewer chose for a channel (#90), while it still
+    // counts: its link is still the source's and its guide still lists it.
+    // Otherwise (null) the channel pairs by id and name as before.
+    function chosenFor(link, channel) {
+        var owner = link.owner || link.id;
+        var chosen = window.GuidePick ? GuidePick.get(owner, channel) : null;
+        if (!chosen) return Promise.resolve(null);
+        var source = window.Sources ? Sources.all().filter(function (saved) { return saved.id === owner; })[0] : null;
+        if (source && !GuideLinks.url(source, chosen.n)) return Promise.resolve(null);
         var id = String(chosen.id).toLowerCase();
-        return chosen.n === (link.n || 1) && Object.prototype.hasOwnProperty.call(index.ids, id) ? index.ids[id] : null;
+        return manifest(chosen.n === 1 ? owner : owner + '#' + chosen.n).then(function (saved) {
+            return saved && has(saved.index.ids, id) ? { n: chosen.n, id: id } : null;
+        }, function () { return null; });
+    }
+
+    // A channel chosen from another link has no programmes here.
+    function matchIn(link, channel, index, chosen) {
+        if (!chosen) return XmltvParser.match(channel, index);
+        return chosen.n === (link.n || 1) ? index.ids[chosen.id] : null;
+    }
+
+    function read(db, source, saved, id) {
+        return new Promise(function (resolve, reject) {
+            var range = IDBKeyRange.bound([source.id, saved.generation, id], [source.id, saved.generation, id, []]);
+            var req = db.transaction('programmes').objectStore('programmes').getAll(range);
+            req.onsuccess = function () { resolve(req.result); };
+            req.onerror = function () { reject(req.error); };
+        });
     }
 
     function programmes(source, channel) {
-        return manifest(source.id).then(function (saved) {
+        return Promise.all([manifest(source.id), chosenFor(source, channel)]).then(function (found) {
+            var saved = found[0];
             if (!saved) return null;
-            var id = matchIn(source, channel, saved.index);
+            var id = matchIn(source, channel, saved.index, found[1]);
             if (!id) return null;
-            return open().then(function (db) {
-                return new Promise(function (resolve, reject) {
-                    var range = IDBKeyRange.bound([source.id, saved.generation, id], [source.id, saved.generation, id, []]);
-                    var req = db.transaction('programmes').objectStore('programmes').getAll(range);
-                    req.onsuccess = function () {
-                        var list = req.result.map(function (p) { return { title: p.title, desc: p.desc, start: p.start, end: p.end }; });
-                        list.sort(function (a, b) { return a.start - b.start; });
-                        resolve(list.length ? list : null);
-                    };
-                    req.onerror = function () { reject(req.error); };
-                });
+            return open().then(function (db) { return read(db, source, saved, id); }).then(function (rows) {
+                var list = rows.map(function (p) { return { title: p.title, desc: p.desc, start: p.start, end: p.end }; });
+                list.sort(function (a, b) { return a.start - b.start; });
+                return list.length ? list : null;
             });
         });
     }
 
-    // One read for the published generation, rather than one transaction per channel.
+    // Only the programmes of the channels asked for: a whole guide can hold
+    // hundreds of thousands, too many to hold in memory at once on a TV.
     function cached(source, channels) {
         return manifest(source.id).then(function (saved) {
             if (!saved) return {};
-            return open().then(function (db) {
-                return new Promise(function (resolve, reject) {
-                    var range = IDBKeyRange.bound([source.id, saved.generation], [source.id, saved.generation, []]);
-                    var req = db.transaction('programmes').objectStore('programmes').getAll(range);
-                    req.onsuccess = function () {
-                        var byChannel = Object.create(null);
-                        req.result.forEach(function (programme) {
-                            if (!byChannel[programme.channel]) byChannel[programme.channel] = [];
-                            byChannel[programme.channel].push(programme);
-                        });
-                        var schedules = {};
-                        channels.forEach(function (channel, index) {
-                            var id = matchIn(source, channel, saved.index);
-                            schedules[index] = id === null ? [] : byChannel[id] || [];
-                        });
-                        resolve(schedules);
-                    };
-                    req.onerror = function () { reject(req.error); };
+            return Promise.all(channels.map(function (channel) { return chosenFor(source, channel); })).then(function (chosen) {
+                var ids = channels.map(function (channel, index) { return matchIn(source, channel, saved.index, chosen[index]) || null; });
+                var wanted = ids.filter(function (id, at) { return id && ids.indexOf(id) === at; });
+                return open().then(function (db) {
+                    return Promise.all(wanted.map(function (id) { return read(db, source, saved, id); }));
+                }).then(function (lists) {
+                    var byChannel = Object.create(null);
+                    wanted.forEach(function (id, at) { byChannel[id] = lists[at]; });
+                    var schedules = {};
+                    ids.forEach(function (id, index) { schedules[index] = id === null ? [] : byChannel[id] || []; });
+                    return schedules;
                 });
             });
         });
     }
-
     return {
         cached: cached,
         programmes: programmes,
-        // The channel ids in a link's saved guide, for choosing one by hand (#90).
+        // A link's guide channels for choosing one by hand (#90): { id, label,
+        // name }, id as the index keeps it; a guide saved before labels has only ids.
         channels: function (source) {
             return manifest(source.id).then(function (saved) {
-                return saved ? Object.keys(saved.index.ids) : [];
+                if (!saved) return [];
+                var labels = saved.index.labels || {};
+                return Object.keys(saved.index.ids).map(function (id) {
+                    var label = labels[id] || [id, ''];
+                    return { id: id, label: label[0], name: label[1] };
+                });
             });
         },
         batch: function (rows) {

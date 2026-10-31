@@ -94,17 +94,18 @@
                     </div>
                 </div>
                 <div id="form-guide">
-                    <label for="form-epg-url" data-i18n="form.guideLink">Guide link (XMLTV) (optional)</label>
+                    <label for="form-epg-url" data-i18n="form.guideLink">Guide link 1 (optional)</label>
                     <input id="form-epg-url" placeholder="https://example.com/guide.xml.gz" />
                     <label for="form-epg-url2" data-i18n="form.guideLink2">Guide link 2 (optional)</label>
                     <input id="form-epg-url2" placeholder="https://example.com/guide.xml.gz" />
                     <label for="form-epg-url3" data-i18n="form.guideLink3">Guide link 3 (optional)</label>
                     <input id="form-epg-url3" placeholder="https://example.com/guide.xml.gz" />
+                    <p id="form-guide-hint" data-i18n="form.guideHint">XMLTV links (.xml or .xml.gz). Each channel uses the first guide in Guide order that has it.</p>
                     <label for="form-epg-offset" data-i18n="form.guideOffset">Guide time offset (hours, -12 to +12)</label>
                     <input id="form-epg-offset" type="number" min="-12" max="12" step="1" value="0" />
                     <div id="form-epg-preference">
-                        <label for="form-epg-prefer" data-i18n="form.preferGuide">Prefer my guide</label>
-                        <select id="form-epg-prefer"><option value="yes" data-i18n="common.on">On</option><option value="no" data-i18n="common.off">Off</option></select>
+                        <label for="form-epg-prefer" data-i18n="form.preferGuide">Provider's guide</label>
+                        <select id="form-epg-prefer"><option value="yes" data-i18n="form.providerLast">After my guides</option><option value="no" data-i18n="form.providerFirst">Before my guides</option></select>
                     </div>
                 </div>
             </div>

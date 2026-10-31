@@ -75,6 +75,8 @@ window.BackupStore = (function () {
         var sourceIds = Object.create(null);
         var attributed = {};
         var catalogues = [];
+        var orders = [];
+        var picks = {};
         if (mode === 'replace') existing.forEach(function (source) {
             ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:', 'list-order:', 'channel-groups:'].forEach(function (kind) { writes[kind + source.id] = null; });
         });
@@ -83,6 +85,13 @@ window.BackupStore = (function () {
             var id = 'backup-' + Date.now() + '-' + index;
             while (existing.concat(sources).some(function (source) { return source.id === id; })) id += '-new';
             var source = match || Object.assign({}, entry.source, { id: id });
+            var guide = entry.browse && entry.browse.guide;
+            // Guide links (#90) come with a new source; Merge keeps a matched source's own.
+            if (guide && (!match || !GuideLinks.any(match))) {
+                source = Object.assign({}, source, BackupOrder.guideFields(guide));
+                if (match) sources[sources.indexOf(match)] = source;
+                picks[source.id] = Object.assign({}, guide.picks, match && window.GuidePick ? GuidePick.all(match.id) : {});
+            }
             if (!match) sources.push(source);
             sourceIds[entry.exportedId] = source.id;
             ['favorites', 'recent'].forEach(function (kind) {
@@ -91,12 +100,11 @@ window.BackupStore = (function () {
                 writes[key] = lists(saved, entry[kind], kind);
             });
             var browse = entry.browse || { order: {}, groups: [] };
-            ['list-order', 'channel-groups'].forEach(function (kind) {
-                var key = kind + ':' + source.id;
-                var incoming = browse[kind === 'list-order' ? 'order' : 'groups'];
-                var saved = writes[key] || (mode === 'merge' ? read(key, null) : null);
-                writes[key] = saved ? BackupOrder.merge(saved, incoming) : incoming;
-            });
+            // Orders wait for every source's new id: a channel order can name another source.
+            orders.push({ key: 'list-order:' + source.id, incoming: browse.order });
+            var groupsKey = 'channel-groups:' + source.id;
+            var savedGroups = writes[groupsKey] || (mode === 'merge' ? read(groupsKey, null) : null);
+            writes[groupsKey] = savedGroups ? BackupOrder.merge(savedGroups, browse.groups) : browse.groups;
             var channelsKey = 'recent-channels:' + source.id;
             var savedChannels = writes[channelsKey] || (mode === 'merge' ? read(channelsKey, []) : []);
             writes[channelsKey] = Library.mergeRecentChannels(savedChannels, entry.recentChannels || []);
@@ -110,6 +118,11 @@ window.BackupStore = (function () {
             attributed[progressKey] = positions(attributed[progressKey] || {}, entry.progress);
             var progress = writes[progressKey] || (mode === 'merge' ? read(progressKey, {}) : {});
             writes[progressKey] = positions(progress, entry.progress);
+        });
+        orders.forEach(function (order) {
+            var incoming = BackupOrder.remapOrder(order.incoming, sourceIds);
+            var saved = writes[order.key] || (mode === 'merge' ? read(order.key, null) : null);
+            writes[order.key] = saved ? BackupOrder.merge(saved, incoming) : incoming;
         });
         var current = mode === 'merge' && Sources.current();
         writes.current = current ? current.id : sources.length ? sources[0].id : null;
@@ -125,6 +138,10 @@ window.BackupStore = (function () {
         }
         writes['audio-choice'] = AudioChoice.merge(mode === 'merge' ? read('audio-choice', null) : null, backup.audioChoice, sourceIds);
         commit(writes, sources);
+        if (window.GuidePick) {
+            if (mode === 'replace') existing.forEach(function (source) { GuidePick.remove(source.id); });
+            Object.keys(picks).forEach(function (id) { GuidePick.replaceAll(id, picks[id]); });
+        }
         // Raw playlists are catalogue data, never part of the localStorage library budget.
         return Promise.all(catalogues.map(function (catalogue) {
             return window.Catalogue ? Catalogue.put(catalogue.id, 'backup:m3u', { url: catalogue.url, text: catalogue.text }) : null;

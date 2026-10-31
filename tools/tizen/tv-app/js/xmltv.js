@@ -27,7 +27,8 @@ window.XmltvGuide = (function () {
     function download(job) {
         var source = job.source;
         var generation = Date.now() + '-' + Math.random();
-        var index = { ids: Object.create(null), names: Object.create(null) };
+        // labels: each channel's id as written and its first name, for choosing one by hand (#90).
+        var index = { ids: Object.create(null), names: Object.create(null), labels: Object.create(null) };
         var rows = [];
         var channels = 0;
         var programmes = 0;
@@ -37,6 +38,7 @@ window.XmltvGuide = (function () {
             if (kind === 'channel') {
                 var id = record.id.toLowerCase();
                 index.ids[id] = id;
+                if (!index.labels[id]) index.labels[id] = [record.id, record.names[0] || ''];
                 record.names.forEach(function (name) {
                     var key = XmltvParser.normalName(name);
                     if (key && !index.names[key]) index.names[key] = id;

@@ -57,6 +57,6 @@ for (const theme of ['black', 'grey']) {
             return ['--shell-bg', '--panel-bg', '--selection'].map(token => css.getPropertyValue(token).trim());
         });
         expect(palette).toEqual(['#0d0f12', '#171b25', '#f1bc50']);
-        await expect(page.locator('#pl-menu')).toHaveCSS('background-color', 'rgba(14, 17, 24, 0.94)');
+        await expect(page.locator('#pl-menu')).toHaveCSS('background-color', 'rgb(14, 17, 24)');
     });
 }

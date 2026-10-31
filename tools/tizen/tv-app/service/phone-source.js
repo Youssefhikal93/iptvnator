@@ -88,8 +88,10 @@ function control(req, res, path) {
     if (path === '/poll') return json(res, 200, sessions.take(), true);
     if (path === '/close') {
         json(res, 200, { ok: true }, true);
-        // After the answer is on its way.
-        return void setTimeout(stop, 200);
+        // After the answer is on its way; an /open before then cancels it.
+        clearTimeout(stopTimer);
+        stopTimer = setTimeout(stop, 200);
+        return undefined;
     }
     // /open: the app's request, with the page's words in the TV's language.
     return readBody(req, function (body) {

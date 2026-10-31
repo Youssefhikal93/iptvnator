@@ -138,6 +138,8 @@ window.SubtitleDownload = function (hooks) {
             if (mine !== generation || !alive()) return;
             var stretch = ratio(match);
             apply(result.text, match.file_id, stretch, match.title || languageName(match.language) + ' · ' + match.release);
+            // Chosen by hand: it shows again next time, even after an earlier Off.
+            AudioChoice.forgetSubtitleOff(current);
             closePicker();
             Log.info('SUBS picked fps ' + (SubtitleRank.rate(match.fps) || '?') + ' scale ' + stretch.toFixed(4));
             if (stretch !== 1) toast('retimed', { from: +SubtitleRank.rate(match.fps).toFixed(3), to: +video.fps.toFixed(3) });

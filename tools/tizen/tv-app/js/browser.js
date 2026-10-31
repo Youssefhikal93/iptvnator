@@ -712,9 +712,16 @@ window.Browser = function (hooks) {
         return row && (row.virtual === 'group' || row.virtual === 'favorites') ? 'channels:' + row.category_id : '';
     }
 
+    // Favorites from every source share one order; with Library on this source
+    // only, the other sources' entries keep their places for when they show again.
+    function otherSourceKey(id) {
+        return Prefs.get('librarySources') !== 'all' && id.indexOf('|') > 0;
+    }
+
     function orderedChannels(row, channels) {
         var scope = channelScope(row);
-        return scope ? ListOrder.apply(sourceId(), scope, channels, channelKey) : channels;
+        var keep = row && row.virtual === 'favorites' ? otherSourceKey : null;
+        return scope ? ListOrder.apply(sourceId(), scope, channels, channelKey, keep) : channels;
     }
 
     function showVirtual(category, index) {

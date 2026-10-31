@@ -64,6 +64,11 @@ window.Browser = function (hooks) {
         allows: function (channel) { return visibility.allows('live', channel, { withHidden: true }); },
     });
     var live = LiveChannels({
+        catalogue: function () {
+            return loadCatalogue({ section: 'live', kind: 'items', id: '' }).then(function (list) {
+                return KidsProfile.filterItems(sourceId(), 'live', list);
+            });
+        },
         categories: function () {
             return loadCatalogue({ section: 'live', kind: 'categories' }).then(function (list) {
                 return categoryRows(list, false, 'live').filter(function (row) { return !row.virtual || row.virtual === 'group' || row.virtual === 'favorites' || row.virtual === 'recent-channels'; });

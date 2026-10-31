@@ -49,6 +49,7 @@ Coverage is grouped by viewer journey:
 | `account` | Expiry warning and badges, expired/inactive/wrong-login screens and Go to Sources, health badges, saved channel counts, Edit source |
 | `reconnect` | Live stall and error reconnect with Reconnecting status and kept frame, give-up Retry screen, Return and zapping cancel, one live connection at a time, movies unchanged |
 | `player` | Pause/play/seek/speed, the ▲ menu's groups and values (#48), track availability and stream info, intro skip, episode/season selection, next episode and autoplay/cancel |
+| `multi-view` | Menu/Blue layout picker, independent tiles and sound, channel selection/zapping, options/main/remove, isolated refusal/retry, full-screen exit, profile/source resume, PIN, sleep timer and screen saver (#77) |
 
 Each test gets an empty browser context, seeds its own source/library state,
 and resets the server failure switch before and after running. Remote actions

@@ -86,7 +86,7 @@ test('every coloured key a screen handles is in its Help, as a dot', function ()
         });
     });
     same(colours(g, g.TvGuide.help()).sort(), ['blue', 'yellow']);
-    same(colours(g, g.PlayerHelp.help(true)).sort(), ['green', 'yellow']);
+    same(colours(g, g.PlayerHelp.help(true)).sort(), ['blue', 'green', 'yellow']);
     same(colours(g, g.Home.help(false)), []);
 });
 

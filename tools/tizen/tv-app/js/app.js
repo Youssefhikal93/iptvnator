@@ -37,6 +37,7 @@
 
     function play(request) {
         if (!request) return;
+        if (multiView) multiView.stop();
         screen = 'player';
         playing = request;
         Player.play(request, null);
@@ -53,6 +54,7 @@
     // Return from full screen opened on a live preview goes back to the box,
     // with the stream still playing; STOP closes everything.
     function closePlayer(stopped) {
+        if (multiView) multiView.stop();
         channelList.close();
         if (!stopped && playing && playing.returnTo && !document.hidden) return play(playing.returnTo);
         if (stopped) preview.stop();
@@ -92,7 +94,30 @@
             }, mode);
         },
     });
-    var channelList = ChannelList({ channels: browser.live, epg: browser.epg, play: zap, visibility: Player.channelList });
+    var multiView = null;
+    var channelList = ChannelList({
+        channels: browser.live, epg: browser.epg, visibility: Player.channelList,
+        play: function (request) {
+            if (multiView.active()) multiView.add(browser.live.current());
+            else zap(request);
+        },
+        unlock: function (category, done) {
+            if (!multiView.active() || !ParentalLock.isLocked(Sources.current().id, 'live', category.category_id) || ParentalLock.isUnlocked()) return false;
+            PinPad.open('unlock', done);
+            return true;
+        },
+    });
+    multiView = MultiView({
+        current: browser.live.current,
+        request: browser.live.request,
+        catalogue: browser.live.catalogue,
+        allows: browser.live.allows,
+        focus: function (channel) { browser.live.play(channel); },
+        pick: function () { channelList.open(); },
+        fullscreen: function (channel) { play(browser.live.play(channel)); },
+        close: function () { closePlayer(true); },
+        zap: function (delta) { if (browser.live.zap(delta)) multiView.add(browser.live.current()); },
+    });
     preview = LivePreview({
         live: browser.live,
         start: Player.play,
@@ -122,11 +147,20 @@
         var previous = browser.live.previous();
         if (previous) zap(previous);
     }
-    PlayerHelp.init({ previous: function () { return browser.live.previousChannel(); }, watchPrevious: watchPrevious });
+    PlayerHelp.init({
+        previous: function () { return browser.live.previousChannel(); }, watchPrevious: watchPrevious,
+        openMultiView: multiView.open,
+        resumeMultiView: multiView.resume,
+        canResumeMultiView: function () { return !!MultiViewStore.read(Sources.current().id); },
+    });
 
     // Hold OK on live TV opens the player menu (#89), a tap does what OK did.
     function onPlayerKey(code) {
         if (Keys.repeat(code)) return true;
+        if (multiView.active()) {
+            if (channelList.key(code)) return true;
+            return multiView.key(code);
+        }
         if (code !== KEY.ENTER || !Player.canHoldMenu()) return playerKey(code);
         Keys.press(function () { playerKey(code); }, Player.openMenu, document.getElementById('player'));
         return true;
@@ -136,6 +170,10 @@
         var live = !!playing && playing.live;
         var zapStep = code === KEY.CH_UP || code === KEY.UP ? 1 : code === KEY.CH_DOWN || code === KEY.DOWN ? -1 : 0;
         if (channelList.key(code)) return true;
+        if (live && !playing.catchUp && code === KEY.BLUE && Player.canOpenChannelList()) {
+            multiView.open();
+            return true;
+        }
         if (live && code === KEY.LEFT && Player.canOpenChannelList()) {
             channelList.open();
             return true;
@@ -186,6 +224,10 @@
     });
 
     ParentalLock.onChange(function () {
+        if (multiView.active()) {
+            if (!ParentalLock.isUnlocked()) channelList.close();
+            return multiView.enforceLocks();
+        }
         channelList.close();
         var current = browser.live.current();
         if (current && !browser.live.allows(current)) {
@@ -202,6 +244,12 @@
             // Browser preview, or firmware that cannot exit: playback is already released.
             browser.toast(I18n.t('sleep.stoppedToast'));
         }
+    });
+    document.addEventListener('player-sleep-warning', function () {
+        if (!multiView.active()) return;
+        Menu.close();
+        channelList.close();
+        multiView.closeMenu();
     });
 
     document.addEventListener('trailer-open', function () {
@@ -240,7 +288,7 @@
     // Menus, a paused video and the live preview count as idle; a playing
     // full-screen video never does.
     saver = ScreenSaver({
-        allowed: function () { return !reminderPopup.isOpen() && (screen !== 'player' || Player.paused()); },
+        allowed: function () { return !reminderPopup.isOpen() && !multiView.active() && (screen !== 'player' || Player.paused()); },
         slides: browser.saverSlides,
     });
 

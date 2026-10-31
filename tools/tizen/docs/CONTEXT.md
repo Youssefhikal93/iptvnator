@@ -208,6 +208,21 @@ _Avoid_: Drawer, sidebar
 The programme on a channel now and the one after it.
 _Avoid_: EPG (for this), guide
 
+**Multi-view**:
+Two, three or four live channels at once, opened from the player menu or Blue.
+Arrows move the focus and sound; CH +/− changes only the focused tile. OK on
+an empty tile opens the channel list; on a filled tile it offers Full screen,
+Change channel, Make main and Remove, plus Retry after a stream refusal. Hold OK or Yellow opens Layout,
+the focused tile's Audio and Subtitles, Help, Sleep timer and Leave multi-view.
+Return plays the focused channel full screen (or the first filled tile when
+focus is empty). Layout 3 makes tile 1 large; Make main swaps into tile 1.
+The last layout and channel identities are saved per profile and source as
+`multi-view:<sourceId>` through ProfileStore and Stored. Resume resolves them
+against the current catalogue and checks Kids and parental restrictions again.
+`js/multi-view-state.js` owns the single `MAX_TILES` limit; lowering it hides
+larger layout choices and truncates saved layouts. Tiles use hls.js or
+mpegts.js without AVPlay. See the explicit exception in [ADR 0006](./adr/0006-one-stream-at-a-time.md).
+
 **Catch-up**:
 Watching a channel's past programme, or restarting its current programme, when the source offers it.
 _Avoid_: Archive, replay, timeshift

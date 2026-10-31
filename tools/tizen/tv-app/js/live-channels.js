@@ -57,6 +57,8 @@ window.LiveChannels = function (hooks) {
     }
 
     return {
+        request: hooks.request,
+        catalogue: hooks.catalogue,
         play: play,
         // The drawer's Recent row (#80) lists the Recent channels, not a catalogue category.
         channels: function (categoryId) {

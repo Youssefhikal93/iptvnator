@@ -1,9 +1,8 @@
 // Full-screen playback with desktop-style controls. A request lists the
 // players to try in order (`sources: [{ via, url }]`): live TV uses mpegts.js
 // (as IPTVnator's web player does), then hls.js, then Samsung AVPlay; movies
-// and episodes (mp4/mkv) use AVPlay, then the <video> element. Only one stream
-// is open at a time: single-connection accounts answer 503 while another
-// stream is open, so release() always closes the previous one first.
+// and episodes (mp4/mkv) use AVPlay, then the <video> element. This player
+// releases its stream before MultiView opens independent HTML video tiles.
 //
 // Request fields: live, title, subtitle, id (stable key for saved progress),
 // sources, and for episodes an optional episodes list (see player-series.js).
@@ -130,7 +129,7 @@ window.Player = (function () {
         },
     });
     var sleep = PlayerSleep({
-        warn: closeMenu,
+        warn: function () { closeMenu(); document.dispatchEvent(new Event('player-sleep-warning')); },
         changed: function () {
             if (menu.open) renderMenu();
         },
@@ -1396,6 +1395,23 @@ window.Player = (function () {
     }
 
     return {
+        // Keep the sleep timer while handing the picture to multi-view (#77).
+        suspend: function () {
+            reconnect.cancel();
+            chain.cancel();
+            release();
+            freeze.clear();
+            banner.hide();
+            streamInfo.hide();
+            hideStatus();
+            hideControls();
+            playerEl.classList.remove('av');
+        },
+        sleepEntries: function (entries) {
+            entries.head(sleep.heading());
+            sleep.choices(current).forEach(function (choice) { entries.item(choice.label, choice.active, choice.select); });
+        },
+        dismissMenu: closeMenu,
         startOver: startOver,
         play: play,
         stop: stop,

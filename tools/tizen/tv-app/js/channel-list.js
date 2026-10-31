@@ -101,6 +101,9 @@ window.ChannelList = function (hooks) {
             message = I18n.t('browser.noCategories');
             return render();
         }
+        if (hooks.unlock && hooks.unlock(category, function () {
+            if (opened && mine === token) load(channel);
+        })) return;
         hooks.channels.channels(category.category_id).then(function (loaded) {
             if (!opened || mine !== token) return;
             channels = loaded;

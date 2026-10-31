@@ -337,3 +337,18 @@ test('DeepL is sent the source language without its region, and none when it is 
     assert.equal(bodies[0].source_lang, 'PT');
     assert.equal(bodies[1].source_lang, undefined);
 });
+
+test('a downloaded subtitle picked by hand undoes a remembered Off for the show', async function () {
+    var calls = [];
+    var env = fixture(everyProvider({ 'os-en': 1 }, calls));
+    keys(env);
+    var v = viewer(env);
+    var episode = { id: 'ep:7', title: 'Fixture', episodes: { show: 's1|show:9' } };
+    env.globals.AudioChoice.rememberSubtitle(episode, false);
+    v.player.start(episode);
+    await v.player.search();
+    env.globals.Menu.onKey(env.globals.Keys.ENTER);
+    await settle(function () { return v.text; });
+    assert.ok(v.text);
+    assert.equal(env.globals.AudioChoice.subtitle(episode), undefined);
+});

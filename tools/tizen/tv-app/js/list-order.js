@@ -17,7 +17,9 @@ window.ListOrder = (function () {
         Stored.save(ProfileStore.key('list-order:' + sourceId), saved);
     }
 
-    function apply(sourceId, scope, list, key) {
+    // keep(id): a saved id missing only because the list is filtered (another
+    // source's favourite while Library shows this source only) keeps its place.
+    function apply(sourceId, scope, list, key, keep) {
         var saved = read(sourceId);
         var ids = saved[scope];
         if (!Array.isArray(ids)) return MoveMode.reset(list);
@@ -32,7 +34,8 @@ window.ListOrder = (function () {
         var waiting = scope.indexOf('categories:') === 0 ? ids.filter(function (id) {
             return (id === '__added' || id === '__collections') && fresh.indexOf(id) < 0;
         }) : [];
-        fresh = MoveMode.apply(fresh.concat(waiting), ids, function (id) { return id; });
+        var kept = keep ? ids.filter(function (id) { return fresh.indexOf(id) < 0 && waiting.indexOf(id) < 0 && keep(id); }) : [];
+        fresh = MoveMode.apply(fresh.concat(waiting, kept), ids, function (id) { return id; });
         if (JSON.stringify(fresh) !== JSON.stringify(ids)) {
             saved[scope] = fresh;
             write(sourceId, saved);

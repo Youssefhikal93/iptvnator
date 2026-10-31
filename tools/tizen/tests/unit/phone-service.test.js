@@ -72,6 +72,21 @@ test('the phone page is served only for the open code and a submit reaches the T
     assert.equal(service.port(), null, 'the service stops listening after /close');
 });
 
+test('opening again right after a close keeps the service and the new code', async function () {
+    var port = await started();
+    try {
+        await request(port, 'POST', '/open', OPEN);
+        await request(port, 'POST', '/close', '{}');
+        var code = JSON.parse((await request(port, 'POST', '/open', OPEN)).text).code;
+        await new Promise(function (resolve) { setTimeout(resolve, 400); });
+        assert.equal(service.port(), port, 'still listening');
+        assert.equal((await request(port, 'GET', '/' + code)).status, 200, 'the new code still works');
+    } finally {
+        await request(port, 'POST', '/close', '{}').catch(function () {});
+        await new Promise(function (resolve) { setTimeout(resolve, 400); });
+    }
+});
+
 test('a body over the limit is not accepted', async function () {
     var port = await started();
     try {

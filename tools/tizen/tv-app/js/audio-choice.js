@@ -101,6 +101,15 @@ window.AudioChoice = (function () {
         save(saved);
     }
 
+    // A subtitle the viewer picks by hand (a downloaded file) undoes a remembered Off.
+    function forgetSubtitleOff(request) {
+        var target = scope(request);
+        var saved = read();
+        if (!target.id || saved[target.text][target.id] !== false) return;
+        delete saved[target.text][target.id];
+        save(saved);
+    }
+
     // Undefined means no choice; false is an explicit Off, not a default.
     function subtitle(request) {
         var target = scope(request);
@@ -141,5 +150,5 @@ window.AudioChoice = (function () {
         return row && !row.active ? row : null;
     }
 
-    return { remember: remember, pick: pick, name: name, rememberSubtitle: rememberSubtitle, subtitle: subtitle, clean: clean, merge: merge };
+    return { remember: remember, pick: pick, name: name, rememberSubtitle: rememberSubtitle, forgetSubtitleOff: forgetSubtitleOff, subtitle: subtitle, clean: clean, merge: merge };
 })();

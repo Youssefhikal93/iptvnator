@@ -24,6 +24,20 @@ test('#87 order survives reload/refresh per profile, source and section, with ne
     assert.equal(g.ListOrder.changed('s1', 'categories:live'), false);
 });
 
+test('a saved order keeps entries left out only by a filter, in their places', function () {
+    var g = load(files).globals, key = function (item) { return item.id; };
+    var items = function (list) { return list.map(function (id) { return { id: id }; }); };
+    var order = function (list) { return Array.from(list, function (item) { return item.id; }).join(','); };
+    g.ListOrder.save('s1', 'channels:__fav', items(['sB|2', '1', '3']), key);
+    var foreign = function (id) { return id.indexOf('|') > 0; };
+    // This source only: the other source's favourite is left out but not forgotten.
+    assert.equal(order(g.ListOrder.apply('s1', 'channels:__fav', items(['3', '1']), key, foreign)), '1,3');
+    assert.equal(order(g.ListOrder.apply('s1', 'channels:__fav', items(['3', '1', 'sB|2']), key, foreign)), 'sB|2,1,3');
+    // Without keep, an entry no longer listed is forgotten as before.
+    g.ListOrder.apply('s1', 'channels:__fav', items(['3', '1']), key);
+    assert.equal(order(g.ListOrder.apply('s1', 'channels:__fav', items(['3', '1', 'sB|2']), key, foreign)), '1,3,sB|2');
+});
+
 test('hidden categories retain their slots when visible categories move and when shown again', function () {
     var g = load(files).globals, key = g.ListOrder.categoryKey;
     var all = rows(['1', '2', '3', '4']);

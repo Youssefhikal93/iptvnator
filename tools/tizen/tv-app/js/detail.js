@@ -11,6 +11,7 @@
 //   badges     optional extra chips, e.g. [I18n.t('home.newEpisodes')]
 //   related()  optional Promise of { label, items } for "More in <category>"
 //   collection(provider) optional Promise of the film's collection row (#58)
+//   found(details) optional, told the provider's and then TMDB's details (#91)
 window.Detail = function () {
     'use strict';
 
@@ -226,6 +227,7 @@ window.Detail = function () {
             if (Tmdb.enabled() && page.catalogue) s.tmdb = TmdbDetail(page, function (enriched) {
                 if (s !== mine) return;
                 if (enriched) s.details = enriched;
+                if (enriched && page.found) page.found(enriched);
                 render();
             });
             root.classList.remove('hidden');
@@ -246,6 +248,8 @@ window.Detail = function () {
                     if (s !== mine) return;
                     s.details = d;
                     s.provider = d;
+                    // What the page learnt, for the boxes to keep (#91).
+                    if (d && page.found) page.found(d);
                 })
                 .catch(function (err) {
                     Log.error('DETAIL FAIL ' + err.message);

@@ -248,6 +248,11 @@ window.Browser = function (hooks) {
             return programmes.now;
         },
     });
+    // TMDB's lengths and seasons for the boxes on screen (#91).
+    var boxLookup = BoxLookup({
+        sourceId: function () { return sourceId(); },
+        redraw: function () { if (items.items().length) items.select(items.index()); },
+    });
     var items = List($('items'), {
         rows: 9,
         title: function () {
@@ -269,8 +274,9 @@ window.Browser = function (hooks) {
         },
         facts: function (it) {
             var show = state.section === 'series' && !otherSource(it) ? state.catalogue.peek({ kind: 'show', id: it.series_id }) : null;
-            return BoxCards.facts(it, state.section, show);
+            return BoxCards.facts(it, state.section, show, it.sourceId || sourceId());
         },
+        boxesShown: function (list) { boxLookup.want(list, state.section); },
         action: function () {
             return refreshAvailable() ? { label: I18n.t('collections.refresh'), focused: state.refreshFocus } : null;
         },
@@ -1397,6 +1403,7 @@ window.Browser = function (hooks) {
         home.reset(!!screenReady);
         if (!source) return renderChrome();
         Sources.setCurrent(source.id);
+        boxLookup.reset();
         state.adapter = source.type === 'xtream' ? XtreamSource(source) : M3uSource(source);
         XmltvGuide.ensure(source);
         updateEpg();
@@ -1457,6 +1464,7 @@ window.Browser = function (hooks) {
         clearTimeout(state.railTimer);
         state.railAt = null;
         if (id !== 'live') hooks.preview.stop();
+        if (id !== state.section) boxLookup.reset();
         state.section = id;
         clearTimeout(state.timer);
         clearTimeout(state.searchTimer);
@@ -1791,9 +1799,16 @@ window.Browser = function (hooks) {
         }).catch(function () { return null; });
     }
 
+    // A film's length and a show's seasons from its page, kept for its box (#91).
+    // The boxes behind the page are drawn again with it.
+    function keepFacts(item, section, found) {
+        if (TitleFacts.save(item.sourceId || sourceId(), section, item, found) && state.section === section && items.items().length) items.select(items.index());
+    }
+
     function openMovie(movie) {
         detail.open({
             item: movie,
+            found: function (d) { keepFacts(movie, 'movies', { minutes: d.seconds / 60 }); },
             catalogue: tmdbCatalogue,
             similarFound: keepSimilar.bind(null, 'movies', movie),
             related: relatedTitles.bind(null, movie, 'movies'),
@@ -1857,13 +1872,20 @@ window.Browser = function (hooks) {
             episodes: episodes,
             badges: fresh ? [I18n.t('home.newEpisodes')] : [],
             onClose: refreshLibrary,
+            // TMDB's count only when the provider's episodes gave none.
+            found: function (d) {
+                var kept = TitleFacts.get(show.sourceId || sourceId(), 'series', show);
+                if (!(kept && kept.seasons)) keepFacts(show, 'series', { seasons: d.seasons });
+            },
             load: function () {
                 var fresh = function (info) {
                     episodes.setEpisodes(info.episodes);
+                    keepFacts(show, 'series', { seasons: BoxCards.seasonCount(info) });
                     detail.refresh();
                 };
                 return loadShow(show, fresh).then(function (info) {
                     episodes.setEpisodes(info.episodes);
+                    keepFacts(show, 'series', { seasons: BoxCards.seasonCount(info) });
                     return info.details;
                 });
             },

@@ -17,6 +17,9 @@ window.ChannelList = function (hooks) {
     var hideTimer = null;
     var epgTimer = null;
     var message = '';
+    var onPick = null;
+    var loading = false;
+    var pending = [];
 
     function element(tag, className, text) {
         var node = document.createElement(tag);
@@ -31,6 +34,9 @@ window.ChannelList = function (hooks) {
     }
 
     function close() {
+        loading = false;
+        pending = [];
+        onPick = null;
         opened = false;
         hooks.visibility(false);
         token++;
@@ -84,6 +90,8 @@ window.ChannelList = function (hooks) {
 
     function failed(mine) {
         if (!opened || mine !== token) return;
+        loading = false;
+        pending = [];
         channels = [];
         message = I18n.t('channels.loadFailed');
         render();
@@ -92,29 +100,42 @@ window.ChannelList = function (hooks) {
 
     function load(channel) {
         var mine = ++token;
+        loading = true;
         channels = [];
         focus = 0;
         message = I18n.t('common.loadingEllipsis');
         render();
         var category = categories[categoryIndex];
         if (!category) {
+            loading = false;
+            pending = [];
             message = I18n.t('browser.noCategories');
             return render();
         }
         if (hooks.unlock && hooks.unlock(category, function () {
             if (opened && mine === token) load(channel);
-        })) return;
+        })) {
+            loading = false;
+            pending = [];
+            return;
+        }
         hooks.channels.channels(category.category_id).then(function (loaded) {
             if (!opened || mine !== token) return;
             channels = loaded;
             focus = Math.max(0, hooks.channels.indexOf(channels, channel));
             message = '';
+            loading = false;
             render();
+            // Visibility precedes catalogue loading. Replay remote input against
+            // the resolved focus, and never carry it past closing this list.
+            while (opened && !loading && pending.length) key(pending.shift());
         }).catch(function () { failed(mine); });
     }
 
     function sync() {
         var mine = ++token;
+        loading = true;
+        pending = [];
         channels = [];
         categories = [];
         message = I18n.t('common.loadingEllipsis');
@@ -137,9 +158,14 @@ window.ChannelList = function (hooks) {
         if (!channels[focus]) return;
         // Zapping from Recent follows the channel's own category, not this short list.
         var recent = categories[categoryIndex] && categories[categoryIndex].recent;
-        var request = recent ? hooks.channels.play(channels[focus], null) : hooks.channels.play(channels[focus], channels, categories[categoryIndex].category_id);
+        var selection = { channel: channels[focus], channels: recent ? null : channels.slice(), category: recent ? null : categories[categoryIndex].category_id };
+        var complete = onPick;
+        var request = hooks.channels.play(selection.channel, selection.channels, selection.category);
         close();
-        if (request) hooks.play(request);
+        if (request) {
+            if (complete) complete(request, selection);
+            else hooks.play(request);
+        }
     }
 
     function key(code) {
@@ -149,6 +175,10 @@ window.ChannelList = function (hooks) {
         if ([KEY.YELLOW, KEY.INFO].indexOf(code) >= 0) {
             close();
             return false;
+        }
+        if (loading && [KEY.UP, KEY.DOWN, KEY.LEFT, KEY.RIGHT, KEY.ENTER].indexOf(code) >= 0) {
+            pending.push(code);
+            return true;
         }
         if (Keys.isBack(code)) close();
         else if (code === KEY.UP || code === KEY.DOWN) {
@@ -160,7 +190,8 @@ window.ChannelList = function (hooks) {
     }
 
     return {
-        open: function () {
+        open: function (pick) {
+            onPick = pick || null;
             opened = true;
             hooks.visibility(true);
             panel.classList.remove('hidden');

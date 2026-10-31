@@ -97,10 +97,7 @@
     var multiView = null;
     var channelList = ChannelList({
         channels: browser.live, epg: browser.epg, visibility: Player.channelList,
-        play: function (request) {
-            if (multiView.active()) multiView.add(browser.live.current());
-            else zap(request);
-        },
+        play: zap,
         unlock: function (category, done) {
             if (!multiView.active() || !ParentalLock.isLocked(Sources.current().id, 'live', category.category_id) || ParentalLock.isUnlocked()) return false;
             PinPad.open('unlock', done);
@@ -108,15 +105,15 @@
         },
     });
     multiView = MultiView({
-        current: browser.live.current,
+        current: browser.live.capture,
         request: browser.live.request,
         catalogue: browser.live.catalogue,
         allows: browser.live.allows,
-        focus: function (channel) { browser.live.play(channel); },
-        pick: function () { channelList.open(); },
-        fullscreen: function (channel) { play(browser.live.play(channel)); },
+        focus: browser.live.focus,
+        pick: function (done) { channelList.open(function (request, selection) { done(selection); }); },
+        fullscreen: function (selection) { play(browser.live.play(selection.channel, selection.channels, selection.category)); },
         close: function () { closePlayer(true); },
-        zap: function (delta) { if (browser.live.zap(delta)) multiView.add(browser.live.current()); },
+        zap: function (delta) { return browser.live.zap(delta) ? browser.live.capture() : null; },
     });
     preview = LivePreview({
         live: browser.live,

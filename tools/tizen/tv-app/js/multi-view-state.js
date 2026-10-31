@@ -17,9 +17,9 @@ window.MultiViewState = (function () {
         return { tiles: tiles, focus: Math.min(state.focus, count - 1) };
     }
 
-    function put(state, channel) {
+    function put(state, channel, index) {
         var tiles = state.tiles.slice();
-        tiles[state.focus] = channel;
+        tiles[index === undefined ? state.focus : index] = channel;
         return { tiles: tiles, focus: state.focus };
     }
 

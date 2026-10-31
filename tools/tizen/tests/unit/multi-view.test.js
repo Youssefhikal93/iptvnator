@@ -10,6 +10,24 @@ var path = require('node:path');
 function plain(state) { return JSON.parse(JSON.stringify(state)); }
 function app(records) { return load(['keys.js', 'profile-store.js', 'library.js', 'multi-view-state.js', 'multi-view-store.js'], records); }
 
+test('#77 round1 delayed picks retain their target and channel after focus moves', function () {
+    var g = app().globals;
+    var state = { tiles: ['one', null, null, null], focus: 1 };
+    var firstTarget = state.focus;
+    state = g.MultiViewState.move(state, g.Keys.DOWN);
+    var secondTarget = state.focus;
+    state = g.MultiViewState.put(state, 'three', secondTarget);
+    state = g.MultiViewState.put(state, 'two', firstTarget);
+    assert.deepEqual(plain(state), { tiles: ['one', 'two', null, 'three'], focus: 3 });
+});
+
+test('#77 round1 resume preserves each tile category without storing its whole channel list', function () {
+    var env = app();
+    env.globals.MultiViewStore.save('s1', { tiles: [{ stream_id: 3 }, { stream_id: 1 }], categories: ['__group_tv', '__fav'] });
+    var reloaded = app(env.stored).globals;
+    assert.deepEqual(plain(reloaded.MultiViewStore.read('s1')), { tiles: ['3', '1'], focus: 0, categories: ['__group_tv', '__fav'] });
+});
+
 test('#77 adding, removing and making main preserve the other tiles and the input state', function () {
     var m = app().globals.MultiViewState;
     var initial = { tiles: ['a', 'b', null], focus: 2 };

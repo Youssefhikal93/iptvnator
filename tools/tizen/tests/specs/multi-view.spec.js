@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, press, sendKeyCode, playing, back, moveTo, playerGroup } = require('./helpers');
+const { test, expect, boot, section, enterItems, press, sendKeyCode, playing, back, moveTo, playerGroup, channel, category } = require('./helpers');
 
 const tiles = page => page.locator('#multi-view .mv-tile');
 const tile = (page, index) => tiles(page).nth(index);
@@ -170,7 +170,7 @@ test('adding from a locked category asks for the PIN and cancelling keeps existi
     await press(page, 'ArrowRight');
     await press(page, 'Enter');
     await expect(page.locator('#pl-channels .pl-channel.focused')).toContainText('Channel 1');
-    await press(page, 'ArrowRight');
+    await moveTo(page, '.pl-channel-header', '◀ get_live_categories cat 3 ▶', 'ArrowRight');
     await expect(page.locator('#pin-pad')).toBeVisible();
     await back(page);
     await back(page); // close the channel list
@@ -178,7 +178,7 @@ test('adding from a locked category asks for the PIN and cancelling keeps existi
     await tilePlaying(page, 0);
     await press(page, 'Enter');
     await expect(page.locator('#pl-channels .pl-channel.focused')).toContainText('Channel 1');
-    await press(page, 'ArrowRight');
+    await moveTo(page, '.pl-channel-header', '◀ get_live_categories cat 3 ▶', 'ArrowRight');
     for (const digit of '1234') await press(page, digit);
     await expect(page.locator('#pin-pad')).toBeHidden();
     await expect(page.locator('#pl-channels .pl-channel.focused')).toContainText('Channel 1');
@@ -279,4 +279,215 @@ test('four HLS tiles play without AVPlay; Change channel and a smaller layout re
     expect(await tiles(page).locator('video').evaluateAll(videos => videos.map(v => v.dataset.slot))).toEqual(ids.slice(0, 3));
     expect(await dropped.evaluate(v => v.paused && !v.getAttribute('src'))).toBe(true);
     for (let index = 0; index < 3; index++) await tilePlaying(page, index);
+});
+
+async function sheetOnTop(page) {
+    return page.locator('#menu .menu-row.focused').evaluate(row => {
+        const box = row.getBoundingClientRect();
+        return row.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+    });
+}
+
+test('#77 round1 layout and tile sheets paint above the player', async ({ page }) => {
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 406);
+    expect.soft(await sheetOnTop(page), 'initial layout sheet').toBe(true);
+    await layout(page, 3);
+    await press(page, 'Enter');
+    expect.soft(await sheetOnTop(page), 'tile options sheet').toBe(true);
+    await back(page);
+    await sendKeyCode(page, 405);
+    await row(page, 'Layout');
+    expect.soft(await sheetOnTop(page), 'layout switch sheet').toBe(true);
+});
+
+test('#77 rapid real-key picks fill tiles 2 and 4 without losing a channel', async ({ page }) => {
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 406);
+    await moveTo(page, '#menu .focused', '4 tiles');
+    await press(page, 'Enter');
+    await expect(tiles(page)).toHaveCount(4);
+    await press(page, 'ArrowRight');
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-channels')).toBeVisible();
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-channels')).toBeHidden();
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-channels')).toBeVisible();
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect.poll(() => tiles(page).evaluateAll(nodes => nodes.map(node =>
+        (node.classList.contains('focused') ? '*' : '') + (node.querySelector('.mv-label')
+            ? node.querySelector('.mv-label').innerText.split('\n')[0] : node.innerText.trim())))).toEqual([
+        'Channel 1 (cat all)', 'Channel 2 (cat 2)', '+ Add channel', '*Channel 3 (cat 2)',
+    ]);
+});
+
+test('#77 Return cancels a channel pick queued while the list is loading', async ({ page }) => {
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 406);
+    await layout(page, 4);
+    let release;
+    const gate = new Promise(resolve => { release = resolve; });
+    const categoryRequest = response => {
+        const url = new URL(response.url());
+        return url.searchParams.get('action') === 'get_live_streams' && url.searchParams.get('category_id') === '2';
+    };
+    await page.route('**/player_api.php?**', async route => {
+        if (categoryRequest(route.request())) await gate;
+        await route.continue();
+    });
+    const requested = page.waitForRequest(categoryRequest);
+    await press(page, 'ArrowRight');
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-channels')).toBeVisible();
+    await requested;
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await back(page);
+    await expect(page.locator('#pl-channels')).toBeHidden();
+    const response = page.waitForResponse(categoryRequest);
+    release();
+    await response;
+    await press(page, 'ArrowDown');
+    await expect(tile(page, 1)).toContainText('+ Add channel');
+    await expect(tile(page, 3)).toContainText('+ Add channel');
+    await expect(page.locator('#pl-channels')).toBeHidden();
+});
+
+test('#77 round1 rapid picks keep their own target tile and channel while streams load', async ({ page }) => {
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 406);
+    await layout(page, 4);
+    // Keep both additions loading so the second cannot depend on engine readiness.
+    await page.route(/\/live\/.*\/100[23]\./, async route => {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await route.continue();
+    });
+    await press(page, 'ArrowRight');
+    await press(page, 'Enter');
+    await expect(page.locator('#pl-channels .focused')).toContainText('Channel 1');
+    await press(page, 'ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#pl-channels')).toBeHidden();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#pl-channels .focused')).toContainText('Channel 2');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(tile(page, 1).locator('.mv-label')).toContainText('Channel 2');
+    await expect(tile(page, 2)).toContainText('+ Add channel');
+    await expect(tile(page, 3).locator('.mv-label')).toContainText('Channel 3');
+    await tilePlaying(page, 1);
+    await tilePlaying(page, 3);
+    expect(await page.evaluate(() => MultiViewStore.read('s1').tiles)).toEqual(['1001', '1002', null, '1003']);
+});
+
+for (const sheet of ['layout', 'options', 'Help']) {
+    test('#77 round1 backgrounding cancels owned ' + sheet + ' and stale actions', async ({ page }) => {
+        await boot(page);
+        await live(page);
+        await sendKeyCode(page, 406);
+        if (sheet !== 'layout') {
+            await layout(page, 2);
+            if (sheet === 'options') await press(page, 'Enter');
+            else {
+                await sendKeyCode(page, 405);
+                await row(page, 'Help');
+            }
+        }
+        await expect(page.locator('#menu')).toBeVisible();
+        await page.evaluate(() => {
+            Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+        expect.soft(await page.evaluate(() => Menu.isOpen())).toBe(false);
+        await page.evaluate(() => Menu.onKey(Keys.ENTER));
+        await expect(tiles(page)).toHaveCount(0);
+        await expect(page.locator('#player')).toBeHidden();
+        expect(await page.locator('video').evaluateAll(videos => videos.every(video => video.paused))).toBe(true);
+    });
+}
+
+for (const list of ['Favorites', 'My TV']) {
+    test('#77 round1 focused tiles keep ' + list + ' order for zapping and the picker', async ({ page }) => {
+        await boot(page, { storage: {
+            'favorites:s1': { live: [channel(3), channel(1), channel(2)] },
+            'channel-groups:s1': [{ id: '__group_mv', name: 'My TV', channels: [channel(3), channel(1), channel(2)] }],
+        } });
+        await section(page, 'Live TV');
+        if (list === 'Favorites') await category(page, list);
+        else {
+            await moveTo(page, '#categories .focused .label', list, 'ArrowUp');
+            await expect(page.locator('#items .list-header')).toContainText(list);
+            await expect(page.locator('#items .skeleton')).toHaveCount(0);
+        }
+        await enterItems(page);
+        await press(page, 'Enter');
+        await playing(page);
+        await sendKeyCode(page, 406);
+        await layout(page, 2);
+        await press(page, 'ArrowRight');
+        await press(page, 'Enter');
+        await expect(page.locator('.pl-channel-header')).toContainText(list);
+        await expect(page.locator('#pl-channels .focused')).toContainText('Channel 3');
+        await press(page, 'ArrowDown');
+        await press(page, 'Enter');
+        await expect(tile(page, 1)).toContainText('Channel 1');
+        await press(page, 'ArrowLeft');
+        await press(page, 'ArrowRight');
+        await sendKeyCode(page, 427);
+        await expect(tile(page, 1).locator('.mv-label')).toContainText('Channel 2');
+        await press(page, 'ArrowLeft');
+        await sendKeyCode(page, 427);
+        await expect(tile(page, 0).locator('.mv-label')).toContainText('Channel 1');
+        await expect(tile(page, 1).locator('.mv-label')).toContainText('Channel 2');
+        await back(page);
+        await playing(page);
+        await sendKeyCode(page, 427);
+        await expect(page.locator('#pl-title')).toContainText('Channel 2');
+    });
+}
+
+test('#77 round1 all labels retain a visible pill over dark letterboxing', async ({ page }) => {
+    await boot(page);
+    await live(page);
+    await sendKeyCode(page, 406);
+    await layout(page, 3);
+    await addSecond(page);
+    const styles = await page.locator('.mv-label').evaluateAll(labels => labels.map(label => {
+        const css = getComputedStyle(label);
+        const rect = label.getBoundingClientRect();
+        return { background: css.backgroundColor, border: css.borderTopColor,
+            width: parseFloat(css.borderTopWidth), onTop: label.contains(document.elementFromPoint(rect.x + 2, rect.y + 2)) };
+    }));
+    expect(styles).toHaveLength(2);
+    expect(styles[0]).toEqual(styles[1]);
+    expect(styles[0].width, 'a visible edge separates the pill from the same dark letterbox surface').toBeGreaterThan(0);
+    expect(styles[0].onTop).toBe(true);
+    expect(styles[0].background).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+test('#77 round1 resume resolves each saved group and Favorites order before zapping', async ({ page }) => {
+    await boot(page, { storage: {
+        'favorites:s1': { live: [channel(3), channel(1), channel(2)] },
+        'channel-groups:s1': [{ id: '__group_mv', name: 'My TV', channels: [channel(3), channel(1), channel(2)] }],
+        'p:default:multi-view:s1': { channels: ['1003', '1001'], categories: ['__group_mv', '__fav'] },
+    } });
+    await live(page);
+    await sendKeyCode(page, 405);
+    await row(page, 'Resume multi-view');
+    await tilePlaying(page, 0);
+    await sendKeyCode(page, 427);
+    await expect(tile(page, 0).locator('.mv-label')).toContainText('Channel 1');
+    await press(page, 'ArrowRight');
+    await sendKeyCode(page, 428);
+    await expect(tile(page, 1).locator('.mv-label')).toContainText('Channel 3');
+    await expect(tile(page, 0).locator('.mv-label')).toContainText('Channel 1');
 });

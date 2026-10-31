@@ -98,6 +98,7 @@ window.Keys = (function () {
     };
 
     keys.HOLD_MS = HOLD_MS;
+    keys.cancel = cancel;
     keys.RING_DELAY_MS = RING_DELAY_MS;
 
     // The focused card or row of a screen, for the bar.

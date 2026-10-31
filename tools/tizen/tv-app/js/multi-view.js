@@ -1,4 +1,5 @@
-// Multi-view owns tile lifetimes; the app keeps routing PINs and the channel list.
+// Each tile keeps its ordered channel selection apart from the shared live
+// browser. The app routes PINs and the channel list.
 window.MultiView = function (hooks) {
     'use strict';
 
@@ -11,21 +12,27 @@ window.MultiView = function (hooks) {
     var serial = 0;
     var generation = 0;
     var nowTimer = null;
+    var lifetime = 0;
     var menu = MultiViewMenu({
         channel: channel,
         engine: function () { return slots[state.focus].engine; },
         refused: function () { return slots[state.focus].status === 'refused'; },
         retry: retry,
-        pick: hooks.pick,
+        pick: pick,
         leave: leave,
         layout: setLayout,
         main: function () { state = MultiViewState.main(state); sync(); focus(); },
         remove: function () { state = MultiViewState.put(state, null); sync(); focus(); },
     });
 
-    function channel() { return state.tiles[state.focus]; }
+    function channel() { var selection = state.tiles[state.focus]; return selection && selection.channel; }
     function sourceId() { return Sources.current().id; }
-    function save() { MultiViewStore.save(sourceId(), state); }
+    function save() {
+        MultiViewStore.save(sourceId(), {
+            tiles: state.tiles.map(function (selection) { return selection && selection.channel; }),
+            categories: state.tiles.map(function (selection) { return selection && selection.category; }),
+        });
+    }
 
     function render() {
         var html = UI.html;
@@ -54,13 +61,13 @@ window.MultiView = function (hooks) {
     function sync() {
         var old = slots.slice();
         slots = state.tiles.map(function (next) {
-            var index = old.findIndex(function (slot) { return slot && slot.channel === next; });
+            var index = old.findIndex(function (slot) { return slot && slot.selection === next; });
             if (index >= 0) {
                 var kept = old[index];
                 old[index] = null;
                 return kept;
             }
-            return { id: ++serial, channel: next, request: next ? hooks.request(next) : null, status: '', engine: null, now: '' };
+            return { id: ++serial, selection: next, channel: next && next.channel, request: next ? hooks.request(next.channel) : null, status: '', engine: null, now: '' };
         });
         old.forEach(function (slot) { if (slot && slot.engine) slot.engine.stop(); });
         render();
@@ -75,7 +82,7 @@ window.MultiView = function (hooks) {
             root.querySelector('[data-slot="' + slot.id + '"]').muted = index !== state.focus;
         });
         var slot = slots[state.focus];
-        if (slot.channel) hooks.focus(slot.channel);
+        if (slot.channel) hooks.focus(slot.selection);
         var mine = ++generation;
         var until = Date.now() + 5000;
         if (slot.request && slot.request.programmes && Prefs.get('programmeGuide')) {
@@ -90,6 +97,7 @@ window.MultiView = function (hooks) {
     }
 
     function begin(next) {
+        lifetime++;
         Player.suspend();
         active = true;
         document.getElementById('player').classList.add('multi-on');
@@ -106,6 +114,8 @@ window.MultiView = function (hooks) {
     }
 
     function stop() {
+        lifetime++;
+        Keys.cancel();
         active = false;
         generation++;
         clearTimeout(nowTimer);
@@ -118,21 +128,28 @@ window.MultiView = function (hooks) {
     }
 
     function leave() {
-        var selected = channel() || state.tiles.filter(Boolean)[0];
+        var selected = state.tiles[state.focus] || state.tiles.filter(Boolean)[0];
         stop();
         if (selected) hooks.fullscreen(selected);
         else hooks.close();
     }
 
-    function add(selected) {
-        if (!active || !selected) return;
-        if (!KidsProfile.allows(sourceId(), 'live', selected)) return;
-        if (!ParentalLock.allows(sourceId(), 'live', selected)) {
-            return PinPad.open('unlock', function () { add(selected); });
+    function add(selected, target) {
+        if (!active || !selected || target >= state.tiles.length) return;
+        if (!KidsProfile.allows(sourceId(), 'live', selected.channel)) return;
+        if (!ParentalLock.allows(sourceId(), 'live', selected.channel)) {
+            var mine = lifetime;
+            return PinPad.open('unlock', function () { if (mine === lifetime) add(selected, target); });
         }
-        state = MultiViewState.put(state, selected);
+        state = MultiViewState.put(state, selected, target);
         sync();
         focus();
+    }
+
+    function pick() {
+        var target = state.focus;
+        var mine = lifetime;
+        hooks.pick(function (selected) { if (mine === lifetime) add(selected, target); });
     }
 
     function resume() {
@@ -142,14 +159,15 @@ window.MultiView = function (hooks) {
         var mine = ++generation;
         hooks.catalogue().then(function (channels) {
             if (mine !== generation) return;
-            var wanted = saved.tiles.map(function (id) {
-                return channels.find(function (entry) { return Library.keyOf('live', entry) === id; }) || null;
+            var wanted = saved.tiles.map(function (id, index) {
+                var found = channels.find(function (entry) { return Library.keyOf('live', entry) === id; });
+                return found ? { channel: found, channels: null, category: saved.categories ? saved.categories[index] : null } : null;
             });
             function restore() {
                 if (mine === generation) begin({ tiles: wanted, focus: 0 });
             }
             // Ask before replacing playback or the saved layout; cancelling keeps both.
-            var locked = wanted.some(function (entry) { return entry && !ParentalLock.allows(sourceId(), 'live', entry); });
+            var locked = wanted.some(function (entry) { return entry && !ParentalLock.allows(sourceId(), 'live', entry.channel); });
             if (locked) PinPad.open('unlock', restore);
             else restore();
         }).catch(function () { Log.error('MULTI-VIEW resume unavailable'); });
@@ -169,7 +187,10 @@ window.MultiView = function (hooks) {
         else if (code === Keys.YELLOW || code === Keys.INFO) menu.open();
         else if (code === Keys.ENTER) Keys.press(menu.options, menu.open, Keys.focusedIn('multi-view'));
         else if (code === Keys.CH_UP || code === Keys.CH_DOWN) {
-            if (channel()) hooks.zap(code === Keys.CH_UP ? 1 : -1);
+            if (channel()) {
+                hooks.focus(state.tiles[state.focus]);
+                add(hooks.zap(code === Keys.CH_UP ? 1 : -1), state.focus);
+            }
         } else if ([Keys.LEFT, Keys.RIGHT, Keys.UP, Keys.DOWN].indexOf(code) >= 0) {
             state = MultiViewState.move(state, code);
             focus();
@@ -181,13 +202,12 @@ window.MultiView = function (hooks) {
         open: menu.layout,
         resume: resume,
         stop: stop,
-        add: add,
         key: key,
         closeMenu: menu.close,
         active: function () { return active; },
         enforceLocks: function () {
             if (!active) return;
-            state.tiles = state.tiles.map(function (entry) { return entry && hooks.allows(entry) ? entry : null; });
+            state.tiles = state.tiles.map(function (entry) { return entry && hooks.allows(entry.channel) ? entry : null; });
             sync();
             focus();
         },

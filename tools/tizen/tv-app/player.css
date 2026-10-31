@@ -48,6 +48,7 @@
 }
 
 /* Multi-view uses HTML video only; overlays keep the player's focus palette. */
+#menu.multi-view-sheet { z-index: 40; }
 #player.multi-on > #video,
 #player.multi-on > object {
     visibility: hidden;
@@ -87,6 +88,7 @@
     padding: 12px 20px;
     border-radius: 8px;
     background: var(--pc-glass);
+    border: 2px solid var(--pc-glass-border);
     font-size: 28px;
     unicode-bidi: plaintext;
 }

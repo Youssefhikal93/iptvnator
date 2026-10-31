@@ -3,11 +3,23 @@ window.MultiViewMenu = function (hooks) {
 
     var root = document.getElementById('pl-menu');
     var opened = false;
+    var owned = null;
+    var generation = 0;
+
+    function sheet(title, choices) {
+        var mine = ++generation;
+        owned = Menu.open(title, choices.map(function (choice) {
+            return { label: choice.label, run: function () {
+                if (mine === generation) choice.run();
+            } };
+        }));
+        document.getElementById('menu').classList.add('multi-view-sheet');
+    }
 
     function layout() {
         Player.dismissMenu();
         close();
-        Menu.open(I18n.t('multi.layout'), MultiViewState.layouts().map(function (count) {
+        sheet(I18n.t('multi.layout'), MultiViewState.layouts().map(function (count) {
             return { label: I18n.t('multi.tiles', { n: count }), run: function () { hooks.layout(count); } };
         }));
     }
@@ -22,7 +34,7 @@ window.MultiViewMenu = function (hooks) {
             { label: I18n.t('multi.remove'), run: hooks.remove },
         ];
         if (hooks.refused()) choices.unshift({ label: I18n.t('multi.retry'), run: hooks.retry });
-        Menu.open(I18n.isolate(channel.name), choices);
+        sheet(I18n.isolate(channel.name), choices);
     }
 
     function trackEntries(entries, type, label, empty) {
@@ -41,7 +53,7 @@ window.MultiViewMenu = function (hooks) {
         build: function (entries) {
             entries.item(I18n.t('multi.layout'), false, layout);
             entries.item(I18n.t('multi.leave'), false, hooks.leave);
-            entries.item(I18n.t('help.title'), false, function () { KeyHelp.open(help()); });
+            entries.item(I18n.t('help.title'), false, function () { owned = KeyHelp.open(help()); });
             trackEntries(entries, 'audio', 'player.audio', 'player.oneAudio');
             trackEntries(entries, 'text', 'picture.subtitles', 'player.noSubtitles');
             Player.sleepEntries(entries);
@@ -60,6 +72,9 @@ window.MultiViewMenu = function (hooks) {
     }
 
     function close() {
+        generation++;
+        if (owned && owned()) Menu.close();
+        owned = null;
         opened = false;
         root.classList.add('hidden');
         document.getElementById('player').classList.remove('menu-on');

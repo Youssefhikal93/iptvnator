@@ -1020,6 +1020,34 @@ body.bar-off #header {
     bottom: 16px;
 }
 
+/* Hold OK (keys.js): a thin bar on the pressed card fills until the hold
+   fires, so the viewer knows when to let go. It is how a hold works, so it
+   runs with Animations Off too, always at an even pace. */
+#hold-progress {
+    position: fixed;
+    z-index: 200;
+    display: none;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: var(--track);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+#hold-progress.on { display: block; }
+#hold-progress i {
+    display: block;
+    height: 100%;
+    background: var(--selection);
+    transform: scaleX(0);
+    transform-origin: left center;
+    animation: hold-fill var(--hold-ms) linear forwards;
+}
+[data-motion="off"] #hold-progress i { animation: hold-fill var(--hold-ms) linear forwards !important; }
+@keyframes hold-fill {
+    to { transform: scaleX(1); }
+}
+
 /* Manage categories: full screen, over everything but the menu and toast */
 #manage {
     position: absolute;

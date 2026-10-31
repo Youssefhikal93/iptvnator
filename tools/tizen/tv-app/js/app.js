@@ -125,7 +125,7 @@
     function onPlayerKey(code) {
         if (Keys.repeat(code)) return true;
         if (code !== KEY.ENTER || !Player.canHoldMenu()) return playerKey(code);
-        Keys.press(function () { playerKey(code); }, Player.openMenu);
+        Keys.press(function () { playerKey(code); }, Player.openMenu, document.getElementById('player'));
         return true;
     }
 

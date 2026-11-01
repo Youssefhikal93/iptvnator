@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Converted sound appears only when it can help, and tells you whether the provider's HLS or TS sound now plays or no other sound was found.
 - Multi-view: watch 2, 3 or 4 live channels at once. Press Blue while watching, or hold OK → Multi-view (see Live TV below).
 - The live player's menu is now called Options, and every action in it and in the hold-OK menus has an icon.
 - Arabic: the player menu is fully translated and reads right to left, category headings are translated, and channel numbers stay next to their names.
@@ -167,9 +168,9 @@ On the timeline, skip forward at least 20 seconds within an episode's first five
 
 Choose Resume from followed by the saved time on a film's detail page, or continue an episode, to return to your progress. Jo-TV checks that playback reached the saved point before replacing that progress. If resume fails, choose Retry with OK or move to Start over to begin again.
 
-### Audio tracks, embedded subtitles and converted sound (#29, #54, #55)
+### Audio tracks, embedded subtitles and converted sound (#29, #54, #55, #92)
 
-While watching, press Yellow / Info for the menu, then use ▲/▼ and OK on Audio or Subtitles to choose an available track; Off hides subtitles. The TV's Samsung player handles films and episodes, and the audio list can also show tracks labelled Not supported on this TV. For Xtream films and episodes with suitable provider links, Audio offers Converted sound (provider) for sound such as DTS that the TV cannot play, and The file's own sound to switch back when converted sound is in use.
+While watching, press Yellow / Info for the menu, then use ▲/▼ and OK on Audio or Subtitles to choose an available track; Off hides subtitles. The TV's Samsung player handles films and episodes, and the audio list can also show tracks labelled Not supported on this TV. For Xtream films and episodes with suitable provider links, Audio offers Converted sound (provider) only when all the file's sound tracks are unsupported or no sound was found. While converted sound plays, both that checked row and The file's own sound stay available so you can switch back. A manual try, or the automatic try after five seconds without sound, tells you whether the provider's converted sound now plays (HLS or TS) or no other sound was found. If neither address has sound, playback continues on the original file where you were.
 
 ### Play links that refuse the first check
 

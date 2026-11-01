@@ -6,6 +6,8 @@ const { test, expect, boot, openFirst, press, back, playerMenu, playerGroup } = 
 async function samsungPlayer(page, request, { file = 'dts-only.mkv.head', converted = ['m3u8', 'ts'], refused = false, slowFail = 0, lateError = 0 } = {}) {
     await request.get('/__fail?file=' + file);
     await page.addInitScript(({ dtsOnly, converted, refused, slowFail, lateError }) => {
+        window.soundToasts = [];
+        document.addEventListener('subtitle-toast', event => soundToasts.push(event.detail));
         const extra = (info) => JSON.stringify(info);
         window.nativePlayback = { state: 'NONE', url: '', opened: [], seeks: [], listener: {} };
         const ext = () => nativePlayback.url.split('.').pop();
@@ -79,6 +81,8 @@ async function playAgain(page) {
 const opened = page => page.evaluate(() => nativePlayback.opened.slice());
 const choices = page => page.locator('#pl-menu .pl-menu-item');
 const UNSUPPORTED = /This sound format \(DTS\) isn't supported by Samsung TVs/;
+const NO_OTHER_SOUND = 'The provider has no other sound for this movie or episode';
+const convertedMessage = route => 'Playing the provider\'s converted sound (' + route + ')';
 
 test('a DTS-only file opens on the provider\'s converted address, and starts there next time', async ({ page, request }) => {
     await samsungPlayer(page, request);
@@ -111,50 +115,65 @@ test('the .ts address is tried when the .m3u8 one has no sound', async ({ page, 
     await expect(page.locator('#toast')).toBeHidden();
 });
 
-test('a file with playable sound opens as it is; Converted sound in the Audio list reopens there where it was, and back', async ({ page, request }) => {
+test('#92 a file with playable sound hides Converted sound', async ({ page, request }) => {
     await samsungPlayer(page, request, { file: 'tracks.mkv.head' });
     await startFirstMovie(page);
     expect(await opened(page)).toEqual(['2025.mkv']);
     await playerMenu(page);
     await playerGroup(page, 'Audio');
-    await expect(choices(page).last()).toHaveText('Converted sound (provider)');
-    await page.evaluate(() => { nativePlayback.seeks = []; });
-    for (let i = 0; i < 3; i++) await press(page, 'ArrowDown');
-    await expect(choices(page).last()).toHaveClass(/focus/);
-    await press(page, 'Enter');
-    await expect.poll(() => opened(page)).toEqual(['2025.mkv', '2025.m3u8']);
-    await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
-    await expect.poll(() => page.evaluate(() => nativePlayback.seeks)).toContain(40000);
-
-    await playerMenu(page);
-    await playerGroup(page, 'Audio');
-    await expect(choices(page).last()).toHaveText('The file\'s own sound');
-    await press(page, 'ArrowDown');
-    await expect(choices(page).last()).toHaveClass(/focus/);
-    await press(page, 'Enter');
-    await expect.poll(() => opened(page)).toEqual(['2025.mkv', '2025.m3u8', '2025.mkv']);
-    await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
-
-    // Converted sound again, after the saved choice of the file's own sound.
-    await playerMenu(page);
-    await playerGroup(page, 'Audio');
-    await expect(choices(page).last()).toHaveText('Converted sound (provider)');
-    for (let i = 0; i < 3; i++) await press(page, 'ArrowDown');
-    await expect(choices(page).last()).toHaveClass(/focus/);
-    await press(page, 'Enter');
-    await expect.poll(() => opened(page)).toEqual(['2025.mkv', '2025.m3u8', '2025.mkv', '2025.m3u8']);
-    await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
+    await expect(choices(page)).toHaveText(['English']);
 });
 
-test('a file whose header cannot be read and has no sound five seconds in is tried on the converted address', async ({ page, request }) => {
-    await samsungPlayer(page, request);
-    // A server that ignores ranges: the header is not read before playing.
-    await page.route('**/movie/**/2025.mkv', route => route.fulfill({ status: 200, body: 'not a range answer' }));
-    await startFirstMovie(page);
-    expect(await opened(page)).toEqual(['2025.mkv']);
-    await expect.poll(() => opened(page), { timeout: 15_000 }).toEqual(['2025.mkv', '2025.m3u8']);
-    await expect(page.locator('#pl-status')).toBeHidden({ timeout: 20_000 });
-});
+for (const converted of [['m3u8'], ['ts'], []]) {
+    const route = converted[0];
+    test('#92 manual Converted sound reports ' + (route || 'fallback') + ' once and resumes where it was', async ({ page, request }) => {
+        await samsungPlayer(page, request, { converted });
+        // The viewer previously chose the file; its DTS sound still cannot play.
+        await page.evaluate(() => AudioRoute.remember({ id: 'movie:2025', subtitleId: 's1|movie:2025' }, 'original'));
+        await startFirstMovie(page);
+        await playerMenu(page);
+        await playerGroup(page, 'Audio');
+        await expect(choices(page).last()).toHaveText('Converted sound (provider)');
+        await press(page, 'ArrowDown');
+        await expect(choices(page).last()).toHaveClass(/focus/);
+        await press(page, 'Enter');
+        const message = route ? convertedMessage(route === 'm3u8' ? 'HLS' : 'TS') : NO_OTHER_SOUND;
+        await expect(page.locator('#toast')).toHaveText(message, { timeout: 20_000 });
+        await expect(page.locator('#pl-status')).toBeHidden();
+        expect(await opened(page)).toEqual(['2025.mkv', '2025.m3u8'].concat(route === 'm3u8' ? [] : ['2025.ts']).concat(route ? [] : ['2025.mkv']));
+        await expect.poll(() => page.evaluate(() => nativePlayback.seeks)).toContain(40000);
+        expect(await page.evaluate(() => soundToasts)).toEqual([message]);
+        if (!route) return;
+        await playerMenu(page);
+        await playerGroup(page, 'Audio');
+        await expect(choices(page).nth(1)).toHaveText('●Converted sound (provider)');
+        await expect(choices(page).last()).toHaveText('The file\'s own sound');
+        await press(page, 'ArrowDown');
+        await press(page, 'Enter');
+        await expect.poll(() => opened(page).then(list => list[list.length - 1])).toBe('2025.mkv');
+        await expect(page.locator('#pl-status')).toBeHidden();
+        expect(await page.evaluate(() => soundToasts)).toEqual([message]);
+    });
+}
+
+for (const converted of [['m3u8'], []]) {
+    test('#92 the automatic five-second retry reports ' + (converted.length ? 'converted sound' : 'fallback') + ' once', async ({ page, request }) => {
+        await samsungPlayer(page, request, { converted });
+        // A server that ignores ranges: the header is not read before playing.
+        await page.route('**/movie/**/2025.mkv', route => route.fulfill({ status: 200, body: 'not a range answer' }));
+        await startFirstMovie(page);
+        expect(await opened(page)).toEqual(['2025.mkv']);
+        await playerMenu(page);
+        await playerGroup(page, 'Audio');
+        await expect(choices(page)).toHaveText(['Converted sound (provider)']);
+        const message = converted.length ? convertedMessage('HLS') : NO_OTHER_SOUND;
+        await expect(page.locator('#toast')).toHaveText(message, { timeout: 25_000 });
+        expect(await opened(page)).toEqual(converted.length ? ['2025.mkv', '2025.m3u8'] : ['2025.mkv', '2025.m3u8', '2025.ts', '2025.mkv']);
+        await expect(page.locator('#pl-status')).toBeHidden();
+        await expect.poll(() => page.evaluate(() => nativePlayback.seeks)).toContain(40000);
+        expect(await page.evaluate(() => soundToasts)).toEqual([message]);
+    });
+}
 
 test('converted addresses the provider refuses are tried once each, then the file plays, and only the file next time', async ({ page, request }) => {
     await samsungPlayer(page, request, { refused: true });

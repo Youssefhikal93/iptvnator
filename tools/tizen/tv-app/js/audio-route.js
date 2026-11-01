@@ -110,12 +110,23 @@ window.AudioRoute = (function () {
         return codec ? I18n.t('player.soundUnsupported', { format: PlayerTracks.codecName(codec.codec) }) : I18n.t('player.soundUnsupportedFile');
     }
 
-    // Whether the provider offers other addresses for what plays.
-    function offered(request) {
-        return !!request && !request.live && !!request.id && (request.sources || []).some(function (source) {
+    // A retry needs both other addresses and a reason to expect they can help.
+    function offered(request, playback) {
+        var addresses = !!request && !request.live && !!request.id && (request.sources || []).some(function (source) {
             return source.via === 'avplay' && source.converted && source.converted.length;
         });
+        if (!addresses) return false;
+        playback = playback || {};
+        // Keep the way back even when the converted address has sound.
+        if (playback.route && playback.route !== 'file') return true;
+        return silentFile(request.fileAudio) || playback.sound === false ||
+            (playback.sound !== true && saved()[key(request)] === 'none');
     }
 
-    return { plan: plan, remember: remember, forget: forget, message: message, offered: offered };
+    function result(route) {
+        return route === 'file' ? I18n.t('player.noConvertedSound') :
+            I18n.t('player.playingConvertedSound', { route: route === 'm3u8' ? 'HLS' : String(route).toUpperCase() });
+    }
+
+    return { plan: plan, remember: remember, forget: forget, message: message, offered: offered, result: result };
 })();

@@ -76,6 +76,7 @@ window.Player = (function () {
     var avAudio = -1;
     var avText = -1;
     var avRoute = 'file'; // the address AVPlay plays (audio-route.js)
+    var avSound = null; // unknown until AVPlay lists the route's tracks
     var avBuffer = null; // AVPlay's last buffering percent, for Stream info (#84)
     var avSeekPending = false;
     var avSeekSerial = 0;
@@ -714,7 +715,7 @@ window.Player = (function () {
         PlayerHelp.menuEntries(m.item, current);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
-        var routes = usingAv && AudioRoute.offered(current);
+        var routes = usingAv && AudioRoute.offered(current, { route: avRoute, sound: avSound });
         if (routes) {
             var converted = avRoute !== 'file';
             m.item(I18n.t('player.convertedSound'), converted, function () { if (!converted) switchRoute(true); });
@@ -920,6 +921,7 @@ window.Player = (function () {
         epg.reset();
         avAudio = avText = -1;
         avRoute = 'file';
+        avSound = null;
         avBuffer = null;
         speed = 1;
         ui.speed.classList.add('hidden');
@@ -1132,22 +1134,27 @@ window.Player = (function () {
                     if (route.needsSound && !sound && route.next) return route.next('has no sound');
                     if (route.needsSound && sound) AudioRoute.remember(current, route.name);
                     avRoute = route.name || 'file';
+                    avSound = sound;
                     // The last resort is only silent when the TV lists no sound track.
                     if (route.silent && sound) AudioRoute.forget(current);
                     if (route.silent && !sound) {
                         AudioRoute.remember(current, 'none');
-                        document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: AudioRoute.message(current) }));
                     }
                     av.play();
                     // AVPlay switches sound only while playing.
                     var preferred = preferAudio();
                     finish(null);
+                    // A requested retry has one outcome, even if the file is still silent.
+                    var message = current.audioRetry ? AudioRoute.result(avRoute) :
+                        (route.silent && !sound ? AudioRoute.message(current) : '');
+                    if (message) document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: message }));
                     // Some firmware lists a track only once playback runs; a second look
                     // tells a late track from a missing one.
                     var shown = current;
                     setTimeout(function () {
                         if (current !== shown || !usingAv) return;
                         var later = AvResolve.tracks(av, null, 'after 5s');
+                        avSound = later;
                         if (!later && route.retry) return retrySound();
                         if (!preferred) preferAudio();
                     }, 5000);

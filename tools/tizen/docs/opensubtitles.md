@@ -72,8 +72,15 @@ sound. Each is opened alone, after the last one closed (ADR 0006), and kept only
 lists a sound track for it (within 4 s of playing). When none has one, the file plays and a
 message names the format. A file whose header could not be read gets the same try when AVPlay
 lists no sound five seconds in, from where the viewer was. What worked is kept per title in
-`iptvnator-tv:audio-route`. The Audio list offers "Converted sound (provider)" and, from there,
-"The file's own sound" for any Xtream movie or episode.
+`iptvnator-tv:audio-route`. The Audio list offers "Converted sound (provider)" only for a
+movie or episode with converted provider addresses and either an all-unsupported file sound
+list or no sound found by AVPlay (including its five-second check or a saved `none` note).
+An unread header alone is not evidence of silence, and a currently reported sound track
+outranks an old `none` note. While a converted address plays, its checked row and
+"The file's own sound" remain available. A manual or five-second retry shows one toast:
+converted sound is playing (HLS for `.m3u8`, TS for `.ts`), or the provider has no other sound
+and the file resumes where it was. The latter replaces the unsupported-format toast for
+that retry. Choosing the file's own sound does not show a new toast.
 
 Faster starts (#70). Every film or episode open logs one line (`js/open-timing.js`), e.g.
 `OPEN timing film resolve=120 hash=cached sniff=cached prepare=1800 total=2020`, from the press

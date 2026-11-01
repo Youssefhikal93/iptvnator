@@ -52,19 +52,29 @@ window.BackupScreen = (function () {
         button(I18n.t('common.cancel'), close).focus();
     }
 
-    function input(title, message, actions) {
+    // fields: [{ id, label, type, value, placeholder }]; an action gets their values in order.
+    function form(title, message, fields, actions) {
         screen(title, message);
-        var label = el('label', I18n.t('backup.linkLabel'));
-        label.htmlFor = 'backup-url';
-        root.appendChild(label);
-        var field = el('input');
-        field.id = 'backup-url';
-        field.type = 'url';
-        field.placeholder = 'http://192.168.1.10/backup.json';
-        root.appendChild(field);
-        actions.forEach(function (action) { button(action.label, function () { action.run(field.value.trim()); }); });
+        var inputs = fields.map(function (field) {
+            var label = el('label', field.label);
+            label.htmlFor = field.id;
+            root.appendChild(label);
+            var node = el('input');
+            node.id = field.id;
+            node.type = field.type || 'text';
+            node.value = field.value || '';
+            if (field.placeholder) node.placeholder = field.placeholder;
+            root.appendChild(node);
+            return node;
+        });
+        var values = function () { return inputs.map(function (node) { return node.value.trim(); }); };
+        actions.forEach(function (action) { button(action.label, function () { action.run.apply(null, values()); }); });
         button(I18n.t('common.cancel'), close);
-        field.focus();
+        (inputs.filter(function (node) { return !node.value; })[0] || inputs[0]).focus();
+    }
+
+    function input(title, message, actions) {
+        form(title, message, [{ id: 'backup-url', type: 'url', label: I18n.t('backup.linkLabel'), placeholder: 'http://192.168.1.10/backup.json' }], actions);
     }
 
     function validUrl(url) {
@@ -77,7 +87,7 @@ window.BackupScreen = (function () {
         return !/^(localhost\.?|127\..*|\[::1\]|0\.0\.0\.0)$/i.test(new URL(url).hostname);
     }
 
-    function request(url, options) {
+    function request(url, options, maxBytes) {
         if (!validUrl(url)) return Promise.reject(new Error('link'));
         var activeController = new AbortController();
         controller = activeController;
@@ -86,7 +96,7 @@ window.BackupScreen = (function () {
         return fetch(url, options).then(function (response) {
             if (!response.ok) throw new Error('request');
             return response.text().then(function (body) {
-                if (new Blob([body]).size > 5 * 1024 * 1024) throw new Error('size');
+                if (new Blob([body]).size > (maxBytes || 5 * 1024 * 1024)) throw new Error('size');
                 return { body: body, location: response.headers.get('Location') };
             });
         }).finally(function () { clearTimeout(timer); });
@@ -189,9 +199,80 @@ window.BackupScreen = (function () {
         });
     }
 
+    // ---- Everything to and from this computer (JOTV-BACKUP.md) ----
+
+    var COMPUTER = 'iptvnator-tv:backup-computer';
+
+    // The receiver's address (kept for next time) and the code it prints.
+    function computer(title, label, run, again) {
+        var last = '';
+        try { last = Stored.json(COMPUTER) || ''; } catch (failure) { /* asked again */ }
+        form(title, I18n.t('fullBackup.help'), [
+            { id: 'backup-computer', label: I18n.t('fullBackup.address'), value: last, placeholder: '192.168.0.21:8766' },
+            { id: 'backup-code', type: 'tel', label: I18n.t('fullBackup.code') },
+        ], [{ label: label, run: function (address, code) {
+            var host = address.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+            var url = 'http://' + host + '/backup';
+            if (!host || !/^\d{6}$/.test(code) || !validUrl(url)) return error(I18n.t('fullBackup.enter'), again);
+            try { Stored.save(COMPUTER, host); } catch (failure) { /* asked again next time */ }
+            run(url, code);
+        } }]);
+    }
+
+    function sendAll() {
+        computer(I18n.t('settings.sendToComputer'), I18n.t('fullBackup.send'), function (url, code) {
+            screen(I18n.t('settings.sendToComputer'), I18n.t('fullBackup.sending'));
+            var mine = ++generation;
+            button(I18n.t('common.cancel'), close).focus();
+            var body = JSON.stringify(FullBackup.collect());
+            request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Jotv-Code': code }, body: body }).then(function (response) {
+                if (mine !== generation) return;
+                var file = '';
+                try { file = JSON.parse(response.body).file || ''; } catch (failure) { /* name not shown */ }
+                screen(I18n.t('settings.sendToComputer'), I18n.t('fullBackup.sent', { file: file }));
+                button(I18n.t('backup.done'), close).focus();
+            }).catch(function () {
+                if (mine === generation) error(I18n.t('fullBackup.failed'), sendAll);
+            });
+        }, sendAll);
+    }
+
+    function confirmRestore(backup) {
+        screen(I18n.t('settings.restoreFromComputer'), I18n.t('fullBackup.confirm', { date: String(backup.createdAt).slice(0, 16).replace('T', ' '), n: FullBackup.count(backup) }));
+        button(I18n.t('fullBackup.restore'), function () {
+            try {
+                // Flush the old player before its records are replaced.
+                Player.stop();
+                FullBackup.apply(backup);
+            } catch (failure) {
+                return error(I18n.t('fullBackup.restoreFailed'), restoreAll);
+            }
+            location.reload();
+        });
+        button(I18n.t('common.cancel'), close).focus();
+    }
+
+    function restoreAll() {
+        computer(I18n.t('settings.restoreFromComputer'), I18n.t('fullBackup.restore'), function (url, code) {
+            screen(I18n.t('settings.restoreFromComputer'), I18n.t('backup.downloading'));
+            var mine = ++generation;
+            button(I18n.t('common.cancel'), close).focus();
+            request(url, { headers: { 'X-Jotv-Code': code } }, 50 * 1024 * 1024).then(function (response) {
+                if (mine !== generation) return;
+                var backup;
+                try { backup = FullBackup.parse(response.body); } catch (failure) { return error(I18n.t('fullBackup.invalid'), restoreAll); }
+                confirmRestore(backup);
+            }).catch(function () {
+                if (mine === generation) error(I18n.t('fullBackup.failed'), restoreAll);
+            });
+        }, restoreAll);
+    }
+
     function open(action) {
         close();
         if (action === 'import') return importLink();
+        if (action === 'send') return sendAll();
+        if (action === 'restore') return restoreAll();
         screen(I18n.t('backup.exportTitle'), I18n.t('backup.containsPasswords'));
         root.appendChild(el('p', I18n.t('backup.shareWarning')));
         button(I18n.t('backup.continue'), showExport);

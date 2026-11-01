@@ -61,6 +61,8 @@ window.Settings = function (hooks) {
         { get label() { return I18n.t('settings.relock'); }, get hint() { return I18n.t('describe.relock'); }, key: 'parentalRelockMs', choices: [300000, 900000, 3600000, 0], get labels() { return [I18n.t('unit.minutes', { n: 5 }), I18n.t('unit.minutes', { n: 15 }), I18n.t('unit.hour'), I18n.t('settings.relockClose')]; } },
         { get group() { return I18n.t('settings.backup'); }, get label() { return I18n.t('settings.import'); }, backup: 'import', text: '' },
         { get label() { return I18n.t('settings.export'); }, backup: 'export', text: '' },
+        { get part() { return I18n.t('settings.fullBackup'); }, get label() { return I18n.t('settings.sendToComputer'); }, get hint() { return I18n.t('describe.fullBackup'); }, backup: 'send', text: '' },
+        { get label() { return I18n.t('settings.restoreFromComputer'); }, backup: 'restore', text: '' },
         ...TmdbSettings.rows,
         // Help (#89): the keys of Settings, and where the coloured keys are.
         { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('help.title'); }, get hint() { return I18n.t('help.colourKeys'); }, run: () => KeyHelp.open(window.Settings.help()), text: '?' },

@@ -26,7 +26,7 @@ Backups go to `Projects\jotv-backup\` (next to the repo, never committed). They 
 2. Remove Jo-TV from the TV (skip on a new TV):
    ```powershell
    C:\tizen-studio\tools\sdb.exe connect 192.168.0.18:26101
-   C:\tizen-studio\tools\ide\bin\tizen.bat uninstall -p IPTVnTVApp -s 192.168.0.18:26101
+   C:\tizen-studio\tools\ide\bin\tizen.bat uninstall -p IPTVnTVApp.IPTVnator -s 192.168.0.18:26101
    ```
 3. Install it again:
    ```powershell

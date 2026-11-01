@@ -71,18 +71,23 @@ test('Sync subtitles: the next line waits for OK, ◀ ▶ fine-tune while it pla
     await expect(page.locator('#pl-menu .pl-menu-item').filter({ hasText: t.timing })).toContainText(/[+−]\d+\.\d s/);
 });
 
-test('Choose the line lists every line, pages with CH, and plays from just before the chosen one; Return saves nothing', async ({ page }) => {
+test('Choose the line lists every line, pages with CH, and moves the chosen one to where the video is; Return saves nothing', async ({ page }) => {
     const t = await subtitle(page);
     await timingRow(page, t, t.choose);
     await expect(bar(page).locator('.sync-line')).not.toHaveCount(0);
     await expect.poll(() => page.locator('#video').evaluate((v) => v.paused)).toBe(true);
+    const at = await page.locator('#video').evaluate((v) => v.currentTime);
     for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
     await sendKeyCode(page, 428);
     const chosen = await bar(page).locator('.sync-line.focus').innerText();
     if (SHOTS) await page.screenshot({ path: SHOTS + '/3-choose-the-line.png' });
     await press(page, 'Enter');
     await expect(bar(page).locator('.sync-target')).toHaveText(chosen);
+    await expect(bar(page).locator('.sync-ask')).toHaveText('Moved. Fine-tune while you watch:');
+    await expect(bar(page).locator('.sync-shift')).not.toHaveText('Subtitles not moved');
+    // No jump back: the video carries on from where the list opened.
     await expect.poll(() => page.locator('#video').evaluate((v) => !v.paused)).toBe(true);
+    expect(await page.locator('#video').evaluate((v) => v.currentTime)).toBeGreaterThanOrEqual(at);
     await back(page);
     await expect(bar(page)).toBeHidden();
     await playerMenu(page);

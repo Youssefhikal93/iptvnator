@@ -814,7 +814,7 @@ I18n.tables.en = {
     'opensubs.sameTiming': 'Same subtitle timing as the last episode ({shift})',
     'sync.listen': 'Press OK when you hear:',
     'sync.tuned': 'Moved. Fine-tune while you watch:',
-    'sync.choose': 'Choose a line you will recognise',
+    'sync.choose': 'Choose the line you just heard',
     'sync.later': 'Subtitles {s} s later',
     'sync.earlier': 'Subtitles {s} s earlier',
     'sync.inSync': 'Subtitles not moved',

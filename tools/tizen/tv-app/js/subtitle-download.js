@@ -89,7 +89,6 @@ window.SubtitleDownload = function (hooks) {
             toast('timingSaved');
         },
         position: hooks.position,
-        jump: function (ms) { if (hooks.jump) hooks.jump(ms); },
         play: function () { if (hooks.play) hooks.play(); },
         pause: function () { if (hooks.pause) hooks.pause(); },
         paused: function () { return !!(hooks.paused && hooks.paused()); },

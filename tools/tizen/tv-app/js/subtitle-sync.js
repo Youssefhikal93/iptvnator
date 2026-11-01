@@ -2,18 +2,17 @@
 // that runs early or late. The bar shows the next line; OK when that line is
 // heard moves every line to it, ◀ ▶ fine-tune by 0.1 s and ▲ ▼ by 1 s while
 // the video plays, OK keeps and Return puts the timing back. Hold OK lists
-// every line of the file to pick one that is easy to recognise; the video
-// then goes back to just before it and the bar waits for it.
+// every line of the file: picking the line just heard moves every line so it
+// starts where the video was when the list opened, and the video carries on.
 //
 // SubtitleSync.create(hooks): hooks.cues(), offset(), scale(), setOffset(ms)
-// (shows it, unsaved), keep() (saves), position(), jump(ms), play(), pause(),
+// (shows it, unsaved), keep() (saves), position(), play(), pause(),
 // paused(), hideControls(), root (the element the bar is drawn in; none in\n// unit tests).
 window.SubtitleSync = (function () {
     'use strict';
 
     var LIMIT = 600000; // The furthest a subtitle may be moved, either way.
     var REACTION_MS = 250; // OK lands a moment after the line starts.
-    var LEAD_MS = 15000; // A picked line is played from this long before it shows.
     var MISSED_MS = 20000; // A line not heard by then makes way for the next.
     var PAGE = 8;
     var ROWS = 2; // Lines drawn on each side of the focused one when choosing.
@@ -31,9 +30,6 @@ window.SubtitleSync = (function () {
 
     // The timing that makes cue start when OK was pressed (heard, in video ms).
     function aligned(cue, heard, scale) { return clamp(heard - REACTION_MS - cue.start * (scale || 1)); }
-
-    // Where to play from so a picked line comes up soon.
-    function startAt(cue, offset, scale) { return Math.max(0, shows(cue, offset, scale) - LEAD_MS); }
 
     // A release name without its episode number, so the next episode of the
     // same release can be recognised: "Show.S01E02.1080p-GRP" -> "show 1080p grp".
@@ -55,6 +51,7 @@ window.SubtitleSync = (function () {
         var target = 0;
         var focus = 0;
         var before = 0; // The timing when the bar opened, for Return.
+        var heard = 0; // Where the video was when the line list opened.
         var wasPaused = false;
         var bar = null;
 
@@ -136,11 +133,12 @@ window.SubtitleSync = (function () {
             if (!cues.length) return;
             before = hooks.offset();
             target = upcoming(cues, hooks.position(), before, hooks.scale());
-            if (mode === 'choose') choose();
+            if (mode === 'choose') choose(hooks.position());
             else listenFor(target);
         }
 
-        function choose() {
+        function choose(at) {
+            heard = at;
             wasPaused = hooks.paused();
             pause();
             focus = target;
@@ -148,12 +146,11 @@ window.SubtitleSync = (function () {
             render();
         }
 
-        // OK in the line list: play from just before the line and wait for it.
+        // OK in the line list: the line was just heard, so it starts where the
+        // video was when the list opened, and the video carries on from there.
         function pick() {
-            var cue = hooks.cues()[focus];
-            hooks.jump(startAt(cue, hooks.offset(), hooks.scale()));
-            play();
-            listenFor(focus);
+            align(focus, heard);
+            if (!wasPaused) play();
         }
 
         // OK heard the line: every line moves so it starts then. The line is
@@ -162,6 +159,7 @@ window.SubtitleSync = (function () {
             var cue = hooks.cues()[index];
             if (!cue) return;
             hooks.setOffset(aligned(cue, at, hooks.scale()));
+            target = index;
             state = 'tuned';
             render();
         }
@@ -197,7 +195,7 @@ window.SubtitleSync = (function () {
                 Keys.press(function () {
                     if (state === 'listen') align(line, at);
                     else close(true);
-                }, choose, function () { return bar; });
+                }, function () { choose(at); }, function () { return bar; });
             } else if (code === Keys.LEFT || code === Keys.RIGHT) move(code === Keys.LEFT ? -100 : 100);
             else if (code === Keys.UP || code === Keys.DOWN) move(code === Keys.UP ? 1000 : -1000);
             else if (Keys.isBack(code)) close(false);
@@ -229,5 +227,5 @@ window.SubtitleSync = (function () {
         };
     }
 
-    return { create: create, upcoming: upcoming, aligned: aligned, startAt: startAt, family: family, REACTION_MS: REACTION_MS };
+    return { create: create, upcoming: upcoming, aligned: aligned, family: family, REACTION_MS: REACTION_MS };
 })();

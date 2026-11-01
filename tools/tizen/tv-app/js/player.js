@@ -88,10 +88,9 @@ window.Player = (function () {
         embeddedOff: function () { var tracks = getTracks(); if (tracks.text.length) tracks.text[0].select(); },
         closeMenu: closeMenu,
         pause: function () { if (!isPaused()) togglePause(true); },
-        // The Sync subtitles bar (subtitle-sync.js) plays, pauses and jumps.
+        // The Sync subtitles bar (subtitle-sync.js) plays and pauses.
         play: function () { if (isPaused()) togglePause(false); },
         paused: function () { return isPaused(); },
-        jump: function (ms) { jumpTo(ms); },
         hideControls: function () { hideControls(); },
         root: playerEl,
         toast: function (text) { document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: text })); },

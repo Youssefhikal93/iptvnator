@@ -451,14 +451,14 @@ test('#39 matching or unknown frame rates leave the timing alone', async functio
 // A player for the Sync subtitles bar: remote keys go through key(), and a
 // short OK is let go (keyup) at once, as on the remote.
 function syncViewer(env) {
-    var calls = { paused: 0, played: 0, jumps: [] };
+    var calls = { paused: 0, played: 0 };
     var v = viewer(env);
     v.calls = calls;
     v.isPaused = false;
     v.player = env.globals.SubtitleDownload({ position: function () { return v.position; },
         draw: function (text) { v.text = text; }, embeddedOff: function () {}, closeMenu: function () {},
         pause: function () { calls.paused++; v.isPaused = true; }, play: function () { calls.played++; v.isPaused = false; },
-        paused: function () { return v.isPaused; }, jump: function (ms) { calls.jumps.push(ms); v.position = ms; },
+        paused: function () { return v.isPaused; },
         toast: function (text) { v.toasts.push(text); } });
     v.key = function (code) { return v.player.syncKey(code); };
     v.ok = function () {
@@ -549,11 +549,12 @@ test('Sync subtitles: Return puts the timing back and saves nothing; play and pa
     v.player.stop();
 });
 
-test('Choose the line: every line of the file, then the video goes back before it and waits for OK', function () {
+test('Choose the line: the line just heard starts where the video was, with no jump back', function () {
     var env = syncFixture();
     var v = syncViewer(env);
     var K = env.globals.Keys;
     v.player.start({ id: 'movie:1', subtitleId: 's1|movie:1', title: 'Fixture' });
+    // "Bye" (9 s in the file) was just heard at 2 s, so the subtitles run late.
     v.position = 2000;
     v.row('Choose the line…').run();
     assert.equal(v.calls.paused, 1);
@@ -563,13 +564,13 @@ test('Choose the line: every line of the file, then the video goes back before i
     v.key(K.CH_UP);
     v.key(K.CH_DOWN);
     v.key(K.ENTER);
-    // "Bye" shows at 9 s: the video plays from 15 s before (clamped to 0).
-    assert.deepEqual(v.calls.jumps, [0]);
+    assert.equal(v.player.syncing(), true, 'the bar stays for fine-tuning');
     assert.equal(v.calls.played, 1);
-    v.position = 12000;
+    var moved = 2000 - env.globals.SubtitleSync.REACTION_MS - 9000;
+    // OK keeps it.
     v.ok();
-    v.ok();
-    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, 12000 - env.globals.SubtitleSync.REACTION_MS - 9000);
+    assert.equal(v.player.syncing(), false);
+    assert.equal(env.globals.SubtitleStore.title('s1|movie:1').offset, moved);
     v.player.stop();
 });
 

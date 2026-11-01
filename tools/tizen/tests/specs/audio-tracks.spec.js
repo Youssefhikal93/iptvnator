@@ -92,7 +92,7 @@ test('the Audio list shows every track in the file, the DTS one marked and not s
     await expect(page.locator('#pl-status')).toBeHidden();
     await playerMenu(page);
     await playerGroup(page, 'Audio');
-    await expect(choices(page)).toHaveText(['●Arabic · AAC 2.0', 'English · AC-3 5.1', 'English · DTS 5.1Not supported on this TV', 'Converted sound (provider)']);
+    await expect(choices(page)).toHaveText(['●Arabic · AAC 2.0', 'English · AC-3 5.1', 'English · DTS 5.1Not supported on this TV']);
     await expect(choices(page).nth(2)).toHaveClass(/unavailable/);
     await expect(choices(page).nth(0)).toHaveClass(/active/);
 

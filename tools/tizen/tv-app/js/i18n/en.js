@@ -533,6 +533,8 @@ I18n.tables.en = {
     'player.audio': 'Audio',
     'player.audioUnsupported': 'Not supported on this TV',
     'player.convertedSound': 'Converted sound (provider)',
+    'player.playingConvertedSound': 'Playing the provider\'s converted sound ({route})',
+    'player.noConvertedSound': 'The provider has no other sound for this movie or episode',
     'player.originalSound': 'The file\'s own sound',
     'player.menuKeys': 'OK: choose · Return: close',
     'player.menuKeysBack': 'OK: choose · ◀ / Return: back',

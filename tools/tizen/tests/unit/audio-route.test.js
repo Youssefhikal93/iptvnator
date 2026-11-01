@@ -46,8 +46,57 @@ test('live channels, M3U files and the viewer\'s own choice open only the file',
     assert.equal(names(api.plan({ id: 'live:1', live: true }, SOURCE, 'x')), 'file');
     assert.equal(names(api.plan({ id: 'movie:1', fileAudio: DTS }, { via: 'avplay', url: 'x' }, 'x')), 'file');
     assert.equal(names(api.plan({ id: 'movie:1', fileAudio: DTS, audioRoute: 'original' }, SOURCE, 'x')), 'file');
-    assert.equal(api.offered({ id: 'movie:1', sources: [SOURCE] }), true);
+    assert.equal(api.offered({ id: 'movie:1', fileAudio: DTS, sources: [SOURCE] }), true);
     assert.equal(api.offered({ id: 'movie:1', sources: [{ via: 'avplay', url: 'x' }] }), false);
+});
+
+test('#92 Converted sound is hidden for playable or unknown sound without evidence of silence', function () {
+    var api = route().api;
+    [null, [], [{ codec: 'aac' }], DTS.concat([{ codec: 'aac' }])].forEach(function (audio) {
+        var request = { id: 'movie:1', fileAudio: audio, sources: [SOURCE] };
+        assert.equal(api.offered(request), false);
+        assert.equal(api.offered(request, { route: 'file', sound: true }), false);
+    });
+});
+
+test('#92 Converted sound is offered for an all-DTS file, missing sound or a saved none note', function () {
+    var env = route();
+    var request = { id: 'movie:1', sources: [SOURCE] };
+    assert.equal(env.api.offered(Object.assign({}, request, { fileAudio: DTS })), true);
+    assert.equal(env.api.offered(request, { route: 'file', sound: false }), true);
+    // A missing AVPlay track is useful evidence even with a playable header.
+    assert.equal(env.api.offered(Object.assign({}, request, { fileAudio: [{ codec: 'aac' }] }), { sound: false }), true);
+    env.api.remember(request, 'none');
+    assert.equal(env.api.offered(request), true);
+    assert.equal(env.api.offered(request, { sound: true }), false);
+    assert.equal(env.api.offered({ id: 'movie:2', sources: [SOURCE] }), false);
+});
+
+test('#92 a playing converted route keeps the way back, but live and files without converted addresses never offer it', function () {
+    var api = route().api;
+    var request = { id: 'movie:1', sources: [SOURCE] };
+    ['m3u8', 'ts'].forEach(function (name) {
+        assert.equal(api.offered(request, { route: name, sound: true }), true);
+    });
+    [null, { sources: [SOURCE] }, { id: 'live:1', live: true, sources: [SOURCE] },
+        { id: 'movie:1', sources: [{ via: 'avplay', converted: [] }] },
+        { id: 'movie:1', sources: [{ via: 'video', converted: SOURCE.converted }] }].forEach(function (request) {
+        assert.equal(api.offered(request, { sound: false }), false);
+    });
+});
+
+test('#92 retry messages name HLS or TS on success and explain fallback in English and Arabic', function () {
+    var env = load(['player-tracks.js', 'audio-route.js', 'i18n/ar.js']);
+    var texts = {
+        en: ['Playing the provider\'s converted sound (HLS)', 'Playing the provider\'s converted sound (TS)', 'The provider has no other sound for this movie or episode'],
+        ar: ['يُشغَّل الآن الصوت المحوَّل من المزوّد (HLS)', 'يُشغَّل الآن الصوت المحوَّل من المزوّد (TS)', 'لا يوفّر المزوّد صوتًا آخر لهذا الفيلم أو الحلقة'],
+    };
+    Object.keys(texts).forEach(function (language) {
+        env.globals.I18n.setLanguage(language);
+        ['m3u8', 'ts', 'file'].forEach(function (name, index) {
+            assert.equal(env.globals.AudioRoute.result(name), texts[language][index]);
+        });
+    });
 });
 
 test('the message names the format the file holds, or says it plainly', function () {

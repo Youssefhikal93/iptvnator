@@ -310,6 +310,8 @@ I18n.tables.ar = {
     'player.audio': 'الصوت',
     'player.audioUnsupported': 'غير مدعوم على هذا التلفاز',
     'player.convertedSound': 'صوت محوَّل (من المزوّد)',
+    'player.playingConvertedSound': 'يُشغَّل الآن الصوت المحوَّل من المزوّد ({route})',
+    'player.noConvertedSound': 'لا يوفّر المزوّد صوتًا آخر لهذا الفيلم أو الحلقة',
     'player.originalSound': 'صوت الملف الأصلي',
     'player.soundUnsupported': 'تلفزيونات سامسونج لا تدعم صيغة الصوت هذه ({format})، لذلك يُعرض بدون صوت.',
     'player.soundUnsupportedFile': 'هذا التلفاز لا يدعم صيغة الصوت في هذا الملف، لذلك يُعرض بدون صوت.',

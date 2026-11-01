@@ -4,6 +4,21 @@ const { test, expect, boot, resumeSeed, movie, press, setting, choose } = requir
 // Display > Screen saver to use.
 const saver = page => page.locator('#screen-saver');
 const block = page => saver(page).locator('.ss-logo');
+const extras = page => saver(page).locator('.ss-logo-extra');
+
+async function centred(page) {
+    const box = await block(page).boundingBox();
+    expect(Math.abs(box.x + box.width / 2 - 960)).toBeLessThan(2);
+    expect(Math.abs(box.y + box.height / 2 - 540)).toBeLessThan(2);
+    await expect(block(page)).toHaveCSS('opacity', '1');
+    await expect(block(page)).toHaveCSS('animation-name', 'none');
+    for (const selector of ['.ss-logo-clock', '.ss-logo-date']) {
+        const text = saver(page).locator(selector);
+        const bounds = await text.boundingBox();
+        expect(Math.abs(bounds.x + bounds.width / 2 - 960)).toBeLessThan(2);
+        await expect(text).toHaveCSS('animation-name', 'none');
+    }
+}
 
 function seed(settings = {}, extra = {}) {
     const s = resumeSeed();
@@ -45,10 +60,7 @@ test('after the idle time it shows the icon, a clock and the date, centred, with
     await expect(saver(page).locator('.ss-logo-clock')).toHaveText(/^\d\d:\d\d$/);
     await expect(saver(page).locator('.ss-logo-date')).toHaveText(/Wednesday.*4.*March|Wednesday.*March.*4/);
     await expect(saver(page).locator('.ss-hint')).toHaveText('Press any key to go back');
-    // Centred at first.
-    const box = await block(page).boundingBox();
-    expect(Math.abs(box.x + box.width / 2 - 960)).toBeLessThan(2);
-    expect(Math.abs(box.y + box.height / 2 - 540)).toBeLessThan(2);
+    await centred(page);
     // The clock follows the time.
     const before = await saver(page).locator('.ss-logo-clock').innerText();
     await page.clock.fastForward(60 * 1000);
@@ -60,73 +72,108 @@ test('after the idle time it shows the icon, a clock and the date, centred, with
     await expect(page.locator('.hm-hero-buttons .focus')).toContainText('Continue watching');
 });
 
-const scene = page => block(page).evaluate(el => el.className + '|' + el.style.getPropertyValue('--size') + '|' + el.querySelector('.ss-logo-icon').className);
-
-test('every two minutes the group leaves and returns as a new scene, a little off centre', async ({ page }) => {
+test('clock and date stay centred as extras grow 0, 2, 6, 14 and reset to 2 every two minutes', async ({ page }) => {
     await page.clock.install();
     await boot(page, seed());
     await idle(page);
     await expect(block(page)).toBeVisible();
-    const start = await block(page).boundingBox();
-    const first = await scene(page);
-    // Not yet: a minute and a half in, nothing changed.
+    await centred(page);
+    await expect(extras(page)).toHaveCount(0);
     await page.clock.fastForward(110 * 1000);
-    await expect(block(page)).not.toHaveClass(/out/);
-    expect(await block(page).boundingBox()).toEqual(start);
+    await expect(extras(page)).toHaveCount(0);
     await page.clock.fastForward(10 * 1000);
-    // Leaving first, with the variant's animation, then back.
-    await expect(block(page)).toHaveClass(/out/);
-    await page.clock.runFor(1300);
-    await expect(block(page)).not.toHaveClass(/out/);
-    await expect(block(page)).toHaveClass(/in/);
-    expect(await scene(page)).not.toEqual(first);
-    const seen = new Set([first]);
-    for (let i = 0; i < 5; i++) {
+    await expect(extras(page)).toHaveCount(2);
+    await centred(page);
+    const first = extras(page).first().locator('img');
+    await expect(first).toHaveCSS('animation-name', 'ss-rotate');
+    await expect(extras(page).nth(1).locator('img')).toHaveCSS('animation-name', 'ss-flip');
+    await expect(extras(page).first()).toHaveCSS('animation-name', 'ss-in');
+    const original = await extras(page).first().elementHandle();
+    for (const count of [6, 14, 2, 6]) {
         await page.clock.fastForward(120 * 1000);
-        await page.clock.runFor(1300);
-        await page.waitForTimeout(1400); // the CSS animation runs on real time
-        const now = await scene(page);
-        seen.add(now);
-        const box = await block(page).boundingBox();
-        // Within a twentieth of the screen of the middle, and fully on screen.
-        expect(Math.abs(box.x + box.width / 2 - 960)).toBeLessThanOrEqual(96 + 2);
-        expect(Math.abs(box.y + box.height / 2 - 540)).toBeLessThanOrEqual(54 + 2);
-        expect(box.y).toBeGreaterThanOrEqual(0);
-        expect(box.y + box.height).toBeLessThanOrEqual(1080);
+        await expect(extras(page)).toHaveCount(count);
+        await centred(page);
+        await expect(saver(page).locator('.ss-logo-icon')).toHaveCSS('animation-name', 'ss-bounce');
+        if (count === 14) expect(await original.evaluate(el => el.isConnected)).toBe(true);
+        if (count === 2) expect(await original.evaluate(el => el.isConnected)).toBe(false);
     }
-    // Sizes and motions differ from scene to scene.
-    expect(seen.size).toBeGreaterThanOrEqual(5);
-    const sizes = new Set([...seen].map(s => s.split('|')[1]));
-    const plays = new Set([...seen].map(s => s.split('|')[2]));
-    expect(sizes.size).toBeGreaterThan(2);
-    expect(plays.size).toBeGreaterThan(2);
+    // Dismiss a populated saver, then restart with no extras or stale step.
+    await press(page, 'ArrowDown');
+    await idle(page);
+    await expect(extras(page)).toHaveCount(0);
+    await page.clock.fastForward(120 * 1000);
+    await expect(extras(page)).toHaveCount(2);
 });
 
-test('the first scene has the icon at twice its old size, a smaller clock, and a slow icon motion that leaves the clock still', async ({ page }) => {
+test('the main 300 px icon bounces forever above the still clock and date', async ({ page }) => {
     await page.clock.install();
     await boot(page, seed());
     await idle(page);
     const icon = saver(page).locator('.ss-logo-icon');
     expect((await icon.boundingBox()).width).toBeGreaterThan(280);
-    await expect(icon).toHaveCSS('animation-name', 'ss-float');
+    await expect(icon).toHaveCSS('animation-name', 'ss-bounce');
+    await expect(icon).toHaveCSS('animation-iteration-count', 'infinite');
     await expect(saver(page).locator('.ss-logo-clock')).toHaveCSS('animation-name', 'none');
     expect(parseFloat(await saver(page).locator('.ss-logo-clock').evaluate(el => getComputedStyle(el).fontSize))).toBeLessThan(200);
     expect(parseFloat(await saver(page).locator('.ss-logo-date').evaluate(el => getComputedStyle(el).fontSize))).toBeLessThan(38);
 });
 
-test('with Animations Off the next scene swaps at once, with no animation and no icon motion', async ({ page }) => {
+test('with Animations Off nothing animates, but extras still accumulate and reset every two minutes', async ({ page }) => {
     await page.clock.install();
     await boot(page, seed({ motion: 'off' }));
     await idle(page);
-    const first = await scene(page);
-    await expect(saver(page).locator('.ss-logo-icon')).toHaveCSS('animation-name', 'none');
-    await page.clock.fastForward(120 * 1000);
-    await expect(block(page)).not.toHaveClass(/out/);
-    await expect(block(page)).toHaveCSS('transition-duration', '0s');
-    await expect(block(page)).toHaveCSS('animation-name', 'none');
-    await expect(saver(page).locator('.ss-logo-icon')).toHaveCSS('animation-name', 'none');
-    expect(await scene(page)).not.toEqual(first);
+    for (const count of [0, 2, 6, 14, 2]) {
+        if (count) await page.clock.fastForward(120 * 1000);
+        await expect(extras(page)).toHaveCount(count);
+        await centred(page);
+        expect(await saver(page).locator('*').evaluateAll(els => els.every(el => getComputedStyle(el).animationName === 'none'))).toBe(true);
+        if (count) await expect(extras(page).last()).toHaveCSS('opacity', '1');
+    }
 });
+
+test('the full swarm has staggered loops, distinct neighbours and no animated overlaps', async ({ page }) => {
+    await page.clock.install();
+    await boot(page, seed());
+    await idle(page);
+    for (let step = 0; step < 3; step++) await page.clock.fastForward(120 * 1000);
+    await expect(extras(page)).toHaveCount(14);
+    const loops = await extras(page).evaluateAll(els => els.map(el => {
+        const style = getComputedStyle(el.querySelector('img'));
+        return { x: parseFloat(el.style.left), y: parseFloat(el.style.top), name: style.animationName, duration: style.animationDuration, delay: style.animationDelay, iterations: style.animationIterationCount };
+    }));
+    expect(new Set(loops.map(loop => loop.duration)).size).toBe(14);
+    expect(new Set(loops.map(loop => loop.delay)).size).toBe(14);
+    expect(new Set(loops.map(loop => loop.name)).size).toBeGreaterThanOrEqual(9);
+    loops.forEach((loop, i) => {
+        expect(loop.iterations).toBe('infinite');
+        loops.slice(0, i).forEach(other => {
+            if (Math.abs(loop.x - other.x) <= 12.51 && Math.abs(loop.y - other.y) <= 16.67) expect(loop.name).not.toBe(other.name);
+        });
+    });
+    // CSS runs on real time: sample its transforms directly, including rotated
+    // corners and 3D flips, rather than relying on fastForward to animate it.
+    const violations = await saver(page).evaluate(stage => {
+        const images = Array.from(stage.querySelectorAll('.ss-logo-extra-icon'));
+        const failures = [];
+        for (let sample = 0; sample < 16; sample++) {
+            images.forEach(img => img.getAnimations().forEach(animation => {
+                animation.pause();
+                animation.currentTime = sample / 16 * animation.effect.getTiming().duration;
+            }));
+            const centre = stage.querySelector('.ss-logo').getBoundingClientRect();
+            const boxes = images.map(img => img.getBoundingClientRect());
+            const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+            boxes.forEach((box, i) => {
+                if (box.left < 0 || box.right > 1920 || box.top < 0 || box.bottom > 1080) failures.push('offscreen ' + i);
+                if (overlaps(box, centre)) failures.push('centre ' + i);
+                boxes.slice(0, i).forEach(other => { if (overlaps(box, other)) failures.push('overlap ' + i); });
+            });
+        }
+        return failures;
+    });
+    expect(violations).toEqual([]);
+});
+
 test('it needs no titles: it runs with no source at all', async ({ page }) => {
     await page.clock.install();
     await boot(page, { screenSaver: true, storage: { sources: [], settings: { screenSaverKind: 'logo' } } });

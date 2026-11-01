@@ -14,17 +14,9 @@ window.ScreenSaver = function (deps) {
 
     const { html } = UI;
     const SLIDE_MS = 20000;
-    // Logo and clock: the group sits in the middle and every two minutes leaves
-    // and returns with the next of these animations (screen-saver.css), back
-    // within LOGO_DRIFT of the screen's size off centre against burn-in.
+    // The centre stays fixed; extras accumulate every two minutes, then reset.
     const LOGO_MOVE_MS = 120000;
-    const LOGO_FADE_MS = 1200;
-    const LOGO_DRIFT = 0.05;
-    // Each scene also has its own icon size (times the icon's 150 px; 2 is the
-    // usual) and one slow motion the icon plays while it shows.
-    const LOGO_SIZES = [2, 1.5, 2.5, 2, 1.75];
-    const LOGO_PLAYS = ['float', 'tilt', 'breathe', 'bounce'];
-    const LOGO_VARIANTS = ['fade', 'left', 'scale', 'right', 'rise'];
+    const LOGO_PLAYS = ['rotate', 'flip', 'swing', 'breathe', 'wobble', 'float', 'reverse', 'flip-x', 'tilt'];
     const CLOCK_MS = 20000;
     const LOGO_DATE = { weekday: 'long', day: 'numeric', month: 'long' };
     // The text and the clock move a little with every slide, so no pixel
@@ -37,10 +29,9 @@ window.ScreenSaver = function (deps) {
     let list = [];
     let index = 0;
     let kind = 'ours';
-    // Logo and clock: the scene (variant, size, motion) and the group's offset from centre, on a timer.
+    // Logo and clock: the step, reserved slots and visible extras.
     let logo = null;
     let mover = 0;
-    let fader = 0;
 
     function samsung(ours) {
         try {
@@ -104,11 +95,14 @@ window.ScreenSaver = function (deps) {
     }
 
     const LogoView = ({ look, time, date }) => html`<div class="ss-stage ss-logo-stage">
-        <div class=${'ss-logo v-' + LOGO_VARIANTS[look.variant] + (look.out ? ' out' : look.moved ? ' in' : '')} style=${{ '--ox': look.dx + 'px', '--oy': look.dy + 'px', '--size': LOGO_SIZES[look.scene % LOGO_SIZES.length] }}>
-            <img class=${'ss-logo-icon p-' + LOGO_PLAYS[look.scene % LOGO_PLAYS.length]} src="icon.png" alt="" />
+        <div class="ss-logo">
+            <img class="ss-logo-icon" src="icon.png" alt="" />
             <div class="ss-logo-clock">${time}</div>
             <div class="ss-logo-date">${date}</div>
         </div>
+        ${look.extras.map((extra) => html`<div key=${extra.key} class="ss-logo-extra" style=${{ left: extra.x + '%', top: extra.y + '%' }}>
+            <img class=${'ss-logo-extra-icon p-' + extra.play} src="icon.png" alt="" style=${{ '--duration': extra.duration + 's', '--delay': extra.delay + 's' }} />
+        </div>`)}
         <div class="ss-hint">${I18n.t('saver.hint')}</div>
     </div>`;
 
@@ -117,25 +111,33 @@ window.ScreenSaver = function (deps) {
         UI.render(html`<${LogoView} look=${logo} time=${I18n.time(now)} date=${I18n.date(now, LOGO_DATE)} />`, root);
     }
 
-    // Every LOGO_MOVE_MS the group leaves with the next variant's animation and
-    // comes back, slightly off centre, from the other side (screen-saver.css
-    // does the animating); with Animations Off it swaps at once.
+    function extraLogo(slot, i) {
+        // Avoid matching loops even in diagonally neighbouring cells.
+        const neighbours = logo.extras.filter((extra) => Math.abs(extra.col - slot.col) <= 1 && Math.abs(extra.row - slot.row) <= 1);
+        let play = i % LOGO_PLAYS.length;
+        while (neighbours.some((extra) => extra.play === LOGO_PLAYS[play])) play = (play + 1) % LOGO_PLAYS.length;
+        return Object.assign({}, slot, {
+            key: logo.step + ':' + i,
+            play: LOGO_PLAYS[play],
+            duration: 6 + i * 0.73,
+            delay: -i * 0.91,
+        });
+    }
+
     function jump() {
-        const back = () => {
-            const screen = { w: window.innerWidth || 1920, h: window.innerHeight || 1080 };
-            const off = ScreenSaver.offset(Math.random, screen, LOGO_DRIFT);
-            const scene = logo.scene + 1;
-            logo = { scene, variant: scene % LOGO_VARIANTS.length, dx: off.x, dy: off.y, out: false, moved: true };
-            fader = 0;
-            showLogo();
-        };
-        if (document.documentElement.getAttribute('data-motion') === 'off') return back();
-        logo.out = true;
+        const count = ScreenSaver.extraCount(++logo.step);
+        if (count < logo.extras.length) {
+            logo.extras = [];
+            logo.slots = ScreenSaver.positions(Math.random, 14);
+        }
+        while (logo.extras.length < count) {
+            const i = logo.extras.length;
+            logo.extras.push(extraLogo(logo.slots[i], i));
+        }
         showLogo();
-        fader = setTimeout(back, LOGO_FADE_MS);
     }
     function startLogo() {
-        logo = { scene: 0, variant: 0, dx: 0, dy: 0, out: false, moved: false };
+        logo = { step: 0, slots: ScreenSaver.positions(Math.random, 14), extras: [] };
         showLogo();
         ticker = setInterval(showLogo, CLOCK_MS);
         mover = setInterval(jump, LOGO_MOVE_MS);
@@ -157,8 +159,7 @@ window.ScreenSaver = function (deps) {
     function stop() {
         clearInterval(ticker);
         clearInterval(mover);
-        clearTimeout(fader);
-        ticker = mover = fader = 0;
+        ticker = mover = 0;
         logo = null;
         UI.clear(root);
         root.remove();
@@ -194,13 +195,31 @@ window.ScreenSaver = function (deps) {
     };
 };
 
-// How far off centre the logo group sits: within +-drift of the screen's size.
-// random() -> [0, 1); screen is { w, h } in px; returns whole px { x, y }.
-ScreenSaver.offset = function (random, screen, drift) {
+// Step zero is alone; later steps repeat 2, 6, 14 extras (3, 7, 15 total).
+ScreenSaver.extraCount = function (step) {
     'use strict';
 
-    const around = (size) => Math.round((random() * 2 - 1) * drift * size);
-    return { x: around(screen.w), y: around(screen.h) };
+    return step === 0 ? 0 : Math.pow(2, (step - 1) % 3 + 2) - 2;
+};
+
+// Pick without replacement from an 8 x 6 grid, reserving the middle 4 x 4 and the hint's corner.
+// x/y are percentages at cell centres. At 1920 x 1080 each 240 x 180 cell
+// contains a 108 px icon's full animation envelope (at most 160 x 160 px).
+// random() -> [0, 1); count is 0..14.
+ScreenSaver.positions = function (random, count) {
+    'use strict';
+
+    const cells = [];
+    const out = [];
+    for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (col >= 2 && col <= 5 && row >= 1 && row <= 4) continue;
+            if (row === 5 && col >= 6) continue;
+            cells.push({ col, row, x: (col + 0.5) * 100 / 8, y: (row + 0.5) * 100 / 6 });
+        }
+    }
+    while (out.length < count) out.push(cells.splice(Math.floor(random() * cells.length), 1)[0]);
+    return out;
 };
 // The slides for a list of Home rows: Continue watching, favorites and
 // recently added, without live channels or repeats. A title shows its

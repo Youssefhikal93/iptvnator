@@ -20,6 +20,21 @@ Backups go to `Projects\jotv-backup\` (next to the repo, never committed). They 
 2. On the TV: Settings → Backup → **Restore from computer…**, enter the address and code, choose **Restore**, then confirm.
 3. Jo-TV restarts with everything as it was. It restores the newest file in the folder.
 
+## Reinstall Jo-TV (or move to a new TV)
+
+1. **Export** (above). Wait for `Saved …` before going on.
+2. Remove Jo-TV from the TV (skip on a new TV):
+   ```powershell
+   C:\tizen-studio\tools\sdb.exe connect 192.168.0.18:26101
+   C:\tizen-studio\tools\ide\bin\tizen.bat uninstall -p IPTVnTVApp -s 192.168.0.18:26101
+   ```
+3. Install it again:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File tools\tizen\deploy-tv.ps1
+   ```
+   On a new TV, follow INSTALLATION-TO-TV.md first.
+4. **Import** (above). Jo-TV opens empty until you restore.
+
 ## Notes
 
 - TV and computer must be on the same home network; the receiver only answers while it runs and only with its code.

@@ -282,7 +282,7 @@ Open Settings → Display → Language and choose with the arrows and OK. Englis
 
 ### Screen savers (#61, #71, #74)
 
-Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock keeps the clock and date centred below a bouncing logo, adding 2, then 6, then 14 smaller animated logos in free spots every two minutes before restarting with 2 in new spots. With Animations Off, the logos still appear but stay still. Press any key to dismiss the app's saver; that press does not also select or play anything.
+Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock keeps the clock and date centred below a bouncing logo, adding 2, then 6, then 14, then 28 smaller animated logos in free spots every two minutes before restarting with 2 in new spots. With Animations Off, the logos still appear but stay still. Press any key to dismiss the app's saver; that press does not also select or play anything.
 
 A film or episode left paused keeps the saver coming even if the provider drops the stream; Play then reopens it where it was, without an error.
 

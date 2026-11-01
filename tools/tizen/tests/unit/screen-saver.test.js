@@ -214,7 +214,7 @@ test('#74 logo steps use only the clock and two-minute intervals, even with Anim
 
 test('#74 extras start at zero, accumulate to fourteen and repeat from two', function () {
     var env = load(['screen-saver.js']).globals;
-    assert.deepEqual(Array.from({ length: 11 }, function (_, step) { return env.ScreenSaver.extraCount(step); }), [0, 2, 6, 14, 2, 6, 14, 2, 6, 14, 2]);
+    assert.deepEqual(Array.from({ length: 11 }, function (_, step) { return env.ScreenSaver.extraCount(step); }), [0, 2, 6, 14, 28, 2, 6, 14, 28, 2, 6]);
 });
 
 test('#74 random slots keep full animation envelopes on screen, outside the centre block and apart', function () {
@@ -222,7 +222,7 @@ test('#74 random slots keep full animation envelopes on screen, outside the cent
     var state = 74;
     var seeded = function () { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
     // Empty, first pair, intermediate and full swarm; include both random extremes.
-    [0, 2, 6, 14].forEach(function (count) {
+    [0, 2, 6, 14, 28].forEach(function (count) {
         [function () { return 0; }, function () { return 0.5; }, function () { return 1 - Number.EPSILON; }, seeded].forEach(function (random) {
             var slots = env.ScreenSaver.positions(random, count);
             assert.equal(slots.length, count);

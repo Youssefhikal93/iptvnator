@@ -17,6 +17,7 @@ window.ScreenSaver = function (deps) {
     // The centre stays fixed; extras accumulate every two minutes, then reset.
     const LOGO_MOVE_MS = 120000;
     const LOGO_PLAYS = ['rotate', 'flip', 'swing', 'breathe', 'wobble', 'float', 'reverse', 'flip-x', 'tilt'];
+    const MAX_EXTRAS = 28;
     const CLOCK_MS = 20000;
     const LOGO_DATE = { weekday: 'long', day: 'numeric', month: 'long' };
     // The text and the clock move a little with every slide, so no pixel
@@ -128,7 +129,7 @@ window.ScreenSaver = function (deps) {
         const count = ScreenSaver.extraCount(++logo.step);
         if (count < logo.extras.length) {
             logo.extras = [];
-            logo.slots = ScreenSaver.positions(Math.random, 14);
+            logo.slots = ScreenSaver.positions(Math.random, MAX_EXTRAS);
         }
         while (logo.extras.length < count) {
             const i = logo.extras.length;
@@ -137,7 +138,7 @@ window.ScreenSaver = function (deps) {
         showLogo();
     }
     function startLogo() {
-        logo = { step: 0, slots: ScreenSaver.positions(Math.random, 14), extras: [] };
+        logo = { step: 0, slots: ScreenSaver.positions(Math.random, MAX_EXTRAS), extras: [] };
         showLogo();
         ticker = setInterval(showLogo, CLOCK_MS);
         mover = setInterval(jump, LOGO_MOVE_MS);
@@ -195,17 +196,17 @@ window.ScreenSaver = function (deps) {
     };
 };
 
-// Step zero is alone; later steps repeat 2, 6, 14 extras (3, 7, 15 total).
+// Step zero is alone; later steps repeat 2, 6, 14, 28 extras.
 ScreenSaver.extraCount = function (step) {
     'use strict';
 
-    return step === 0 ? 0 : Math.pow(2, (step - 1) % 3 + 2) - 2;
+    return step === 0 ? 0 : [2, 6, 14, 28][(step - 1) % 4];
 };
 
 // Pick without replacement from an 8 x 6 grid, reserving the middle 4 x 4 and the hint's corner.
 // x/y are percentages at cell centres. At 1920 x 1080 each 240 x 180 cell
 // contains a 108 px icon's full animation envelope (at most 160 x 160 px).
-// random() -> [0, 1); count is 0..14.
+// random() -> [0, 1); count is 0..28 (30 free cells).
 ScreenSaver.positions = function (random, count) {
     'use strict';
 

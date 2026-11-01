@@ -72,7 +72,7 @@ test('after the idle time it shows the icon, a clock and the date, centred, with
     await expect(page.locator('.hm-hero-buttons .focus')).toContainText('Continue watching');
 });
 
-test('clock and date stay centred as extras grow 0, 2, 6, 14 and reset to 2 every two minutes', async ({ page }) => {
+test('clock and date stay centred as extras grow 0, 2, 6, 14, 28 and reset to 2 every two minutes', async ({ page }) => {
     await page.clock.install();
     await boot(page, seed());
     await idle(page);
@@ -89,12 +89,12 @@ test('clock and date stay centred as extras grow 0, 2, 6, 14 and reset to 2 ever
     await expect(extras(page).nth(1).locator('img')).toHaveCSS('animation-name', 'ss-flip');
     await expect(extras(page).first()).toHaveCSS('animation-name', 'ss-in');
     const original = await extras(page).first().elementHandle();
-    for (const count of [6, 14, 2, 6]) {
+    for (const count of [6, 14, 28, 2]) {
         await page.clock.fastForward(120 * 1000);
         await expect(extras(page)).toHaveCount(count);
         await centred(page);
         await expect(saver(page).locator('.ss-logo-icon')).toHaveCSS('animation-name', 'ss-bounce');
-        if (count === 14) expect(await original.evaluate(el => el.isConnected)).toBe(true);
+        if (count === 28) expect(await original.evaluate(el => el.isConnected)).toBe(true);
         if (count === 2) expect(await original.evaluate(el => el.isConnected)).toBe(false);
     }
     // Dismiss a populated saver, then restart with no extras or stale step.
@@ -122,7 +122,7 @@ test('with Animations Off nothing animates, but extras still accumulate and rese
     await page.clock.install();
     await boot(page, seed({ motion: 'off' }));
     await idle(page);
-    for (const count of [0, 2, 6, 14, 2]) {
+    for (const count of [0, 2, 6, 14, 28, 2]) {
         if (count) await page.clock.fastForward(120 * 1000);
         await expect(extras(page)).toHaveCount(count);
         await centred(page);
@@ -135,14 +135,14 @@ test('the full swarm has staggered loops, distinct neighbours and no animated ov
     await page.clock.install();
     await boot(page, seed());
     await idle(page);
-    for (let step = 0; step < 3; step++) await page.clock.fastForward(120 * 1000);
-    await expect(extras(page)).toHaveCount(14);
+    for (let step = 0; step < 4; step++) await page.clock.fastForward(120 * 1000);
+    await expect(extras(page)).toHaveCount(28);
     const loops = await extras(page).evaluateAll(els => els.map(el => {
         const style = getComputedStyle(el.querySelector('img'));
         return { x: parseFloat(el.style.left), y: parseFloat(el.style.top), name: style.animationName, duration: style.animationDuration, delay: style.animationDelay, iterations: style.animationIterationCount };
     }));
-    expect(new Set(loops.map(loop => loop.duration)).size).toBe(14);
-    expect(new Set(loops.map(loop => loop.delay)).size).toBe(14);
+    expect(new Set(loops.map(loop => loop.duration)).size).toBe(28);
+    expect(new Set(loops.map(loop => loop.delay)).size).toBe(28);
     expect(new Set(loops.map(loop => loop.name)).size).toBeGreaterThanOrEqual(9);
     loops.forEach((loop, i) => {
         expect(loop.iterations).toBe('infinite');

@@ -39,4 +39,4 @@ Backups go to `Projects\jotv-backup\` (next to the repo, never committed). They 
 
 - TV and computer must be on the same home network; the receiver only answers while it runs and only with its code.
 - Restore replaces everything Jo-TV has on that TV.
-- Movie lists and the TV guide are not in the file; they download again.
+- Movie lists, collections and the TV guide are not in the file; they download and build again.

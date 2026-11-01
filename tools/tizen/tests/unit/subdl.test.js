@@ -182,7 +182,7 @@ test('#52 one search asks both providers, merges them into one ranked list and s
     await v.player.search();
     // SubDL failed, so its name says so under the title and OpenSubtitles' result still shows.
     assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · OpenSubtitles 1 · SubDL: no connection');
-    assert.equal(env.menu.children[1].textContent, 'Show.S01E01.WEBOpenSubtitles★⬇ 12k');
+    assert.equal(env.menu.children[1].textContent, 'Show S01E01WEBOpenSubtitles★⬇ 12k');
     assert.ok(env.logs.some(function (line) { return line === 'SUBS providers opensubtitles 1, subdl failed 500'; }));
     v.player.stop();
 
@@ -199,7 +199,7 @@ test('#52 one search asks both providers, merges them into one ranked list and s
     await v.player.search();
     // Only SubDL has a key, so only SubDL is asked.
     assert.equal(env.menu.children[0].textContent, 'Subtitles · English1 found · SubDL 1');
-    assert.equal(env.menu.children[1].textContent, 'Fixture.1080p.NF.WEB-DLSubDL★CC');
+    assert.equal(env.menu.children[1].textContent, 'Fixture1080p · NF · WEB-DLSubDL★CC');
     env.globals.Menu.onKey(env.globals.Keys.ENTER);
     // Unzipping goes through streams, so wait for the cues rather than a fixed number of turns.
     for (var i = 0; i < 50 && !v.text; i++) await new Promise(function (done) { setTimeout(done, 5); });

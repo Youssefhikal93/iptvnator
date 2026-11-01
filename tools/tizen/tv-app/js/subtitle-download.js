@@ -232,9 +232,29 @@ window.SubtitleDownload = function (hooks) {
         return [match.release].concat(badges(match).map(function (badge) { return badge[2] || badge[0]; })).join(' · ');
     }
 
-    // Two short lines: the release, then the source and small badges.
+    // The first word of a release that is about the video, not the title.
+    var FORMAT = /^(\d{3,4}[pi]|4k|uhd|web(-?(dl|rip))?|blu-?ray|b[dr]rip|hdtv|hdrip|dvd(rip)?|webrip|x26[45]|h\.?26[45]|hevc|avc|xvid|amzn|nf|dsnp|hmax|atvp|hulu|shahid|osn|ddp?\d?|aac\d?|ac3|hdr\d*|10bit|proper|repack|internal|remux)(-.*)?$/i;
+
+    // "Mona.Lisa.S01E02.1080p.WEB-DL.x264-GRP" -> name "Mona Lisa S01E02",
+    // format "1080p · WEB-DL · x264-GRP"; a release with no format word is all name.
+    function releaseParts(release) {
+        // Dots split words, except inside "5.1", "AAC2.0" and "H.264".
+        var words = String(release || '').replace(/[._]/g, function (mark, at, text) {
+            var before = text.charAt(at - 1), after = text.slice(at + 1);
+            var keep = mark === '.' && ((/\d/.test(before) && /^\d(?![\da-z])/i.test(after)) || (/h/i.test(before) && /^26[45]/.test(after)));
+            return keep ? '.' : ' ';
+        }).trim().split(/\s+/).filter(Boolean);
+        var at = 0;
+        while (at < words.length && !FORMAT.test(words[at])) at++;
+        if (!at) return { name: words.join(' '), format: '' };
+        return { name: words.slice(0, at).join(' '), format: words.slice(at).join(' · ') };
+    }
+
+    // The full name (up to two lines), the video format under it, then the source and small badges.
     function view(match) {
-        return UI.html`<div class="sp-release">${match.release || I18n.t('opensubs.downloaded')}</div>
+        var parts = releaseParts(match.release);
+        return UI.html`<div class="sp-release">${parts.name || I18n.t('opensubs.downloaded')}</div>
+            ${parts.format ? UI.html`<div class="sp-format">${parts.format}</div>` : null}
             <div class="sp-badges">${badges(match).map(function (badge) { return UI.html`<span class=${badge[1]}>${badge[0]}</span>`; })}</div>`;
     }
 

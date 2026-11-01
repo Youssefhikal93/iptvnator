@@ -8,16 +8,30 @@ body.subtitles-open #toast {
     z-index: 45;
     white-space: normal;
 }
-/* A result (#52): the release on one line, then the source and small badges. */
+/* A result (#52): the full name (two lines at most), the video format, then the source and small badges. */
 #menu.subtitle-picker .menu-row.rich {
     padding: 12px 20px;
     overflow-wrap: normal;
 }
 .sp-release {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    unicode-bidi: plaintext;
+}
+.sp-format {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 26px;
+    margin-top: 4px;
+    font-size: 20px;
+    color: var(--muted);
+    direction: ltr;
     unicode-bidi: plaintext;
 }
 .sp-badges {

@@ -16,7 +16,7 @@ var TV = {
     'other-app': 'keep',
 };
 
-test('a full backup holds every Jo-TV record as stored, and nothing of other apps', function () {
+test('a full backup holds every Jotv record as stored, and nothing of other apps', function () {
     var api = backup(TV).api;
     var made = api.collect();
     assert.equal(made.kind, 'jotv-full-backup');
@@ -34,7 +34,7 @@ test('restoring on a fresh TV puts every record back and removes records the bac
     assert.equal(fresh.stored['other-app'], 'x');
 });
 
-test('a file that is not a Jo-TV full backup is refused', function () {
+test('a file that is not a Jotv full backup is refused', function () {
     var api = backup({}).api;
     assert.throws(function () { api.parse('{"kind":"iptvnator-playlist-backup","data":{}}'); });
     assert.throws(function () { api.parse(JSON.stringify({ kind: 'jotv-full-backup', version: 1, data: { 'evil': 'x' } })); });

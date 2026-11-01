@@ -66,7 +66,7 @@ window.Settings = function (hooks) {
         ...TmdbSettings.rows,
         // Help (#89): the keys of Settings, and where the coloured keys are.
         { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('help.title'); }, get hint() { return I18n.t('help.colourKeys'); }, run: () => KeyHelp.open(window.Settings.help()), text: '?' },
-        { get label() { return I18n.t('settings.appName'); }, text: 'Jo-TV' },
+        { get label() { return I18n.t('settings.appName'); }, text: 'Jotv' },
         { get label() { return I18n.t('settings.version'); }, text: VERSION },
         { get label() { return I18n.t('settings.basedOn'); }, text: '' },
         { get label() { return I18n.t('settings.installGuide'); }, text: 'tools/tizen/INSTALLATION-TO-TV.md' },

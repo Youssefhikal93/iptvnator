@@ -1,4 +1,4 @@
-// Keeps Jo-TV full backups on this computer (JOTV-BACKUP.md). The TV sends
+// Keeps Jotv full backups on this computer (JOTV-BACKUP.md). The TV sends
 // everything it has saved, and gets the newest file back to restore. Home
 // network only, and only while this runs; every request needs the code it
 // prints. The files hold source passwords: they never leave this folder.
@@ -58,7 +58,7 @@ http.createServer((req, res) => {
     req.on('end', () => {
         try {
             const backup = JSON.parse(Buffer.concat(parts).toString('utf8'));
-            if (backup.kind !== 'jotv-full-backup' || !backup.data) return reply(res, 400, { error: 'not a Jo-TV full backup' });
+            if (backup.kind !== 'jotv-full-backup' || !backup.data) return reply(res, 400, { error: 'not a Jotv full backup' });
             const name = 'jotv-backup-' + new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-') + '.json';
             fs.writeFileSync(path.join(dir, name), JSON.stringify(backup, null, 1));
             console.log('Saved ' + name + ' (' + Object.keys(backup.data).length + ' records)');
@@ -68,7 +68,7 @@ http.createServer((req, res) => {
         }
     });
 }).listen(PORT, '0.0.0.0', () => {
-    console.log('Jo-TV backup receiver. Folder: ' + dir);
+    console.log('Jotv backup receiver. Folder: ' + dir);
     console.log('On the TV enter address: ' + addresses().map((ip) => ip + ':' + PORT).join('  or  '));
     console.log('Code: ' + code);
 });

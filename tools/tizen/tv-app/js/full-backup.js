@@ -1,4 +1,4 @@
-// Everything Jo-TV keeps on the TV, in one file (JOTV-BACKUP.md): every
+// Everything Jotv keeps on the TV, in one file (JOTV-BACKUP.md): every
 // saved record of every profile and source, as it is stored, so a restore
 // puts the TV back exactly as it was (new name, new TV). The downloaded
 // catalogue, guide and TMDB caches are not in it; they load again.
@@ -30,7 +30,7 @@ window.FullBackup = (function () {
         var data = backup && backup.data;
         var valid = backup && backup.kind === KIND && backup.version === 1 && data && typeof data === 'object' && !Array.isArray(data) &&
             Object.keys(data).every(function (key) { return ours(key) && typeof data[key] === 'string'; });
-        if (!valid) throw new Error('not a Jo-TV full backup');
+        if (!valid) throw new Error('not a Jotv full backup');
         return backup;
     }
 

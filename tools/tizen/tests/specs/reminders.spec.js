@@ -165,7 +165,7 @@ test('the Reminders list in Settings and the guide says it works while the app i
     await setting(page, 'Reminders');
     await expect(page.locator('#settings .st-row.focused')).toContainText('1 reminder');
     await press(page, 'Enter');
-    await expect(page.locator('#menu')).toContainText('Reminders only work while Jo-TV is open');
+    await expect(page.locator('#menu')).toContainText('Reminders only work while Jotv is open');
     await expect(page.locator('#menu')).toContainText('Late film');
     await expect(page.locator('#menu')).toContainText('Channel 3 (cat all)');
     await press(page, 'Enter');

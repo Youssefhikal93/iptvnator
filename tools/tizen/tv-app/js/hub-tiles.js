@@ -1,4 +1,4 @@
-// Jo-TV tiles on the Samsung home screen (#91, Smart Hub Preview). The app
+// Jotv tiles on the Samsung home screen (#91, Smart Hub Preview). The app
 // builds the tiles (Continue watching, Recent channels) and hands them to the
 // service IPTVnTVApp.HubPreview, which gives them to the TV and exits. A tile
 // carries only the source id, section and item key; picking it opens the app

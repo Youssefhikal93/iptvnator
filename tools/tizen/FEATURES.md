@@ -1,13 +1,13 @@
-# Jo-TV features
+# Jotv features
 
-Jo-TV brings live channels, movies and shows from your saved sources to your Samsung TV. Use the arrows to move, OK to choose and Return to go back. The names below are the English names shown on the TV.
+Jotv brings live channels, movies and shows from your saved sources to your Samsung TV. Use the arrows to move, OK to choose and Return to go back. The names below are the English names shown on the TV.
 
 Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
 - Full backup with a computer: Settings → Backup → Send everything to computer… and Restore from computer… keep every profile, setting and your library (see Backup below).
-- Samsung home screen tiles: press Home on the remote and move to the Jo-TV icon to see Continue watching and recent channels; pick one to play it straight away (see Home and your library below).
+- Samsung home screen tiles: press Home on the remote and move to the Jotv icon to see Continue watching and recent channels; pick one to play it straight away (see Home and your library below).
 - Converted sound appears only when it can help, and tells you whether the provider's HLS or TS sound now plays or no other sound was found.
 - Multi-view: watch 2, 3 or 4 live channels at once. Press Blue while watching, or hold OK → Multi-view (see Live TV below).
 - The live player's menu is now called Options, and every action in it and in the hold-OK menus has an icon.
@@ -48,7 +48,7 @@ While watching a live channel, press Blue, or hold OK → Multi-view, and choose
 
 ### Reconnect after a live interruption (#14)
 
-If live TV stops, Jo-TV shows Reconnecting… and tries again after closing the old connection. If it cannot reconnect, choose Retry playback with the arrows and OK, or Back to leave the player.
+If live TV stops, Jotv shows Reconnecting… and tries again after closing the old connection. If it cannot reconnect, choose Retry playback with the arrows and OK, or Back to leave the player.
 
 ## TV guide
 
@@ -74,11 +74,11 @@ When an Xtream source offers catch-up for a channel, the guide lets you move lef
 
 ### Start the current programme again (#82)
 
-On a live channel with catch-up and a current programme, hold OK while watching → Start over. Use Back to live in the controls to return; Jo-TV also offers it when you catch up with live TV. The option is absent when the source cannot replay that programme.
+On a live channel with catch-up and a current programme, hold OK while watching → Start over. Use Back to live in the controls to return; Jotv also offers it when you catch up with live TV. The option is absent when the source cannot replay that programme.
 
 ### Programme reminders (#75)
 
-In the guide, choose a future programme with OK, then press OK on Remind me; the same place offers Remove reminder afterwards. Jo-TV shows a reminder one minute before the start, with Watch now and Dismiss, only while the app is open. Press Yellow in the guide, or ▲ from its first channel and choose Reminders, to see and remove saved reminders; Settings → Playback → Reminders opens the same list.
+In the guide, choose a future programme with OK, then press OK on Remind me; the same place offers Remove reminder afterwards. Jotv shows a reminder one minute before the start, with Watch now and Dismiss, only while the app is open. Press Yellow in the guide, or ▲ from its first channel and choose Reminders, to see and remove saved reminders; Settings → Playback → Reminders opens the same list.
 
 ### Search for a programme (#81)
 
@@ -96,7 +96,7 @@ In Series, press OK on a show to open its details, seasons and episodes. Press �
 
 ### Movies and shows in M3U playlists (#16)
 
-An M3U source also offers Movies and Series when its playlist contains recognisable films or episodes. Open either section and use OK on a title just as with other sources; episode names such as S01E02 let Jo-TV group a show into seasons. Details depend on what the playlist supplies, with extra information available when TMDB is set up.
+An M3U source also offers Movies and Series when its playlist contains recognisable films or episodes. Open either section and use OK on a title just as with other sources; episode names such as S01E02 let Jotv group a show into seasons. Details depend on what the playlist supplies, with extra information available when TMDB is set up.
 
 ### Recently added and sorting (#9)
 
@@ -142,7 +142,7 @@ Home → Continue watching brings back unfinished films and episodes with their 
 
 ### Tiles on the Samsung home screen (#91)
 
-Press Home on the remote and move to the Jo-TV icon: up to six Continue watching titles and six recently watched channels from the active source show as tiles. Pick one to open Jo-TV and play it; a film or episode continues where it stopped. The tiles change when you leave Jo-TV, at most once every 10 minutes (a Samsung limit). Titles from a locked category never show. Turn them off in Settings → Playback → Samsung home screen tiles. Setup and removal: HOME-TILES.md.
+Press Home on the remote and move to the Jotv icon: up to six Continue watching titles and six recently watched channels from the active source show as tiles. Pick one to open Jotv and play it; a film or episode continues where it stopped. The tiles change when you leave Jotv, at most once every 10 minutes (a Samsung limit). Titles from a locked category never show. Turn them off in Settings → Playback → Samsung home screen tiles. Setup and removal: HOME-TILES.md.
 
 ### Favorites and recents across sources (#24)
 
@@ -164,15 +164,15 @@ For a film or episode, OK or Play / Pause pauses or plays; ▼ shows hidden cont
 
 ### Previous, Next and Up next (#31, #70)
 
-While watching an episode, show the controls and use ◀/▶ and OK on Previous or Next to change episode, or on Episodes to choose with ◀/▶ for seasons and ▲/▼ for episodes. Up next appears near the end: OK plays now and Return hides or cancels it. Settings → Playback → Autoplay next episode offers Off, 5 s, 8 s or 15 s for the end-of-episode countdown; Jo-TV also reuses known playback choices to shorten later starts.
+While watching an episode, show the controls and use ◀/▶ and OK on Previous or Next to change episode, or on Episodes to choose with ◀/▶ for seasons and ▲/▼ for episodes. Up next appears near the end: OK plays now and Return hides or cancels it. Settings → Playback → Autoplay next episode offers Off, 5 s, 8 s or 15 s for the end-of-episode countdown; Jotv also reuses known playback choices to shorten later starts.
 
 ### Learn and skip a show's intro (#31)
 
-On the timeline, skip forward at least 20 seconds within an episode's first five minutes to teach Jo-TV that show's intro. In later episodes, press ▲ from the timeline to select Skip intro when it appears, then OK to jump past it. To teach it again, open the player menu → Intro → Forget this show’s intro.
+On the timeline, skip forward at least 20 seconds within an episode's first five minutes to teach Jotv that show's intro. In later episodes, press ▲ from the timeline to select Skip intro when it appears, then OK to jump past it. To teach it again, open the player menu → Intro → Forget this show’s intro.
 
 ### Confirmed resume position (#33)
 
-Choose Resume from followed by the saved time on a film's detail page, or continue an episode, to return to your progress. Jo-TV checks that playback reached the saved point before replacing that progress. If resume fails, choose Retry with OK or move to Start over to begin again.
+Choose Resume from followed by the saved time on a film's detail page, or continue an episode, to return to your progress. Jotv checks that playback reached the saved point before replacing that progress. If resume fails, choose Retry with OK or move to Start over to begin again.
 
 ### Audio tracks, embedded subtitles and converted sound (#29, #54, #55, #92)
 
@@ -180,11 +180,11 @@ While watching, press Yellow / Info for the menu, then use ▲/▼ and OK on Aud
 
 ### Play links that refuse the first check
 
-Choose Play on a film's detail page, or select an episode and press OK. Some providers block Jo-TV's first check of a link even though it can play; the TV can now try that link directly.
+Choose Play on a film's detail page, or select an episode and press OK. Some providers block Jotv's first check of a link even though it can play; the TV can now try that link directly.
 
 ### Download subtitles (#30, #52)
 
-In Settings → Subtitles, add your own OpenSubtitles API key or SubDL API key under Subtitles download and choose Subtitle language. During a film or episode, press Yellow / Info → Subtitles → Find subtitles online…, then choose a result with the arrows and OK. Jo-TV searches both services when their keys are set, remembers the chosen download, and offers Try another match when there are more results.
+In Settings → Subtitles, add your own OpenSubtitles API key or SubDL API key under Subtitles download and choose Subtitle language. During a film or episode, press Yellow / Info → Subtitles → Find subtitles online…, then choose a result with the arrows and OK. Jotv searches both services when their keys are set, remembers the chosen download, and offers Try another match when there are more results.
 
 ### Backup subtitle search and translation
 
@@ -218,11 +218,11 @@ In an add-source form, choose Use my phone with the remote, then scan the QR cod
 
 ### Start with the saved catalogue (#2)
 
-After a source has loaded once, Jo-TV uses its saved catalogue on later starts so you can browse without waiting for fresh lists. Choose a source and open Home, Live TV, Movies or Series as usual; open a film or show to see saved details while older details refresh. For new lists now, use Settings → Sources → Refresh content now; scheduled background updates follow Refresh automatically.
+After a source has loaded once, Jotv uses its saved catalogue on later starts so you can browse without waiting for fresh lists. Choose a source and open Home, Live TV, Movies or Series as usual; open a film or show to see saved details while older details refresh. For new lists now, use Settings → Sources → Refresh content now; scheduled background updates follow Refresh automatically.
 
 ### Automatic source and guide refresh (#86)
 
-Settings → Sources → Refresh automatically offers Daily at night, Every 12 hours or Off. Refresh runs while Jo-TV is open, idle and nothing is playing, including no live preview; Settings → Sources shows Last refreshed for each source. A rejected login or failed download keeps the previous catalogue, and new lists are fetched in full before they replace the old ones.
+Settings → Sources → Refresh automatically offers Daily at night, Every 12 hours or Off. Refresh runs while Jotv is open, idle and nothing is playing, including no live preview; Settings → Sources shows Last refreshed for each source. A rejected login or failed download keeps the previous catalogue, and new lists are fetched in full before they replace the old ones.
 
 ### Library stays with the source account (#34)
 
@@ -230,7 +230,7 @@ Use Settings → Sources, OK on a source → Edit source… to change its detail
 
 ### Loading, empty lists and errors (#17)
 
-Jo-TV shows loading messages and explains empty lists, such as No favorites yet or Nothing to continue. On a source or network error, use the arrows and OK on Retry; an account error also offers Go to Sources to fix the login. A Too many requests message waits and retries by itself.
+Jotv shows loading messages and explains empty lists, such as No favorites yet or Nothing to continue. On a source or network error, use the arrows and OK on Retry; an account error also offers Go to Sources to fix the login. A Too many requests message waits and retries by itself.
 
 ## Profiles and parental lock
 
@@ -254,7 +254,7 @@ Settings → Playback → Preferred sound and Preferred subtitles set this profi
 
 ### Settings and app details (#10, #65)
 
-Choose Settings in the main menu, use ▲/▼ to choose a group and OK or ▶ to open its rows. Press OK on a row to switch it, open its choices or run its action; ◀ or Return goes back to the groups. Settings → About shows the Jo-TV app name and App version; look for the Jo-TV name and icon when launching it on the TV.
+Choose Settings in the main menu, use ▲/▼ to choose a group and OK or ▶ to open its rows. Press OK on a row to switch it, open its choices or run its action; ◀ or Return goes back to the groups. Settings → About shows the Jotv app name and App version; look for the Jotv name and icon when launching it on the TV.
 
 ### Main menu at the side or top (#50)
 
@@ -288,7 +288,7 @@ A film or episode left paused keeps the saver coming even if the provider drops 
 
 ### Sleep timer (#22)
 
-While watching, open the player menu → Sleep timer and choose 15 min, 30 min, 60 min or 90 min, or End of movie / End of episode when offered. It stops playback and closes Jo-TV at the chosen time; choose Off to cancel. The final warning offers Keep watching and Stop now with the arrows and OK.
+While watching, open the player menu → Sleep timer and choose 15 min, 30 min, 60 min or 90 min, or End of movie / End of episode when offered. It stops playback and closes Jotv at the chosen time; choose Off to cancel. The final warning offers Keep watching and Stop now with the arrows and OK.
 
 ### Help and actions without coloured keys (#89)
 
@@ -306,4 +306,4 @@ Open Settings → Backup → Export, read Contains your passwords and choose Con
 
 ### Everything to and from a computer
 
-Settings → Backup → Send everything to computer… copies every profile, PIN, setting, source and your whole library to a computer on the home network; Restore from computer… puts it all back exactly as it was, to reinstall Jo-TV or move to a new TV. The computer runs a small receiver that shows the address and a code to enter; steps in JOTV-BACKUP.md.
+Settings → Backup → Send everything to computer… copies every profile, PIN, setting, source and your whole library to a computer on the home network; Restore from computer… puts it all back exactly as it was, to reinstall Jotv or move to a new TV. The computer runs a small receiver that shows the address and a code to enter; steps in JOTV-BACKUP.md.

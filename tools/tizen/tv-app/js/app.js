@@ -261,7 +261,7 @@
         browser.toast(event.detail, 8000);
     });
 
-    // The Samsung home screen's Jo-TV tiles (#91); Off leaves none there.
+    // The Samsung home screen's Jotv tiles (#91); Off leaves none there.
     function publishTiles() {
         var text = Prefs.get('homeTiles') ? browser.homeTiles() : JSON.stringify({ sections: [] });
         if (text) HubTiles.publish(text);
@@ -313,5 +313,5 @@
 
     if (ProfileScreen.shouldAsk()) whoIsWatching();
     else browser.start();
-    Log.info('Jo-TV started');
+    Log.info('Jotv started');
 })();

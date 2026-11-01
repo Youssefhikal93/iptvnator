@@ -42,7 +42,7 @@ function build(kind, words, dir) {
         'x.send(JSON.stringify({name:v("name"),url:v("url"),user:v("user"),pass:v("pass")}));});})();';
     return '<!doctype html><html lang="en" dir="' + (dir === 'rtl' ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8">' +
         '<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">' +
-        '<title>Jo-TV</title><style>' +
+        '<title>Jotv</title><style>' +
         'body{font:18px/1.4 system-ui,sans-serif;margin:0;padding:24px;background:#14161a;color:#f2f2f2}' +
         'main{max-width:480px;margin:0 auto}h1{font-size:26px}label{display:block;margin-top:18px;color:#aab}' +
         'input{box-sizing:border-box;width:100%;margin-top:6px;padding:14px;font:inherit;color:inherit;background:#23262d;border:2px solid #3a3f4a;border-radius:12px}' +

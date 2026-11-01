@@ -70,7 +70,7 @@ test('the tile that opened the app, and one picked while it runs, are handed on'
     assert.equal(JSON.stringify(opened), JSON.stringify([{ s: 's1', sec: 'live', key: '7' }, { s: 's1', sec: 'movies', key: '11' }]));
 });
 
-test('a PAYLOAD that is not a Jo-TV tile is ignored', function () {
+test('a PAYLOAD that is not a Jotv tile is ignored', function () {
     var api = tiles().api;
     assert.equal(api.action({ data: [{ key: 'PAYLOAD', value: ['not json'] }] }), null);
     assert.equal(api.action(payload({ videoIdx: 1 })), null);

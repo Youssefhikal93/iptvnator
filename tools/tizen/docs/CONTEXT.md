@@ -269,6 +269,12 @@ A jump of a fixed length near the start of an episode; providers do not mark int
 A player choice that stops playback and closes the TV app after a duration or at the end of the current movie or episode.
 _Avoid_: Auto-off, shutdown timer
 
+## Phone remote
+
+Settings > General pairs up to five phones while Jotv is open, separately from
+Add from phone. The service, storage and protocol are described in
+[phone-remote.md](./phone-remote.md).
+
 ## Feature guide
 
 Every ticket that adds or changes a user-visible feature must update

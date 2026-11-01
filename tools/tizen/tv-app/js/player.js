@@ -710,8 +710,8 @@ window.Player = (function () {
     }
 
     // What the ▲ menu shows (see player-menu.js), asked again on every render.
-    function menuEntries(whole) {
-        var m = menuPart(whole);
+    function menuEntries(whole, all) {
+        var m = all ? whole : menuPart(whole);
         var tracks = getTracks();
         var watch = epg.watchFromStart();
         if (watch) m.item(I18n.t('player.startOver'), false, startOver, null, '\u21BA');
@@ -1442,7 +1442,13 @@ window.Player = (function () {
         if (watch) watch();
     }
 
+    var remote = PlayerRemote({ current: function () { return current; }, entries: function (entries) { menuEntries(entries, true); }, series: series,
+        openMenu: openMenu, menuGroup: playerMenu.selectGroup, startOver: startOver,
+        startOverAvailable: function () { return !!epg.watchFromStart(); }, programmes: epg.programmes, position: position, duration: duration, clock: fmt,
+        ready: function () { return ready && !playbackError && !resume.open; } });
+
     return {
+        remote: remote.state,
         // Keep the sleep timer while handing the picture to multi-view (#77).
         suspend: function () {
             reconnect.cancel();

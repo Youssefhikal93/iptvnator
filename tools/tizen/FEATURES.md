@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Phone remote: pair up to five phones in Settings > General. Use the phone for keys, search, typing and actions that follow the TV screen.
 - Full backup with a computer: Settings → Backup → Send everything to computer… and Restore from computer… keep every profile, setting and your library (see Backup below).
 - Samsung home screen tiles: press Home on the remote and move to the Jotv icon to see Continue watching and recent channels; pick one to play it straight away (see Home and your library below).
 - Converted sound appears only when it can help, and tells you whether the provider's HLS or TS sound now plays or no other sound was found.
@@ -307,3 +308,11 @@ Open Settings → Backup → Export, read Contains your passwords and choose Con
 ### Everything to and from a computer
 
 Settings → Backup → Send everything to computer… copies every profile, PIN, setting, source and your whole library to a computer on the home network; Restore from computer… puts it all back exactly as it was, to reinstall Jotv or move to a new TV. The computer runs a small receiver that shows the address and a code to enter; steps in JOTV-BACKUP.md.
+
+## Phone remote (#93)
+
+Settings > General > Phone remote > Pair a phone shows a QR code and address, valid once for 10 minutes. Scan it on the home network, then bookmark the page or add it to your home screen. Up to five phones can stay paired and work together. Rename or forget them in the same Settings group.
+
+The phone has the remote keys, volume, section jumps, search and a More sheet with numbers and colour keys. Its actions follow the TV: for example Next episode, available Skip intro, tracks, or Play on a detail page. A TV text field opens phone text entry; results stay on the TV. Film and episode seek buttons use the TV's accelerating steps. Language and accent follow the TV.
+
+It works while Jotv is open on the same home network. A page left open reconnects by itself when Jotv returns. It cannot turn the TV on or control Samsung Home, Source or other apps.

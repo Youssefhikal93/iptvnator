@@ -18,36 +18,35 @@
 #screen-saver .empty .ss-clock { top: 44%; right: 44%; color: rgba(255, 255, 255, 0.6); }
 #screen-saver .empty .ss-hint { color: rgba(255, 255, 255, 0.3); }
 
-/* Logo and clock (#74): one group (icon, time, date) in the middle. Every two
-   minutes it leaves and comes back with the next animation (screen-saver.js
-   sets the variant class, and --ox/--oy: how far off centre it rests). Only
-   transform and opacity move, so the TV's compositor does all of it. */
+/* Logo and clock (#74): a fixed centre and a bouncing main icon. Extras fade
+   in within reserved grid cells; their loops fit inside those cells. Only
+   transform and opacity animate, so the TV's compositor does all of it. */
 #screen-saver .ss-logo-stage { background: radial-gradient(ellipse at center, #14161c 0%, #05060a 60%, #000 100%); }
-#screen-saver .ss-logo { --out: translate(0, 0) scale(1); --rest: translate(calc(-50% + var(--ox, 0px)), calc(-50% + var(--oy, 0px))); position: absolute; left: 50%; top: 50%; width: 720px; display: flex; flex-direction: column; align-items: center; text-align: center; opacity: 1; transform: var(--rest); transition: opacity 1.2s ease, transform 1.2s ease; }
-#screen-saver .ss-logo.out { opacity: 0; transform: var(--rest) var(--out); }
-#screen-saver .ss-logo.v-left { --out: translateX(-60vw); }
-#screen-saver .ss-logo.v-right { --out: translateX(60vw); }
-#screen-saver .ss-logo.v-rise { --out: translateY(-14vh); }
-#screen-saver .ss-logo.v-scale { --out: scale(0.88); }
-#screen-saver .ss-logo.in { animation: ss-logo-in 1.2s ease both; }
-#screen-saver .ss-logo.in.v-left { --from: translateX(60vw); }
-#screen-saver .ss-logo.in.v-right { --from: translateX(-60vw); }
-#screen-saver .ss-logo.in.v-rise { --from: translateY(14vh); }
-#screen-saver .ss-logo.in.v-scale { --from: scale(1.12); }
-#screen-saver .ss-logo.in.v-fade { --from: translate(0, 0); }
-@keyframes ss-logo-in { from { opacity: 0; transform: var(--rest) var(--from); } to { opacity: 1; transform: var(--rest); } }
-#screen-saver .ss-logo-icon { --s: var(--size, 2); width: calc(150px * var(--s)); height: calc(150px * var(--s)); border-radius: calc(28px * var(--s)); }
-/* What the icon plays while a scene shows: slow and small; the clock stays still. */
-#screen-saver .ss-logo-icon.p-float { animation: ss-float 9s ease-in-out infinite; }
-#screen-saver .ss-logo-icon.p-tilt { animation: ss-tilt 10s ease-in-out infinite; }
-#screen-saver .ss-logo-icon.p-breathe { animation: ss-breathe 7s ease-in-out infinite; }
-#screen-saver .ss-logo-icon.p-bounce { animation: ss-bounce 2.4s ease-out 0.8s both; }
-@keyframes ss-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
-@keyframes ss-tilt { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-@keyframes ss-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-@keyframes ss-bounce { 0% { transform: translateY(-60px); } 35% { transform: translateY(0); } 60% { transform: translateY(-18px); } 80% { transform: translateY(0); } 90% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+#screen-saver .ss-logo { position: absolute; left: 50%; top: 50%; width: 720px; display: flex; flex-direction: column; align-items: center; text-align: center; transform: translate(-50%, -50%); }
+#screen-saver .ss-logo-icon { width: 300px; height: 300px; border-radius: 56px; animation: ss-bounce 2.4s ease-in-out infinite; }
 #screen-saver .ss-logo-clock { margin-top: 28px; font-size: 140px; font-weight: 300; line-height: 1; letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.9); }
 #screen-saver .ss-logo-date { margin-top: 16px; font-size: 28px; color: rgba(255, 255, 255, 0.6); }
+#screen-saver .ss-logo-extra { position: absolute; width: 108px; height: 108px; transform: translate(-50%, -50%); animation: ss-in 1.2s ease-out both; }
+#screen-saver .ss-logo-extra-icon { display: block; width: 100%; height: 100%; border-radius: 20px; animation-duration: var(--duration); animation-delay: var(--delay); animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+#screen-saver .ss-logo-extra-icon.p-rotate { animation-name: ss-rotate; animation-timing-function: linear; }
+#screen-saver .ss-logo-extra-icon.p-flip { animation-name: ss-flip; animation-timing-function: linear; }
+#screen-saver .ss-logo-extra-icon.p-swing { animation-name: ss-swing; }
+#screen-saver .ss-logo-extra-icon.p-breathe { animation-name: ss-breathe; }
+#screen-saver .ss-logo-extra-icon.p-wobble { animation-name: ss-wobble; }
+#screen-saver .ss-logo-extra-icon.p-float { animation-name: ss-float; }
+#screen-saver .ss-logo-extra-icon.p-reverse { animation-name: ss-reverse; animation-timing-function: linear; }
+#screen-saver .ss-logo-extra-icon.p-flip-x { animation-name: ss-flip-x; animation-timing-function: linear; }
+#screen-saver .ss-logo-extra-icon.p-tilt { animation-name: ss-tilt; }
+@keyframes ss-bounce { 0%, 65%, 90%, 100% { transform: translateY(0); } 35% { transform: translateY(-48px); } 80% { transform: translateY(-16px); } 95% { transform: translateY(-5px); } }
+@keyframes ss-rotate { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes ss-flip { from { transform: perspective(500px) rotateY(0); } to { transform: perspective(500px) rotateY(360deg); } }
+@keyframes ss-swing { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+@keyframes ss-breathe { 0%, 100% { transform: scale(0.92); } 50% { transform: scale(1.08); } }
+@keyframes ss-wobble { 0%, 100% { transform: translateX(-8px) rotate(-8deg); } 50% { transform: translateX(8px) rotate(8deg); } }
+@keyframes ss-float { 0%, 100% { transform: translateY(12px); } 50% { transform: translateY(-12px); } }
+@keyframes ss-reverse { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+@keyframes ss-flip-x { from { transform: perspective(500px) rotateX(0); } to { transform: perspective(500px) rotateX(360deg); } }
+@keyframes ss-tilt { 0%, 100% { transform: skewY(-8deg); } 50% { transform: skewY(8deg); } }
 
 @keyframes ss-in{ from { opacity: 0; } to { opacity: 1; } }
 @keyframes ss-drift { from { transform: scale(1.08) translate(-1.2%, -0.8%); } to { transform: scale(1.08) translate(1.2%, 0.8%); } }
@@ -60,4 +59,6 @@
 [data-motion="off"] #screen-saver .ss-clock,
 [data-motion="off"] #screen-saver .ss-info,
 [data-motion="off"] #screen-saver .ss-logo { transition: none; animation: none; }
-[data-motion="off"] #screen-saver .ss-logo-icon { animation: none; }
+[data-motion="off"] #screen-saver .ss-logo-icon,
+[data-motion="off"] #screen-saver .ss-logo-extra,
+[data-motion="off"] #screen-saver .ss-logo-extra-icon { animation: none; }

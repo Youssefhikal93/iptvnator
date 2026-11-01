@@ -196,38 +196,49 @@ test("#74 an unknown stored kind is the slideshow; the TV's own never starts our
     assert.deepEqual(tv.samsung, [1]);
 });
 
-test('#74 every two minutes the group leaves, then returns as the next variant; with Animations Off it swaps at once', function () {
-    var s = scene({ ms: 300000, kind: 'logo' });
-    s.elapse('idle');
-    var views = s.renders.length;
-    s.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
-    assert.equal(s.renders.length, views + 1);
-    var leave = s.timers().filter(function (t) { return t.ms === 1200; })[0];
-    assert.ok(leave);
-    leave.fn();
-    assert.equal(s.renders.length, views + 2);
-    var off = scene({ ms: 300000, kind: 'logo', motion: 'off' });
-    off.elapse('idle');
-    var offViews = off.renders.length;
-    off.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
-    assert.equal(off.renders.length, offViews + 1);
-    assert.equal(off.timers().filter(function (t) { return t.ms === 1200; }).length, 0);
+test('#74 logo steps use only the clock and two-minute intervals, even with Animations Off; waking clears both', function () {
+    ['on', 'off'].forEach(function (motion) {
+        var s = scene({ ms: 300000, kind: 'logo', motion: motion });
+        s.elapse('idle');
+        var views = s.renders.length;
+        for (var step = 1; step <= 7; step++) {
+            s.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
+            assert.equal(s.renders.length, views + step);
+            assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000, 120000]);
+        }
+        s.saver.wake();
+        assert.equal(s.saver.isOn(), false);
+        assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [300000]);
+    });
 });
 
-test('#74 the logo group rests off centre by at most a twentieth of the screen', function () {
+test('#74 extras start at zero, accumulate to fourteen and repeat from two', function () {
     var env = load(['screen-saver.js']).globals;
-    var screen = { w: 1920, h: 1080 };
-    var top = 1 - Number.EPSILON;
-    [0, 0.0001, 0.25, 0.5, 0.9999, top].forEach(function (a) {
-        [0, 0.5, top].forEach(function (b) {
-            var seq = [a, b];
-            var off = env.ScreenSaver.offset(function () { return seq.shift(); }, screen, 0.05);
-            assert.ok(Math.abs(off.x) <= 96, 'x ' + off.x);
-            assert.ok(Math.abs(off.y) <= 54, 'y ' + off.y);
+    assert.deepEqual(Array.from({ length: 11 }, function (_, step) { return env.ScreenSaver.extraCount(step); }), [0, 2, 6, 14, 2, 6, 14, 2, 6, 14, 2]);
+});
+
+test('#74 random slots keep full animation envelopes on screen, outside the centre block and apart', function () {
+    var env = load(['screen-saver.js']).globals;
+    var state = 74;
+    var seeded = function () { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
+    // Empty, first pair, intermediate and full swarm; include both random extremes.
+    [0, 2, 6, 14].forEach(function (count) {
+        [function () { return 0; }, function () { return 0.5; }, function () { return 1 - Number.EPSILON; }, seeded].forEach(function (random) {
+            var slots = env.ScreenSaver.positions(random, count);
+            assert.equal(slots.length, count);
+            slots.forEach(function (slot, i) {
+                assert.ok(!(slot.col >= 2 && slot.col <= 5 && slot.row >= 1 && slot.row <= 4), 'reserved centre cell');
+                var x = slot.x * 1920 / 100;
+                var y = slot.y * 1080 / 100;
+                var half = 80; // Covers rotation, flips, wobble and float, not just static icons.
+                assert.ok(x - half >= 0 && x + half <= 1920 && y - half >= 0 && y + half <= 1080, 'on screen');
+                assert.ok(x + half <= 480 || x - half >= 1440 || y + half <= 180 || y - half >= 900, 'outside centre block');
+                slots.slice(0, i).forEach(function (other) {
+                    assert.ok(Math.abs(x - other.x * 1920 / 100) >= half * 2 || Math.abs(y - other.y * 1080 / 100) >= half * 2, 'no overlap');
+                });
+            });
         });
     });
-    var mid = env.ScreenSaver.offset(function () { return 0.5; }, screen, 0.05);
-    assert.deepEqual([mid.x, mid.y], [0, 0]);
-    var low = env.ScreenSaver.offset(function () { return 0; }, screen, 0.05);
-    assert.deepEqual([low.x, low.y], [-96, -54]);
+    var first = JSON.stringify(env.ScreenSaver.positions(function () { return 0; }, 14));
+    assert.notEqual(JSON.stringify(env.ScreenSaver.positions(function () { return 0.99; }, 14)), first, 'randomness changes the layout');
 });

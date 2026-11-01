@@ -68,10 +68,12 @@ test('#52 Find subtitles online searches OpenSubtitles and SubDL together in one
     await expect(rows).toHaveCount(5);
     await expect(page.locator('#menu .menu-title')).toHaveText('Subtitles · English');
     await expect(page.locator('#menu .menu-sub')).toHaveText('5 found · OpenSubtitles 3 · SubDL 2');
-    // The exact OpenSubtitles match leads; each row is the release over its badges.
-    await expect(rows.first().locator('.sp-release')).toHaveText('Fixture.2021.1080p.BluRay.x264-GROUP');
+    // The exact OpenSubtitles match leads; each row is the name, the video format, then the badges.
+    await expect(rows.first().locator('.sp-release')).toHaveText('Fixture 2021');
+    await expect(rows.first().locator('.sp-format')).toHaveText('1080p · BluRay · x264-GROUP');
+    await expect(rows.filter({ hasText: 'DDP5.1' }).locator('.sp-format')).toHaveText('1080p · NF · WEB-DL · DDP5.1 · H.264');
     await expect(rows.first().locator('.sp-badges span')).toHaveText(['OpenSubtitles', '★', '✓', '⬇ 48k']);
-    await expect(rows.filter({ hasText: 'NF.WEB-DL.HDR' }).locator('.sp-badges span')).toHaveText(['SubDL', 'CC']);
+    await expect(rows.filter({ hasText: '2160p' }).locator('.sp-badges span')).toHaveText(['SubDL', 'CC']);
     await expect(rows.filter({ hasText: 'HDTV' }).locator('.sp-badges span')).toHaveText(['OpenSubtitles', '⬇ 410', 'AI']);
     // Down to the first SubDL row and OK: the zip is unpacked and shown.
     for (let i = 0; i < 6 && !(await page.locator('#menu .menu-row.focused').textContent()).includes('SubDL'); i++) await press(page, 'ArrowDown');

@@ -165,7 +165,7 @@ test('#52 the backup search runs only when OpenSubtitles and SubDL find nothing,
     v.player.start({ id: 'movie:1', title: 'Fixture' });
     await v.player.search();
     assert.equal(env.menu.children[0].textContent, 'Subtitles · EnglishBackup · 3 found · Subsource 3');
-    assert.equal(env.menu.children[1].textContent, 'SS.0Subsource★');
+    assert.equal(env.menu.children[1].textContent, 'SS 0Subsource★');
 
     // Backup search off, from the player's Subtitles group: only the first round runs.
     var items = [];

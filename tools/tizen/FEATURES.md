@@ -11,6 +11,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 - Arabic: the player menu is fully translated and reads right to left, category headings are translated, and channel numbers stay next to their names.
 - The channel list remembers keys pressed while its channels are still loading.
 - Sync subtitles: a bar over the playing video. Press OK when you hear the line it shows, then fine-tune with ◀ ▶ (0.1 s) and ▲ ▼ (1 s); Hold OK to choose any line of the file instead. The next episode of the same release starts with the same timing.
+- Find subtitles online shows each result's full name first (up to two lines), the video format under it (1080p · WEB-DL …), then the site, ★ and download badges, so a subtitle for another show with the same name is easy to spot.
 
 ## Live TV
 

@@ -503,6 +503,10 @@ window.Home = (api, element) => {
     };
 
     return {
+        openContinue: () => {
+            const at = blocks().findIndex((block) => block.row && block.row.id === 'continue');
+            if (at >= 0) { s.block = at; s.blockKey = 'continue'; render(); }
+        },
         openSearch,
         render,
         key,

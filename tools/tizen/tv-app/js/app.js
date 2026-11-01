@@ -197,6 +197,7 @@
     }
 
     document.addEventListener('keydown', function (event) {
+        if (RemoteSettings.isOpen()) return RemoteSettings.onKey(event);
         if (PinPad.isOpen()) {
             PinPad.onKey(event.keyCode);
             event.preventDefault();
@@ -313,5 +314,6 @@
 
     if (ProfileScreen.shouldAsk()) whoIsWatching();
     else browser.start();
+    PhoneRemote.start(RemoteApp({ browser: browser, screen: function () { return screen; }, saver: function () { return saver; }, previous: watchPrevious, channels: channelList.open, closePlayer: closePlayer }));
     Log.info('Jotv started');
 })();

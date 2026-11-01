@@ -132,6 +132,10 @@ window.PlayerMenu = (root, hooks) => {
             rows = [];
         },
         render,
+        selectGroup: (label) => {
+            const index = rows.findIndex((row) => isGroup(row) && row.label === label);
+            if (index >= 0) { open(index); render(); }
+        },
         key,
     };
 };

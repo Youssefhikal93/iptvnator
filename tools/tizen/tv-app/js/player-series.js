@@ -357,6 +357,7 @@ window.PlayerSeries = function (api) {
     }
 
     return {
+        remote: function () { return { next: nextIndex() >= 0 ? playNext : null, skip: skipShown() ? skipIntro : null }; },
         reset: reset,
         onJump: onJump,
         introEntries: introEntries,

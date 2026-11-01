@@ -1844,12 +1844,12 @@ window.Browser = function (hooks) {
                 var p = Progress.unfinished('movies', movie);
                 var list = p
                     ? [
-                          { label: I18n.t('detail.resumeFrom', { time: clock(p.position) }), progress: p.ratio, run: playMovie.bind(null, movie, true) },
+                          { remoteId: 'play', label: I18n.t('detail.resumeFrom', { time: clock(p.position) }), progress: p.ratio, run: playMovie.bind(null, movie, true) },
                           { label: I18n.t('detail.startOver'), run: playMovie.bind(null, movie, false) },
                       ]
-                    : [{ label: I18n.t('detail.play'), run: playMovie.bind(null, movie, undefined) }];
+                    : [{ remoteId: 'play', label: I18n.t('detail.play'), run: playMovie.bind(null, movie, undefined) }];
                 list.push({
-                    label: I18n.t(isFavorite(movie, 'movies') ? 'menu.removeFavorite' : 'menu.addFavorite'),
+                    remoteId: 'favourite', label: I18n.t(isFavorite(movie, 'movies') ? 'menu.removeFavorite' : 'menu.addFavorite'),
                     run: function () {
                         toggleFavorite(movie, 'movies');
                         detail.refresh();
@@ -1916,7 +1916,7 @@ window.Browser = function (hooks) {
                 var list = [];
                 if (next) {
                     list.push({
-                        label: '▶  ' + next.label,
+                        remoteId: 'play', label: '▶  ' + next.label,
                         progress: next.progress,
                         run: function () {
                             playEpisode(show, episodes.all(), next.index, next.resume);
@@ -1924,7 +1924,7 @@ window.Browser = function (hooks) {
                     });
                 }
                 list.push({
-                    label: I18n.t(isFavorite(show, 'series') ? 'menu.removeFavorite' : 'menu.addFavorite'),
+                    remoteId: 'favourite', label: I18n.t(isFavorite(show, 'series') ? 'menu.removeFavorite' : 'menu.addFavorite'),
                     run: function () {
                         toggleFavorite(show, 'series');
                         detail.refresh();
@@ -2403,7 +2403,33 @@ window.Browser = function (hooks) {
         });
     }
 
+    function remoteJump(action) {
+        if (KidsProfile.on() && action === 'settings') return;
+        if (detail.isOpen()) detail.close();
+        if (guide.isOpen()) guide.close();
+        if (programmeSearch.isOpen()) programmeSearch.close();
+        if (Menu.isOpen()) Menu.close();
+        if (action === 'search') {
+            if (['live', 'movies', 'series'].indexOf(state.section) >= 0) return startTyping();
+            openSection('home'); setZone('home'); return home.openSearch();
+        }
+        if (action === 'guide') return Promise.resolve(openSection('live')).then(function () { setZone('categories'); openGuide(); });
+        var library = action === 'favs' ? '__fav' : null;
+        var section = library ? (['live', 'movies', 'series'].indexOf(state.section) >= 0 ? state.section : 'live') : action;
+        if (action === 'continue') { openSection('home'); setZone('home'); return home.openContinue(); }
+        return Promise.resolve(openSection(section)).then(function () {
+            setZone(contentZone());
+            if (!library) return;
+            var rows = categoryRows();
+            var index = rows.map(function (row) { return row.category_id; }).indexOf(library);
+            if (index >= 0) { categories.select(index); clearTimeout(state.timer); showVirtual(rows[index], 0); }
+        });
+    }
+
     return {
+        remoteJump: remoteJump,
+        remoteLast: function () { return live.last(sourceId(), true).then(function (channel) { if (channel) hooks.play(live.play(channel)); }).catch(function () { Log.info('REMOTE last channel unavailable'); }); },
+        remote: function () { return { section: state.section, jump: guide.isOpen() ? 'guide' : ['live', 'movies', 'series'].indexOf(state.section) >= 0 && categories.item() && categories.item().virtual === 'favorites' ? 'favs' : state.section, detail: detail.remote() }; },
         start: start,
         toast: toast,
         onKey: onKey,

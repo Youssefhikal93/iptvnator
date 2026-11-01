@@ -81,7 +81,7 @@ window.Settings = function (hooks) {
     // changes. A row that names a group starts it.
     function groups() {
         const list = [];
-        SourceSettings.rows(hooks.sources).concat([autoRefresh], rows).forEach((row) => {
+        SourceSettings.rows(hooks.sources).concat([autoRefresh], rows, RemoteSettings.rows(render)).forEach((row) => {
             if (row.hidden) return;
             const name = row.group;
             if (name || !list.length) list.push({ name, rows: [] });

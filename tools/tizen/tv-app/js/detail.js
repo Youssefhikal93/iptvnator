@@ -48,7 +48,7 @@ window.Detail = function () {
     function buttons() {
         var d = details();
         var list = s.page.actions(d);
-        if (s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
+        if (s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ remoteId: 'trailer', label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
         if (s.clipped) list.push({ label: I18n.t('detail.more'), run: openMore });
         return list;
     }
@@ -266,6 +266,12 @@ window.Detail = function () {
                         render();
                     });
                 });
+        },
+        remote: function () {
+            if (!s) return null;
+            var offered = {};
+            buttons().forEach(function (button) { if (button.remoteId && button.run) offered[button.remoteId] = button; });
+            return { title: details().title, section: s.page.episodes ? 'series' : 'movies', actions: RemoteContext.select('details', offered) };
         },
         isOpen: function () {
             return !!s;

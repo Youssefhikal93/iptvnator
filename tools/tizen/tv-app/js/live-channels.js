@@ -129,9 +129,9 @@ window.LiveChannels = function (hooks) {
                 return { categories: categories, index: index, channel: channel };
             });
         },
-        last: function (sourceId) {
+        last: function (sourceId, explicitly) {
             var saved = Library.lastChannel(sourceId);
-            if (!saved || Prefs.get('onStart') !== 'last-channel') return Promise.resolve(null);
+            if (!saved || (!explicitly && Prefs.get('onStart') !== 'last-channel')) return Promise.resolve(null);
             return hooks.channels('').then(function (channels) {
                 var index = indexOf(channels, saved);
                 return index < 0 ? null : channels[index];

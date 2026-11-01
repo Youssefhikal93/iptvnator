@@ -284,6 +284,8 @@ Open Settings → Display → Language and choose with the arrows and OK. Englis
 
 Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock for a centred scene with new sizes and movements every two minutes, or The TV's own for Samsung's saver. Press any key to dismiss the app's saver; that press does not also select or play anything.
 
+A film or episode left paused keeps the saver coming even if the provider drops the stream; Play then reopens it where it was, without an error.
+
 ### Sleep timer (#22)
 
 While watching, open the player menu → Sleep timer and choose 15 min, 30 min, 60 min or 90 min, or End of movie / End of episode when offered. It stops playback and closes Jo-TV at the chosen time; choose Off to cancel. The final warning offers Keep watching and Stop now with the arrows and OK.

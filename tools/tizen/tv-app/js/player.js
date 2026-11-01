@@ -66,6 +66,9 @@ window.Player = (function () {
     var started = false; // the resume prompt is settled; progress may be saved
     var ended = false;
     var playbackError = false;
+    // The viewer paused a film; its stream then dropped and reopens on Play.
+    var heldPaused = false;
+    var lostPaused = false;
     var liveOffered = false;
     var errorFocus = 0;
     var speed = 1;
@@ -343,7 +346,7 @@ window.Player = (function () {
     // ---- Overlay ----------------------------------------------------------
 
     function canHide() {
-        return !isPaused() && !menu.open && !resume.open && !ended && !seek.timer && !series.busy();
+        return !isPaused() && !lostPaused && !menu.open && !resume.open && !ended && !seek.timer && !series.busy();
     }
 
     function hideControls() {
@@ -381,7 +384,7 @@ window.Player = (function () {
         var live = current.live;
         ui.seekbox.classList.toggle('live', live);
         ui.live.classList.toggle('hidden', !live);
-        var paused = isPaused();
+        var paused = isPaused() || lostPaused;
         ui.state.textContent = ended ? '■' : paused ? '❚❚' : '▶';
         // The transport row (#48): OK acts on the play/pause circle, so it
         // shows what OK does next; ▼ moves to the buttons beside it.
@@ -1197,12 +1200,21 @@ window.Player = (function () {
         showControls();
     }
 
-    // Live reconnects on its own; a movie or episode shows the error screen.
+    // Live reconnects on its own. A movie or episode the viewer paused (the
+    // provider drops a connection left idle) waits, still paused, and reopens
+    // where it was on Play; otherwise it shows the error screen.
     function streamLost(reason, message) {
-        if (current && current.live) {
-            Log.error('STREAM LOST ' + current.title + ' (' + reason + ')');
-            reconnect.lost(reason);
-        } else showStatus(message, true);
+        if (!current) return;
+        Log.error('STREAM LOST ' + current.title + ' (' + reason + ')' + (heldPaused ? ' while paused' : ''));
+        if (current.live) reconnect.lost(reason);
+        else if (heldPaused && !lostPaused) lostPaused = true;
+        else if (!lostPaused) showStatus(message, true);
+    }
+
+    function reopenLost() {
+        lostPaused = false;
+        Log.info('REOPEN after pause ' + current.title);
+        play(Object.assign({}, current, { resume: true }));
     }
 
     function onReady() {
@@ -1257,6 +1269,7 @@ window.Player = (function () {
     // keeps the Reconnecting status and hears null (playing) or the failure.
     function start(req, onAttempt, rect) {
         playbackError = false;
+        heldPaused = lostPaused = false;
         release();
         current = req;
         opening = req.live ? OpenTiming.off : OpenTiming.begin(req.openKind || (req.episodes ? 'episode' : 'film'));
@@ -1333,9 +1346,14 @@ window.Player = (function () {
     }
 
     function togglePause(force) {
-        var wantPause = force === undefined ? !isPaused() : force;
-        if (wantPause) pause();
-        else unpause();
+        var wantPause = force === undefined ? !(isPaused() || lostPaused) : force;
+        if (!wantPause && lostPaused) return reopenLost();
+        heldPaused = wantPause;
+        if (wantPause) {
+            pause();
+            // Where a stream dropped during the pause reopens.
+            saveProgress();
+        } else unpause();
         showControls();
     }
 
@@ -1457,6 +1475,10 @@ window.Player = (function () {
         isPlaying: function () {
             return current !== null && ready && !playbackError;
         },
-        paused: isPaused,
+        // Still on screen: paused, or a film that dropped while paused, or the
+        // error screen. The screen saver may start over any of these.
+        paused: function () {
+            return isPaused() || lostPaused || (current !== null && playbackError);
+        },
     };
 })();

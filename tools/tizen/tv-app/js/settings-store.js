@@ -28,6 +28,7 @@ window.Prefs = (function () {
         'sort:movies': 'newest',
         'sort:series': 'newest',
         onStart: 'last-channel',
+        homeTiles: true,
         parentalRelockMs: 900000,
         language: 'en',
         theme: 'dark',

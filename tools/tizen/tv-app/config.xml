@@ -18,4 +18,17 @@
         <tizen:icon src="icon.png"/>
         <tizen:description>Receives a source typed on a phone, on the home network only</tizen:description>
     </tizen:service>
+    <!-- #91: Jo-TV tiles on the Samsung home screen; a picked tile opens the running app without reloading it. -->
+    <tizen:app-control>
+        <tizen:src name="index.html" reload="disable"/>
+        <tizen:operation name="http://samsung.com/appcontrol/operation/eden_resume"/>
+    </tizen:app-control>
+    <tizen:service id="IPTVnTVApp.HubPreview" auto-restart="false" on-boot="false">
+        <tizen:content src="service/hub-preview.js"/>
+        <tizen:name>Jo-TV home tiles</tizen:name>
+        <tizen:icon src="icon.png"/>
+        <tizen:description>Puts Continue watching and Recent channels on the Samsung home screen</tizen:description>
+        <tizen:category name="http://tizen.org/category/service"/>
+    </tizen:service>
+    <tizen:metadata key="http://samsung.com/tv/metadata/use.preview" value="bg_service"/>
 </widget>

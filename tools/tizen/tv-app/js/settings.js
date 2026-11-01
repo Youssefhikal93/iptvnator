@@ -39,6 +39,7 @@ window.Settings = function (hooks) {
         ...LanguageSettings.rows,
         placed(picture[4], null, 'picture.picture'),
         { get part() { return I18n.t('settings.startUp'); }, get label() { return I18n.t('settings.onStart'); }, get hint() { return I18n.t('describe.onStart'); }, key: 'onStart', choices: ['last-channel', 'home'], get labels() { return [I18n.t('settings.lastChannel'), I18n.t('rail.home')]; } },
+        { get label() { return I18n.t('settings.homeTiles'); }, get hint() { return I18n.t('describe.homeTiles'); }, key: 'homeTiles', choices: [true, false], get labels() { return onOff(); } },
         placed(picture[0], 'picture.subtitles', 'picture.subtitleStyle'),
         ...picture.slice(1, 4).map((source) => placed(source)),
         ...OpenSubsSettings.rows,

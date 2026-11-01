@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Samsung home screen tiles: press Home on the remote and move to the Jo-TV icon to see Continue watching and recent channels; pick one to play it straight away (see Home and your library below).
 - Converted sound appears only when it can help, and tells you whether the provider's HLS or TS sound now plays or no other sound was found.
 - Multi-view: watch 2, 3 or 4 live channels at once. Press Blue while watching, or hold OK → Multi-view (see Live TV below).
 - The live player's menu is now called Options, and every action in it and in the hold-OK menus has an icon.
@@ -137,6 +138,10 @@ Choose Home in the main menu, then use the arrows and OK to open or play titles 
 ### Continue watching (#31, #33)
 
 Home → Continue watching brings back unfinished films and episodes with their saved progress; select one and press OK to continue. The Movies and Series categories also offer Continue watching. To remove a saved position, hold OK on its item and choose Remove from Continue watching.
+
+### Tiles on the Samsung home screen (#91)
+
+Press Home on the remote and move to the Jo-TV icon: up to six Continue watching titles and six recently watched channels from the active source show as tiles. Pick one to open Jo-TV and play it; a film or episode continues where it stopped. The tiles change when you leave Jo-TV, at most once every 10 minutes (a Samsung limit). Titles from a locked category never show. Turn them off in Settings → Playback → Samsung home screen tiles. Setup and removal: HOME-TILES.md.
 
 ### Favorites and recents across sources (#24)
 

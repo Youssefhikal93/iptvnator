@@ -183,6 +183,8 @@ I18n.tables.en = {
     'describe.menuPosition': 'The main menu down the side or along the top',
     'describe.motion': 'Fades and growing tiles; turn off if the TV stutters',
     'describe.onStart': 'What the app opens when it starts',
+    'describe.homeTiles': 'Continue watching and recent channels on the Samsung home screen, under the Jo-TV icon',
+    'settings.homeTiles': 'Samsung home screen tiles',
     'describe.pin': 'Locks the categories you choose behind a PIN',
     'describe.programmeGuide': 'Shows what is on now and next in lists and the player',
     'describe.relock': 'How long unlocked categories stay open',

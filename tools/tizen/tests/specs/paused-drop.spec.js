@@ -32,12 +32,21 @@ test('a film whose stream drops while paused stays paused and reopens where it w
     expect(logs.some((line) => /REOPEN after pause/.test(line))).toBe(true);
 });
 
-test('a film whose stream drops while playing shows the error, which the screen saver may cover', async ({ page }) => {
+test('a film whose stream drops while playing reopens once where it was; a second drop shows the error', async ({ page }) => {
     const logs = [];
     page.on('console', (message) => logs.push(message.text()));
     await film(page);
+    // Past the 10 s periodic save, so the reopen has a position to return to.
+    await page.waitForTimeout(4000);
+    const at = await page.locator('#video').evaluate((v) => v.currentTime);
+    await drop(page);
+    await expect.poll(() => logs.some((line) => /REOPEN after drop/.test(line))).toBe(true);
+    await playing(page);
+    await expect(errorShown(page)).toBeHidden();
+    expect(await page.locator('#video').evaluate((v) => v.currentTime)).toBeGreaterThanOrEqual(Math.floor(at) - 1);
     await drop(page);
     await expect(errorShown(page)).toBeVisible();
+    // The screen saver may cover the error screen.
     expect(await page.evaluate(() => Player.paused())).toBe(true);
-    expect(logs.some((line) => /STREAM LOST /.test(line))).toBe(true);
+    expect(logs.filter((line) => /STREAM LOST /.test(line)).length).toBe(2);
 });

@@ -69,6 +69,8 @@ window.Player = (function () {
     // The viewer paused a film; its stream then dropped and reopens on Play.
     var heldPaused = false;
     var lostPaused = false;
+    var REOPEN_GAP_MS = 60000;
+    var lastReopen = { id: null, at: 0 }; // the last film reopened after a drop while playing
     var liveOffered = false;
     var errorFocus = 0;
     var speed = 1;
@@ -1202,13 +1204,27 @@ window.Player = (function () {
 
     // Live reconnects on its own. A movie or episode the viewer paused (the
     // provider drops a connection left idle) waits, still paused, and reopens
-    // where it was on Play; otherwise it shows the error screen.
+    // where it was on Play. One that drops while playing (the provider's
+    // redirected link expires) reopens once where it was; a second drop within
+    // a minute shows the error screen.
     function streamLost(reason, message) {
         if (!current) return;
         Log.error('STREAM LOST ' + current.title + ' (' + reason + ')' + (heldPaused ? ' while paused' : ''));
         if (current.live) reconnect.lost(reason);
         else if (heldPaused && !lostPaused) lostPaused = true;
+        else if (!lostPaused && mayReopen()) reopenPlaying();
         else if (!lostPaused) showStatus(message, true);
+    }
+
+    function mayReopen() {
+        return !!current.id && !(lastReopen.id === current.id && Date.now() - lastReopen.at < REOPEN_GAP_MS);
+    }
+
+    function reopenPlaying() {
+        if (position() > 0) saveProgress();
+        lastReopen = { id: current.id, at: Date.now() };
+        Log.info('REOPEN after drop ' + current.title);
+        play(Object.assign({}, current, { resume: true }));
     }
 
     function reopenLost() {

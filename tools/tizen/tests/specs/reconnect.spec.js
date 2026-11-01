@@ -137,13 +137,16 @@ test('zapping during Reconnecting cancels it and plays only the new channel', as
     expect(live.max).toBe(1);
 });
 
-test('a movie that fails still shows the error screen at once and never reconnects', async ({ page }) => {
+test('a movie that fails again after its one reopen shows the error screen and never reconnects', async ({ page }) => {
     await shorten(page);
     await boot(page);
     await section(page, 'Movies');
     await enterItems(page);
     await press(page, 'Enter');
     await press(page, 'Enter');
+    await playing(page);
+    // The first drop reopens it once (paused-drop.spec.js); the second shows the error.
+    await page.locator('#video').evaluate((v) => v.dispatchEvent(new Event('error')));
     await playing(page);
     await page.locator('#video').evaluate((v) => v.dispatchEvent(new Event('error')));
     await expect(page.locator('#pl-status')).toHaveClass(/error/);

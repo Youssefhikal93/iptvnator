@@ -261,12 +261,29 @@
         browser.toast(event.detail, 8000);
     });
 
+    // The Samsung home screen's Jo-TV tiles (#91); Off leaves none there.
+    function publishTiles() {
+        var text = Prefs.get('homeTiles') ? browser.homeTiles() : JSON.stringify({ sections: [] });
+        if (text) HubTiles.publish(text);
+    }
+
     // Leaving the app (Home, Source) must free the account's connection.
     document.addEventListener('visibilitychange', function () {
         if (document.hidden) preview.stop();
         if (document.hidden && screen === 'player') closePlayer();
         LoadScreen.pause(document.hidden || screen === 'player');
+        // After the player closed, so Continue watching has where it stopped.
+        if (document.hidden) publishTiles();
     });
+    Prefs.onChange(function (name) {
+        if (name === 'homeTiles') publishTiles();
+    });
+    HubTiles.listen(function (picked) {
+        if (screen === 'player') closePlayer(true);
+        browser.openTile(picked);
+    });
+    // A first set of tiles once the library has loaded.
+    setTimeout(publishTiles, 30000);
 
     try {
         if (tizen.tvinputdevice.getKey('Guide')) MEDIA_KEYS.push('Guide');

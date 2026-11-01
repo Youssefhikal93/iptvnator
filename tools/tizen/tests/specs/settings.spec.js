@@ -81,8 +81,8 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await press(page, 'ArrowDown');
     await expect(groups.nth(2)).toContainText('Playback');
     await expect(page.locator('#settings .st-section:visible .st-group')).toHaveText('Playback');
-    // Playback, then its Picture and Start-up parts (#52).
-    await expect(page.locator('#settings .st-section:visible .st-row')).toHaveCount(8);
+    // Playback, then its Picture and Start-up parts (#52); Start-up has the home screen tiles (#91).
+    await expect(page.locator('#settings .st-section:visible .st-row')).toHaveCount(9);
     await expect(page.locator('#settings .st-section:visible .st-part')).toHaveText(['Picture', 'Start-up']);
     // ▶ enters the rows; a row says what it does and on/off is a switch.
     await press(page, 'ArrowRight');

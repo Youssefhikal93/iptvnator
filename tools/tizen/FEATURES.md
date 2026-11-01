@@ -6,6 +6,8 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Full backup with a computer: Settings → Backup → Send everything to computer… and Restore from computer… keep every profile, setting and your library (see Backup below).
+- Samsung home screen tiles: press Home on the remote and move to the Jo-TV icon to see Continue watching and recent channels; pick one to play it straight away (see Home and your library below).
 - Converted sound appears only when it can help, and tells you whether the provider's HLS or TS sound now plays or no other sound was found.
 - Multi-view: watch 2, 3 or 4 live channels at once. Press Blue while watching, or hold OK → Multi-view (see Live TV below).
 - The live player's menu is now called Options, and every action in it and in the hold-OK menus has an icon.
@@ -137,6 +139,10 @@ Choose Home in the main menu, then use the arrows and OK to open or play titles 
 ### Continue watching (#31, #33)
 
 Home → Continue watching brings back unfinished films and episodes with their saved progress; select one and press OK to continue. The Movies and Series categories also offer Continue watching. To remove a saved position, hold OK on its item and choose Remove from Continue watching.
+
+### Tiles on the Samsung home screen (#91)
+
+Press Home on the remote and move to the Jo-TV icon: up to six Continue watching titles and six recently watched channels from the active source show as tiles. Pick one to open Jo-TV and play it; a film or episode continues where it stopped. The tiles change when you leave Jo-TV, at most once every 10 minutes (a Samsung limit). Titles from a locked category never show. Turn them off in Settings → Playback → Samsung home screen tiles. Setup and removal: HOME-TILES.md.
 
 ### Favorites and recents across sources (#24)
 
@@ -295,3 +301,7 @@ Open Settings → Backup → Import from link…, enter a direct HTTP or HTTPS l
 ### Export a backup (#25)
 
 Open Settings → Backup → Export, read Contains your passwords and choose Continue. Download JSON on this device saves the backup where supported; Copy to a link… lets you send it to a trusted server with Upload with PUT or Upload with POST and shows a phone link only after checking it can read the backup back. Export uses the current profile's library across sources; desktop transfer does not preserve every TV choice, and M3U progress does not survive a transfer through the desktop.
+
+### Everything to and from a computer
+
+Settings → Backup → Send everything to computer… copies every profile, PIN, setting, source and your whole library to a computer on the home network; Restore from computer… puts it all back exactly as it was, to reinstall Jo-TV or move to a new TV. The computer runs a small receiver that shows the address and a code to enter; steps in JOTV-BACKUP.md.

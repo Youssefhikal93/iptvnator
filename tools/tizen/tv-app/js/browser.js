@@ -2314,6 +2314,66 @@ window.Browser = function (hooks) {
         return row.add === 'xtream';
     }
 
+    // ---- Samsung home tiles (#91) ----
+
+    var pendingTile = null;
+
+    // A locked category never reaches the home screen, even while unlocked.
+    function tileAllowed(section, item) {
+        var own = item.show || item;
+        var category = own.category_id !== undefined && own.category_id !== null ? String(own.category_id) : own.group || '';
+        return visibility.allows(section, item, { withHidden: section !== 'live' }) && !ParentalLock.isLocked(sourceId(), section, category);
+    }
+
+    function tileOf(entry) {
+        var item = entry.item;
+        var show = item.show || item;
+        var p = entry.section === 'live' ? null : progressOf(entry);
+        var left = p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '';
+        var episode = item.episode ? String(item.episode.label || '').replace(/\s+/g, ' ').trim() : '';
+        return {
+            section: entry.section,
+            key: Library.keyOf(entry.section, item),
+            title: show.name || show.title || '',
+            subtitle: [episode, left].filter(Boolean).join(' · '),
+            image: show.stream_icon || show.cover || show.logo || '',
+        };
+    }
+
+    // The tiles for the Samsung home screen: this source and profile only.
+    function homeTiles() {
+        if (!state.adapter) return null;
+        var src = sourceId();
+        var channels = available('live') ? Library.recent(src, 'live').map(function (item) { return { item: item, section: 'live' }; }) : [];
+        var allowed = function (entry) { return tileAllowed(entry.section, entry.item); };
+        return HubTiles.build(src, {
+            continue: continueEntries().filter(allowed).map(tileOf),
+            live: channels.filter(allowed).map(tileOf),
+        });
+    }
+
+    // A picked tile plays what it shows: Continue watching resumes without
+    // asking, a channel plays. One that is gone or locked opens Home.
+    function openTile(picked) {
+        if (!state.adapter) {
+            pendingTile = picked;
+            return;
+        }
+        restoring = false;
+        if (picked.s !== sourceId()) return Log.info('HUBTILES tile of another source');
+        var key = String(picked.key);
+        var match = function (entry) { return Library.keyOf(entry.section, entry.item) === key && tileAllowed(entry.section, entry.item); };
+        if (picked.sec === 'live') {
+            var channel = Library.recent(sourceId(), 'live').map(function (item) { return { item: item, section: 'live' }; }).filter(match)[0];
+            return channel ? openEntry(channel.item, 'live') : Log.info('HUBTILES channel gone');
+        }
+        var entry = continueEntries().filter(match)[0];
+        if (entry) return resumeEntry(entry);
+        var saved = Library.recent(sourceId(), picked.sec).map(function (item) { return { item: item, section: picked.sec }; }).filter(match)[0];
+        if (saved) return openEntry(saved.item, saved.section);
+        Log.info('HUBTILES item gone');
+    }
+
     function start() {
         return LoadScreen.run('saved', function () {
             return KidsProfile.source(Sources.current());
@@ -2327,6 +2387,12 @@ window.Browser = function (hooks) {
         if (!source) return openSources(addRow);
         openSection('home');
         setZone(contentZone());
+        // A home tile that opened the app plays instead of the last channel.
+        if (pendingTile) {
+            var picked = pendingTile;
+            pendingTile = null;
+            return openTile(picked);
+        }
         restoring = true;
         live.last(source.id).then(function (channel) {
             if (restoring && channel) hooks.play(live.play(channel));
@@ -2341,6 +2407,8 @@ window.Browser = function (hooks) {
         start: start,
         toast: toast,
         onKey: onKey,
+        homeTiles: homeTiles,
+        openTile: openTile,
         // The player closed: new progress, recents and Resume labels.
         afterPlayback: function () {
             if (!state.played) return;

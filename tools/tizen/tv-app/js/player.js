@@ -709,6 +709,18 @@ window.Player = (function () {
         };
     }
 
+    // Quality (#94): another copy opens where this one was.
+    var quality = PlayerQuality({
+        current: function () { return current; },
+        hls: function () { return window.Hls && lib instanceof Hls ? lib : null; },
+        switchTo: function (req) {
+            closeMenu();
+            if (!current.live && position() > 0) saveProgress();
+            Log.info('QUALITY ' + (req.quality.tag || 'standard') + ' ' + current.title);
+            play(Object.assign(req, { resume: current.live ? req.resume : true, zapped: false }));
+        },
+    });
+
     // What the ▲ menu shows (see player-menu.js), asked again on every render.
     function menuEntries(whole, all) {
         var m = all ? whole : menuPart(whole);
@@ -717,6 +729,7 @@ window.Player = (function () {
         if (watch) m.item(I18n.t('player.startOver'), false, startOver, null, '\u21BA');
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive, null, '\u25B6');
         PlayerHelp.menuEntries(m.item, current);
+        quality.menuEntries(m.head, m.item);
         m.head(I18n.t('player.audio'));
         tracks.audio.forEach(function (t) { m.item(t.label, t.active, t.select, t.note); });
         var routes = usingAv && AudioRoute.offered(current, { route: avRoute, sound: avSound });
@@ -987,6 +1000,9 @@ window.Player = (function () {
                 var reason = data.details + (status ? ' HTTP ' + status : '');
                 if (ready && lib === player) streamLost(reason, I18n.t('player.stopped'));
                 finish(reason);
+            });
+            player.on(Hls.Events.MANIFEST_PARSED, function () {
+                if (lib === player) quality.applyLevel();
             });
             video.onplaying = function () {
                 finish(null);
@@ -1321,6 +1337,12 @@ window.Player = (function () {
                 epg.load(req);
             },
             giveUp: function (kind) {
+                // A chosen copy that does not play goes back to the one before (#94).
+                var back = req.qualityFallback;
+                if (back && !onAttempt) {
+                    document.dispatchEvent(new CustomEvent('subtitle-toast', { detail: I18n.t('player.quality.failed', { quality: Quality.label(back.tag) }) }));
+                    return play(Object.assign({}, req, { sources: back.sources, quality: Object.assign({}, req.quality, { tag: back.tag, auto: back.auto !== undefined ? back.auto : req.quality.auto }), qualityFallback: null, resume: req.live ? req.resume : true }));
+                }
                 fail(I18n.t(kind === 'busy' ? 'player.busy' : 'player.offline'));
             },
         });

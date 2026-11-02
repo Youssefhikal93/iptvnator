@@ -526,6 +526,76 @@ window.Browser = function (hooks) {
                 return epg.load(channel);
             };
         }
+        var all = state.catalogue.peek({ section: 'live', kind: 'items' }) || [];
+        return withCopies(req, channel, all.concat(live.capture().channels || []), 'live', function (copy) { return state.adapter.liveRequest(copy).sources; });
+    }
+
+    // #94: other copies of a channel or title (HD, FHD, 4K) become the
+    // player's Quality choices; the request opens with the remembered or best
+    // one. Only copies the viewer may open here: shown, and not in another
+    // locked category. The request keeps its own ids, so progress, guide and
+    // tracks stay with what was opened.
+    function copyAllowed(section, item, entry) {
+        var own = String(item.category_id);
+        var category = String(entry.category_id);
+        return visibility.allows(section, entry, { withHidden: true }) && (category === own || !ParentalLock.isLocked(sourceId(), section, category));
+    }
+
+    // The section's saved lists: everything, and the item's category.
+    function savedItems(section, item) {
+        var all = state.catalogue.peek({ section: section, kind: 'items' }) || [];
+        var category = item.category_id !== undefined && item.category_id !== null ? state.catalogue.peek({ section: section, kind: 'items', id: String(item.category_id) }) : null;
+        return category ? all.concat(category) : all;
+    }
+
+    function copyKey(section, item) {
+        return section + '|' + sourceId() + '|' + Quality.parse(item.name, section === 'live').base;
+    }
+
+    function withCopies(req, item, list, section, sourcesOf) {
+        if (otherSource(item)) return req;
+        var found = Quality.copies(item, list.filter(function (entry) { return copyAllowed(section, item, entry); }), section === 'live');
+        if (!found) return req;
+        var own = Quality.parse(item.name, section === 'live').tag;
+        var copies = found.map(function (copy) {
+            return { tag: copy.tag, sources: copy.item === item ? req.sources : sourcesOf(copy.item) };
+        });
+        var key = copyKey(section, item);
+        var choice = Quality.choose(key, copies);
+        req.quality = { key: key, tag: choice.copy.tag, auto: choice.auto, copies: function () { return copies; } };
+        if (choice.copy.tag !== own) {
+            req.qualityFallback = { tag: own, sources: req.sources };
+            req.sources = choice.copy.sources;
+        }
+        return req;
+    }
+
+    // An episode's copies are the same episode of the show's other copies.
+    // Their episode lists load in the background and join the choices once
+    // they are known; the remembered or best copy applies when already known.
+    function withEpisodeCopies(req, show, episode) {
+        var shows = Quality.copies(show, savedItems('series', show).filter(function (entry) { return copyAllowed('series', show, entry); }), false);
+        if (otherSource(show) || !shows) return req;
+        var own = Quality.parse(show.name, false).tag;
+        if (episode.num === undefined || episode.num === null || episode.num === '') return req;
+        var same = function (ep) { return ep && String(ep.season) === String(episode.season) && String(ep.num) === String(episode.num); };
+        var known = function () {
+            return shows.map(function (copy) {
+                if (copy.item === show) return { tag: copy.tag, sources: req.sources };
+                var info = state.catalogue.peek({ kind: 'show', id: copy.item.series_id });
+                var match = info && (info.episodes || []).filter(same)[0];
+                return match ? { tag: copy.tag, sources: state.adapter.episodeRequest(copy.item, match).sources } : null;
+            }).filter(Boolean);
+        };
+        shows.forEach(function (copy) { if (copy.item !== show) loadShow(copy.item).catch(function () {}); });
+        var key = copyKey('series', show);
+        var now = known();
+        var choice = now.length > 1 ? Quality.choose(key, now) : { copy: { tag: own }, auto: Quality.picked(key) === null };
+        req.quality = { key: key, tag: choice.copy.tag, auto: choice.auto, copies: function () { var list = known(); return list.length > 1 ? list : []; } };
+        if (choice.copy.tag !== own) {
+            req.qualityFallback = { tag: own, sources: req.sources };
+            req.sources = choice.copy.sources;
+        }
         return req;
     }
 
@@ -1602,7 +1672,7 @@ window.Browser = function (hooks) {
                 return episodeRequest(show, list, next);
             },
         };
-        return req;
+        return withEpisodeCopies(req, show, list[index]);
     }
 
     // From Recently watched / Continue watching: load the show's episodes
@@ -1799,6 +1869,7 @@ window.Browser = function (hooks) {
         record(movie, null, null, 'movies');
         var req = state.adapter.movieRequest(movie);
         SubtitleContext.attach(req, { sourceId: sourceId(), item: movie, catalogue: state.catalogue, details: detail.subtitleInfo(movie) });
+        withCopies(req, movie, savedItems('movies', movie), 'movies', function (copy) { return state.adapter.movieRequest(copy).sources; });
         if (resume !== undefined) req.resume = resume;
         hooks.play(req);
     }

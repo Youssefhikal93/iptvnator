@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Quality: when the provider has a channel, film or show in several qualities, the player's menu offers Auto or a copy of your choice (see Player below).
 - Phone remote: pair up to five phones in Settings > General. Use the phone for keys, search, typing and actions that follow the TV screen.
 - Full backup with a computer: Settings → Backup → Send everything to computer… and Restore from computer… keep every profile, setting and your library (see Backup below).
 - Samsung home screen tiles: press Home on the remote and move to the Jotv icon to see Continue watching and recent channels; pick one to play it straight away (see Home and your library below).
@@ -158,6 +159,10 @@ On Home, press ▲ to the Search icon, then OK and enter a name to search Movies
 With TMDB set up, Home can offer Because you watched followed by a title, using films and shows you played for at least five minutes or marked watched. It offers similar titles available in the current source when enough matches are found. Use the arrows and OK on a suggestion to open it.
 
 ## Player
+
+### Quality (#94)
+
+When the provider lists the same channel, film or show more than once in different qualities (4K, FHD, HD, SD), the player's menu starts with Quality: Settings gear for films and episodes, ▲ / Options on Live TV. Auto plays the best copy this TV shows and names it, e.g. Auto (FHD). Pick a copy to switch where you are; the pick is kept for that channel or title until you choose Auto again. If a copy does not play, Jotv goes back to the one before and says so. An adaptive HLS stream with several sizes offers them (1080p, 720p…) in the same place. Lists still show every copy.
 
 ### Pause, timeline and playback speed (#31)
 

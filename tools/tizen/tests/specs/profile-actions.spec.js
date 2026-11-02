@@ -33,7 +33,8 @@ for (const language of ['en', 'ar']) {
             expect(fit).toBe(true);
             const remove = actions.last();
             await expect(remove).toHaveAttribute('aria-disabled', 'true');
-            await expect(page.locator('.st-action-hint')).not.toBeEmpty();
+            // Delete's note shows only while Delete is focused.
+            await expect(page.locator('.st-action-hint')).toBeEmpty();
             await expect(remove.locator('.st-value')).toHaveCount(0);
             await expect(actions.locator('.menu-icon svg')).toHaveCount(4);
             const groupIcons = page.locator('.st-group-item .menu-icon');

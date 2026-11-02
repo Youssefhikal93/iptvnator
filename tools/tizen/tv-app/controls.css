@@ -40,6 +40,12 @@
     box-shadow: 0 6px 22px var(--selection-surface);
     transform: scale(var(--control-lift));
 }
+/* Full-width rows do not grow: in a scrolling pane even 2% pushes their
+   rounded ends past the pane's edge, which clips them. Pills still lift. */
+:is(.row, .menu-row, .st-group-item, .st-row:not(.st-profile-actions .st-row), .pl-menu-item,
+    .pl-channel, .pl-ep-row, .kp-source, .kp-cat, .sync-line, .gd-programme, .list-action):is(.focused, .focus) {
+    transform: none;
+}
 /* Values and icons inherit the filled pill's contrast, including active rows. */
 :is(.focused, .focus) :is(.menu-icon, .menu-check, .st-value, .st-label, .st-sub,
     .st-arrow, .st-group-item .n, .pl-menu-note, .value, .chev, .dot, .epg-now) { color: inherit; }

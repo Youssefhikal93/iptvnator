@@ -90,3 +90,38 @@ body:not(.menu-top) #menu.profile-menu { inset-inline-start: 382px; inset-inline
 :is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #rail:has(.focused) :is(.rail-item, .rail-profile) > span { transform: none; }
 :is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) :is(#content, #header, #load-error) { left: 0; right: var(--menu-w); }
 :is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #menu.profile-menu { left: auto; right: 382px; }
+
+/* Top menu: icons only. The focused entry's name fades in under its icon,
+   just below the bar, so the bar never changes size. */
+body.menu-top #rail :is(.rail-item, .rail-profile) {
+    position: relative;
+    justify-content: center;
+    inset: auto;
+    width: 72px;
+    height: 72px;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    gap: 0;
+}
+body.menu-top #rail .rail-profile { margin-inline-end: 22px; }
+body.menu-top #rail .rail-item.rail-bottom { margin-inline-start: auto; }
+body.menu-top #rail .rail-item.active:not(.focused) { background: var(--selection-surface); }
+body.menu-top #rail :is(.rail-item, .rail-profile) > span {
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 50%;
+    max-width: none;
+    padding: 6px 16px;
+    border-radius: var(--control-radius);
+    background: var(--rail-bg);
+    color: var(--on-surface);
+    font-size: 22px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -6px);
+    transition: opacity var(--control-time) ease-out, transform var(--control-time) ease-out;
+}
+body.menu-top #rail :is(.rail-item, .rail-profile).focused > span { opacity: 1; transform: translate(-50%, 0); }
+body.menu-top #rail { z-index: 12; overflow: visible; }

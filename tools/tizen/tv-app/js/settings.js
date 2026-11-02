@@ -111,9 +111,11 @@ window.Settings = function (hooks) {
         return entry.rows.map((row, at) => {
             if (!row.strip) return [row.part ? html`<h3 class="st-part">${row.part}</h3>` : null, draw(row, at)];
             if (at > 0 && entry.rows[at - 1].strip) return null;
-            const hints = entry.rows.filter((button) => button.strip).map(valueText).filter(Boolean);
+            // A button's note (why it is unavailable) shows only while it is focused.
+            const focused = active && zone === 'rows' && index === group ? entry.rows[focus] : null;
+            const hint = focused && focused.strip ? valueText(focused) : '';
             return html`<div class="st-profile-tools"><div class="st-profile-actions">${entry.rows.map((button, offset) => button.strip ? draw(button, offset) : null)}</div>
-                <p class="st-action-hint">${hints.join(' · ')}</p></div>`;
+                <p class="st-action-hint">${hint}</p></div>`;
         });
     };
 

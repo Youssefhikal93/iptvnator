@@ -6,6 +6,8 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Rounded controls across Jotv use filled accent focus with a gentle lift. Profiles have an avatar card and action pills; paired phones have separate Rename and Forget pills. The logo screen saver moves more slowly (#95).
+- Settings and player menus use distinct line icons. Inactive rail entries stay clear, destructive actions turn red on focus, unavailable Delete stays one line with its reason below, and profile settings are translated into Arabic (#95).
 - Quality: when the provider has a channel, film or show in several qualities, the player's menu offers Auto or a copy of your choice (see Player below).
 - Phone remote: pair up to five phones in Settings > General. Use the phone for keys, search, typing and actions that follow the TV screen.
 - Full backup with a computer: Settings → Backup → Send everything to computer… and Restore from computer… keep every profile, setting and your library (see Backup below).
@@ -282,11 +284,17 @@ Hold OK on a category → Move, use ▲/▼ to move it, then OK to place it or R
 
 In Settings → Display, Theme offers Dark black, Dark grey, Dark blue and Light. Accent colour changes the focus colour, and Density offers Comfortable or Compact. Set Animations to Off if movement is uncomfortable or makes the TV stutter; these choices belong to the current profile.
 
+Controls use translucent pills with filled accent focus (#95). Settings → Profiles shows the current avatar and name above Avatar, Rename profile…, Add profile… and Delete profile pills. Left/Right move along the action row; Up/Down still reach every action and the toggles below. Paired phones in General have separate Rename and Forget pills, also reached with Left/Right.
+
+Home and Movies cards share a single accent ring with a small gap. Only the active or focused rail entry has a pill surface. Delete and Forget use red text while idle and a red fill when focused; the last profile's disabled Delete shows its explanation below the action row.
+
 ### App language (#27)
 
 Open Settings → Display → Language and choose with the arrows and OK. English, العربية (Arabic) and other available languages change menus and help text; Arabic also changes the reading direction. Source title names are supplied by the source.
 
 ### Screen savers (#61, #71, #74)
+
+The logo rises gently over a 5.5-second cycle; the smaller logos keep their different animations on 14–20-second cycles (#95).
 
 Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock keeps the clock and date centred below a bouncing logo, adding 2, then 6, then 14, then 28 smaller animated logos in free spots every two minutes before restarting with 2 in new spots. With Animations Off, the logos still appear but stay still. Press any key to dismiss the app's saver; that press does not also select or play anything.
 

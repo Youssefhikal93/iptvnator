@@ -113,6 +113,8 @@ test('the main 300 px icon bounces forever above the still clock and date', asyn
     expect((await icon.boundingBox()).width).toBeGreaterThan(280);
     await expect(icon).toHaveCSS('animation-name', 'ss-bounce');
     await expect(icon).toHaveCSS('animation-iteration-count', 'infinite');
+    await expect(icon).toHaveCSS('animation-duration', '5.5s');
+    await expect(icon).toHaveCSS('animation-timing-function', 'ease-in-out');
     await expect(saver(page).locator('.ss-logo-clock')).toHaveCSS('animation-name', 'none');
     expect(parseFloat(await saver(page).locator('.ss-logo-clock').evaluate(el => getComputedStyle(el).fontSize))).toBeLessThan(200);
     expect(parseFloat(await saver(page).locator('.ss-logo-date').evaluate(el => getComputedStyle(el).fontSize))).toBeLessThan(38);
@@ -146,6 +148,8 @@ test('the full swarm has staggered loops, distinct neighbours and no animated ov
     expect(new Set(loops.map(loop => loop.name)).size).toBeGreaterThanOrEqual(9);
     loops.forEach((loop, i) => {
         expect(loop.iterations).toBe('infinite');
+        expect(parseFloat(loop.duration)).toBeGreaterThanOrEqual(14);
+        expect(parseFloat(loop.duration)).toBeLessThanOrEqual(20);
         loops.slice(0, i).forEach(other => {
             if (Math.abs(loop.x - other.x) <= 12.51 && Math.abs(loop.y - other.y) <= 16.67) expect(loop.name).not.toBe(other.name);
         });

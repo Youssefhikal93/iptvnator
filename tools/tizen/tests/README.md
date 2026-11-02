@@ -26,6 +26,22 @@ npx playwright test specs/resume.spec.js
 npx playwright test --list
 ```
 
+The #95 owner-review gallery is excluded from ordinary test runs. Run it
+explicitly from this directory in PowerShell:
+
+```powershell
+$env:TV_TEST_PORT='8261'
+npx playwright test --trace=off --reporter=line specs/design-95.shots.spec.js
+```
+
+PNG files go into the ignored `design-95-shots/` directory, with one folder
+per review section. Set `DESIGN_SHOTS` to choose another output directory.
+TV shots are 1920×1080; phone shots are 390×844. The gallery uses the fake
+provider, generated media and the real local phone service on port 8778.
+Vendor scripts must be present as described in
+[installation section 8](../INSTALLATION-TO-TV.md); generate media with
+`npm run media` before running playback checks or the gallery.
+
 Coverage is grouped by viewer journey:
 
 | Spec | Coverage |

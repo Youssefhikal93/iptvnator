@@ -5,6 +5,12 @@ Jotv is open. Add from phone remains on its own service and port 8777.
 `js/phone-remote.js` connects the app, `js/remote-app.js` maps app state and
 commands, and `js/remote-settings.js` owns pairing management.
 
+Settings > General draws each paired phone's name and last-used time beside
+Rename and Forget pills (#95). Left/Right select an action and OK runs it;
+Up/Down move to the next row. Forget all phones remains below the list and
+still asks for confirmation. The phone page uses the same rounded controls
+and filled accent focus, with its D-pad geometry and script CSP unchanged.
+
 The service resolves Tizen's `wgt-private` directory and atomically saves
 `phone-remote.json` there, outside ProfileStore. It contains random 256-bit
 phone keys, independent IDs, names and last-used timestamps. It survives app

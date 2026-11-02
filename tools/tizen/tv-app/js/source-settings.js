@@ -11,8 +11,8 @@ window.SourceSettings = (function () {
     // Remove asks once more, like the profile delete.
     function confirmRemove(source, hooks) {
         Menu.open(source.name, [
-            { label: I18n.t('sources.pressAgain'), run: function () { hooks.remove(source); } },
-            { label: I18n.t('common.cancel'), run: function () { open(source, hooks); } },
+            { label: I18n.t('sources.pressAgain'), glyph: '×', run: function () { hooks.remove(source); } },
+            { label: I18n.t('common.cancel'), glyph: '‹', run: function () { open(source, hooks); } },
         ]);
     }
 
@@ -20,11 +20,11 @@ window.SourceSettings = (function () {
         var current = hooks.current();
         var isCurrent = !!current && current.id === source.id;
         var options = [
-            { label: I18n.t(isCurrent ? 'sources.watch' : 'sources.switch'), run: function () { hooks.use(source); } },
-            { label: I18n.t('sources.refresh'), run: function () { hooks.refresh(source); } },
-            { label: I18n.t('sources.edit'), run: function () { hooks.edit(source); } },
+            { label: I18n.t(isCurrent ? 'sources.watch' : 'sources.switch'), glyph: '▶', run: function () { hooks.use(source); } },
+            { label: I18n.t('sources.refresh'), glyph: '↻', run: function () { hooks.refresh(source); } },
+            { label: I18n.t('sources.edit'), glyph: '✎', run: function () { hooks.edit(source); } },
         ].concat(hooks.guide(source), [
-            { label: I18n.t('common.remove'), run: function () { confirmRemove(source, hooks); } },
+            { label: I18n.t('common.remove'), glyph: '×', run: function () { confirmRemove(source, hooks); } },
             { label: Sources.typeLabel(source) + ' · ' + source.url, note: true },
         ], SourceAccount.detailRows(source, isCurrent ? hooks.info() : null).map(note));
         Menu.open(source.name, options);

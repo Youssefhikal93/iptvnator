@@ -58,19 +58,18 @@ function luminance([r, g, b]) {
 
 const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
 
-// The outer box-shadow ring is opaque and separate from the surface gap.
+// Filled focus must stand out from its surface, with readable label text.
 async function focusContrast(page, selector) {
     return page.evaluate(({ selector }) => {
         const parse = text => (text.match(/[\d.]+/g) || []).map(Number);
         const node = document.querySelector(selector);
         const style = getComputedStyle(node);
-        const colours = style.boxShadow.match(/rgba?\([^)]+\)/g);
-        const border = parse(colours[1]);
+        const border = parse(style.backgroundColor);
         const surface = parse(getComputedStyle(node.parentElement).backgroundColor);
         const base = surface.length ? surface : parse(getComputedStyle(document.body).backgroundColor);
         const alpha = border.length > 3 ? border[3] : 1;
         const mixed = [0, 1, 2].map(i => Math.round(border[i] * alpha + base[i] * (1 - alpha)));
-        return { mixed, base: base.slice(0, 3), alpha };
+        return { mixed, base: base.slice(0, 3), text: parse(style.color), alpha };
     }, { selector });
 }
 
@@ -145,6 +144,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Dark blue');
     const darkFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(darkFocus.text, darkFocus.mixed)).toBeGreaterThanOrEqual(4.5);
 
     await choose(page, 'Light');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Light');
@@ -154,23 +154,24 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     expect(dark).toBe('rgb(13, 15, 18)');
     expect(light).toBe('rgb(238, 240, 243)');
 
-    // Focus uses a 4 px surface gap and an 8 px outer ring in both themes.
+    // Rows use a filled accent pill in both themes (#95).
     const style = await page.locator('.st-row.focused').evaluate(node => {
         const css = getComputedStyle(node);
-        return { shadow: css.boxShadow };
+        return { radius: css.borderRadius, background: css.backgroundColor };
     });
-    expect(style.shadow).toContain('0px 0px 0px 4px');
-    expect(style.shadow).toContain('0px 0px 0px 8px');
+    expect(style.radius).toBe('999px');
+    expect(style.background).toBe('rgb(29, 99, 224)');
     const lightFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(lightFocus.mixed, lightFocus.base)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(lightFocus.text, lightFocus.mixed)).toBeGreaterThanOrEqual(4.5);
 
-    // The rail uses the same shared ring.
+    // The rail uses the same filled focus pill.
     await backToRail(page);
     const ring = await page.locator('#rail .rail-item.focused').evaluate(node => {
         const css = getComputedStyle(node);
-        return { shadow: css.boxShadow, outline: css.outlineStyle, border: css.borderTopColor };
+        return { background: css.backgroundColor, radius: css.borderRadius };
     });
-    expect(ring.shadow !== 'none' || ring.outline !== 'none').toBe(true);
+    expect(ring).toEqual({ background: 'rgb(29, 99, 224)', radius: '999px' });
 
     await page.reload();
     await expect(page.locator('#rail .rail-item')).toHaveCount(5);

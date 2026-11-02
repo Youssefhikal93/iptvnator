@@ -33,14 +33,49 @@ window.Kit = (() => {
         const face = Avatars.has(profile.avatar) ? Avatars.art(profile.avatar) : profile.name.charAt(0).toUpperCase();
         const drawn = Avatars.has(profile.avatar) ? ' drawn' : '';
         return profile.kids
-            ? html`<div class=${cls + drawn + ' kids'} style=${{ background: profile.color }}>${face}<span class="kids-badge">${I18n.t('kids.badge')}</span></div>`
-            : html`<div class=${cls + drawn} style=${{ background: profile.color }}>${face}</div>`;
+            ? html`<div class=${cls + drawn + ' kids'} style=${{ backgroundColor: profile.color }}>${face}<span class="kids-badge">${I18n.t('kids.badge')}</span></div>`
+            : html`<div class=${cls + drawn} style=${{ backgroundColor: profile.color }}>${face}</div>`;
     };
 
     // Full-screen artwork with the shade that keeps text readable on it.
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;
 
-    const MenuIcon = ({ glyph }) => html`<span class="menu-icon" data-glyph=${glyph} aria-hidden="true"></span>`;
+    const ICONS = {
+        sources: 'M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1',
+        person: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2',
+        play: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M10 8l6 4-6 4z',
+        subtitles: 'M3 5h18v14H3zM10 9H7v6h3M17 9h-3v6h3',
+        display: 'M3 4h18v13H3zM12 17v4M8 21h8',
+        lock: 'M5 10h14v11H5zM8 10V6a4 4 0 0 1 8 0v4M12 14v3',
+        backup: 'M6 17H5a4 4 0 0 1-1-8 7 7 0 0 1 13-2 5 5 0 0 1 2 10h-1M12 21V11M8 15l4-4 4 4',
+        film: 'M3 3h18v18H3zM7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4M10 9l4 3-4 3z',
+        info: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M12 11v6M12 7h.01',
+        sliders: 'M3 6h5M12 6h9M3 18h9M16 18h5M8 3v6M16 15v6M3 12h12M19 12h2M15 9v6',
+        quality: 'M3 5h18v14H3zM7 9v6M11 9v6M7 12h4M15 9v6h1a3 3 0 0 0 0-6z',
+        audio: 'M3 9h4l5-4v14l-5-4H3zM16 8a6 6 0 0 1 0 8M19 5a10 10 0 0 1 0 14',
+        text: 'M4 5h16M12 5v14M8 19h8M4 9V5M20 9V5',
+        aspect: 'M2 5h20v14H2zM6 10V9h3M18 14v1h-3',
+        speed: 'M3 17a10 10 0 1 1 18 0M12 13l5-5M6 12h.01M12 6h.01M18 12h.01M10 17h4',
+        skip: 'M4 5l8 7-8 7zM13 5l8 7-8 7z',
+        moon: 'M20 15A9 9 0 0 1 9 3a9 9 0 1 0 11 12z',
+        phone: 'M6 2h12v20H6zM10 5h4M11 19h2',
+        avatar: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M8 9h.01M16 9h.01M8 14a4 4 0 0 0 8 0',
+        edit: 'M4 16L16 4l4 4L8 20H4zM13 7l4 4',
+        add: 'M12 5v14M5 12h14',
+        trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7',
+        chevron: 'M9 5l7 7-7 7',
+        restart: 'M3 11a9 9 0 1 1 2 7M3 4v7h7',
+        swap: 'M3 7h18l-4-4M21 17H3l4 4',
+        grid: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
+        help: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17h.01',
+    };
+    const GLYPH_ICONS = { '?': 'help', '›': 'chevron', '▶': 'play', '↺': 'restart', '⇆': 'swap', '▦': 'grid', '↻': 'restart' };
+    const MenuIcon = ({ glyph, name }) => {
+        const icon = name || GLYPH_ICONS[glyph];
+        return html`<span class=${'menu-icon' + (icon ? ' svg-icon' : '')} data-glyph=${glyph} data-icon=${icon} aria-hidden="true">
+            ${icon ? html`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d=${ICONS[icon]} /></svg>` : null}
+        </span>`;
+    };
 
     // A titled list of options with one focused row. An option may carry an
     // icon before its label and a check mark after it, or a glyph that CSS
@@ -50,7 +85,7 @@ window.Kit = (() => {
         ? html`<div class=${classes('menu-row with-icon', { focused })}>
             ${typeof option.icon === 'string' ? html`<${MenuIcon} glyph=${option.icon} />` : option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
         </div>`
-        : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view })} data-glyph=${option.note ? null : option.glyph}>${option.view || html`<span class="menu-label">${option.label}</span>`}</div>`);
+        : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view })} data-glyph=${option.note ? null : option.glyph || '›'}>${option.view || html`<span class="menu-label">${option.label}</span>`}</div>`);
 
     // header { image, sub } puts the item's artwork and a line beside the title (#48);
     // header { profile } puts the profile's avatar above its name.

@@ -5,6 +5,8 @@ const port = Number(process.env.TV_TEST_PORT || 8767);
 
 module.exports = defineConfig({
     testDir: './specs',
+    // Review galleries run only when explicitly named on the command line.
+    testIgnore: process.argv.some(arg => arg.includes('.shots.spec.js')) ? [] : ['**/*.shots.spec.js'],
     workers: 1,
     fullyParallel: false,
     timeout: 90_000,

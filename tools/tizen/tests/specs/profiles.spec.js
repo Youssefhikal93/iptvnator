@@ -168,7 +168,9 @@ test('rename updates the name; duplicate and empty names are refused', async ({ 
 test('delete asks to confirm, removes the profile data and the last profile cannot be deleted', async ({ page }) => {
     await boot(page, oldSeed());
     await settingsRow(page, 'Delete profile');
-    await expect(row(page, 'Delete profile').locator('.st-value')).toHaveText('Needs another profile');
+    await expect(row(page, 'Delete profile')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.locator('.st-action-hint')).toHaveText('Needs another profile');
+    await expect(row(page, 'Delete profile').locator('.st-value')).toHaveCount(0);
     await press(page, 'Enter');
     await expect(page.locator('#toast')).toHaveText('The last profile cannot be deleted');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
@@ -180,6 +182,9 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await section(page, 'Settings');
     // Cancel keeps the profile.
     await settingsRow(page, 'Delete profile');
+    await expect(row(page, 'Delete profile')).not.toHaveAttribute('aria-disabled');
+    await expect(row(page, 'Delete profile')).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+    await expect(page.locator('.st-action-hint')).toBeEmpty();
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toContainText('Delete Anna?');
     await press(page, 'Enter');
@@ -226,7 +231,8 @@ test('at most six profiles; the picker then has no Add profile tile', async ({ p
     for (const name of ['B', 'C', 'D', 'E', 'F']) await addProfile(page, name);
     expect((await profiles(page)).length).toBe(6);
     await settingsRow(page, 'Add profile…');
-    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Up to 6');
+    await expect(page.locator('.st-action-hint')).toHaveText('Up to 6');
+    await expect(page.locator('.st-row.focused .st-value')).toHaveCount(0);
     await press(page, 'Enter');
     await expect(page.locator('#toast')).toHaveText('Up to 6 profiles');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);

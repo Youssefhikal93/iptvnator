@@ -167,3 +167,19 @@ button { background-color: transparent; }
 .volume button { border: 0; }
 [hidden] { display: none !important; }
 input { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; }
+
+/* Same quiet surfaces and filled focus pills as the TV. Positional D-pad
+   transforms stay intact; scale is independent of their centring. */
+:is(.chip, .tile, .num, .color, .codebox button, #text-done, .field, .codebox input) { border-radius: 999px; }
+button { transition: scale 180ms ease-out, opacity 180ms ease-out; }
+button:focus-visible { outline: none; background-color: var(--accent); color: var(--accent-on); box-shadow: 0 0 0 5px var(--accent-soft); scale: 1.04; }
+button:focus-visible svg { color: inherit; }
+button:active { filter: none; opacity: 0.8; scale: 0.96; }
+.dpad .arrow { border-radius: 999px; }
+.tile { flex-direction: row; gap: 10px; }
+.jump i { border-radius: 22px; }
+.jump:focus-visible { border-radius: 24px; }
+.jump:focus-visible i { background: transparent; color: inherit; border-color: transparent; }
+.scrim { backdrop-filter: none; }
+.sheet { background: var(--bg2); }
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }

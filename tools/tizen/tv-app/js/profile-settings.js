@@ -49,12 +49,12 @@ window.ProfileSettings = (function () {
         }
 
         return [
-            { get group() { return I18n.t('profile.group'); }, get label() { return I18n.t('profile.current'); }, run: function () { ProfileScreen.open(changed); }, text: function () { return ProfileStore.active().name; } },
-            { get label() { return I18n.t('profile.avatar'); }, run: function () { AvatarPicker.open(ProfileStore.active(), function () { changed(false); }); }, text: '' },
-            { get label() { return I18n.t('profile.addMenu'); }, run: add, text: function () { return ProfileStore.list().length >= ProfileStore.max ? I18n.t('profile.upToShort', { n: ProfileStore.max }) : ''; } },
-            { get label() { return I18n.t('profile.renameMenu'); }, run: rename, text: '' },
+            { get group() { return I18n.t('profile.group'); }, get label() { return I18n.t('profile.current'); }, profileCard: true, run: function () { ProfileScreen.open(changed); }, text: function () { return ProfileStore.active().name; } },
+            { get label() { return I18n.t('profile.avatar'); }, strip: true, icon: 'avatar', run: function () { AvatarPicker.open(ProfileStore.active(), function () { changed(false); }); }, text: '' },
+            { get label() { return I18n.t('profile.renameMenu'); }, strip: true, icon: 'edit', run: rename, text: '' },
+            { get label() { return I18n.t('profile.addMenu'); }, strip: true, icon: 'add', run: add, text: function () { return ProfileStore.list().length >= ProfileStore.max ? I18n.t('profile.upToShort', { n: ProfileStore.max }) : ''; } },
+            { get label() { return I18n.t('profile.delete'); }, strip: true, destructive: true, icon: 'trash', get disabled() { return ProfileStore.list().length < 2; }, run: remove, text: function () { return ProfileStore.list().length < 2 ? I18n.t('profile.needsAnother') : ''; } },
             { get label() { return I18n.t('kids.profiles'); }, get hidden() { return !KidsSetup.profiles().length; }, run: kids, text: function () { return KidsSetup.profiles().map(function (profile) { return profile.name; }).join(', '); } },
-            { get label() { return I18n.t('profile.delete'); }, run: remove, text: function () { return ProfileStore.list().length < 2 ? I18n.t('profile.needsAnother') : ''; } },
             { get label() { return I18n.t('profile.ask'); }, key: 'askProfile', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
         ];
     }

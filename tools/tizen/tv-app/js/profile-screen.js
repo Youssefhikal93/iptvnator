@@ -53,8 +53,8 @@ window.ProfileScreen = (() => {
             if (root) render();
         };
         const list = [
-            { label: I18n.t('profile.changeName'), run: () => KidsSetup.edit(profile, again) },
-            { label: I18n.t('profile.changeAvatar'), run: () => AvatarPicker.open(profile, again) },
+            { label: I18n.t('profile.changeName'), glyph: '✎', run: () => KidsSetup.edit(profile, again) },
+            { label: I18n.t('profile.changeAvatar'), glyph: '◉', run: () => AvatarPicker.open(profile, again) },
         ];
         if (profile.kids) list.push({ label: I18n.t('kids.title', { name: profile.name }), run: () => KidsSetup.choose(profile, again) });
         KidsProfile.leave(null, () => Menu.open(profile.name, list, 0, { profile }));

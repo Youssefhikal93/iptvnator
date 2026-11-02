@@ -17,6 +17,9 @@ for (const [language, liveLabel, options] of [['en', 'Live TV', 'Options'], ['ar
         const glyphs = await actions.locator('.menu-icon').evaluateAll(list => list.map(icon => icon.dataset.glyph || ''));
         expect(glyphs).toHaveLength(await actions.count());
         glyphs.forEach(glyph => expect(glyph.trim()).not.toBe(''));
+        const icons = page.locator('#pl-menu .pl-menu-item:not(.unavailable) .menu-icon');
+        await expect(icons.locator('svg')).toHaveCount(await icons.count());
+        for (const svg of await icons.locator('svg').all()) await expect(svg).toHaveAttribute('viewBox', '0 0 24 24');
         const xs = await actions.locator('.menu-icon').evaluateAll(list => list.map(icon => Math.round(icon.getBoundingClientRect().x)));
         expect(new Set(xs).size).toBe(1);
         if (language !== 'ar') return;
@@ -66,6 +69,7 @@ test('movie controls pause, play, seek and change speed; track menu and stream i
     await playerMenu(page);
     // Groups with their values first; OK opens one, Return goes back (#48).
     await expect(page.locator('#pl-menu .pl-menu-group .label').first()).toHaveText('Audio');
+    await expect(page.locator('#pl-menu .pl-menu-item').last()).toHaveText('Help');
     await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Playback speed' }).locator('.value')).toHaveText('1×');
     await playerGroup(page, 'Subtitles');
     // A movie can always look online, so the group offers that instead of "none".

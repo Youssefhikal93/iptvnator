@@ -23,7 +23,7 @@
    transform and opacity animate, so the TV's compositor does all of it. */
 #screen-saver .ss-logo-stage { background: radial-gradient(ellipse at center, #14161c 0%, #05060a 60%, #000 100%); }
 #screen-saver .ss-logo { position: absolute; left: 50%; top: 50%; width: 720px; display: flex; flex-direction: column; align-items: center; text-align: center; transform: translate(-50%, -50%); }
-#screen-saver .ss-logo-icon { width: 300px; height: 300px; border-radius: 56px; animation: ss-bounce 2.4s ease-in-out infinite; }
+#screen-saver .ss-logo-icon { width: 300px; height: 300px; border-radius: 56px; animation: ss-bounce 5.5s ease-in-out infinite; }
 #screen-saver .ss-logo-clock { margin-top: 28px; font-size: 140px; font-weight: 300; line-height: 1; letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.9); }
 #screen-saver .ss-logo-date { margin-top: 16px; font-size: 28px; color: rgba(255, 255, 255, 0.6); }
 #screen-saver .ss-logo-extra { position: absolute; width: 108px; height: 108px; transform: translate(-50%, -50%); animation: ss-in 1.2s ease-out both; }
@@ -37,7 +37,7 @@
 #screen-saver .ss-logo-extra-icon.p-reverse { animation-name: ss-reverse; animation-timing-function: linear; }
 #screen-saver .ss-logo-extra-icon.p-flip-x { animation-name: ss-flip-x; animation-timing-function: linear; }
 #screen-saver .ss-logo-extra-icon.p-tilt { animation-name: ss-tilt; }
-@keyframes ss-bounce { 0%, 65%, 90%, 100% { transform: translateY(0); } 35% { transform: translateY(-48px); } 80% { transform: translateY(-16px); } 95% { transform: translateY(-5px); } }
+@keyframes ss-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-24px); } }
 @keyframes ss-rotate { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 @keyframes ss-flip { from { transform: perspective(500px) rotateY(0); } to { transform: perspective(500px) rotateY(360deg); } }
 @keyframes ss-swing { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }

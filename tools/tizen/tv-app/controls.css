@@ -33,11 +33,14 @@
     #pl-sleep-buttons button.focus, .state-button:focus, .gd-watch:focus,
     .gd-popup button:focus, .pf-dialog button:focus, .tm-dialog button:focus,
     #backup-screen button:focus, #form button:focus, #form input:focus, #form select:focus, .rm-popup button:focus) {
-    background: var(--selection);
-    color: var(--selection-on);
+    /* A muted accent fill (the glow over the strong surface) with bold
+       light text: clear from the sofa, softer than the solid accent. */
+    background: linear-gradient(var(--selection-glow), var(--selection-glow)), var(--selection-surface-strong);
+    color: var(--on-surface);
+    font-weight: 700;
     border-color: transparent;
     outline: none;
-    box-shadow: 0 6px 22px var(--selection-surface);
+    box-shadow: 0 6px 18px var(--selection-surface);
     transform: scale(var(--control-lift));
 }
 /* Full-width rows do not grow: in a scrolling pane even 2% pushes their

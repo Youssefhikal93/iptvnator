@@ -80,7 +80,7 @@ test('page builder escapes TV words and metadata, preserves RTL and allows only 
     assert.match(html, /\\u003c\/script\\u003e/);
     assert.ok(!html.includes('<script>bad()'));
     assert.ok(!html.includes('lang="ar" onload='));
-    assert.ok(!/src="https?:|<link|@import/.test(html));
+    assert.ok(!/src="https?:|<link[^>]+href="(?!\/)|@import/.test(html));
     assert.match(Page.csp, /script-src 'sha256-/);
     assert.match(Page.csp, /frame-ancestors 'none'/);
     assert.ok(!Page.build({ accent: '" onload="bad' }).includes('data-accent=""'));
@@ -115,6 +115,22 @@ async function start(t) {
     const base = 'http://127.0.0.1:' + service.port();
     return async (route, request, key, extra, options) => fetch(base + route, { method: request ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + (key || ''), ...extra }, body: request ? JSON.stringify(request) : undefined, ...options });
 }
+
+test('the page offers a home-screen icon and a manifest named after the TV words', async t => {
+    const call = await start(t);
+    await call('/app/state', { online: true, words: { title: 'Jotv remote' } });
+    const html = await (await call('/')).text();
+    assert.match(html, /rel="apple-touch-icon" href="\/icon-180.png"/);
+    for (const route of ['/icon-180.png', '/icon-512.png']) {
+        const icon = await call(route);
+        assert.equal(icon.headers.get('content-type'), 'image/png');
+        assert.deepEqual([...new Uint8Array(await icon.arrayBuffer()).slice(1, 4)], [80, 78, 71]);
+    }
+    const manifest = await (await call('/manifest.webmanifest')).json();
+    assert.equal(manifest.name, 'Jotv remote');
+    assert.equal(manifest.start_url, '/');
+    assert.match(Page.csp, /img-src 'self'; manifest-src 'self'/);
+});
 
 test('unknown keys and cross-origin controls get 404; held requests deliver keys immediately (#93)', async t => {
     const call = await start(t);
@@ -203,10 +219,13 @@ test('a browser without the service probes once and does not poll during browsin
 test('volume keys use Tizen TVAudioControl, including mute toggle and volume unmute (#93)', () => {
     let volume = 50;
     let muted = false;
+    const shown = [];
     const g = require('./sandbox')(['keys.js', 'remote-app.js'], {}, {
+        VolumeOsd: { show: (level, mute) => shown.push([level, mute]) },
         document: { hidden: false, activeElement: null, addEventListener() {}, dispatchEvent() { return true; } },
         KeyboardEvent: function (type, options) { this.keyCode = options.keyCode; },
         tizen: { tvaudiocontrol: {
+            getVolume: () => volume,
             isMute: () => muted,
             setMute: next => { muted = next; },
             setVolumeUp: () => { volume++; muted = false; },
@@ -216,6 +235,7 @@ test('volume keys use Tizen TVAudioControl, including mute toggle and volume unm
     const remote = g.RemoteApp({});
     remote.command({ type: 'key', code: 447 });
     assert.equal(volume, 51);
+    assert.deepEqual(shown.pop(), [51, false]);
     remote.command({ type: 'key', code: 449 });
     assert.equal(muted, true);
     remote.command({ type: 'key', code: 448 });

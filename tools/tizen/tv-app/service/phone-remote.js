@@ -158,6 +158,14 @@ function handle(req, res) {
         res.writeHead(302, { Location: '/#pair=' + url.pathname.slice(3).toUpperCase(), 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
         return res.end();
     }
+    if (req.method === 'GET' && Page.icons[url.pathname]) {
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+        return res.end(Page.icons[url.pathname]);
+    }
+    if (req.method === 'GET' && url.pathname === '/manifest.webmanifest') {
+        res.writeHead(200, { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        return res.end(Page.manifest(snapshot || {}));
+    }
     if (req.method === 'GET' && url.pathname === '/') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': Page.csp });
         return res.end(Page.build(snapshot || {}));

@@ -196,6 +196,9 @@
     input.addEventListener('input', textChanged);
     $('text-done').addEventListener('click', function () { keypress(65376); input.blur(); });
     input.addEventListener('keydown', function (event) { if (event.key === 'Enter') { event.preventDefault(); keypress(65376); input.blur(); } });
+    // A held button is a remote key, not a copy/paste or link press.
+    document.addEventListener('contextmenu', function (event) { if (event.target !== input) event.preventDefault(); });
+    document.addEventListener('selectstart', function (event) { if (event.target !== input) event.preventDefault(); });
     document.addEventListener('click', function (event) {
         var button = event.target.closest('button');
         if (button && (button !== ok || event.detail === 0) && navigator.vibrate) navigator.vibrate(12);

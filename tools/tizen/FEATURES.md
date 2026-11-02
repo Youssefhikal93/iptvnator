@@ -313,6 +313,6 @@ Settings → Backup → Send everything to computer… copies every profile, PIN
 
 Settings > General > Phone remote > Pair a phone shows a QR code and address, valid once for 10 minutes. Scan it on the home network, then bookmark the page or add it to your home screen. Up to five phones can stay paired and work together. Rename or forget them in the same Settings group.
 
-The phone has the remote keys, volume, section jumps, search and a More sheet with numbers and colour keys. Its actions follow the TV: for example Next episode, available Skip intro, tracks, or Play on a detail page. A TV text field opens phone text entry; results stay on the TV. Film and episode seek buttons use the TV's accelerating steps. Language and accent follow the TV.
+The phone has the remote keys, volume, section jumps, search and a More sheet with numbers and colour keys. Its actions follow the TV: for example Next episode, available Skip intro, tracks, or Play on a detail page. A TV text field opens phone text entry; results stay on the TV. Film and episode seek buttons use the TV's accelerating steps. Phone volume shows a level bar on the TV. On the home screen the page has its own remote icon. Language and accent follow the TV.
 
 It works while Jotv is open on the same home network. A page left open reconnects by itself when Jotv returns. It cannot turn the TV on or control Samsung Home, Source or other apps.

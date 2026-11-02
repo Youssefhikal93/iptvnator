@@ -209,3 +209,15 @@ test('a screen saver offers Wake TV and returns to the same screen', async ({ pa
     await expect(page.locator('#screen-saver')).toHaveCount(0);
     await expect(page.locator('#content')).toHaveClass(/home/);
 });
+
+test('phone volume shows a level bar on the TV, then hides it', async ({ page }) => {
+    await boot(page);
+    await page.evaluate(() => VolumeOsd.show(35, false));
+    const osd = page.locator('#volume-osd');
+    await expect(osd).toHaveClass(/on/);
+    await expect(osd.locator('b')).toHaveText('35');
+    await expect(osd.locator('.fill')).toHaveAttribute('style', /width: 35%/);
+    await page.evaluate(() => VolumeOsd.show(35, true));
+    await expect(osd).toHaveClass(/muted/);
+    await expect(osd).not.toHaveClass(/on/, { timeout: 4000 });
+});

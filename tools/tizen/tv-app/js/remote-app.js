@@ -53,6 +53,7 @@ window.RemoteApp = function (api) {
             if (code === 449) tizen.tvaudiocontrol.setMute(!tizen.tvaudiocontrol.isMute());
             else if (code === 447) tizen.tvaudiocontrol.setVolumeUp();
             else tizen.tvaudiocontrol.setVolumeDown();
+            VolumeOsd.show(tizen.tvaudiocontrol.getVolume(), tizen.tvaudiocontrol.isMute());
         } catch (error) { Log.info('REMOTE volume unavailable'); }
     }
     function command(request) {

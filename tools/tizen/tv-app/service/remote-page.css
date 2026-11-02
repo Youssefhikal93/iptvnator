@@ -21,6 +21,8 @@ body {
     color: var(--text);
     background: radial-gradient(120% 60% at 50% -10%, #1a2540 0%, var(--bg) 60%) fixed, var(--bg);
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 main { max-width: 440px; margin: 0 auto; padding: 12px 16px 18px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; min-height: 100vh; }
 svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -159,4 +161,4 @@ button { background-color: transparent; }
 .volume .mute { width: auto; min-width: 100px; display: flex; gap: 8px; color: var(--dim); justify-content: center; }
 .volume button { border: 0; }
 [hidden] { display: none !important; }
-input { user-select: text; }
+input { user-select: text; -webkit-user-select: text; -webkit-touch-callout: default; }

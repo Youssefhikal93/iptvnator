@@ -191,3 +191,11 @@ body.menu-top { --grid-rows: 2; }
 #header #searchbar.typing svg { fill: var(--muted); }
 /* A card's last position is its accent title; the side bar suits rows only. */
 .card.selected:not(.focused) { box-shadow: none; }
+/* Picture avatars are cut-outs (#95): no disc behind or around them and
+   nothing cropped; focus follows the picture's outline with an accent glow. */
+:is(.rail-avatar, .pf-avatar, .ap-avatar, .menu-avatar, .st-avatar).drawn { border-radius: 0; overflow: visible; box-shadow: none; }
+:is(.pf-tile.focused .pf-avatar, .ap-choice.focused .ap-avatar).drawn {
+    box-shadow: none;
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 2px var(--selection)) drop-shadow(0 0 2px var(--selection)) drop-shadow(0 14px 22px rgba(0, 0, 0, 0.5));
+}

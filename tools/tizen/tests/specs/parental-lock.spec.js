@@ -1,4 +1,4 @@
-const { test, expect, boot, section, category, press, back, holdOK, menuChoice, moveTo, enterItems, toolbar, channel, playing, sendKeyCode, setting } = require('./helpers');
+const { test, expect, boot, section, category, press, back, holdOK, menuChoice, moveTo, enterItems, toolbar, channel, playing, sendKeyCode, setting, menuSearch } = require('./helpers');
 
 async function digits(page, pin) {
     for (const digit of pin) await press(page, digit);
@@ -32,8 +32,7 @@ async function allChannels(page, count) {
 
 async function search(page, found) {
     await enterItems(page);
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.locator('#search-input').fill('channel 34 (');
     await press(page, 'Enter');
     if (found) await expect(page.locator('#items .focused .label')).toContainText('Channel 34 (cat all)');

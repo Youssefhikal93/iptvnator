@@ -6,6 +6,10 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- The toolbar shares the list title row, so lists start under the menu and show more rows; the next row peeks in, dimmed. Search is an icon beside View and Sort and searches the category in use; Search in the menu does the same. Picture avatars show whole, with no disc; focus outlines the picture (#95).
+- The side menu stays slim until focused, then opens over the page with names beside the icons; Arabic mirrors it. Picture avatars have clear backgrounds and letter avatars follow the accent. Confirmation dialogs dim the page and use readable destructive pills. Settings starts with Playback, and Mark watched precedes removal actions (#95).
+- Rounded controls across Jotv use filled accent focus with a gentle lift. Profiles have an avatar card and action pills; paired phones have separate Rename and Forget pills. The logo screen saver moves more slowly (#95).
+- Settings and player menus use distinct line icons. Inactive rail entries stay clear, destructive actions turn red on focus, unavailable Delete stays one line with its reason below, and profile settings are translated into Arabic (#95).
 - Quality: when the provider has a channel, film or show in several qualities, the player's menu offers Auto or a copy of your choice (see Player below).
 - Phone remote: pair up to five phones in Settings > General. Use the phone for keys, search, typing and actions that follow the TV screen.
 - Full backup with a computer: Settings → Backup → Send everything to computer… and Restore from computer… keep every profile, setting and your library (see Backup below).
@@ -282,11 +286,17 @@ Hold OK on a category → Move, use ▲/▼ to move it, then OK to place it or R
 
 In Settings → Display, Theme offers Dark black, Dark grey, Dark blue and Light. Accent colour changes the focus colour, and Density offers Comfortable or Compact. Set Animations to Off if movement is uncomfortable or makes the TV stutter; these choices belong to the current profile.
 
+Controls use translucent pills with filled accent focus (#95). Settings → Profiles shows the current avatar and name above Avatar, Rename profile…, Add profile… and Delete profile pills. Left/Right move along the action row; Up/Down still reach every action and the toggles below. Paired phones in General have separate Rename and Forget pills, also reached with Left/Right.
+
+Home and Movies cards share a single accent ring with a small gap. Only the active or focused rail entry has a pill surface. Delete and Forget use red text while idle and a red fill when focused; the last profile's disabled Delete shows its explanation below the action row.
+
 ### App language (#27)
 
 Open Settings → Display → Language and choose with the arrows and OK. English, العربية (Arabic) and other available languages change menus and help text; Arabic also changes the reading direction. Source title names are supplied by the source.
 
 ### Screen savers (#61, #71, #74)
+
+The logo rises gently over a 5.5-second cycle; the smaller logos keep their different animations on 14–20-second cycles (#95).
 
 Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock keeps the clock and date centred below a bouncing logo, adding 2, then 6, then 14, then 28 smaller animated logos in free spots every two minutes before restarting with 2 in new spots. With Animations Off, the logos still appear but stay still. Press any key to dismiss the app's saver; that press does not also select or play anything.
 
@@ -319,5 +329,7 @@ Settings → Backup → Send everything to computer… copies every profile, PIN
 Settings > General > Phone remote > Pair a phone shows a QR code and address, valid once for 10 minutes. Scan it on the home network, then bookmark the page or add it to your home screen. The saved address keeps the pairing, so an iPhone home-screen icon stays paired. A page that is not paired takes the 6-letter code typed in. Up to five phones can stay paired and work together. Rename or forget them in the same Settings group.
 
 The phone has the remote keys, volume, section jumps, search and a More sheet with numbers and colour keys. Its actions follow the TV: for example Next episode, available Skip intro, tracks, or Play on a detail page. A TV text field opens phone text entry; results stay on the TV. Film and episode seek buttons use the TV's accelerating steps. Phone volume shows a level bar on the TV. On the home screen the page has its own remote icon. Language and accent follow the TV.
+
+The phone controls fit a 390×844 screen (#95). A slim title/status strip shows Info only during playback. A large Back button sits directly below the D-pad beside volume; all eight section shortcuts stay within reach. Smaller 375×667 phones use a tighter D-pad and may need a short scroll during playback. Every button gives a light tap flash and a slight press, including context actions and More controls.
 
 It works while Jotv is open on the same home network. A page left open reconnects by itself when Jotv returns. It cannot turn the TV on or control Samsung Home, Source or other apps.

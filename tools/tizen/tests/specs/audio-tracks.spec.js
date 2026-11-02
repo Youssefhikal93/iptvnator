@@ -185,7 +185,7 @@ for (const subtitlesOff of [false, true]) {
         await expect(page.locator('#pl-status')).toBeHidden();
         expect(await page.evaluate(() => nativePlayback.text)).toBe(subtitlesOff ? -1 : 3);
         await page.reload();
-        await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+        await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
         await openFirst(page, 'Series');
         await press(page, 'Enter');
         await expect(page.locator('#pl-status')).toBeHidden();

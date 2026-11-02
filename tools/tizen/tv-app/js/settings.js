@@ -15,6 +15,7 @@ window.Settings = function (hooks) {
     const boxViews = () => views().concat([I18n.t('settings.wide'), I18n.t('settings.info')]);
     let group = 0;
     let focus = 0;
+    let action = 0;
     let zone = 'groups';
     let active = false;
 
@@ -77,8 +78,7 @@ window.Settings = function (hooks) {
     // Background refresh (#86): the last row of Sources, after Refresh content now.
     const autoRefresh = { get label() { return I18n.t('settings.autoRefresh'); }, get hint() { return I18n.t('describe.autoRefresh'); }, key: 'autoRefresh', choices: ['night', 'twelve', 'off'], get labels() { return [I18n.t('settings.refreshNight'), I18n.t('settings.refreshTwelve'), I18n.t('common.off')]; } };
 
-    // Sources come first (#51) and are read on every draw, as the list
-    // changes. A row that names a group starts it.
+    // Sources are read on every draw as the saved list changes.
     function groups() {
         const list = [];
         SourceSettings.rows(hooks.sources).concat([autoRefresh], rows, RemoteSettings.rows(render)).forEach((row) => {
@@ -87,13 +87,37 @@ window.Settings = function (hooks) {
             if (name || !list.length) list.push({ name, rows: [] });
             list[list.length - 1].rows.push(row);
         });
-        return list;
+        const order = ['settings.playback', 'picture.subtitles', 'settings.display', 'profile.group',
+            'settings.parentalLock', 'remote.general', 'TMDB', 'settings.backup', 'rail.sources', 'settings.about']
+            .map((key) => key === 'TMDB' ? key : I18n.t(key));
+        return list.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
     }
 
     const choice = (row) => Math.max(0, row.choices.indexOf(row.read ? row.read() : Prefs.get(row.key)));
     const isSwitch = (row) => !row.pills && !!row.choices && row.choices.length === 2 && row.choices[0] === true && row.choices[1] === false;
     const valueText = (row) => (row.key ? row.labels[choice(row)] : typeof row.text === 'function' ? row.text() : row.text);
     const classes = (base, flags) => [base].concat(Object.keys(flags).filter((flag) => flags[flag])).join(' ');
+    const groupIcon = (name) => {
+        if (name === 'TMDB') return 'film';
+        const icons = [['rail.sources', 'sources'], ['profile.group', 'person'], ['settings.playback', 'play'],
+            ['picture.subtitles', 'subtitles'], ['settings.display', 'display'],
+            ['settings.parentalLock', 'lock'], ['settings.backup', 'backup'], ['settings.about', 'info'], ['remote.general', 'sliders']];
+        const match = icons.find(([key]) => I18n.t(key) === name);
+        return match ? match[1] : 'sliders';
+    };
+
+    const SectionRows = ({ entry, index }) => {
+        const draw = (row, at) => html`<${Row} row=${row} focused=${active && zone === 'rows' && index === group && at === focus} />`;
+        return entry.rows.map((row, at) => {
+            if (!row.strip) return [row.part ? html`<h3 class="st-part">${row.part}</h3>` : null, draw(row, at)];
+            if (at > 0 && entry.rows[at - 1].strip) return null;
+            // A button's note (why it is unavailable) shows only while it is focused.
+            const focused = active && zone === 'rows' && index === group ? entry.rows[focus] : null;
+            const hint = focused && focused.strip ? valueText(focused) : '';
+            return html`<div class="st-profile-tools"><div class="st-profile-actions">${entry.rows.map((button, offset) => button.strip ? draw(button, offset) : null)}</div>
+                <p class="st-action-hint">${hint}</p></div>`;
+        });
+    };
 
     // Every choice is shown, so the viewer sees how many there are; the active one is filled.
     const Pills = ({ row }) => html`<span class="st-value st-pills">
@@ -103,7 +127,12 @@ window.Settings = function (hooks) {
     </span>`;
 
     // On/off reads by shape as well as by word; other choices show their arrows.
-    const Value = ({ row }) => {
+    const Value = ({ row, focused }) => {
+        if (row.strip) return null;
+        if (row.actions) return html`<span class="st-actions">${row.actions.map((entry, index) => html`
+            <span role="button" aria-label=${entry.label} class=${classes('st-action-pill', { focus: focused && index === action, destructive: entry.destructive })}>
+                <${Kit.MenuIcon} name=${entry.icon} /><span>${entry.label}</span>
+            </span>`)}</span>`;
         if (row.source) return html`<span class=${classes('st-chip', { warn: row.warn })}>${row.chip}</span>`;
         if (row.pills) return html`<${Pills} row=${row} />`;
         if (isSwitch(row)) {
@@ -121,9 +150,10 @@ window.Settings = function (hooks) {
 
     const Row = ({ row, focused }) => {
         const sub = row.source ? row.sub : row.hint;
-        return html`<div class=${classes('st-row', { 'st-source': !!row.source, 'st-current': !!row.current, 'st-add': !!row.add, warn: !!row.warn, focused })}>
+        return html`<div aria-disabled=${row.disabled ? 'true' : undefined} class=${classes('st-row', { 'st-profile-card': row.profileCard, 'st-action': row.strip, 'st-standalone-action': row.compactAction, disabled: row.disabled, 'has-actions': !!row.actions, destructive: row.destructive, 'st-source': !!row.source, 'st-current': !!row.current, 'st-add': !!row.add, warn: !!row.warn, focused })}>
+            ${row.profileCard ? html`<${Kit.Avatar} cls="st-avatar" profile=${ProfileStore.active()} />` : row.icon || row.glyph ? html`<${Kit.MenuIcon} name=${row.icon} glyph=${row.glyph} />` : null}
             <span class="st-text"><${Name} row=${row} />${sub ? html`<span class="st-sub">${sub}</span>` : null}</span>
-            <${Value} row=${row} />
+            <${Value} row=${row} focused=${focused} />
         </div>`;
     };
 
@@ -132,14 +162,14 @@ window.Settings = function (hooks) {
     const Screen = ({ list }) => html`<div class="st-groups">
             <h1 class="st-title">${I18n.t('rail.settings')}</h1>
             ${list.map((entry, index) => html`<div class=${classes('st-group-item', { selected: index === group, focused: active && zone === 'groups' && index === group })}>
+                <${Kit.MenuIcon} name=${groupIcon(entry.name)} />
                 <span>${entry.name}</span><span class="n">${entry.rows.length}</span>
             </div>`)}
         </div>
         <div class="st-panes">
             ${list.map((entry, index) => html`<section class=${classes('st-section', { hidden: index !== group })}>
                 <h2 class="st-group">${entry.name}</h2>
-                ${entry.rows.map((row, at) => [row.part ? html`<h3 class="st-part">${row.part}</h3>` : null,
-                    html`<${Row} row=${row} focused=${active && zone === 'rows' && index === group && at === focus} />`])}
+                <${SectionRows} entry=${entry} index=${index} />
             </section>`)}
         </div>`;
 
@@ -147,6 +177,8 @@ window.Settings = function (hooks) {
         const list = groups();
         group = Math.min(group, list.length - 1);
         focus = Math.max(0, Math.min(focus, list[group].rows.length - 1));
+        const actions = list[group].rows[focus].actions;
+        action = actions ? Math.min(action, actions.length - 1) : 0;
         UI.render(html`<${Screen} list=${list} />`, root);
         const selected = root.querySelector('.st-row.focused, .st-group-item.focused');
         if (selected) selected.scrollIntoView({ block: 'nearest' });
@@ -158,6 +190,7 @@ window.Settings = function (hooks) {
 
     function setZone(next) {
         zone = next;
+        action = 0;
         render();
         hooks.chrome();
     }
@@ -171,6 +204,7 @@ window.Settings = function (hooks) {
 
     function choose() {
         const row = current();
+        if (row.actions) return row.actions[action].run();
         if (!row.key) {
             if (row.backup) BackupScreen.open(row.backup);
             if (row.action && row.action.indexOf('tmdb-') === 0) return TmdbSettings.act(row.action, hooks, render);
@@ -196,6 +230,7 @@ window.Settings = function (hooks) {
         if (code === KEY.UP || code === KEY.DOWN) {
             group = Math.max(0, Math.min(groups().length - 1, group + (code === KEY.UP ? -1 : 1)));
             focus = 0;
+            action = 0;
             root.querySelector('.st-panes').scrollTop = 0;
             render();
         } else if (code === KEY.RIGHT || code === KEY.ENTER) {
@@ -226,9 +261,24 @@ window.Settings = function (hooks) {
         },
         key(code) {
             if (zone === 'groups') return groupKey(code);
+            const row = current();
+            if (code === KEY.LEFT || code === KEY.RIGHT) {
+                const direction = getComputedStyle(root).direction === 'rtl' ? -1 : 1;
+                const delta = (code === KEY.LEFT ? -1 : 1) * direction;
+                if (row.actions && action + delta >= 0 && action + delta < row.actions.length) {
+                    action += delta;
+                    return render();
+                }
+                const adjacent = groups()[group].rows[focus + delta];
+                if (row.strip && adjacent && adjacent.strip) {
+                    focus += delta;
+                    return render();
+                }
+            }
             if (Keys.isBack(code) || code === KEY.LEFT) return setZone('groups');
             if (code === KEY.ENTER) return choose();
             if (code === KEY.UP || code === KEY.DOWN) {
+                action = 0;
                 focus = Math.max(0, Math.min(groups()[group].rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
                 render();
             }

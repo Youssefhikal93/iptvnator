@@ -5,6 +5,24 @@ Jotv is open. Add from phone remains on its own service and port 8777.
 `js/phone-remote.js` connects the app, `js/remote-app.js` maps app state and
 commands, and `js/remote-settings.js` owns pairing management.
 
+Settings > General draws each paired phone's name and last-used time beside
+Rename and Forget pills (#95). Left/Right select an action and OK runs it;
+Up/Down move to the next row. Forget all phones remains below the list and
+still asks for confirmation. The phone page uses the same rounded controls
+and filled accent focus.
+
+The phone layout (#95) fits 390×844 without scrolling, including playback
+actions and seeking. A slim strip holds a small artwork tile, the title and
+one status line; Info appears beside the title only during playback. Back is
+a full-size button below the D-pad, to the left of volume, followed by the
+same eight section shortcuts. At 375×667 the D-pad contracts and a short
+scroll may be needed during playback. Arabic mirrors the text and section
+grid while D-pad directions and the Back/volume row keep their physical order.
+Buttons flash a light highlight and press to 0.96 scale for 140 ms without
+delaying commands. Only scale and highlight opacity transition; reduced-motion
+preferences remove the transitions. OK still sends its original down/up phases
+for held actions. The script CSP is regenerated from LF-normalized source.
+
 The service resolves Tizen's `wgt-private` directory and atomically saves
 `phone-remote.json` there, outside ProfileStore. It contains random 256-bit
 phone keys, independent IDs, names and last-used timestamps. It survives app
@@ -84,5 +102,21 @@ These cover the real local service and a second phone browser page against the
 fake provider. Device installation, Tizen service storage, Samsung volume and
 mobile keyboard policies need hardware validation; no TV deployment is part
 of the local suite.
+
+For the phone layout gallery, run separately (the service defaults to port 8778):
+
+```powershell
+$env:TV_TEST_PORT='8271'
+npx playwright test --trace=off --reporter=line specs/design-95-phone.shots.spec.js
+```
+
+The gallery is excluded from normal runs by the existing `*.shots.spec.js`
+rule. It saves idle, film playback, Arabic playback and 375×667 playback PNGs
+under `tools/tizen/tests/design-95-shots/11-phone-remote/`. `DESIGN_SHOTS`
+overrides the output root. The focused phone spec checks screen fit, Info
+visibility, touch feedback, command delivery and held-OK behavior.
+Both phone specs accept `PHONE_TEST_PORT` to isolate their local service from
+another worktree, redirecting only test browser requests to that port. The
+production service and TV bridge continue to use port 8778.
 
 Samsung API references: [TV audio control](https://developer.samsung.com/smarttv/develop/api-references/tizen-web-device-api-references/tvaudiocontrol-api.html) and [private file storage](https://developer.samsung.com/smarttv/develop/guides/data-handling/managing-file-operations.html).

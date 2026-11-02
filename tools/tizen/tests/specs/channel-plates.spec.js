@@ -26,10 +26,11 @@ test('live rows and grid tiles show 16:9 plates: the logo, or the channel name w
     await expect(rows.nth(1).locator('.plate-name')).toHaveText('Channel 2 (cat all)');
     await expect(rows.nth(2).locator('.plate-name')).toHaveText('Channel 3 (cat all)');
     await expect(page.locator('#items .row .icon')).toHaveCount(0);
-    // 16:9 plates in rows of 104 px; seven rows fit in Comfortable.
+    // 16:9 plates in rows of 104 px; eight rows fit in Comfortable, then one peeks (#95).
     const box = await rows.nth(0).locator('.row-plate').boundingBox();
     expect(Math.round(box.width / box.height * 9)).toBe(16);
-    await expect(rows).toHaveCount(7);
+    await expect(page.locator('#items .row.channel:not(.peek)')).toHaveCount(8);
+    await expect(page.locator('#items .row.channel.peek')).toHaveCount(1);
     await expect(rows.nth(0).locator('.epg-left')).toHaveText(/min left/);
 
     await enterItems(page);

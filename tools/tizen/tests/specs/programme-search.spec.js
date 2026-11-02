@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, sendKeyCode, back, playing, menuChoice } = require('./helpers');
+const { test, expect, boot, section, press, sendKeyCode, back, playing, menuChoice, menuSearch } = require('./helpers');
 
 const root = page => page.locator('#programme-search');
 const cards = page => root(page).locator('.hm-card');
@@ -78,8 +78,7 @@ test('#81 searches all cached XMLTV channels, groups programmes and offers live,
 test('#81 Home Search reaches cached programmes, debounces typing and never requests provider schedules', async ({ page, baseURL }) => {
     await cachedGuide(page, baseURL);
     await section(page, 'Home');
-    await press(page, 'ArrowUp');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await expect(page.locator('#home .hm-search .dt-btn')).toHaveText('Search programmes');
     await expect(page.locator('#home .hm-search .dt-btn .key-dot-blue')).toHaveCount(1);
     await page.waitForLoadState('networkidle');
@@ -98,8 +97,7 @@ test('#81 Home Search reaches cached programmes, debounces typing and never requ
     // A new search session reads the persisted XMLTV generation after reload.
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
-    await press(page, 'ArrowUp');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await search(page, 'Liverpool');
     await expect(cards(page).first()).toContainText('Liverpool live');
 });

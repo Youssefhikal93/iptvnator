@@ -42,7 +42,7 @@ window.GroupMenu = function (hooks) {
                     name(I18n.t('groups.rename'), row.category_name, function (text) { ChannelGroups.rename(source, row.category_id, text); });
                 } },
                 { label: I18n.t('groups.delete'), glyph: '✕', run: function () {
-                    ProfileDialog.open({ title: I18n.t('groups.delete'), text: row.category_name, ok: I18n.t('groups.delete'), done: function (confirmed) {
+                    ProfileDialog.open({ title: I18n.t('groups.delete'), text: row.category_name, ok: I18n.t('groups.delete'), destructive: true, done: function (confirmed) {
                         if (confirmed) {
                             ChannelGroups.remove(source, row.category_id);
                             ListOrder.reset(source, 'channels:' + row.category_id);

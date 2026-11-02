@@ -120,8 +120,8 @@ window.ScreenSaver = function (deps) {
         return Object.assign({}, slot, {
             key: logo.step + ':' + i,
             play: LOGO_PLAYS[play],
-            duration: 6 + i * 0.73,
-            delay: -i * 0.91,
+            duration: 14 + i * 0.22,
+            delay: -i * 2.1,
         });
     }
 

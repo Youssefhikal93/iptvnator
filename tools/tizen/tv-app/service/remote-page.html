@@ -53,11 +53,9 @@
     <div class="card hide-search hide-closed" id="card">
         <div class="art" id="art">Jotv</div>
         <div class="np">
-            <small id="kind"></small>
             <h2 id="title"></h2>
+            <button type="button" class="chip info" hidden><svg><use href="#info"/></svg><span data-t="info"></span></button>
             <p id="sub"></p>
-            <div class="bar"><i id="fill"></i></div>
-            <div class="times"><span id="t1"></span><span id="t2"></span></div>
         </div>
     </div>
 
@@ -70,15 +68,16 @@
             <button type="button" class="arrow left"><svg><use href="#left"/></svg></button>
             <button type="button" class="arrow right"><svg><use href="#right"/></svg></button>
             <button type="button" class="ok" id="ok" data-t="ok">OK</button>
-            <button type="button" class="corner back"><svg><use href="#back"/></svg></button>
-            <button type="button" class="corner info"><svg><use href="#info"/></svg></button>
         </div>
     </div>
 
-    <div class="volume hide-search hide-closed">
-        <button type="button"><svg><use href="#minus"/></svg></button>
-        <button type="button" class="mute"><svg><use href="#mute"/></svg><i data-t="vol"></i></button>
-        <button type="button"><svg><use href="#plus"/></svg></button>
+    <div class="remote-row hide-search hide-closed">
+        <button type="button" class="back"><svg><use href="#back"/></svg><span data-t="back"></span></button>
+        <div class="volume">
+            <button type="button"><svg><use href="#minus"/></svg></button>
+            <button type="button" class="mute"><svg><use href="#mute"/></svg><i data-t="vol"></i></button>
+            <button type="button"><svg><use href="#plus"/></svg></button>
+        </div>
     </div>
     <div class="seekrow hide-search hide-closed">
         <button type="button"><svg><use href="#rew"/></svg><span data-t="rewind"></span></button>

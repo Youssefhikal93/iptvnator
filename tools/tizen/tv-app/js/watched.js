@@ -43,12 +43,18 @@ window.Watched = function (api) {
         };
     }
 
+    function addWatched(options, option) {
+        var removalLabels = ['menu.removeContinue', 'menu.removeRecent'].map(function (key) { return I18n.t(key); });
+        var at = options.findIndex(function (entry) { return removalLabels.indexOf(entry.label) !== -1; });
+        options.splice(at < 0 ? options.length : at, 0, option);
+    }
+
     // Return closes the sheet, so it has no Cancel row (#48).
     function openShowMenu(item, options, title, header) {
         var current = Menu.open(title, [{ label: I18n.t('episodes.loading'), note: true }], 0, header);
         api.loadShow(item).then(function (info) {
             if (!current()) return;
-            if (info.episodes && info.episodes.length) options.push(episodesOption('watched.markShow', info.episodes, item));
+            if (info.episodes && info.episodes.length) addWatched(options, episodesOption('watched.markShow', info.episodes, item));
             else api.toast(I18n.t('episodes.none'));
             Menu.open(title, options, 0, header);
         }).catch(function () {
@@ -60,7 +66,7 @@ window.Watched = function (api) {
 
     function openItemMenu(item, section, options, title, header) {
         if (section === 'series' && !item.episode) return openShowMenu(item, options, title, header);
-        if (section === 'movies' || item.episode) options.push(itemOption(item, section, item.episode ? item.show : item));
+        if (section === 'movies' || item.episode) addWatched(options, itemOption(item, section, item.episode ? item.show : item));
         Menu.open(title, options, 0, header);
     }
 

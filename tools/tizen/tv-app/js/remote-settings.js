@@ -55,24 +55,23 @@
     function change(path, request) {
         PhoneRemote.call(path, request).catch(function () { ProfileDialog.open({ title: t('title'), text: I18n.t('phone.unavailable') }); });
     }
-    function manage(phone) {
-        Menu.open(phone.name, [
-            { label: t('rename'), run: function () {
+    function actions(phone) {
+        return [
+            { label: t('rename'), icon: 'edit', run: function () {
                 ProfileDialog.open({ title: t('rename'), value: phone.name, inputLabel: t('name'), validate: function (text) { return text.trim() ? '' : t('needName'); },
                     done: function (text) { if (text !== null) change('/app/rename', { id: phone.id, name: text }); } });
             } },
-            { label: t('forget'), run: function () { change('/app/forget', { id: phone.id }); } },
-            { label: I18n.t('common.cancel') },
-        ]);
+            { label: t('forget'), icon: 'trash', destructive: true, run: function () { change('/app/forget', { id: phone.id }); } },
+        ];
     }
     function rows(render) {
         redraw = render;
-        var list = [{ get group() { return t('general'); }, get part() { return t('settingsTitle'); }, get label() { return t('pair'); }, get hint() { return t('limits'); }, run: pair, text: function () { return t('count', { n: phones.length }); } }];
+        var list = [{ get group() { return t('general'); }, get part() { return t('settingsTitle'); }, get label() { return t('pair'); }, get hint() { return t('limits'); }, icon: 'add', run: pair, text: function () { return t('count', { n: phones.length }); } }];
         phones.forEach(function (phone, index) {
-            list.push({ part: index === 0 ? t('paired') : null, label: phone.name, hint: t('lastUsed', { time: I18n.date(phone.lastUsed, { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + I18n.time(phone.lastUsed) }), text: t('manage'), run: function () { manage(phone); } });
+            list.push({ part: index === 0 ? t('paired') : null, icon: 'phone', label: phone.name, hint: t('lastUsed', { time: I18n.date(phone.lastUsed, { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + I18n.time(phone.lastUsed) }), actions: actions(phone) });
         });
-        list.push({ label: t('forgetAll'), text: '', run: function () {
-            ProfileDialog.open({ title: t('forgetAll'), text: t('forgetAllText'), ok: t('forgetAll'), done: function (yes) { if (yes) change('/app/forget', { id: 'all' }); } });
+        list.push({ label: t('forgetAll'), destructive: true, compactAction: true, icon: 'trash', text: '', run: function () {
+            ProfileDialog.open({ title: t('forgetAll'), text: t('forgetAllText'), ok: t('forgetAll'), destructive: true, done: function (yes) { if (yes) change('/app/forget', { id: 'all' }); } });
         } });
         return list;
     }

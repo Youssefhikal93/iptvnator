@@ -52,16 +52,17 @@ body.menu-top #menu.profile-menu {
     left: 48px;
 }
 
-/* The content is one menu height shorter: lists show a row less. */
+/* The content is one menu height shorter: lists show a row less. With the
+   toolbar on the title row (#95) the lists start under the menu. */
 body.menu-top {
-    --category-rows: 10;
-    --list-rows: 8;
+    --category-rows: 12;
+    --list-rows: 9;
 }
 body.menu-top #items.channels {
-    --visible-rows: 6;
+    --visible-rows: 7;
 }
 [data-density="compact"] body.menu-top #items.channels {
-    --visible-rows: 8;
+    --visible-rows: 9;
 }
 
 /* Home keeps its first row in view: the hero gives up the menu's height. */

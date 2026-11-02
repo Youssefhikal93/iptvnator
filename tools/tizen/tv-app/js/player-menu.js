@@ -30,10 +30,21 @@ window.PlayerMenu = (root, hooks) => {
             note: (text) => group && group.notes.push(text),
             info: (text) => group && group.infos.push(text),
         });
+        // Playback choices come before reference material in every menu part.
+        const helpIndex = list.findIndex((row) => !row.items && row.label === I18n.t('help.title'));
+        if (helpIndex >= 0) list.push(list.splice(helpIndex, 1)[0]);
         return list;
     };
 
     const isGroup = (row) => !!row && Array.isArray(row.items);
+
+    const groupIcon = (label) => {
+        const icons = [['player.quality.title', 'quality'], ['player.audio', 'audio'], ['picture.subtitles', 'subtitles'],
+            ['picture.subtitleStyle', 'text'], ['picture.picture', 'aspect'], ['player.speed', 'speed'],
+            ['player.intro', 'skip'], ['sleep.timer', 'moon'], ['player.streamInfo', 'info']];
+        const match = icons.find(([key]) => I18n.t(key) === label);
+        return match ? match[1] : 'sliders';
+    };
 
     // The chosen value(s), else the values of "Label: value" rows, else the note.
     const valueOf = (group) => {
@@ -52,11 +63,12 @@ window.PlayerMenu = (root, hooks) => {
     // A row of its own among the groups (Help, Back to live) lines up with
     // the group labels: no choice dot, the groups' size.
     const Action = ({ entry, focused }) => html`<div class=${'pl-menu-item pl-menu-action' + (entry.run ? '' : ' unavailable') + (focused ? ' focus' : '')}>
-        ${entry.icon ? html`<${Kit.MenuIcon} glyph=${entry.icon} />` : null}
+        <${Kit.MenuIcon} glyph=${entry.icon || '›'} />
         <span class="label">${entry.label}${entry.note ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
     </div>`;
 
     const Group = ({ group, focused }) => html`<div class=${'pl-menu-item pl-menu-group' + (focused ? ' focus' : '')}>
+        <${Kit.MenuIcon} name=${groupIcon(group.label)} />
         <span class="label">${group.label}</span><span class="value">${valueOf(group)}</span><span class="chev">›</span>
     </div>`;
 

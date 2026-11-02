@@ -181,6 +181,25 @@
 .hm-search {
     padding: 32px 56px 8px;
 }
+.hm-search-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.hm-search-row .hm-search-bar { flex: 1; min-width: 0; }
+/* Search programmes (#95): a pill as tall as the bar, readable on any theme. */
+#home .hm-programmes {
+    flex: none;
+    height: 84px;
+    padding: 0 32px;
+    gap: 12px;
+    color: var(--on-surface);
+    background: var(--overlay);
+    font-size: 28px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+#home .hm-programmes.focus { color: var(--selection-on); background: var(--selection); }
 .hm-search-bar {
     display: flex;
     align-items: center;

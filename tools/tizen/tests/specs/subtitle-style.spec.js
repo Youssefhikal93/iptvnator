@@ -6,7 +6,7 @@ const menuLabel = '#pl-menu .pl-menu-item.focus span:last-child';
 test('Settings subtitle and picture rows offer their choices and survive a reload', async ({ page }) => {
     await boot(page);
     await section(page, 'Settings');
-    expect((await page.locator('.st-group').allTextContents()).slice(0, 5)).toEqual(['Sources', 'Profiles', 'Playback', 'Subtitles', 'Display']);
+    expect((await page.locator('.st-group').allTextContents()).slice(0, 5)).toEqual(['Playback', 'Subtitles', 'Display', 'Profiles', 'Parental lock']);
     const scenarios = [
         ['Size', 'Medium', ['Large', 'Extra large', 'Small', 'Medium', 'Large']],
         ['Text colour', 'White', ['Yellow']],

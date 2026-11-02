@@ -59,7 +59,7 @@ window.ProfileDialog = (function () {
         return row;
     }
 
-    // opts: { title, text, value (a string asks for text), ok, validate(value),
+    // opts: { title, text, value (a string asks for text), ok, destructive, validate(value),
     //   kids (a boolean shows the Kids profile switch), kidsChanged(on) -> the
     //   OK button's label, done(result|null, kids) }
     function open(opts) {
@@ -92,6 +92,10 @@ window.ProfileDialog = (function () {
         var buttons = el('div');
         var ok = el('button', opts.ok || 'OK');
         ok.id = 'profile-dialog-ok';
+        if (opts.destructive) {
+            ok.className = 'destructive';
+            ok.insertBefore(UI.node(UI.html`<${Kit.MenuIcon} name="trash" />`), ok.firstChild);
+        }
         ok.addEventListener('click', submit);
         var cancel = el('button', I18n.t('common.cancel'));
         cancel.id = 'profile-dialog-cancel';

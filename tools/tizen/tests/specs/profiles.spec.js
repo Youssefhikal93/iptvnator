@@ -41,7 +41,7 @@ async function reloadAndPick(page, name) {
     await moveTo(page, '#profiles .pf-tile.focused .pf-name', name, 'ArrowRight');
     await press(page, 'Enter');
     await expect(page.locator('#profiles')).toHaveCount(0);
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
 }
 
 test('old-format data moves under the profile Me and looks unchanged', async ({ page }) => {
@@ -66,7 +66,7 @@ test('old-format data moves under the profile Me and looks unchanged', async ({ 
     await expect(row(page, 'TMDB API key').locator('.st-value')).toContainText('cret');
     // One profile never asks who is watching, even after a reload.
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await expect(page.locator('#profiles')).toHaveCount(0);
 });
 
@@ -92,7 +92,7 @@ test('a second profile starts empty with its own settings; Who is watching appea
     await expect(page.locator('#profiles .pf-tile.focused .pf-name')).toHaveText('Anna');
     await press(page, 'ArrowLeft');
     await press(page, 'Enter');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await expect(page.locator('.hm-row.big .hm-card').first()).toContainText('Movie 25');
     await expect(page.locator('#home')).toHaveClass(/bigrow/);
 });
@@ -168,7 +168,9 @@ test('rename updates the name; duplicate and empty names are refused', async ({ 
 test('delete asks to confirm, removes the profile data and the last profile cannot be deleted', async ({ page }) => {
     await boot(page, oldSeed());
     await settingsRow(page, 'Delete profile');
-    await expect(row(page, 'Delete profile').locator('.st-value')).toHaveText('Needs another profile');
+    await expect(row(page, 'Delete profile')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.locator('.st-action-hint')).toHaveText('Needs another profile');
+    await expect(row(page, 'Delete profile').locator('.st-value')).toHaveCount(0);
     await press(page, 'Enter');
     await expect(page.locator('#toast')).toHaveText('The last profile cannot be deleted');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
@@ -180,8 +182,14 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await section(page, 'Settings');
     // Cancel keeps the profile.
     await settingsRow(page, 'Delete profile');
+    await expect(row(page, 'Delete profile')).not.toHaveAttribute('aria-disabled');
+    await expect(row(page, 'Delete profile')).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+    await expect(page.locator('.st-action-hint')).toBeEmpty();
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toContainText('Delete Anna?');
+    await expect(page.locator('#profile-dialog-ok .menu-icon[data-icon="trash"] svg')).toHaveCount(1);
+    await expect(page.locator('#profile-dialog-ok')).toHaveCSS('color', 'rgb(255, 180, 171)');
+    expect(await page.locator('#profile-dialog').evaluate(node => getComputedStyle(node).boxShadow)).toContain('rgba(0, 0, 0, 0.58)');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
     expect((await profiles(page)).length).toBe(2);
@@ -189,6 +197,9 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await settingsRow(page, 'Delete profile');
     await press(page, 'Enter');
     await press(page, 'ArrowLeft');
+    await expect(page.locator('#profile-dialog-ok')).toBeFocused();
+    await expect(page.locator('#profile-dialog-ok')).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+    await expect(page.locator('#profile-dialog-ok')).toHaveCSS('color', 'rgb(255, 255, 255)');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
     expect((await profiles(page)).map(p => p.name)).toEqual(['Me']);
@@ -197,7 +208,7 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await expect(page.locator('.hm-row.big .hm-card').first()).toContainText('Movie 25');
     // Back to one profile: the question is never asked.
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await expect(page.locator('#profiles')).toHaveCount(0);
 });
 
@@ -209,7 +220,7 @@ test('Ask who is watching Off skips the screen; On brings it back', async ({ pag
     await press(page, 'Enter');
     await expect(page.locator('.st-row.focused .st-value')).toHaveText('Off');
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await expect(page.locator('#profiles')).toHaveCount(0);
     // The last active profile stays; the choice is shared, not per profile.
     await section(page, 'Settings');
@@ -226,7 +237,8 @@ test('at most six profiles; the picker then has no Add profile tile', async ({ p
     for (const name of ['B', 'C', 'D', 'E', 'F']) await addProfile(page, name);
     expect((await profiles(page)).length).toBe(6);
     await settingsRow(page, 'Add profile…');
-    await expect(page.locator('.st-row.focused .st-value')).toHaveText('Up to 6');
+    await expect(page.locator('.st-action-hint')).toHaveText('Up to 6');
+    await expect(page.locator('.st-row.focused .st-value')).toHaveCount(0);
     await press(page, 'Enter');
     await expect(page.locator('#toast')).toHaveText('Up to 6 profiles');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
@@ -245,7 +257,7 @@ test('Add profile on the picker creates and opens a profile', async ({ page }) =
     await press(page, 'Enter');
     await enterName(page, 'Ben');
     await expect(page.locator('#profiles')).toHaveCount(0);
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     expect((await profiles(page)).map(p => p.name)).toEqual(['Me', 'Anna', 'Ben']);
     await section(page, 'Settings');
     await expect(row(page, 'Current profile').locator('.st-value')).toHaveText('Ben');
@@ -276,6 +288,7 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await expect(page.locator('#avatar-picker')).toHaveCount(0);
     expect((await profiles(page))[1].avatar).toBe('fox');
     await expect(page.locator('#rail .rail-avatar.drawn .avatar-art')).toHaveCount(1);
+    await expect(page.locator('#rail .rail-avatar.drawn')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 
     for (let i = 0; i < 12 && !await page.locator('#rail .focused').count(); i++) await back(page);
     for (let i = 0; i < 8 && !await page.locator('.rail-profile.focused').count(); i++) await press(page, 'ArrowUp');
@@ -283,11 +296,13 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await expect(page.locator('#menu .menu-row.with-icon .menu-label')).toHaveText(['Me', 'Anna']);
     await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-check')).toHaveCount(1);
     await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-avatar.drawn .avatar-art')).toHaveCount(1);
+    await expect(page.locator('#menu .menu-avatar.drawn')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await back(page);
 
     await page.reload();
     await expect(page.locator('#profiles')).toBeVisible();
     await expect(page.locator('#profiles .pf-tile.focused .pf-avatar.drawn .avatar-art')).toHaveCount(1);
+    await expect(page.locator('#profiles .pf-avatar.drawn')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     // ▲ on Who's watching opens the same picker from a held OK; Return keeps the avatar.
     await holdOK(page);
     await press(page, 'ArrowDown');

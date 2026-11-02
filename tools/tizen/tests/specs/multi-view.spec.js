@@ -145,7 +145,7 @@ test('resume restores layout and channels after reload and OK Full screen uses t
     await layout(page, 3);
     await addSecond(page);
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await live(page);
     await sendKeyCode(page, 405);
     await row(page, 'Resume multi-view');
@@ -567,7 +567,7 @@ async function icons(page, selector) {
     await expect(rows.locator('.menu-icon')).toHaveCount(count);
     const drawn = await rows.locator('.menu-icon').evaluateAll(nodes => nodes.map(node => {
         const box = node.getBoundingClientRect();
-        return { x: box.x, width: box.width, glyph: getComputedStyle(node, '::before').content };
+        return { x: box.x, width: box.width, glyph: node.querySelector('svg') ? 'svg' : getComputedStyle(node, '::before').content };
     }));
     for (const icon of drawn) {
         expect(icon.width).toBeGreaterThan(0);

@@ -1,4 +1,4 @@
-const { test, expect, boot, section, category, enterItems, toolbar, press, moveTo } = require('./helpers');
+const { test, expect, boot, section, category, enterItems, toolbar, press, moveTo, menuSearch } = require('./helpers');
 
 // #69: the bar searches the category in use; All movies / All series search
 // the whole section, Collections its collections. The placeholder says which.
@@ -15,8 +15,7 @@ async function smallCategory(page) {
 async function search(page, text) {
     await expect(page.locator('#items .skeleton')).toHaveCount(0);
     await enterItems(page);
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.locator('#search-input').fill(text);
     await press(page, 'Enter');
     await expect(page.locator('#items .skeleton')).toHaveCount(0);

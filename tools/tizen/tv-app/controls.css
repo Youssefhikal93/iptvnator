@@ -1,0 +1,201 @@
+/* Shared TV controls. Keep geometry in screen styles and resolve colours on
+   each control, so Light accents and the player's dark palette stay local. */
+:root {
+    --control-radius: 999px;
+    --control-lift: 1.02;
+    --control-time: 180ms;
+    --destructive: #ffb4ab;
+    --destructive-fill: #b3261e;
+    --destructive-on: #fff;
+}
+:root[data-theme="light"] { --destructive: #b3261e; }
+:is(.rail-item, .rail-profile, #searchbar, .view-btn, .row, .menu-row:not(.note),
+    .st-group-item, .st-row, .st-action-pill, .dt-btn, .dt-ep-pill, .tm-chip,
+    .hm-help-icon, .hm-search-icon, .hm-search-bar, .list-action,
+    .kp-source, .kp-tab, .kp-search, .kp-cat, .kp-btn, .sync-line, .gd-programme,
+    .mc-search, .mc-btn, .pin-key, .pl-menu-item, .pl-btn, .pl-channel,
+    .pl-ep-row, .pl-ep-pill, .pl-resume-buttons span, #pl-sleep-buttons button,
+    .state-button, .gd-watch, .gd-popup button, .pf-dialog button,
+    .tm-dialog button, #backup-screen button, #form button, #form input, #form select, .rm-popup button) {
+    border-radius: var(--control-radius);
+    border-color: transparent;
+    background: var(--overlay);
+    transition: transform var(--control-time) ease-out, opacity var(--control-time) ease-out;
+}
+:is(.rail-item.focused, .rail-profile.focused, #searchbar.focused, .view-btn.focused,
+    .row.focused, .menu-row.focused, .st-group-item.focused, .st-row.focused,
+    .st-action-pill.focus, .dt-btn.focus, .dt-ep-pill.focus, .tm-chip.focus,
+    .hm-help-icon.focus, .hm-search-icon.focus, .hm-search-bar.focused, .list-action.focused,
+    .kp-source.focus, .kp-tab.focus, .kp-search.focus, .kp-search:focus, .kp-cat.focus, .kp-btn.focus,
+    .sync-line.focus, .gd-programme.focused,
+    .mc-search.focused, .mc-btn.focused, .pin-key.focused, .pl-menu-item.focus,
+    .pl-btn.focus, .pl-channel.focused, .pl-ep-row.focus, .pl-ep-pill.focus, .pl-resume-buttons span.focus,
+    #pl-sleep-buttons button.focus, .state-button:focus, .gd-watch:focus,
+    .gd-popup button:focus, .pf-dialog button:focus, .tm-dialog button:focus,
+    #backup-screen button:focus, #form button:focus, #form input:focus, #form select:focus, .rm-popup button:focus) {
+    background: var(--selection);
+    color: var(--selection-on);
+    border-color: transparent;
+    outline: none;
+    box-shadow: 0 6px 22px var(--selection-surface);
+    transform: scale(var(--control-lift));
+}
+/* Full-width rows do not grow: in a scrolling pane even 2% pushes their
+   rounded ends past the pane's edge, which clips them. Pills still lift. */
+:is(.row, .menu-row, .st-group-item, .st-row, .pl-menu-item,
+    .pl-channel, .pl-ep-row, .kp-source, .kp-cat, .sync-line, .gd-programme, .list-action):is(.focused, .focus) {
+    transform: none;
+}
+/* The profile's action pills are short: they still lift. */
+.st-profile-actions .st-row:is(.focused, .focus) { transform: scale(var(--control-lift)); }
+/* Values and icons inherit the filled pill's contrast, including active rows. */
+:is(.focused, .focus) :is(.menu-icon, .menu-check, .st-value, .st-label, .st-sub,
+    .st-arrow, .st-group-item .n, .pl-menu-note, .value, .chev, .dot, .epg-now) { color: inherit; }
+.menu-row.focused[data-glyph]::before { color: inherit; }
+.st-group-item.focused .n { color: inherit; }
+.hm-help-icon.focus svg, .hm-search-icon.focus svg { fill: currentColor; }
+.kp-cat.focus :is(.kp-count, .kp-name), .kp-tab.focus small { color: inherit; }
+:is(#detail, #home) .dt-btn.primary:not(.focus) { background: var(--selection-surface-strong); color: var(--on-surface); }
+.st-row.focused :is(.st-pill, .st-chip) { color: inherit; border-color: currentColor; background: transparent; }
+.st-row.focused .st-pill.on { color: var(--selection); background: var(--selection-on); border-color: transparent; }
+.st-row.focused .st-switch { background: var(--selection-on); }
+.st-row.focused .st-switch i { background: var(--selection); }
+.st-row.focused .st-switch:not(.on) { background: var(--selection-surface-strong); box-shadow: inset 0 0 0 2px currentColor; }
+.st-row.focused .st-switch:not(.on) i { background: var(--selection-on); }
+#settings .st-group-item.selected:not(.focused),
+:is(#categories, #items) .row.selected:not(.focused), #rail .rail-item.active:not(.focused) {
+    background: var(--selection-surface);
+    color: var(--selection);
+    box-shadow: none;
+}
+.st-value, .pl-menu-group .value { text-align: end; }
+.menu-row.with-icon { gap: 22px; }
+/* Column menus keep label edges fixed as focus moves between their rows. */
+.menu-row, .pl-menu-item { --control-lift: 1; }
+.menu-icon, .pl-menu-item .dot { width: 40px; flex: 0 0 40px; text-align: center; }
+.menu-icon.svg-icon { display: inline-flex; align-items: center; justify-content: center; }
+.menu-icon.svg-icon::before { content: none; }
+.menu-icon.svg-icon svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; }
+.pl-menu-group .label { flex: 1; }
+.pl-menu-group .value { max-width: 210px; }
+#player .pl-ep-pill.active { background: var(--pc-accent-strong); color: var(--pc-accent-on); }
+.pl-menu-item { gap: 18px; }
+.pl-menu-item .dot:empty::before { content: '○'; opacity: 0.4; }
+.pl-menu-action .menu-icon, .pl-menu-group .menu-icon { font-size: 28px; }
+.menu-row.note { background: transparent; }
+.st-part { letter-spacing: normal; text-transform: none; }
+.st-row { padding-inline: 28px; }
+.st-row.st-add { border-style: solid; }
+.st-group-item { padding-inline: 20px; gap: 14px; }
+.st-group-item > span:not(.menu-icon):not(.n) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.st-group-item .menu-icon { font-size: 26px; width: 32px; flex-basis: 32px; }
+
+/* Artwork remains artwork: broad corners and a quiet accent halo. */
+:is(.card, .hm-card, .tm-card, .dt-ep) { border-radius: 24px; }
+:is(.card.focused, .hm-card.focus, .tm-card.focus, .dt-ep.focus) {
+    outline: 3px solid var(--selection);
+    outline-offset: 3px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+}
+.rail-item { margin-inline: 12px; }
+#rail .rail-item:not(.active):not(.focused), #rail .rail-profile:not(.focused) { background: transparent; box-shadow: none; }
+.rail-profile { border-radius: 40px; }
+:is(.rail-avatar, .pf-avatar, .ap-avatar, .menu-avatar, .st-avatar) {
+    border-radius: 50%;
+    background: var(--selection);
+    color: var(--selection-on);
+    box-shadow: none;
+}
+:is(.rail-avatar, .pf-avatar, .ap-avatar, .menu-avatar, .st-avatar).drawn { background: transparent; }
+.pf-avatar.pf-add { background: var(--overlay); color: var(--muted); }
+.rail-avatar { width: 64px; height: 64px; }
+.pf-tile.focused .pf-avatar, .ap-choice.focused .ap-avatar {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 5px var(--shell-bg), 0 0 0 9px var(--selection), 0 18px 36px var(--selection-surface);
+}
+.pf-name { border-radius: 999px; padding: 8px 12px; }
+.pf-tile.focused .pf-name { background: var(--selection); color: var(--selection-on); font-size: 34px; }
+.pf-tile .pf-avatar, .ap-choice .ap-avatar { transition: transform var(--control-time) ease-out; }
+.pf-dialog { border: 1px solid var(--line); border-radius: 36px; }
+.pf-dialog, .tm-dialog, #pl-resume { box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4), 0 0 0 100vmax rgba(0, 0, 0, 0.58); }
+.pf-dialog button { padding-inline: 32px; margin-inline: 0 20px; }
+.pf-dialog button, .tm-dialog button { color: var(--on-surface); }
+.pf-dialog button.destructive { display: inline-flex; align-items: center; gap: 10px; background: var(--overlay); color: var(--destructive); }
+#profile-dialog button.destructive:focus { background: var(--destructive-fill); color: var(--destructive-on); }
+
+/* Profile actions keep their linear Up/Down path and also accept Left/Right. */
+#settings .st-row.st-profile-card { min-height: 176px; padding: 20px 32px; border-radius: 32px; }
+.st-avatar { flex: none; display: flex; align-items: center; justify-content: center; width: 128px; height: 128px; font-size: 64px; }
+.st-profile-card .st-value { font-size: 40px; }
+.st-profile-actions { display: flex; gap: 14px; padding: 12px 4px 8px; }
+.st-profile-actions .st-action { flex: 1; min-width: 0; min-height: 76px; margin: 0; padding: 12px 18px; gap: 8px; flex-wrap: nowrap; justify-content: center; }
+.st-action .st-text { flex: initial; min-width: 0; padding: 0; }
+.st-action .st-label { font-size: 23px; white-space: nowrap; text-align: center; unicode-bidi: plaintext; }
+.st-action-hint { min-height: 28px; margin: 0 24px 20px; color: var(--muted); font-size: 22px; }
+.st-action .menu-icon { width: 28px; flex-basis: 28px; font-size: 24px; }
+.st-actions { display: flex; align-items: center; gap: 14px; flex: none; }
+.st-action-pill { display: inline-flex; align-items: center; gap: 8px; padding: 14px 24px; font-size: 24px; }
+.st-action-pill .menu-icon { flex-basis: 28px; width: 28px; font-size: 26px; }
+#settings .st-row.has-actions.focused { background: var(--overlay); color: var(--on-surface); transform: none; box-shadow: none; }
+.st-row.has-actions.focused .st-sub { color: var(--muted); }
+.st-row.has-actions .st-action-pill.focus { color: var(--selection-on); }
+#settings .destructive:not(.focus):not(.focused) { color: var(--destructive); background: var(--overlay); }
+#settings .destructive .menu-icon { color: inherit; }
+#settings .destructive:is(.focus, .focused) { color: var(--destructive-on); background: var(--destructive-fill); box-shadow: 0 6px 22px var(--overlay); }
+#settings .st-row.disabled { color: var(--muted); background: var(--overlay); opacity: 0.55; }
+#settings .st-row.disabled.focused { color: var(--on-surface); background: var(--overlay-2); box-shadow: 0 0 0 3px var(--selection-surface-strong); }
+#settings .st-standalone-action { display: inline-flex; width: fit-content; max-width: 100%; min-height: 68px; padding-inline: 28px; }
+.st-row.destructive:not(.focused) .st-value { color: inherit; }
+#settings:lang(ar) { direction: rtl; }
+#settings:lang(ar) .st-profile-actions .st-action { flex: 1 1 auto; }
+#settings:lang(ar) .st-arrow { transform: scaleX(-1); }
+[data-density="compact"] #settings .st-row.st-profile-card { min-height: 152px; }
+[data-density="compact"] .st-avatar { width: 108px; height: 108px; }
+[data-density="compact"] .st-profile-actions .st-action { min-height: 68px; }
+
+/* Motion-off remains the final authority, including on the shared controls. */
+[data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after { transition: none !important; animation: none !important; }
+
+/* The toolbar sits on the list title row (#95), so the lists start right
+   under the menu. Search is an icon beside the buttons until it is typed in
+   or shows results; then the box spans the list's side and the list moves
+   down under it. */
+#content, body.no-bar #content, body.bar-off #content { top: var(--menu-h); }
+#header { z-index: 4; top: calc(var(--menu-h) + 8px); height: 72px; gap: 12px; padding: 0 24px; justify-content: flex-end; background: transparent; }
+body.bar-off #header { box-shadow: none; }
+body.searching #header#header { left: calc(var(--menu-w) + 560px); right: 0; }
+:is(html:lang(ar), html[dir="rtl"]) body.searching #header#header { left: 0; right: calc(var(--menu-w) + 560px); }
+body.searching:not(.no-bar) #items.pane { padding-top: 92px; }
+#searchbar:not(.shown) { flex: none; width: 62px; height: 62px; padding: 0; justify-content: center; border: 0; background: var(--search-bg); }
+#searchbar:not(.shown) input { display: none; }
+#searchbar:not(.shown) svg { fill: currentColor; }
+body:not(.no-bar) #items .list-header { padding-inline-end: 572px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Live preview: the buttons sit over the preview, which moves down under them. */
+#content.previewing #items .list-header { padding-inline-end: 16px; }
+body:not(.no-bar) #content.previewing #live-preview { padding-top: 96px; }
+/* Side menu: the grid holds three rows; the top menu's leaves the third peeking. */
+:root { --grid-rows: 3; }
+body.menu-top { --grid-rows: 2; }
+/* Pills keep artwork and titles clear of their rounded ends. */
+.pane.main .row { padding-inline: 24px; }
+.pane.main .row.channel { padding-inline-start: 22px; }
+:is(#categories, #items) .row.focused { transform: none; }
+#items .card:not(.box) { padding: 10px 10px 14px; }
+#items .card:not(.box) .card-title { padding-inline: 8px; }
+/* The next row peeks in, dimmed and fading out, so the list visibly goes on. */
+.row.peek { opacity: 0.5; -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%); mask-image: linear-gradient(to bottom, #000 0%, transparent 85%); }
+/* While typing the box stays readable: its own surface, an accent edge. */
+#header #searchbar.typing { background: var(--search-bg); color: var(--on-surface); border-color: var(--selection); box-shadow: 0 0 0 3px var(--selection); transform: none; }
+#header #searchbar.typing input { color: var(--on-surface); }
+#header #searchbar.typing input::placeholder { color: var(--muted); }
+#header #searchbar.typing svg { fill: var(--muted); }
+/* A card's last position is its accent title; the side bar suits rows only. */
+.card.selected:not(.focused) { box-shadow: none; }
+/* Picture avatars are cut-outs (#95): no disc behind or around them and
+   nothing cropped; focus follows the picture's outline with an accent glow. */
+:is(.rail-avatar, .pf-avatar, .ap-avatar, .menu-avatar, .st-avatar).drawn { border-radius: 0; overflow: visible; box-shadow: none; }
+:is(.pf-tile.focused .pf-avatar, .ap-choice.focused .ap-avatar).drawn {
+    box-shadow: none;
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 2px var(--selection)) drop-shadow(0 0 2px var(--selection)) drop-shadow(0 14px 22px rgba(0, 0, 0, 0.5));
+}

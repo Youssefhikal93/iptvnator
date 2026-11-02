@@ -1,18 +1,19 @@
 const { test, expect, boot, section, moveTo, press, back, category, sources, sourceMenu, menuChoice } = require('./helpers');
 
-test('Sources is the first group of Settings and has no menu item (#51)', async ({ page }) => {
+test('Sources remains reachable near the end of Settings and has no rail item (#95)', async ({ page }) => {
     await boot(page);
-    await expect(page.locator('#rail .rail-item')).toHaveText(['Home', 'Live TV', 'Movies', 'Series', 'Settings']);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveText(['Home', 'Live TV', 'Movies', 'Series', 'Settings']);
     await sources(page);
-    await expect(page.locator('#settings .st-group').first()).toHaveText('Sources');
-    await expect(page.locator('#settings .st-row').nth(0)).toHaveClass(/st-source/);
-    await expect(page.locator('#settings .st-row').nth(0).locator('.st-label')).toHaveText('Regression TV');
-    await expect(page.locator('#settings .st-row').nth(0).locator('.st-badge')).toHaveText('Active');
-    await expect(page.locator('#settings .st-row').nth(0)).toHaveClass(/st-current/);
-    await expect(page.locator('#settings .st-row .st-label').nth(1)).toHaveText('+  Add Xtream account');
-    await expect(page.locator('#settings .st-row .st-label').nth(2)).toHaveText('+  Add M3U playlist');
-    await expect(page.locator('#settings .st-row .st-label').nth(3)).toHaveText('Refresh content now');
-    await expect(page.locator('#settings .st-group').nth(1)).toHaveText('Profiles');
+    await expect(page.locator('#settings .st-group').nth(8)).toHaveText('Sources');
+    const rows = page.locator('#settings .st-section:visible .st-row');
+    await expect(rows.nth(0)).toHaveClass(/st-source/);
+    await expect(rows.nth(0).locator('.st-label')).toHaveText('Regression TV');
+    await expect(rows.nth(0).locator('.st-badge')).toHaveText('Active');
+    await expect(rows.nth(0)).toHaveClass(/st-current/);
+    await expect(rows.nth(1).locator('.st-label')).toHaveText('+  Add Xtream account');
+    await expect(rows.nth(2).locator('.st-label')).toHaveText('+  Add M3U playlist');
+    await expect(rows.nth(3).locator('.st-label')).toHaveText('Refresh content now');
+    await expect(page.locator('#settings .st-group').nth(3)).toHaveText('Profiles');
     // OK opens the source's options; the account details are lines the focus skips.
     await press(page, 'Enter');
     await expect(page.locator('#menu .menu-title')).toHaveText('Regression TV');

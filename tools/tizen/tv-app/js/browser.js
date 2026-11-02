@@ -171,7 +171,7 @@ window.Browser = function (hooks) {
     });
 
     var categories = List($('categories'), {
-        rows: 11,
+        rows: 13,
         title: function () {
             return I18n.t('browser.categoriesOf', { section: sectionOf(state.section).label });
         },
@@ -262,7 +262,7 @@ window.Browser = function (hooks) {
         redraw: function () { if (items.items().length) items.select(items.index()); },
     });
     var items = List($('items'), {
-        rows: 9,
+        rows: 10,
         title: function () {
             if (state.collection) return state.collection.found.label;
             if (currentList.showingSearch()) return I18n.t('browser.searchTitle', { query: state.search.query });
@@ -1100,6 +1100,11 @@ window.Browser = function (hooks) {
         return (guideAvailable() ? tools.concat(['guide']) : tools).concat(['help']);
     }
 
+    // While typing, and while its results are on screen.
+    function searchShown() {
+        return state.searching || currentList.showingSearch();
+    }
+
     function openSortMenu() {
         var current = Library.sort(sourceId(), state.section);
         Menu.open(I18n.t('browser.sort'), Sort.options.map(function (option) {
@@ -1136,6 +1141,8 @@ window.Browser = function (hooks) {
 
     function startTyping() {
         state.searching = true;
+        state.tool = 0;
+        renderChrome();
         $('searchbar').classList.add('typing');
         $('search-input').focus();
     }
@@ -1144,6 +1151,7 @@ window.Browser = function (hooks) {
         state.searching = false;
         $('searchbar').classList.remove('typing');
         $('search-input').blur();
+        renderChrome();
     }
 
     // What the bar searches (#69): the row with no category id (All movies,
@@ -1216,8 +1224,10 @@ window.Browser = function (hooks) {
 
     function onSearchKey(code) {
         if (code === KEY.ENTER || code === KEY.IME_DONE || code === KEY.DOWN) {
+            // Read the query before stopTyping redraws the bar and clears it.
+            var search = runSearch();
             stopTyping();
-            runSearch().then(function (found) {
+            search.then(function (found) {
                 if (found) setZone('items');
             });
         } else if (code === KEY.RETURN || code === KEY.ESCAPE || code === KEY.IME_CANCEL) {
@@ -1305,7 +1315,7 @@ window.Browser = function (hooks) {
             el.className =
                 'rail-item' +
                 (section.id === state.section ? ' active' : '') +
-                (section.id === at && state.zone === 'rail' && !state.profileFocus ? ' focused' : '') +
+                (section.id === at && state.zone === 'rail' && !state.profileFocus && !state.searchFocus ? ' focused' : '') +
                 (section.id === 'settings' ? ' rail-bottom' : '') +
                 (available(section.id) ? '' : ' disabled');
             el.innerHTML =
@@ -1314,6 +1324,7 @@ window.Browser = function (hooks) {
             $('rail').appendChild(el);
         });
         RailProfile.render($('rail'), state.zone === 'rail' && state.profileFocus);
+        renderRailSearch();
         // The source is switched in Settings > Sources (#45); the page keeps
         // its name for diagnostics and tests.
         document.body.setAttribute('data-source', state.source ? state.source.name : '');
@@ -1323,6 +1334,50 @@ window.Browser = function (hooks) {
         $('status').textContent = [state.updating ? I18n.t('browser.updating') : '', genres.hint()]
             .filter(Boolean)
             .join('  ·  ');
+    }
+
+    // Search sits in the menu after the profile (#95). It searches the
+    // section in use, its category when one is open, and everything on Home.
+    var SEARCH_ICON = 'M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z';
+
+    function renderRailSearch() {
+        var el = document.createElement('div');
+        el.className = 'rail-item rail-search' +
+            (state.zone === 'rail' && state.searchFocus ? ' focused' : '') +
+            (available('home') ? '' : ' disabled');
+        el.innerHTML = '<svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="' + SEARCH_ICON + '"/></svg><span></span>';
+        el.lastChild.textContent = I18n.t('browser.search');
+        var rail = $('rail');
+        rail.insertBefore(el, rail.querySelector('.rail-profile') ? rail.children[1] : rail.firstChild);
+    }
+
+    // Live TV, Movies and Series search their own lists (the open category);
+    // anywhere else searches everything on Home. The section is the one the
+    // menu was entered from, though moving up to Search passes the others.
+    function openMenuSearch() {
+        state.searchFocus = false;
+        var from = state.railFrom;
+        if (['live', 'movies', 'series'].indexOf(from) < 0 || !available(from)) return remoteJump('search');
+        return Promise.resolve(from === state.section ? null : openSection(from)).then(function () {
+            if (!hasTools()) return;
+            // The bar takes the focus, so ▼ after typing reaches the results.
+            state.toolFrom = contentZone();
+            state.searching = true;
+            setZone('toolbar');
+            startTyping();
+        });
+    }
+
+    // ▶ from Search reaches the first section the profile can open.
+    function leaveMenuSearch() {
+        state.searchFocus = false;
+        var first = SECTIONS.filter(function (section) { return available(section.id); })[0];
+        if (first) {
+            state.railAt = first.id;
+            clearTimeout(state.railTimer);
+            state.railTimer = setTimeout(settleRail, RAIL_REST_MS);
+        }
+        renderChrome();
     }
 
     function renderToolbar() {
@@ -1337,6 +1392,8 @@ window.Browser = function (hooks) {
         document.body.classList.toggle('no-bar', !on || (off && state.zone !== 'toolbar'));
         document.body.classList.toggle('bar-off', off);
         $('searchbar').classList.toggle('focused', focus === 'search');
+        $('searchbar').classList.toggle('shown', searchShown());
+        document.body.classList.toggle('searching', searchShown());
         var input = $('search-input');
         input.placeholder = on ? searchPlaceholder() : I18n.t('browser.search');
         if (!state.searching) input.value = currentList.showingSearch() ? state.search.query : '';
@@ -1375,7 +1432,9 @@ window.Browser = function (hooks) {
 
     function setZone(zone) {
         if (state.zone === 'rail' && zone !== 'rail') LoadScreen.enter();
-        if (zone !== 'rail') state.profileFocus = false;
+        // Search in the menu searches the screen the menu was entered from.
+        if (zone === 'rail' && state.zone !== 'rail') state.railFrom = state.section;
+        if (zone !== 'rail') state.profileFocus = state.searchFocus = false;
         state.refreshFocus = false;
         state.zone = zone;
         categories.setActive(zone === 'categories');
@@ -2314,6 +2373,7 @@ window.Browser = function (hooks) {
         if (state.zone === 'rail' && state.profileFocus) {
             if (code === next || code === enter) {
                 state.profileFocus = false;
+                state.searchFocus = available('home');
                 renderChrome();
             } else if (code === KEY.ENTER) {
                 RailProfile.open(profileChanged, function () {
@@ -2324,12 +2384,28 @@ window.Browser = function (hooks) {
                 });
             } else if (Keys.isBack(code)) hooks.exit();
             else return code === prev;
+        } else if (state.zone === 'rail' && state.searchFocus) {
+            if (code === prev) {
+                state.searchFocus = false;
+                state.profileFocus = true;
+                renderChrome();
+            } else if (code === next) leaveMenuSearch();
+            else if (code === enter || code === KEY.ENTER) openMenuSearch();
+            else if (Keys.isBack(code)) hooks.exit();
+            else return false;
         } else if (state.zone === 'rail') {
             if (code === prev || code === next) {
-                // Back past the first section reaches the profile avatar.
+                // Back past the first section reaches Search, then the profile avatar.
                 if (!moveSection(code === prev ? -1 : 1) && code === prev) {
-                    settleRail();
-                    state.profileFocus = true;
+                    if (available('home')) {
+                        // Passing the sections on the way to Search opens none of them.
+                        clearTimeout(state.railTimer);
+                        state.railAt = null;
+                        state.searchFocus = true;
+                    } else {
+                        settleRail();
+                        state.profileFocus = true;
+                    }
                     renderChrome();
                 }
             } else if (code === enter || code === KEY.ENTER) {

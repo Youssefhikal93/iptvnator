@@ -123,8 +123,8 @@ test('the top of the next row shows dimmed under the grid and the boxes, so the 
     const cards = page.locator('#items .card:not(.peek)');
     const peek = page.locator('#items .card.peek');
     await expect(cards.first()).toBeVisible();
-    // Compact Grid: 6 a row, 2 rows, then 6 dimmed.
-    await expect(cards).toHaveCount(12);
+    // Compact Grid: 6 a row, 3 rows under the side menu (#95), then 6 dimmed.
+    await expect(cards).toHaveCount(18);
     await expect(peek).toHaveCount(6);
     expect(Number(await peek.first().evaluate(el => getComputedStyle(el).opacity))).toBeLessThan(1);
     await view(page, 'wide');

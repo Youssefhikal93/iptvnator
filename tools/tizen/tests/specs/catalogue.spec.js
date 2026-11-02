@@ -1,4 +1,4 @@
-const { test, expect, boot, section, category, enterItems, toolbar, chooseView, press } = require('./helpers');
+const { test, expect, boot, section, category, enterItems, chooseView, press, menuSearch } = require('./helpers');
 
 test('Live TV, Movies and Series load provider categories and items', async ({ page }) => {
     await boot(page);
@@ -54,14 +54,12 @@ test('search filters titles and list/grid choice survives reload', async ({ page
     await chooseView(page, 'List');
     await press(page, 'ArrowDown');
     await expect(page.locator('#items .row.focused')).toBeVisible();
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.locator('#search-input').fill('Movie 17');
     await press(page, 'Enter');
     await expect(page.locator('#items .count')).toHaveText('1 / 1');
     await expect(page.locator('#items .focused .label')).toHaveText('Movie 17');
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.locator('#search-input').fill('No such movie');
     await expect(page.locator('#items .list-empty')).toContainText('No results');
     await page.reload();
@@ -73,11 +71,9 @@ test('search filters titles and list/grid choice survives reload', async ({ page
 test('▼ from the search bar lands on the results even when the search started from the categories', async ({ page }) => {
     await boot(page);
     await section(page, 'Series');
-    // The focus is on the category list; ▲ past the top category reaches the search bar.
+    // The focus is on the category list; Search opens from the menu.
     await expect(page.locator('#categories .focused')).toBeVisible();
-    for (let i = 0; i < 8 && !(await page.locator('#searchbar.focused').count()); i++) await press(page, 'ArrowUp');
-    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.locator('#search-input').fill('Show 7');
     await expect(page.locator('#items .list-header')).toContainText('Show 7');
     // Return stops typing and leaves the focus on the search bar with the results showing.

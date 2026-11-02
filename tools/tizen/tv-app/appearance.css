@@ -5,13 +5,14 @@
     --home-cols: 6;
     --poster-h: 300px;
     --home-poster-h: 286px;
-    /* Lists keep today's rows in both densities: source details and guides must fit. */
+    /* Lists keep their rows in both densities: source details and guides must fit.
+   The toolbar shares the title row (#95), so the lists hold more rows. */
     --row-h: 64px;
     --item-row-h: 84px;
     --settings-row-h: 92px;
     --settings-row-gap: 12px;
-    --category-rows: 11;
-    --list-rows: 9;
+    --category-rows: 13;
+    --list-rows: 10;
     --visible-rows: var(--list-rows);
     --row-gap: 6px;
     --gap: 20px;

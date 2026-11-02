@@ -28,7 +28,7 @@ window.RailProfile = (() => {
                 run: () => KidsProfile.leave(profile.id, () => { if (ProfileStore.setActive(profile.id)) changed(); }),
             };
         });
-        if (!KidsProfile.on()) options.push({ label: I18n.t('profile.manage'), run: manage });
+        if (!KidsProfile.on()) options.push({ label: I18n.t('profile.manage'), glyph: '⚙', run: manage });
         Menu.open(I18n.t('profile.switch'), options, at);
         document.getElementById('menu').classList.add('profile-menu');
     };

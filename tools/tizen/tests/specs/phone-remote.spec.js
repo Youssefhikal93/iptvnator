@@ -4,17 +4,19 @@ const os = require('node:os');
 const path = require('node:path');
 const service = require('../../tv-app/service/phone-remote');
 let dir;
-const BASE = 'http://127.0.0.1:8778';
+const PORT = Number(process.env.PHONE_TEST_PORT || 8778);
+const BASE = 'http://127.0.0.1:' + PORT;
 async function app(route, body) {
     const response = await fetch(BASE + route, { method: body ? 'POST' : 'GET', body: body ? JSON.stringify(body) : undefined });
     return response.json();
 }
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'jotv-phone-e2e-'));
     service.hooks.ip = () => '127.0.0.1';
-    service.start(8778, { file: path.join(dir, 'phones.json') });
-    await expect.poll(() => service.port()).toBe(8778);
+    service.start(PORT, { file: path.join(dir, 'phones.json') });
+    await expect.poll(() => service.port()).toBe(PORT);
+    await page.route('http://127.0.0.1:8778/**', route => route.continue({ url: route.request().url().replace('http://127.0.0.1:8778', BASE) }));
 });
 test.afterEach(async () => {
     service.stop();
@@ -26,7 +28,7 @@ async function pair(page, context) {
     await expect(page.locator('#settings .st-section:not(.hidden) .st-part').first()).toHaveText('Phone remote');
     await press(page, 'Enter');
     const address = page.locator('#remote-url');
-    await expect(address).toHaveText(/:8778\/r\/[A-HJ-NP-Z2-9]{6}$/);
+    await expect(address).toHaveText(new RegExp(':' + PORT + '/r/[A-HJ-NP-Z2-9]{6}$'));
     await expect(page.locator('#remote-pair')).toContainText('home screen');
     const phone = await context.newPage();
     await phone.setViewportSize({ width: 390, height: 844 });
@@ -36,6 +38,97 @@ async function pair(page, context) {
     await back(page);
     return phone;
 }
+
+async function expectCompactRemote(phone, height) {
+    await expect.poll(() => phone.locator('.back').evaluate(node => getComputedStyle(node).scale)).toMatch(/^(none|1)$/);
+    const layout = await phone.evaluate(() => {
+        const box = selector => document.querySelector(selector).getBoundingClientRect().toJSON();
+        return { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight,
+            card: box('#card'), pad: box('.dpad'), back: box('.back'), volume: box('.volume'), jumps: box('.jumps') };
+    });
+    expect(layout.width).toBeLessThanOrEqual(phone.viewportSize().width);
+    expect(layout.height).toBeLessThanOrEqual(height + (height === 667 ? 48 : 0));
+    expect(layout.card.height).toBeLessThanOrEqual(76);
+    expect(layout.back.width).toBeGreaterThanOrEqual(100);
+    expect(layout.back.height).toBeGreaterThanOrEqual(56);
+    expect(layout.back.y).toBeGreaterThanOrEqual(layout.pad.bottom);
+    expect(layout.back.right).toBeLessThan(layout.volume.x);
+    expect(layout.back.y).toBe(layout.volume.y);
+    expect(layout.jumps.bottom).toBeLessThanOrEqual(height + (height === 667 ? 48 : 0));
+}
+
+test('phone controls fit one screen, with playback-only Info and physical Back/volume order (#95)', async ({ page, context }) => {
+    const phone = await pair(page, context);
+    await phone.locator('[data-jump="home"]').click();
+    await expect(phone.locator('#title')).toHaveText('Home');
+    await expect(phone.locator('#sub')).toHaveText('Nothing playing');
+    await expect(phone.getByRole('button', { name: 'Info', exact: true })).toHaveCount(0);
+    await expectCompactRemote(phone, 844);
+    await phone.setViewportSize({ width: 375, height: 667 });
+    await expectCompactRemote(phone, 667);
+    // The fake film has fewer tracks: exercise the full supported action set
+    // at the TV/service boundary as well as the real playback controls below.
+    await page.route('http://127.0.0.1:8778/app/state', async route => {
+        const state = route.request().postDataJSON();
+        if (state.playing) state.actions = [
+            { id: 'subtitles', label: 'Subtitles' }, { id: 'audio', label: 'Audio' },
+            { id: 'sync', label: 'Subtitle sync' }, { id: 'speed', label: 'Playback speed' },
+        ];
+        await route.continue({ url: route.request().url().replace('http://127.0.0.1:8778', BASE), postData: JSON.stringify(state) });
+    });
+    await openFirst(page, 'Movies');
+    await expect(phone.locator('[data-action="play"]')).toBeVisible();
+    await expect(phone.locator('.info')).toBeHidden();
+    await phone.locator('[data-action="play"]').click();
+    await playing(page);
+    await expect(phone.locator('.info')).toBeVisible();
+    await expect(phone.locator('#context button')).toHaveCount(4);
+    await expectCompactRemote(phone, 667);
+    await phone.setViewportSize({ width: 390, height: 844 });
+    await expectCompactRemote(phone, 844);
+    await phone.locator('.info').click();
+    await expect(page.locator('#pl-menu')).toBeVisible();
+    await phone.locator('.back').click();
+    await page.evaluate(() => Prefs.set('language', 'ar'));
+    await expect(phone.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expectCompactRemote(phone, 844);
+    await phone.locator('[data-jump="home"]').click();
+    await expect(phone.locator('.info')).toBeHidden();
+});
+
+test('touch feedback flashes without delaying keys and preserves OK down/up phases (#95)', async ({ page, browser }) => {
+    const touchContext = await browser.newContext({ hasTouch: true, isMobile: true });
+    try {
+        const phone = await pair(page, touchContext);
+        await phone.locator('[data-jump="home"]').tap();
+        await expect(page.locator('#content')).toHaveClass(/home/);
+        const up = phone.getByRole('button', { name: 'Up', exact: true });
+        const sent = phone.waitForRequest(request => request.url().endsWith('/command') && request.postDataJSON().code === 38);
+        await up.tap();
+        await expect(up).toHaveClass(/tapped/);
+        expect((await sent).postDataJSON()).toEqual({ type: 'key', code: 38 });
+        await expect(up).not.toHaveClass(/tapped/);
+        await openFirst(page, 'Movies');
+        const play = phone.locator('[data-action="play"]');
+        await expect(play).toBeVisible();
+        await play.tap();
+        await playing(page);
+        await phone.locator('.info').tap();
+        await expect(page.locator('#pl-menu')).toBeVisible();
+        await phone.locator('.back').tap();
+        await expect(page.locator('#pl-menu')).toBeHidden();
+        const ok = phone.locator('#ok');
+        const phases = [];
+        phone.on('request', request => {
+            if (request.url().endsWith('/command') && request.postDataJSON().code === 13) phases.push(request.postDataJSON().phase);
+        });
+        const bounds = await ok.boundingBox();
+        await phone.touchscreen.tap(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+        await expect(ok).toHaveClass(/tapped/);
+        await expect(ok).not.toHaveClass(/tapped/);
+        await expect.poll(() => phases).toEqual(['down', 'up']);
+    } finally { await touchContext.close(); }
+});
 
 test('pair from Settings, D-pad follows TV focus, Search types on TV, More and bookmarks work (#93)', async ({ page, context }) => {
     const errors = [];
@@ -119,15 +212,24 @@ test('rename and Forget in Settings revoke a phone immediately', async ({ page, 
     const phone = await pair(page, context);
     const phones = await app('/app/phones');
     await setting(page, phones[0].name);
-    await press(page, 'Enter');
-    await expect(page.locator('#menu')).toContainText('Rename');
+    await expect(page.locator('.st-action-pill.focus')).toHaveText('Rename');
+    await expect(page.locator('.st-row.focused [data-icon="phone"] svg')).toHaveCount(1);
+    const forgetAll = page.locator('.st-standalone-action');
+    expect((await forgetAll.boundingBox()).width).toBeLessThan(600);
+    const idleSurface = await page.locator('.st-row.focused').evaluate(node => getComputedStyle(node).backgroundColor);
+    await expect(forgetAll).toHaveCSS('background-color', idleSurface);
     await press(page, 'Enter');
     await page.locator('#profile-name').fill('Kitchen');
     await page.locator('#profile-dialog-ok').click();
     await expect(page.locator('#settings')).toContainText('Kitchen');
     await setting(page, 'Kitchen');
-    await press(page, 'Enter');
-    await press(page, 'ArrowDown');
+    await press(page, 'ArrowRight');
+    await expect(page.locator('.st-action-pill.focus')).toHaveText('Forget');
+    await expect(page.locator('.st-action-pill.focus')).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+    await expect(page.locator('.st-action-pill.focus')).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('.st-action-pill.focus')).toHaveText('Rename');
+    await press(page, 'ArrowRight');
     await press(page, 'Enter');
     await expect(phone.locator('.closed p')).toContainText('not paired');
     await expect.poll(async () => (await app('/app/phones')).length).toBe(0);
@@ -156,9 +258,10 @@ test('closed page retries and reconnects after Jotv restarts with its saved pair
     service.stop();
     await expect(phone.locator('.closed h2')).toHaveText('Jotv is closed.');
     await expect(phone.locator('.closed p')).toHaveText('Open Jotv on the TV with its remote. This page connects by itself.');
-    service.start(8778, { file: path.join(dir, 'phones.json') });
-    await expect.poll(() => service.port()).toBe(8778);
+    service.start(PORT, { file: path.join(dir, 'phones.json') });
+    await expect.poll(() => service.port()).toBe(PORT);
     const reopened = await context.newPage();
+    await reopened.route('http://127.0.0.1:8778/**', route => route.continue({ url: route.request().url().replace('http://127.0.0.1:8778', BASE) }));
     await boot(reopened);
     await expect(phone.locator('#linkText')).toHaveText('Connected', { timeout: 6000 });
 });

@@ -1,8 +1,9 @@
 # Shared appearance foundation
 
 Ticket #31's screen changes reuse `tv-app/theme-accents.css` and
-`tv-app/appearance.css`, loaded after the base palette and screen styles
-respectively. Keep screen layouts in their own stylesheets; these files own
+`tv-app/appearance.css`, loaded after the base palette and most screen styles
+respectively. `tv-app/controls.css` owns the shared pill controls
+and avatar polish; `tv-app/rail.css` follows it for the overlay rail (#95). Keep screen layouts in their own stylesheets; these files own
 the shared tokens, focus language and main-screen safe area.
 
 Hold-OK options use `glyph` text symbols in a 40px column with a 22px gap,
@@ -48,15 +49,40 @@ the same virtual grid with their own `--grid-cols`/`--grid-rows` on
 text from the list item, or from a TMDB match already in memory: a box costs no
 request and no storage read.
 
-Existing `.focus` and `.focused` classes define `--focus-shadow` locally so
-the ring resolves against the element's palette, including inside the player.
-Artwork cards scale to 1.08 with a dark 4px gap and an 8px outer ring. Rows,
-chips and buttons use the same ring and a lighter surface without scaling.
-Selection uses accent text or a left bar without the focus ring. Later screen
-styles should reuse these tokens and class names.
+Existing `.focus` and `.focused` classes resolve colours against the control's
+palette, including inside the player. `controls.css` uses `--control-radius`
+(999px), `--control-lift` (1.02) and `--control-time` (180ms). Idle controls use
+`--overlay`; focus uses `--selection` with `--selection-on` text and a static
+soft shadow. Only transform and opacity transition. Column menus keep a scale
+of 1 so their icon and label edges stay aligned between focused and idle rows.
+Artwork keeps its shape and 24px corners. Home and Movies share one 3px
+accent outline with a 3px gap and a static drop shadow; Home cards
+grow to 1.05 (big cards 1.04). Selection uses a soft accent surface and text.
+Idle rail entries are transparent; the active section uses the soft accent
+surface and remote focus uses the accent fill.
 
-The rail (168px), header and content keep their full-width geometry; only the
-hint bar moved up to 24px from the bottom edge. Player geometry is unchanged.
+Destructive controls use the normal idle surface with `--destructive` text.
+Focus uses `--destructive-fill` (#b3261e) and `--destructive-on` (white).
+Forget all phones uses a content-sized pill rather than a full Settings row.
+
+The side rail reserves 112px at all times. Outside rail focus, only the avatar
+and section icons show. Rail focus reveals horizontal labels over a 360px solid
+theme surface without moving the header or content. The surface and pill
+backgrounds scale with `transform`; labels use `transform` and `opacity`.
+Arabic/`dir=rtl` puts the rail on the right and opens it leftwards. Motion Off
+removes these transitions. The optional top menu keeps its existing layout.
+The collapsed rail stays below full-screen details and forms; only rail focus
+raises it over browsing content.
+
+Picture avatars have transparent backgrounds; letter avatars use `--selection`
+and `--selection-on`, including in the picker. Existing focus rings remain.
+Floating profile and key-entry dialogs use a static rgba scrim without blur.
+Destructive confirmation buttons carry a trash icon, red idle text and red focus fill.
+
+Settings opens on Playback and orders its sections: Playback, Subtitles, Display,
+Profiles, Parental lock, General, TMDB, Backup, Sources, About. Empty-source startup
+still opens Add Xtream account in Sources. Movie/show/unfinished-episode options
+place Mark watched before removal from Continue watching or Recently watched.
 
 Theme, Accent colour and Density render as pills (`pills: true` on a Settings
 row): every choice is visible, LEFT/RIGHT move between them and stop at the
@@ -70,8 +96,8 @@ Movies on the way to Settings loads neither (#53).
 New appearance translations live in `tests/i18n/appearance-translations.json`
 as well as the shipped tables. The table builder retains them when desktop
 translations are regenerated. Existing browser specs seed Compact in
-`tests/specs/helpers.js`; `i18n-theme.spec.js` inspects the outer shadow ring
-instead of the former translucent border. Real-TV verification is required.
+`tests/specs/helpers.js`; `i18n-theme.spec.js` inspects the rail's filled
+pseudo-element. Real-TV verification is required.
 
 ## Motion (#42)
 
@@ -81,14 +107,26 @@ session shows at once, so lists that rebuild on every key press do not flash.
 Lists preload the next page's artwork and Home the tiles RIGHT scrolls to and
 the row DOWN brings up. TMDB images are requested at the size they are drawn
 (poster `w342`, cast `w185`, actor photo `h632`, backdrop `w1280`). Focused
-tiles grow to 1.1 with a 0.15 s transform; TMDB rows on Detail fade in. Only
-transform and opacity animate. Settings > Appearance > Animations (`motion`,
+Grid/Home tiles grow to 1.05 (big Home cards 1.04) with a 0.15 s transform;
+TMDB rows on Detail fade in. Only transform and opacity animate.
+Settings > Display > Animations (`motion`,
 On by default) sets `data-motion="off"`, which removes every transition and
-animation for TVs where they stutter. Vanilla screens rebuild their tiles on
-each key press, so the focus growth animates only on Preact screens until
-Home and the lists move to Preact (#44, #45).
+animation for TVs where they stutter. Preact screens retain their nodes
+between renders so focus transitions can complete.
 
 ## Profile avatars (#43)
+
+Settings > Profiles keeps Current profile as a large avatar/name card, then
+groups Avatar, Rename, Add and Delete into one row of pills. Each remains a
+Settings row in the linear Up/Down path; Left/Right also move across the pills
+in reading order, mirrored in RTL. The delete action stays last in the strip.
+The last profile's Delete pill is dimmed and exposes `aria-disabled`; its
+reason appears in `.st-action-hint` below the strip. Pill labels remain on
+one line in both densities. Arabic profile labels and Display are maintained
+in both the shipped Arabic table and `tests/i18n/appearance-translations.json`.
+Paired phones use a row-level `actions` list with an independent action index;
+Left/Right select Rename or Forget and OK runs the selected action. Return
+still goes to Settings groups. Values and glyphs keep their shared columns.
 
 `js/avatars.js` exposes 24 animal IDs through `Avatars.ids`, `has(id)` and
 `art(id)`. Artwork ships in `tv-app/avatars/` as 320 x 320 WebPs, each under
@@ -98,11 +136,11 @@ out by flooding inward from the edges.
 Retired saved IDs remain supported: `princess` resolves to `unicorn`, `wizard`
 to `owl` and `pig` to `monkey`,
 without rewriting profile storage. `Kit.Avatar` draws a profile's
-`avatar` on its colour, or its initial when it has none. Settings > Profiles >
-Avatar and ▲ on Who's watching open `AvatarPicker`; `ProfileStore.setAvatar`
+`avatar` on a transparent surface, or its initial on the current accent. Settings > Profiles >
+Avatar and hold OK > Change avatar on Who's watching open `AvatarPicker`; `ProfileStore.setAvatar`
 saves the choice in the profile list. Who's watching follows design review
-13: 220 px avatars that grow 10% inside a ring, a bold name for the focused
-profile, a PIN chip on protected profiles and an accent glow. The rail's
+13, polished in #95: 220 px avatars that grow 6% inside a ring, a filled name
+pill for the focused profile, a PIN chip on protected profiles and an accent glow. The rail's
 profile menu lists every profile with its avatar, its name and a check on the
 active one. The new strings are English until a person checks translations
 (see the table builder).
@@ -150,7 +188,7 @@ up over the list while the remote is on it (`body.no-bar`, `body.bar-off`).
 ## Menu position and Back (#50)
 
 Settings > Appearance > Menu position (`menuPosition`, per profile) is Side
-(default) or Top. Side is the 208px rail with its items 28px in from the edge;
+(default) or Top. Side is the 112px rail with its items 12px in from the edge;
 Top turns the same `#rail` into a 96px bar (`body.menu-top`, `menu.css`) with
 the profile first and Settings at the far end. The header, content, load error
 and hints start after the menu through `--menu-w` and `--menu-h`; the hints sit
@@ -203,13 +241,13 @@ Settings (`js/settings.js`, styles in `settings.css`) shows its groups down
 the left with their row counts and the chosen group's rows on the right. A
 row that names a `group` starts one. ▲▼ pick a group and show its rows at
 once; ▶ or OK enters the rows; Return or ◀ at the first choice goes back to
-the groups, and Return there goes to the menu. Rows are 96px cards with the
+the groups, and Return there goes to the menu. Rows use density-specific minimum heights with the
 label and, where a row has a `hint`, a line that says what it does
 (`describe.*`, in every language). On/off rows are a switch next to the word;
 other choices show ‹ value ›; Appearance keeps its pills. Every group is in
 the page and only the chosen one is shown, so tests can read any row's value;
 the `setting(page, label)` helper opens a row through its group. Sources are
-cards with a status dot, and the add rows are dashed.
+rounded cards with a status dot; add rows use the shared pill surface.
 
 ## Rows under the detail page (#47)
 
@@ -237,6 +275,8 @@ buttons take it; ◀ ▶ seek and light the circle on their side. The bar is
 The ▲ menu (`js/player-menu.js`) is a panel down the right edge. The player
 hands it entries on every render (`head` starts a group, `item` adds a
 choice, `note` and `info` add lines); its groups show their current value,
+and Help appears last after the playback choices (#95). Group and action
+icons use the same 40px column; values align to the reading-end edge.
 OK or ▶ opens a group, ◀ or Return goes back and Return on the groups closes
 it. Live TV calls the menu Options; films and episodes keep the Audio &
 subtitles button and its track menu. Specs open a group with `playerGroup(page, name)`.
@@ -248,9 +288,11 @@ its label; Return closes the sheet, so there is no Cancel row. The profile
 switcher keeps its small list under the avatar.
 
 Multi-view sheets use the row's `icon` field with a glyph string; existing
-avatar nodes still work there. `Kit.MenuIcon` draws the glyph in a 40 px
-column, also used by player action rows through `item(label, active, run,
-note, icon)`. CSS draws the glyph so the row's text stays its label.
+avatar nodes still work there. `Kit.MenuIcon` accepts a named line icon or
+a legacy glyph. Settings groups, profile/phone actions and player groups
+use inline SVG with a 24px view box, 1.8px stroke and `currentColor` in the
+40px column. Player action glyphs map to the same SVG set through
+`item(label, active, run, note, icon)`; other legacy menus retain their symbols.
 
 Up next sits at the top right on the 96 px edge with the next episode's
 still, moves under the clock while the controls are up, and runs a bar down

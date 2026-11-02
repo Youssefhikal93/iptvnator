@@ -1,14 +1,16 @@
 const { test, expect, boot, resumeSeed, movie, press, section } = require('./helpers');
 
 // The focused item's whole ring stays visible (#56): a grown tile's ring
-// (its box + 8 px) stays clear of the next tile and the row title, and a
+// (its box + 6 px) stays clear of the next tile and the row title, and a
 // scrolled list stops with the ring inside its visible area.
-const RING = 8;
+const RING = 6;
 
 const ringTrouble = () => {
     const el = document.querySelector('.hm-card.focus, .card.focused, .st-row.focused');
     const r = el.getBoundingClientRect();
-    const ring = { left: r.left - 8, top: r.top - 8, right: r.right + 8, bottom: r.bottom + 8 };
+    // Artwork has an outer halo; Settings pills show focus inside the fill.
+    const halo = el.matches('.st-row') ? 0 : 6;
+    const ring = { left: r.left - halo, top: r.top - halo, right: r.right + halo, bottom: r.bottom + halo };
     const name = node => node.tagName === 'H2' ? 'title' : node.className;
     const trouble = [];
     const others = [...el.parentElement.children].filter(c => c !== el);
@@ -63,8 +65,8 @@ for (const density of ['comfortable', 'compact']) {
         await page.setViewportSize({ width: 1920, height: 1080 });
         await boot(page, { storage: { settings: { density } } });
         await section(page, 'Settings');
-        // Display is the fifth group and longer than the screen.
-        for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
+        // Display is the third group and longer than the screen.
+        for (let i = 0; i < 2; i++) await press(page, 'ArrowDown');
         await press(page, 'ArrowRight');
         for (let i = 0; i < 12; i++) await press(page, 'ArrowDown');
         await expect.poll(() => page.locator('.st-panes').evaluate(p => p.scrollTop)).toBeGreaterThan(0);
@@ -72,12 +74,19 @@ for (const density of ['comfortable', 'compact']) {
     });
 }
 
-test('the ring width the checks assume matches the focus style', async ({ page }) => {
-    await boot(page);
+test('#95 Home and Movies use the same single accent ring with a small gap', async ({ page }) => {
+    const ringStyle = el => {
+        const css = getComputedStyle(el);
+        return { width: css.outlineWidth, gap: css.outlineOffset, colour: css.outlineColor,
+            shadowLayers: (css.boxShadow.match(/rgba?\(/g) || []).length };
+    };
+    await boot(page, homeSeed('comfortable', 'bigrow'));
+    const home = await page.locator('.hm-card.big.focus').evaluate(ringStyle);
+    expect(home).toEqual({ width: '3px', gap: '3px', colour: 'rgb(120, 173, 255)', shadowLayers: 1 });
+    expect(parseFloat(home.width) + parseFloat(home.gap)).toBe(RING);
     await section(page, 'Movies');
     await press(page, 'ArrowRight');
-    const shadow = await page.locator('.card.focused').evaluate(el => getComputedStyle(el).boxShadow);
-    expect(shadow).toContain(`0px 0px 0px ${RING}px`);
+    expect(await page.locator('.card.focused').evaluate(ringStyle)).toEqual(home);
 });
 
 test('a focused Home row tile grows to 105% and a big tile to 104% (#68)', async ({ page }) => {

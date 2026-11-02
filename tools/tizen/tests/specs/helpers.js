@@ -49,7 +49,8 @@ async function boot(page, seed = {}) {
         localStorage.setItem('tv-tests:seeded', '1');
     }, seed);
     await page.goto('/');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    // Five sections, plus Search (#95).
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     // Seeded with no source, the app opens Settings > Sources instead (#51).
     if (seed.storage.sources && !seed.storage.sources.length) return;
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
@@ -82,6 +83,16 @@ async function moveTo(page, selector, text, key = 'ArrowDown', limit = 50) {
         await press(page, key);
     }
     throw new Error('Focus did not reach ' + JSON.stringify(text) + ' at ' + selector);
+}
+
+// Search in the menu (#95), after the profile: it opens the search for the
+// section in use, or Home's search over everything.
+async function menuSearch(page) {
+    for (let i = 0; i < 12 && !await page.locator('#rail .focused').count(); i++) await back(page);
+    const previous = await page.locator('body.menu-top').count() ? 'ArrowLeft' : 'ArrowUp';
+    for (let i = 0; i < 8 && !await page.locator('#rail .rail-search.focused').count(); i++) await press(page, previous);
+    await expect(page.locator('#rail .rail-search')).toHaveClass(/focused/);
+    await press(page, 'Enter');
 }
 
 async function section(page, name) {
@@ -242,8 +253,9 @@ async function teachIntro(page, from = 15, { clock = false } = {}) {
 async function toolbar(page, name) {
     // Call from the first item (or the top category).
     await press(page, 'ArrowUp');
-    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
-    if (name !== 'search') {
+    await expect(page.locator('#header .focused')).toHaveCount(1);
+    if (name === 'search') throw new Error('Search opens from the menu: use menuSearch');
+    {
         for (let i = 0; i < 10; i++) {
             const focused = page.locator('.view-btn.focused');
             if (await focused.count() && await focused.getAttribute('data-mode') === name) return;
@@ -275,4 +287,4 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, menuSearch, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };

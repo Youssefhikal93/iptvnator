@@ -1,4 +1,4 @@
-const { test, expect, boot, resumeSeed, movie, section, category, enterItems, toolbar, press, holdOK, menuChoice, setting, moveTo } = require('./helpers');
+const { test, expect, boot, resumeSeed, movie, section, category, enterItems, toolbar, press, holdOK, menuChoice, setting, moveTo, menuSearch } = require('./helpers');
 
 const button = page => page.locator('[data-mode="hide-watched"]');
 async function toggle(page) {
@@ -25,8 +25,7 @@ test('finished movies disappear, counts follow, focus moves to the nearest title
     const favorites = page.locator('#categories .row').filter({ has: page.locator('.label', { hasText: /^Favorites$/ }) });
     await expect(favorites.locator('.badge')).toHaveText('0');
     await expect(page.locator('#categories .row.selected .badge')).toHaveText('24');
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.keyboard.type('Movie 25');
     await press(page, 'Enter');
     await expect(page.locator('#items .card-title')).toHaveText('Movie 25');

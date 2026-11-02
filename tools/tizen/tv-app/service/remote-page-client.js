@@ -66,16 +66,11 @@
         $('link').classList.remove('off');
         $('linkText').textContent = word('connected');
         document.body.classList.toggle('playing', !!next.seek);
-        $('kind').textContent = next.kind || word('onTV');
-        $('title').textContent = next.title || '';
-        $('sub').textContent = next.subtitle || word('nothing');
+        $('title').textContent = next.title || word('onTV');
+        $('sub').textContent = next.subtitle || (next.playing ? [next.elapsed, next.duration].filter(Boolean).join(' / ') || next.kind : word('nothing'));
+        document.querySelector('.info').hidden = !next.playing;
         $('art').textContent = next.art || 'Jotv';
         $('art').classList.toggle('live', !next.playing || next.kind === word('live'));
-        $('fill').style.width = Math.max(0, Math.min(100, next.progress || 0)) + '%';
-        $('t1').textContent = next.elapsed || '';
-        $('t2').textContent = next.duration || '';
-        document.querySelector('.bar').hidden = !next.playing;
-        document.querySelector('.times').hidden = !next.playing;
         var context = $('context');
         context.textContent = '';
         (next.actions || []).forEach(function (action, index) {
@@ -166,7 +161,7 @@
     }
     var arrows = { up: 38, down: 40, left: 37, right: 39, ok: 13, back: 10009, info: 457 };
     Object.keys(arrows).forEach(function (name) {
-        if (name !== 'ok') bind(document.querySelector('.dpad .' + name), { type: 'key', code: arrows[name] }, name);
+        if (name !== 'ok') bind(document.querySelector('.' + name), { type: 'key', code: arrows[name] }, name);
     });
     var ok = document.querySelector('.dpad .ok');
     var held = false;
@@ -221,7 +216,19 @@
     // A held button is a remote key, not a copy/paste or link press.
     document.addEventListener('contextmenu', function (event) { if (event.target.tagName !== 'INPUT') event.preventDefault(); });
     document.addEventListener('selectstart', function (event) { if (event.target.tagName !== 'INPUT') event.preventDefault(); });
+    var tapTimers = new WeakMap();
+    function flashButton(event) {
+        var button = event.target.closest('button');
+        if (!button || button.disabled) return;
+        clearTimeout(tapTimers.get(button));
+        button.classList.add('tapped');
+        tapTimers.set(button, setTimeout(function () { button.classList.remove('tapped'); }, 140));
+    }
+    document.addEventListener('pointerdown', flashButton);
+    // Safari also needs a touch listener to activate touch press styling.
+    document.addEventListener('touchstart', flashButton, { passive: true });
     document.addEventListener('click', function (event) {
+        flashButton(event);
         var button = event.target.closest('button');
         if (button && (button !== ok || event.detail === 0) && navigator.vibrate) navigator.vibrate(12);
     });

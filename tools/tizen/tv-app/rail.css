@@ -91,37 +91,36 @@ body:not(.menu-top) #menu.profile-menu { inset-inline-start: 382px; inset-inline
 :is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) :is(#content, #header, #load-error) { left: 0; right: var(--menu-w); }
 :is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #menu.profile-menu { left: auto; right: 382px; }
 
-/* Top menu: icons only. The focused entry's name fades in under its icon,
-   just below the bar, so the bar never changes size. */
+/* Top menu, Netflix style: the profile at the start, the sections as text
+   centred in the bar, Settings as an icon at the end. The page you are on is
+   bold white; the focused entry is a solid pill. No line under the bar. */
+body.menu-top #rail { z-index: 12; border-bottom: 0; gap: 8px; }
 body.menu-top #rail :is(.rail-item, .rail-profile) {
     position: relative;
-    justify-content: center;
     inset: auto;
-    width: 72px;
-    height: 72px;
-    box-sizing: border-box;
-    padding: 0;
     margin: 0;
+    box-shadow: none;
+    border: 0;
+    background: transparent;
+}
+body.menu-top #rail .rail-item {
+    height: 56px;
+    padding: 0 26px;
     gap: 0;
+    color: var(--muted);
+    font-size: 28px;
+    font-weight: 500;
 }
-body.menu-top #rail .rail-profile { margin-inline-end: 22px; }
-body.menu-top #rail .rail-item.rail-bottom { margin-inline-start: auto; }
-body.menu-top #rail .rail-item.active:not(.focused) { background: var(--selection-surface); }
-body.menu-top #rail :is(.rail-item, .rail-profile) > span {
-    position: absolute;
-    top: calc(100% + 14px);
-    left: 50%;
-    max-width: none;
-    padding: 6px 16px;
-    border-radius: var(--control-radius);
-    background: var(--rail-bg);
-    color: var(--on-surface);
-    font-size: 22px;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transform: translate(-50%, -6px);
-    transition: opacity var(--control-time) ease-out, transform var(--control-time) ease-out;
+body.menu-top #rail .rail-item:not(.rail-bottom) .glyph { display: none; }
+body.menu-top #rail .rail-profile + .rail-item { margin-inline-start: auto; }
+body.menu-top #rail .rail-item.rail-bottom { margin-inline-start: auto; width: 56px; padding: 0; justify-content: center; }
+/* Icon-only entries keep their name for readers, just not on screen. */
+body.menu-top #rail :is(.rail-item.rail-bottom, .rail-profile) > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+body.menu-top #rail .rail-item.active { color: var(--on-surface); font-weight: 700; background: transparent; }
+body.menu-top #rail .rail-profile { padding: 4px; border-radius: 50%; }
+body.menu-top #rail :is(.rail-item, .rail-profile).focused {
+    background: var(--on-surface);
+    color: var(--content-bg);
+    transform: scale(1.04);
 }
-body.menu-top #rail :is(.rail-item, .rail-profile).focused > span { opacity: 1; transform: translate(-50%, 0); }
-body.menu-top #rail { z-index: 12; overflow: visible; }
+body.menu-top #rail .rail-profile.focused { box-shadow: 0 0 0 4px var(--on-surface); background: transparent; }

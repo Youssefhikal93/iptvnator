@@ -7,8 +7,11 @@
     --destructive: #ffb4ab;
     --destructive-fill: #b3261e;
     --destructive-on: #fff;
+    /* Focus (#95): a muted accent fill with white labels on dark themes;
+       Light keeps the solid accent, as a soft fill fades on a light page. */
+    --focus-on: #fff;
 }
-:root[data-theme="light"] { --destructive: #b3261e; }
+:root[data-theme="light"] { --destructive: #b3261e; --focus-on: var(--selection-on); --focus-layer: none; --focus-fill: var(--selection); }
 :is(.rail-item, .rail-profile, #searchbar, .view-btn, .row, .menu-row:not(.note),
     .st-group-item, .st-row, .st-action-pill, .dt-btn, .dt-ep-pill, .tm-chip,
     .hm-help-icon, .hm-search-icon, .hm-search-bar, .list-action,
@@ -33,10 +36,10 @@
     #pl-sleep-buttons button.focus, .state-button:focus, .gd-watch:focus,
     .gd-popup button:focus, .pf-dialog button:focus, .tm-dialog button:focus,
     #backup-screen button:focus, #form button:focus, #form input:focus, #form select:focus, .rm-popup button:focus) {
-    /* A muted accent fill (the glow over the strong surface) with bold
-       light text: clear from the sofa, softer than the solid accent. */
-    background: linear-gradient(var(--selection-glow), var(--selection-glow)), var(--selection-surface-strong);
-    color: var(--on-surface);
+    /* The accent glow over its strong surface, resolved here so the
+       player's own accent values apply inside it. */
+    background: var(--focus-layer, linear-gradient(var(--selection-glow), var(--selection-glow))), var(--focus-fill, var(--selection-surface-strong));
+    color: var(--focus-on);
     font-weight: 700;
     border-color: transparent;
     outline: none;

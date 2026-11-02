@@ -36,9 +36,9 @@ test('#91 Continue watching and recent channels go to the Samsung home screen, a
     const preview = await sentTiles(page);
     expect(preview.sections.map((part) => part.title)).toEqual(['Continue watching', 'Recently watched channels']);
     const film = preview.sections[0].tiles[0];
-    expect(film).toMatchObject({ title: 'Movie 25', subtitle: '3 min left', image_url: 'http://posters.test/25.jpg', image_ratio: '2by3' });
+    expect(film).toMatchObject({ title: 'Movie 25', subtitle: '3 min left', image_url: 'http://posters.test/25.jpg', image_ratio: '16by9' });
     expect(JSON.parse(film.action_data)).toEqual({ s: 's1', sec: 'movies', key: '2025' });
-    expect(preview.sections[1].tiles[0]).toMatchObject({ title: 'Channel 1 (cat all)', image_ratio: '1by1' });
+    expect(preview.sections[1].tiles[0]).toMatchObject({ title: 'Channel 1 (cat all)', image_ratio: '16by9' });
 
     // The TV wakes the running app with the tile's action_data.
     await page.evaluate((action) => {

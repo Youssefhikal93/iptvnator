@@ -95,13 +95,16 @@ window.ScreenSaver = function (deps) {
         show();
     }
 
+    // Extras start in their cells; the frame loop then moves them by transform.
+    const at = (ball) => 'translate(' + (ball.x - ScreenSaver.BALL_R) + 'px, ' + (ball.y - ScreenSaver.BALL_R) + 'px)';
+
     const LogoView = ({ look, time, date }) => html`<div class="ss-stage ss-logo-stage">
         <div class="ss-logo">
             <img class="ss-logo-icon" src="icon.png" alt="" />
             <div class="ss-logo-clock">${time}</div>
             <div class="ss-logo-date">${date}</div>
         </div>
-        ${look.extras.map((extra) => html`<div key=${extra.key} class="ss-logo-extra" style=${{ left: extra.x + '%', top: extra.y + '%' }}>
+        ${look.extras.map((extra) => html`<div key=${extra.key} class="ss-logo-extra" data-x=${extra.cellX} data-y=${extra.cellY} style=${{ transform: extra.start }}>
             <img class=${'ss-logo-extra-icon p-' + extra.play} src="icon.png" alt="" style=${{ '--duration': extra.duration + 's', '--delay': extra.delay + 's' }} />
         </div>`)}
         <div class="ss-hint">${I18n.t('saver.hint')}</div>
@@ -110,6 +113,24 @@ window.ScreenSaver = function (deps) {
     function showLogo() {
         const now = Date.now();
         UI.render(html`<${LogoView} look=${logo} time=${I18n.time(now)} date=${I18n.date(now, LOGO_DATE)} />`, root);
+        logo.nodes = Array.prototype.slice.call(root.querySelectorAll('.ss-logo-extra'));
+    }
+
+    // Extras drift like balls (#95): steady speed, bouncing off the screen
+    // edges, the logo block and each other. Animations Off keeps them still.
+    function roll(now) {
+        if (!logo) return;
+        const dt = Math.min(0.1, (now - (logo.last || now)) / 1000);
+        logo.last = now;
+        if (!logo.box) {
+            const block = root.querySelector('.ss-logo').getBoundingClientRect();
+            const pad = 24;
+            logo.box = { w: root.clientWidth, h: root.clientHeight,
+                hole: { left: block.left - pad, top: block.top - pad, right: block.right + pad, bottom: block.bottom + pad } };
+        }
+        ScreenSaver.bounce(logo.extras, dt, logo.box);
+        logo.extras.forEach((ball, i) => { if (logo.nodes[i]) logo.nodes[i].style.transform = at(ball); });
+        logo.frame = requestAnimationFrame(roll);
     }
 
     function extraLogo(slot, i) {
@@ -117,12 +138,23 @@ window.ScreenSaver = function (deps) {
         const neighbours = logo.extras.filter((extra) => Math.abs(extra.col - slot.col) <= 1 && Math.abs(extra.row - slot.row) <= 1);
         let play = i % LOGO_PLAYS.length;
         while (neighbours.some((extra) => extra.play === LOGO_PLAYS[play])) play = (play + 1) % LOGO_PLAYS.length;
-        return Object.assign({}, slot, {
+        // It starts at its cell's centre (x/y in px on the 1920 x 1080 page;
+        // cellX/cellY keep the cell in percent) heading a random way.
+        const angle = Math.random() * 2 * Math.PI;
+        const ball = Object.assign({}, slot, {
             key: logo.step + ':' + i,
             play: LOGO_PLAYS[play],
             duration: 14 + i * 0.22,
             delay: -i * 2.1,
+            cellX: slot.x,
+            cellY: slot.y,
+            x: slot.x * 19.2,
+            y: slot.y * 10.8,
+            vx: Math.cos(angle) * ScreenSaver.SPEED,
+            vy: Math.sin(angle) * ScreenSaver.SPEED,
         });
+        ball.start = at(ball);
+        return ball;
     }
 
     function jump() {
@@ -142,6 +174,8 @@ window.ScreenSaver = function (deps) {
         showLogo();
         ticker = setInterval(showLogo, CLOCK_MS);
         mover = setInterval(jump, LOGO_MOVE_MS);
+        const still = document.documentElement.getAttribute('data-motion') === 'off';
+        if (!still && typeof requestAnimationFrame === 'function') logo.frame = requestAnimationFrame(roll);
         Log.info('SAVER on (logo and clock)');
     }
 
@@ -161,6 +195,7 @@ window.ScreenSaver = function (deps) {
         clearInterval(ticker);
         clearInterval(mover);
         ticker = mover = 0;
+        if (logo && logo.frame) cancelAnimationFrame(logo.frame);
         logo = null;
         UI.clear(root);
         root.remove();
@@ -201,6 +236,88 @@ ScreenSaver.extraCount = function (step) {
     'use strict';
 
     return step === 0 ? 0 : [2, 6, 14, 28][(step - 1) % 4];
+};
+
+// Moving extras (#95): px per second, and the radius that holds an icon's
+// whole spin or flip (its 108 px box turned 45°), so touching never overlaps.
+ScreenSaver.SPEED = 45;
+ScreenSaver.BALL_R = 54;
+ScreenSaver.HIT_R = 78;
+
+// One step of the balls: move, bounce off the box's edges and its hole (the
+// logo block), then off each other as equal elastic balls; knocks set both
+// back to SPEED, so only directions change. balls: [{ x, y, vx, vy }] (px,
+// px/s), changed in place. box: { w, h, hole: { left, top, right, bottom } }.
+ScreenSaver.bounce = function (balls, dt, box) {
+    'use strict';
+
+    const r = ScreenSaver.HIT_R;
+    // Every ball keeps the calm speed after a knock.
+    const steady = (ball) => {
+        const speed = Math.hypot(ball.vx, ball.vy) || 1;
+        ball.vx *= ScreenSaver.SPEED / speed;
+        ball.vy *= ScreenSaver.SPEED / speed;
+    };
+    // Edges and the hole come last, so a knock never pushes a ball into them.
+    const keep = (ball) => {
+        if (ball.x < r) { ball.x = r; ball.vx = Math.abs(ball.vx); }
+        if (ball.x > box.w - r) { ball.x = box.w - r; ball.vx = -Math.abs(ball.vx); }
+        if (ball.y < r) { ball.y = r; ball.vy = Math.abs(ball.vy); }
+        if (ball.y > box.h - r) { ball.y = box.h - r; ball.vy = -Math.abs(ball.vy); }
+        const hole = box.hole;
+        if (!hole) return;
+        // The hole's nearest point; within the radius, push out and reflect.
+        let nx = Math.max(hole.left, Math.min(ball.x, hole.right));
+        let ny = Math.max(hole.top, Math.min(ball.y, hole.bottom));
+        const dist = Math.hypot(ball.x - nx, ball.y - ny);
+        if (dist >= r) return;
+        let ux;
+        let uy;
+        if (dist > 0) {
+            ux = (ball.x - nx) / dist;
+            uy = (ball.y - ny) / dist;
+        } else {
+            // The centre got inside: leave by the nearest side.
+            const sides = [ball.x - hole.left, hole.right - ball.x, ball.y - hole.top, hole.bottom - ball.y];
+            const side = sides.indexOf(Math.min.apply(null, sides));
+            ux = side === 0 ? -1 : side === 1 ? 1 : 0;
+            uy = side === 2 ? -1 : side === 3 ? 1 : 0;
+            nx = side === 0 ? hole.left : side === 1 ? hole.right : ball.x;
+            ny = side === 2 ? hole.top : side === 3 ? hole.bottom : ball.y;
+        }
+        ball.x = nx + ux * r;
+        ball.y = ny + uy * r;
+        const along = ball.vx * ux + ball.vy * uy;
+        if (along < 0) { ball.vx -= 2 * along * ux; ball.vy -= 2 * along * uy; }
+    };
+    balls.forEach((ball) => {
+        ball.x += ball.vx * dt;
+        ball.y += ball.vy * dt;
+    });
+    for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+            const a = balls[i];
+            const b = balls[j];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy) || 0.01;
+            if (dist >= 2 * r) continue;
+            const ux = dx / dist;
+            const uy = dy / dist;
+            const push = (2 * r - dist) / 2;
+            a.x -= ux * push; a.y -= uy * push;
+            b.x += ux * push; b.y += uy * push;
+            // Equal masses swap the parts of their speeds along the line between them.
+            const closing = (a.vx - b.vx) * ux + (a.vy - b.vy) * uy;
+            if (closing > 0) {
+                a.vx -= closing * ux; a.vy -= closing * uy;
+                b.vx += closing * ux; b.vy += closing * uy;
+                steady(a);
+                steady(b);
+            }
+        }
+    }
+    balls.forEach(keep);
 };
 
 // Pick without replacement from an 8 x 6 grid, reserving the middle 4 x 4 and the hint's corner.

@@ -141,7 +141,7 @@ test('the full swarm has staggered loops, distinct neighbours and no animated ov
     await expect(extras(page)).toHaveCount(28);
     const loops = await extras(page).evaluateAll(els => els.map(el => {
         const style = getComputedStyle(el.querySelector('img'));
-        return { x: parseFloat(el.style.left), y: parseFloat(el.style.top), name: style.animationName, duration: style.animationDuration, delay: style.animationDelay, iterations: style.animationIterationCount };
+        return { x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y), name: style.animationName, duration: style.animationDuration, delay: style.animationDelay, iterations: style.animationIterationCount };
     }));
     expect(new Set(loops.map(loop => loop.duration)).size).toBe(28);
     expect(new Set(loops.map(loop => loop.delay)).size).toBe(28);
@@ -207,3 +207,21 @@ test('an unknown saved kind falls back to the slideshow', async ({ page }) => {
     await expect(saver(page).locator('.ss-logo')).toHaveCount(0);
     await expect(saver(page).locator('.ss-clock')).toBeVisible();
 });
+
+for (const motion of ['on', 'off']) {
+    test('#95 extras drift like balls at a steady pace; with Animations ' + motion + (motion === 'on' ? ' they move' : ' they stay put'), async ({ page }) => {
+        await page.clock.install();
+        await boot(page, seed({ motion }));
+        await idle(page);
+        await page.clock.fastForward(120 * 1000);
+        await expect(extras(page)).toHaveCount(2);
+        const where = () => extras(page).evaluateAll(els => els.map(el => { const box = el.getBoundingClientRect(); return [box.x, box.y]; }));
+        const before = await where();
+        await page.clock.runFor(4000);
+        const after = await where();
+        const moved = before.map((p, i) => Math.hypot(after[i][0] - p[0], after[i][1] - p[1]));
+        // 45 px a second for four seconds, give or take a bounce.
+        if (motion === 'on') moved.forEach(d => { expect(d).toBeGreaterThan(60); expect(d).toBeLessThan(200); });
+        else moved.forEach(d => expect(d).toBe(0));
+    });
+}

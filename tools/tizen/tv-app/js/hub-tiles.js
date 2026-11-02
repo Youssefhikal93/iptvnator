@@ -39,11 +39,11 @@ window.HubTiles = (function () {
         return platform || (platform = tizenPlatform());
     }
 
-    // Square logos for channels, posters for movies and shows.
-    function tile(entry, live, sourceId) {
+    // Every tile is wide (#95); Samsung fits a logo or poster into it.
+    function tile(entry, sourceId) {
         var out = {
             title: entry.title,
-            image_ratio: live ? '1by1' : '2by3',
+            image_ratio: '16by9',
             image_url: entry.image,
             action_data: JSON.stringify({ s: sourceId, sec: entry.section, key: entry.key }),
             is_playable: true,
@@ -57,15 +57,15 @@ window.HubTiles = (function () {
         return !!entry && !!entry.title && /^https?:\/\//i.test(entry.image || '');
     }
 
-    function section(title, entries, live, sourceId) {
-        var tiles = (entries || []).filter(usable).slice(0, MAX).map(function (entry) { return tile(entry, live, sourceId); });
+    function section(title, entries, sourceId) {
+        var tiles = (entries || []).filter(usable).slice(0, MAX).map(function (entry) { return tile(entry, sourceId); });
         return tiles.length ? { title: title, tiles: tiles } : null;
     }
 
     function build(sourceId, lists) {
         var sections = [
-            section(I18n.t('browser.continueWatching'), lists && lists.continue, false, sourceId),
-            section(I18n.t('home.recentLive'), lists && lists.live, true, sourceId),
+            section(I18n.t('browser.continueWatching'), lists && lists.continue, sourceId),
+            section(I18n.t('home.recentLive'), lists && lists.live, sourceId),
         ].filter(Boolean);
         return JSON.stringify({ sections: sections });
     }

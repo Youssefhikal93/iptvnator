@@ -110,17 +110,22 @@ test('list and category windows follow the density and respect smaller caller li
     var pane = node();
     var options = { rows: 11, title: function () { return ''; }, label: function (item) { return item.name; } };
     var list = run.globals.List(pane, options);
+    // Rows in the window, past the header; one more peeks in, dimmed (#95).
+    var shown = function () { return pane.children.filter(function (row) { return !/\bpeek\b/.test(row.className); }).length - 1; };
+    var peeks = function () { return pane.children.length - 1 - shown(); };
     list.set(items(30));
     assert.equal(list.cols(), 1);
-    assert.equal(pane.children.length - 1, 9);
+    assert.equal(shown(), 10);
+    assert.equal(peeks(), 1);
     run.globals.Prefs.set('density', 'compact');
-    assert.equal(pane.children.length - 1, 9);
+    assert.equal(shown(), 10);
     pane.className = 'pane side';
     list.set(items(30));
-    assert.equal(pane.children.length - 1, 11);
+    assert.equal(shown(), 11);
     options.rows = 3;
     list.move(1);
-    assert.equal(pane.children.length - 1, 3);
+    assert.equal(shown(), 3);
+    assert.equal(peeks(), 1);
 });
 
 test('Home keeps the focused entry visible while row counts change and at the end of a row', function () {

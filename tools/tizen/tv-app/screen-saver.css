@@ -26,7 +26,8 @@
 #screen-saver .ss-logo-icon { width: 300px; height: 300px; border-radius: 56px; animation: ss-bounce 5.5s ease-in-out infinite; }
 #screen-saver .ss-logo-clock { margin-top: 28px; font-size: 140px; font-weight: 300; line-height: 1; letter-spacing: 0.02em; color: rgba(255, 255, 255, 0.9); }
 #screen-saver .ss-logo-date { margin-top: 16px; font-size: 28px; color: rgba(255, 255, 255, 0.6); }
-#screen-saver .ss-logo-extra { position: absolute; width: 108px; height: 108px; transform: translate(-50%, -50%); animation: ss-in 1.2s ease-out both; }
+/* Extras move like balls (#95): the script places each one by transform. */
+#screen-saver .ss-logo-extra { position: absolute; left: 0; top: 0; width: 108px; height: 108px; will-change: transform; animation: ss-in 1.2s ease-out both; }
 #screen-saver .ss-logo-extra-icon { display: block; width: 100%; height: 100%; border-radius: 20px; animation-duration: var(--duration); animation-delay: var(--delay); animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
 #screen-saver .ss-logo-extra-icon.p-rotate { animation-name: ss-rotate; animation-timing-function: linear; }
 #screen-saver .ss-logo-extra-icon.p-flip { animation-name: ss-flip; animation-timing-function: linear; }

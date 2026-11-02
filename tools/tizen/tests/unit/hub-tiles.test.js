@@ -31,10 +31,10 @@ test('Continue watching and Recent channels become two sections; a tile carries 
     var preview = JSON.parse(env.api.build('s1', { continue: [MOVIE], live: [CHANNEL] }));
     assert.deepEqual(preview.sections.map(function (part) { return part.title; }), ['Continue watching', 'Recently watched channels']);
     assert.deepEqual(preview.sections[0].tiles[0], {
-        title: 'Dexter', subtitle: '42 min left', image_ratio: '2by3', image_url: 'http://posters.test/dexter.jpg',
+        title: 'Dexter', subtitle: '42 min left', image_ratio: '16by9', image_url: 'http://posters.test/dexter.jpg',
         action_data: JSON.stringify({ s: 's1', sec: 'movies', key: '11' }), is_playable: true,
     });
-    assert.equal(preview.sections[1].tiles[0].image_ratio, '1by1');
+    assert.equal(preview.sections[1].tiles[0].image_ratio, '16by9');
     assert.equal('subtitle' in preview.sections[1].tiles[0], false);
 });
 

@@ -2472,9 +2472,23 @@ window.Browser = function (hooks) {
         return visibility.allows(section, item, { withHidden: section !== 'live' }) && !ParentalLock.isLocked(sourceId(), section, category);
     }
 
+    // The details the app already holds for a title; never a request.
+    function peekDetails(entry) {
+        if (otherSource(entry.item)) return null;
+        if (entry.item.episode || entry.section === 'series') {
+            var show = entry.item.show || entry.item;
+            var info = state.catalogue.peek({ kind: 'show', id: show.series_id });
+            return info && info.details;
+        }
+        return state.catalogue.peek({ kind: 'movie', id: entry.item.stream_id });
+    }
+
+    // Every tile is wide (#95): a title's backdrop when the app has one, else
+    // its poster, which Samsung fits into the wide box.
     function tileOf(entry) {
         var item = entry.item;
         var show = item.show || item;
+        var d = entry.section === 'live' ? null : peekDetails(entry) || {};
         var p = entry.section === 'live' ? null : progressOf(entry);
         var left = p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '';
         var episode = item.episode ? String(item.episode.label || '').replace(/\s+/g, ' ').trim() : '';
@@ -2483,7 +2497,7 @@ window.Browser = function (hooks) {
             key: Library.keyOf(entry.section, item),
             title: show.name || show.title || '',
             subtitle: [episode, left].filter(Boolean).join(' · '),
-            image: show.stream_icon || show.cover || show.logo || '',
+            image: (d && d.backdrop) || show.stream_icon || show.cover || show.logo || '',
         };
     }
 
@@ -2613,15 +2627,7 @@ window.Browser = function (hooks) {
             if (!state.adapter) return [];
             return ScreenSaver.slides(homeRows(), {
                 progress: progressOf,
-                details: function (entry) {
-                    if (otherSource(entry.item)) return null;
-                    if (entry.item.episode || entry.section === 'series') {
-                        var show = entry.item.show || entry.item;
-                        var info = state.catalogue.peek({ kind: 'show', id: show.series_id });
-                        return info && info.details;
-                    }
-                    return state.catalogue.peek({ kind: 'movie', id: entry.item.stream_id });
-                },
+                details: peekDetails,
             });
         },
     };

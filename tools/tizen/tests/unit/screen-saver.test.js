@@ -35,7 +35,7 @@ function scene(options) {
             documentElement: { getAttribute: function () { return motion; } },
             addEventListener: function () {},
             createElement: function () {
-                return { remove: function () { body.children.splice(body.children.indexOf(this), 1); } };
+                return { remove: function () { body.children.splice(body.children.indexOf(this), 1); }, querySelectorAll: function () { return []; } };
             },
         },
         UI: { html: function () { return 'view'; }, img: function () { return 'img'; }, render: function (view) { renders.push(view); }, clear: function () {} },
@@ -241,4 +241,56 @@ test('#74 random slots keep full animation envelopes on screen, outside the cent
     });
     var first = JSON.stringify(env.ScreenSaver.positions(function () { return 0; }, 14));
     assert.notEqual(JSON.stringify(env.ScreenSaver.positions(function () { return 0.99; }, 14)), first, 'randomness changes the layout');
+});
+
+test('#95 extras bounce off the edges and the logo block at a steady speed', function () {
+    var S = load(['screen-saver.js']).globals.ScreenSaver;
+    var box = { w: 1920, h: 1080, hole: { left: 576, top: 254, right: 1344, bottom: 826 } };
+    var wall = { x: 100, y: 540, vx: -S.SPEED, vy: 0 };
+    S.bounce([wall], 1, box);
+    assert.equal(wall.x, S.HIT_R);
+    assert.equal(wall.vx, S.SPEED);
+    var hole = { x: 480, y: 540, vx: S.SPEED, vy: 0 };
+    S.bounce([hole], 1, box);
+    assert.ok(hole.x <= box.hole.left - S.HIT_R + 1e-9, 'pushed out of the logo block');
+    assert.equal(hole.vx, -S.SPEED);
+});
+
+test('#95 two extras meeting head-on bounce apart without overlapping, at the same speed', function () {
+    var S = load(['screen-saver.js']).globals.ScreenSaver;
+    var box = { w: 1920, h: 1080 };
+    var a = { x: 300, y: 300, vx: S.SPEED, vy: 0 };
+    var b = { x: 300 + 2 * S.HIT_R + 10, y: 300, vx: -S.SPEED, vy: 0 };
+    S.bounce([a, b], 1, box);
+    assert.ok(b.x - a.x >= 2 * S.HIT_R - 1e-9);
+    assert.ok(a.vx < 0 && b.vx > 0, 'they turn back');
+    assert.ok(Math.abs(Math.hypot(a.vx, a.vy) - S.SPEED) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(b.vx, b.vy) - S.SPEED) < 1e-9);
+});
+
+test('#95 a full swarm of 28 runs ten minutes on screen, out of the logo block and apart', function () {
+    var S = load(['screen-saver.js']).globals.ScreenSaver;
+    var state = 95;
+    var seeded = function () { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
+    var box = { w: 1920, h: 1080, hole: { left: 576, top: 254, right: 1344, bottom: 826 } };
+    var balls = S.positions(seeded, 28).map(function (slot) {
+        var angle = seeded() * 2 * Math.PI;
+        return { x: slot.x * 19.2, y: slot.y * 10.8, vx: Math.cos(angle) * S.SPEED, vy: Math.sin(angle) * S.SPEED };
+    });
+    var worst = 0;
+    for (var frame = 0; frame < 600 * 30; frame++) {
+        S.bounce(balls, 1 / 30, box);
+        balls.forEach(function (ball, i) {
+            assert.ok(ball.x >= S.HIT_R - 1e-6 && ball.x <= box.w - S.HIT_R + 1e-6 && ball.y >= S.HIT_R - 1e-6 && ball.y <= box.h - S.HIT_R + 1e-6, 'on screen');
+            var cx = Math.max(box.hole.left, Math.min(ball.x, box.hole.right));
+            var cy = Math.max(box.hole.top, Math.min(ball.y, box.hole.bottom));
+            assert.ok(Math.hypot(ball.x - cx, ball.y - cy) >= S.HIT_R - 1e-6, 'outside the logo block');
+            balls.slice(0, i).forEach(function (other) {
+                worst = Math.max(worst, 2 * S.HIT_R - Math.hypot(ball.x - other.x, ball.y - other.y));
+            });
+        });
+    }
+    // Crowded corners may squeeze two a little; never by more than a few px.
+    assert.ok(worst < 12, 'overlap ' + worst.toFixed(1) + ' px');
+    balls.forEach(function (ball) { assert.ok(Math.abs(Math.hypot(ball.vx, ball.vy) - S.SPEED) < 1e-6); });
 });

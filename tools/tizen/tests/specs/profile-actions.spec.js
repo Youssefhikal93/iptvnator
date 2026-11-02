@@ -14,7 +14,8 @@ for (const language of ['en', 'ar']) {
             await setting(page, labels.avatar, labels.settings);
             for (const accent of ['blue', 'saffron', 'asphalt', 'violet', 'pink']) {
                 await page.evaluate(accent => Prefs.set('accent', accent), accent);
-                const focusFill = await page.locator('.st-row.focused').evaluate(node => getComputedStyle(node).backgroundColor);
+                // Letter avatars wear the solid accent, whatever the focus fill (#95).
+                const focusFill = await page.evaluate(() => { const probe = document.createElement('i'); probe.style.background = 'var(--selection)'; document.body.appendChild(probe); const fill = getComputedStyle(probe).backgroundColor; probe.remove(); return fill; });
                 await expect(page.locator('.st-avatar')).toHaveCSS('background-color', focusFill);
                 await expect(page.locator('.rail-avatar')).toHaveCSS('background-color', focusFill);
             }

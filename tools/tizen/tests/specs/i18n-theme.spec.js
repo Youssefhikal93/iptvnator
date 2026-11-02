@@ -68,7 +68,15 @@ async function focusContrast(page, selector) {
         const surface = parse(getComputedStyle(node.parentElement).backgroundColor);
         const base = surface.length ? surface : parse(getComputedStyle(document.body).backgroundColor);
         const alpha = border.length > 3 ? border[3] : 1;
-        const mixed = [0, 1, 2].map(i => Math.round(border[i] * alpha + base[i] * (1 - alpha)));
+        const over = (top, under) => {
+            const a = top.length > 3 ? top[3] : 1;
+            return [0, 1, 2].map(i => top[i] * a + under[i] * (1 - a));
+        };
+        // The fill is a colour, and since #95 a gradient layer over it.
+        const layer = parse((style.backgroundImage.match(/rgba?\([^)]*\)/) || [''])[0]);
+        let mixed = over(border, base);
+        if (layer.length) mixed = over(layer, mixed);
+        mixed = mixed.map(Math.round);
         return { mixed, base: base.slice(0, 3), text: parse(style.color), alpha };
     }, { selector });
 }
@@ -143,7 +151,8 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     await setting(page, 'Theme');
     await expect(page.locator('.st-row.focused .st-pill.on')).toHaveText('Dark blue');
     const darkFocus = await focusContrast(page, '.st-row.focused');
-    expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(4.5);
+    // The muted fill (#95) meets the 3:1 contrast for controls; labels stay at 4.5:1.
+    expect(contrast(darkFocus.mixed, darkFocus.base)).toBeGreaterThanOrEqual(3);
     expect(contrast(darkFocus.text, darkFocus.mixed)).toBeGreaterThanOrEqual(4.5);
 
     await choose(page, 'Light');
@@ -157,10 +166,12 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     // Rows use a filled accent pill in both themes (#95).
     const style = await page.locator('.st-row.focused').evaluate(node => {
         const css = getComputedStyle(node);
-        return { radius: css.borderRadius, background: css.backgroundColor };
+        return { radius: css.borderRadius, background: css.backgroundColor, layer: css.backgroundImage };
     });
     expect(style.radius).toBe('999px');
+    // Light keeps the solid accent; dark themes use a muted fill (#95).
     expect(style.background).toBe('rgb(29, 99, 224)');
+    expect(style.layer).toMatch(/^none(, none)?$/);
     const lightFocus = await focusContrast(page, '.st-row.focused');
     expect(contrast(lightFocus.mixed, lightFocus.base)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(lightFocus.text, lightFocus.mixed)).toBeGreaterThanOrEqual(4.5);

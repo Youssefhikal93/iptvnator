@@ -221,3 +221,25 @@ test('phone volume shows a level bar on the TV, then hides it', async ({ page })
     await expect(osd).toHaveClass(/muted/);
     await expect(osd).not.toHaveClass(/on/, { timeout: 4000 });
 });
+
+test('a home-screen copy with its own storage stays paired, and an unpaired page takes a typed code', async ({ page, context, browser }) => {
+    const phone = await pair(page, context);
+    const saved = phone.url();
+    expect(saved).toMatch(/#k=[0-9a-f]{64}$/);
+    // An iPhone home-screen app starts from the saved address with empty storage.
+    const home = await (await browser.newContext()).newPage();
+    await home.goto(saved);
+    await expect(home.locator('#linkText')).toHaveText('Connected');
+    const fresh = await (await browser.newContext()).newPage();
+    await fresh.goto(BASE + '/');
+    await expect(fresh.locator('#code')).toBeVisible();
+    await setting(page, 'Pair a phone');
+    await press(page, 'Enter');
+    await expect(page.locator('#remote-url')).toHaveText(/\/r\/[A-Z0-9]{6}$/);
+    const code = (await page.locator('#remote-url').innerText()).slice(-6);
+    await fresh.locator('#code').fill(code.toLowerCase());
+    await fresh.locator('#code-go').click();
+    await expect(fresh.locator('#linkText')).toHaveText('Connected');
+    await expect(fresh.locator('#code')).toBeHidden();
+    expect(fresh.url()).toMatch(/#k=[0-9a-f]{64}$/);
+});

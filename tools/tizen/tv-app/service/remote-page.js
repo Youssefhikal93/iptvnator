@@ -21,11 +21,12 @@ function build(state) {
 }
 var executable = 'window.REMOTE=JSON.parse(document.getElementById("remote-words").textContent);\n' + client;
 var hash = crypto.createHash('sha256').update(executable).digest('base64');
-// The home-screen icon and its install manifest.
+// The home-screen icon and its install manifest. No start_url: Add to Home
+// Screen keeps the current address, which carries this phone's key.
 var icons = { '/icon-180.png': fs.readFileSync(__dirname + '/remote-icon-180.png'), '/icon-512.png': fs.readFileSync(__dirname + '/remote-icon-512.png') };
 function manifest(state) {
     var name = (state.words && state.words.title) || 'Jotv remote';
-    return JSON.stringify({ name: name, short_name: name, start_url: '/', display: 'standalone', background_color: '#0b0f17', theme_color: '#0b0f17',
+    return JSON.stringify({ name: name, short_name: name, display: 'standalone', background_color: '#0b0f17', theme_color: '#0b0f17',
         icons: [{ src: '/icon-180.png', sizes: '180x180', type: 'image/png' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }] });
 }
 module.exports = { build: build, icons: icons, manifest: manifest, csp: "default-src 'none'; script-src 'sha256-" + hash + "'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" };

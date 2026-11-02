@@ -311,7 +311,7 @@ Settings → Backup → Send everything to computer… copies every profile, PIN
 
 ## Phone remote (#93)
 
-Settings > General > Phone remote > Pair a phone shows a QR code and address, valid once for 10 minutes. Scan it on the home network, then bookmark the page or add it to your home screen. Up to five phones can stay paired and work together. Rename or forget them in the same Settings group.
+Settings > General > Phone remote > Pair a phone shows a QR code and address, valid once for 10 minutes. Scan it on the home network, then bookmark the page or add it to your home screen. The saved address keeps the pairing, so an iPhone home-screen icon stays paired. A page that is not paired takes the 6-letter code typed in. Up to five phones can stay paired and work together. Rename or forget them in the same Settings group.
 
 The phone has the remote keys, volume, section jumps, search and a More sheet with numbers and colour keys. Its actions follow the TV: for example Next episode, available Skip intro, tracks, or Play on a detail page. A TV text field opens phone text entry; results stay on the TV. Film and episode seek buttons use the TV's accelerating steps. Phone volume shows a level bar on the TV. On the home screen the page has its own remote icon. Language and accent follow the TV.
 

@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     'use strict';
     var boot = window.REMOTE;
     var words = boot.words || {};
@@ -15,6 +15,8 @@
         document.querySelectorAll('[data-t]').forEach(function (node) { node.textContent = word(node.getAttribute('data-t')); });
         document.querySelectorAll('[data-label]').forEach(function (node) { node.setAttribute('aria-label', word(node.dataset.label)); });
         document.title = word('title');
+        $('code').placeholder = word('codeLabel');
+        $('code').setAttribute('aria-label', word('codeLabel'));
         document.querySelector('.gear').setAttribute('aria-label', word('settings'));
     }
     function call(path, request) {
@@ -27,6 +29,7 @@
     }
     function closed(message) {
         document.body.classList.add('closedstate');
+        document.body.classList.toggle('unpaired', message === 'forgotten' || message === 'expired');
         document.body.classList.remove('searching', 'more');
         $('link').classList.add('off');
         $('linkText').textContent = word('waiting');
@@ -59,7 +62,7 @@
         document.documentElement.dir = next.dir === 'rtl' ? 'rtl' : 'ltr';
         document.documentElement.lang = next.lang || 'en';
         document.documentElement.dataset.accent = next.accent;
-        document.body.classList.remove('closedstate');
+        document.body.classList.remove('closedstate', 'unpaired');
         $('link').classList.remove('off');
         $('linkText').textContent = word('connected');
         document.body.classList.toggle('playing', !!next.seek);
@@ -123,24 +126,35 @@
         var browser = /Edg\//.test(ua) ? 'Edge' : /Firefox/.test(ua) ? 'Firefox' : /Chrome/.test(ua) ? 'Chrome' : 'Safari';
         return platform + ' · ' + browser;
     }
+    // An iPhone home-screen app has its own storage, apart from Safari's. The
+    // key also lives in the address, which is what Add to Home Screen saves.
+    function remember() {
+        try { localStorage.setItem('jotv-remote-key', key); }
+        catch (error) { /* The address still carries the key. */ }
+        history.replaceState(null, '', location.pathname + '#k=' + key);
+    }
     function redeem(code) {
         call('/pair', { code: code, name: browserName() }).then(function (paired) {
-            try { localStorage.setItem('jotv-remote-key', paired.key); }
-            catch (error) { return closed('storage'); }
             key = paired.key;
-            history.replaceState(null, '', location.pathname);
+            remember();
             poll();
         }).catch(function (error) { closed(error.message === 'limit' ? 'limit' : 'expired'); });
     }
     function connect() {
         var pair = /^#pair=([A-Za-z0-9]{6})$/.exec(location.hash);
+        var saved = /^#k=([0-9a-f]{64})$/.exec(location.hash);
         try { key = localStorage.getItem('jotv-remote-key') || ''; }
-        catch (error) { return closed('storage'); }
-        if (!pair) return key ? poll() : closed('forgotten');
+        catch (error) { key = ''; }
+        if (saved && saved[1] !== key) key = saved[1];
+        if (!pair) {
+            if (!key) return closed('forgotten');
+            remember();
+            return poll();
+        }
         if (!key) return redeem(pair[1]);
         // Scanning again must not leave an unreachable duplicate pairing behind.
         call('/events?since=-1').then(function (update) {
-            history.replaceState(null, '', location.pathname);
+            remember();
             revision = update.revision;
             render(update.state);
             poll();
@@ -196,9 +210,17 @@
     input.addEventListener('input', textChanged);
     $('text-done').addEventListener('click', function () { keypress(65376); input.blur(); });
     input.addEventListener('keydown', function (event) { if (event.key === 'Enter') { event.preventDefault(); keypress(65376); input.blur(); } });
+    // Not paired here: type the code from Jotv's Pair a phone window.
+    var codeInput = $('code');
+    function typedCode() {
+        var code = codeInput.value.trim().toUpperCase();
+        if (/^[A-Z0-9]{6}$/.test(code)) { codeInput.blur(); key = ''; redeem(code); }
+    }
+    $('code-go').addEventListener('click', typedCode);
+    codeInput.addEventListener('keydown', function (event) { if (event.key === 'Enter') { event.preventDefault(); typedCode(); } });
     // A held button is a remote key, not a copy/paste or link press.
-    document.addEventListener('contextmenu', function (event) { if (event.target !== input) event.preventDefault(); });
-    document.addEventListener('selectstart', function (event) { if (event.target !== input) event.preventDefault(); });
+    document.addEventListener('contextmenu', function (event) { if (event.target.tagName !== 'INPUT') event.preventDefault(); });
+    document.addEventListener('selectstart', function (event) { if (event.target.tagName !== 'INPUT') event.preventDefault(); });
     document.addEventListener('click', function (event) {
         var button = event.target.closest('button');
         if (button && (button !== ok || event.detail === 0) && navigator.vibrate) navigator.vibrate(12);

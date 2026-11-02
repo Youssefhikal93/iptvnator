@@ -128,7 +128,7 @@ test('the page offers a home-screen icon and a manifest named after the TV words
     }
     const manifest = await (await call('/manifest.webmanifest')).json();
     assert.equal(manifest.name, 'Jotv remote');
-    assert.equal(manifest.start_url, '/');
+    assert.equal(manifest.start_url, undefined);
     assert.match(Page.csp, /img-src 'self'; manifest-src 'self'/);
 });
 

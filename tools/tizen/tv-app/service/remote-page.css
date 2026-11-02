@@ -138,6 +138,11 @@ body.searching .hide-search { display: none; }
 .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.12); border-top-color: var(--accent); margin-top: 10px; }
 body.closedstate .closed { display: flex; }
 body.closedstate .hide-closed { display: none; }
+.codebox { display: none; gap: 8px; margin-top: 6px; }
+.codebox input { width: 150px; padding: 12px; border-radius: 14px; border: 1px solid var(--edge); background: var(--glass); color: var(--text); font: 700 20px/1 ui-monospace, monospace; letter-spacing: 4px; text-align: center; text-transform: uppercase; }
+.codebox button { padding: 0 18px; border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-on); font-weight: 700; }
+body.unpaired .codebox { display: flex; }
+body.unpaired .closed .spin { display: none; }
 
 .pad, .transport { direction: ltr; }
 

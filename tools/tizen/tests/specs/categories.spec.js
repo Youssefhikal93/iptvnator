@@ -1,4 +1,4 @@
-const { test, expect, boot, channel, section, category, enterItems, toolbar, press, back, holdOK, menuChoice, moveTo, playing, setting } = require('./helpers');
+const { test, expect, boot, channel, section, category, enterItems, toolbar, press, back, holdOK, menuChoice, moveTo, playing, setting, menuSearch } = require('./helpers');
 
 const labels = page => page.locator('#categories .row .label').allTextContents();
 const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('iptvnator-tv:p:default:hidden-categories:s1') || '{}'));
@@ -113,8 +113,7 @@ test('search and All channels leave out hidden categories', async ({ page }) => 
     await expect(page.locator('#items .count')).toHaveText('1 / 483');
     // Channel 34 is in the hidden category 5, channel 35 in the shown 6.
     await enterItems(page);
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.locator('#search-input').fill('channel 34 (');
     await press(page, 'Enter');
     await expect(page.locator('#items .list-empty')).toContainText('No results');

@@ -1,4 +1,4 @@
-const { test, expect, boot, press, back, section, setting, enterItems, holdOK, moveTo, toolbar, playing, channel } = require('./helpers');
+const { test, expect, boot, press, back, section, setting, enterItems, holdOK, moveTo, toolbar, playing, channel, menuSearch } = require('./helpers');
 
 async function digits(page, pin) {
     for (const digit of pin) await press(page, digit);
@@ -91,7 +91,7 @@ test('a kids profile sees only ticked categories, has no Settings and leaves onl
     await addKids(page);
     // The new kids profile is in use: badge on the avatar, no Settings.
     await expect(page.locator('#rail .rail-avatar .kids-badge')).toHaveText('KIDS');
-    await expect(page.locator('#rail .rail-item')).toHaveCount(4);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(4);
     await expect(page.locator('#rail .rail-item').filter({ hasText: 'Settings' })).toHaveCount(0);
     await expect(page.locator('#rail .rail-item').filter({ hasText: 'Series' })).toHaveClass(/disabled/);
     await section(page, 'Movies');
@@ -105,8 +105,7 @@ test('a kids profile sees only ticked categories, has no Settings and leaves onl
     await expect(page.locator('#items .list-header')).toContainText('All movies');
     await expect(page.locator('#items .skeleton')).toHaveCount(0);
     await enterItems(page);
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.keyboard.type('Movie');
     await press(page, 'Enter');
     await expect(page.locator('#items .card-title').first()).toBeVisible();
@@ -142,7 +141,7 @@ test('a kids profile sees only ticked categories, has no Settings and leaves onl
     await expect(page.locator('#pin-pad .pin-message')).toHaveText('Wrong PIN');
     await digits(page, '1234');
     await expect(page.locator('#profiles')).toHaveCount(0);
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await expect(page.locator('#rail .rail-avatar .kids-badge')).toHaveCount(0);
 });
 

@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { test, expect, boot, section, press, back, moveTo, enterItems, toolbar, openFirst } = require('./helpers');
+const { test, expect, boot, section, press, back, moveTo, enterItems, toolbar, openFirst, menuSearch } = require('./helpers');
 
 // TMDB for the fake catalogue (Movie 1..25): Movies 1-3 are a trilogy with a
 // fourth film the provider lacks, 4-5 a pair, 6 a collection the provider has
@@ -127,8 +127,7 @@ test('a collection opens on its films in release order, a missing one greyed; th
     // The top bar finds collections by name; ▲ passes the Refresh pill (#67) first.
     await press(page, 'ArrowUp');
     await expect(page.locator('#items .list-action.focused')).toHaveCount(1);
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.keyboard.type('pair');
     await press(page, 'Enter');
     await expect(page.locator('#items .card-title')).toHaveText(['Pair Collection']);

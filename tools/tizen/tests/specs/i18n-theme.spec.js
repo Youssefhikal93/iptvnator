@@ -32,7 +32,7 @@ test('Arabic numbered channel titles isolate the number with the name in lists, 
 const RAIL_GERMAN = ['Startseite', 'Live-TV', 'Filme', 'Serien', 'Einstellungen'];
 const RAIL_ENGLISH = ['Home', 'Live TV', 'Movies', 'Series', 'Settings'];
 
-const railLabels = page => page.locator('#rail .rail-item').allTextContents().then(list => list.map(text => text.trim()));
+const railLabels = page => page.locator('#rail .rail-item:not(.rail-search)').allTextContents().then(list => list.map(text => text.trim()));
 
 // Opens the Language list from the Settings row and picks a language by its own name.
 async function pickLanguage(page, name, key = 'ArrowDown') {
@@ -94,7 +94,7 @@ test('Settings language list switches the app to Deutsch, survives a reload and 
     expect(stored).toBe('de');
 
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     expect(await railLabels(page)).toEqual(RAIL_GERMAN);
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
 
@@ -174,7 +174,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     expect(ring).toEqual({ background: 'rgb(29, 99, 224)', radius: '999px' });
 
     await page.reload();
-    await expect(page.locator('#rail .rail-item')).toHaveCount(5);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveCount(5);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(238, 240, 243)');
 

@@ -253,8 +253,9 @@ async function teachIntro(page, from = 15, { clock = false } = {}) {
 async function toolbar(page, name) {
     // Call from the first item (or the top category).
     await press(page, 'ArrowUp');
-    await expect(page.locator('#searchbar')).toHaveClass(/focused/);
-    if (name !== 'search') {
+    await expect(page.locator('#header .focused')).toHaveCount(1);
+    if (name === 'search') throw new Error('Search opens from the menu: use menuSearch');
+    {
         for (let i = 0; i < 10; i++) {
             const focused = page.locator('.view-btn.focused');
             if (await focused.count() && await focused.getAttribute('data-mode') === name) return;

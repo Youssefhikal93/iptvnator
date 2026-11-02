@@ -137,8 +137,7 @@ test('a genre typed in a search finds titles of that genre, in English or Arabic
     await boot(page);
     await section(page, 'Series');
     await enterItems(page);
-    await toolbar(page, 'search');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.keyboard.type('comedy');
     await press(page, 'Enter');
     // Show 2, 5, 8, 11 and 14 are the Comedy shows.
@@ -147,8 +146,7 @@ test('a genre typed in a search finds titles of that genre, in English or Arabic
     await expect(names.first()).toContainText('Show');
     // From Home: the Arabic name finds the same Drama shows as Drama.
     await section(page, 'Home');
-    await press(page, 'ArrowUp');
-    await press(page, 'Enter');
+    await menuSearch(page);
     await page.keyboard.type('دراما');
     await press(page, 'Enter');
     await expect(page.locator('#home .hm-row h2')).toHaveText(['Series']);

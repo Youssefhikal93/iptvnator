@@ -1226,8 +1226,10 @@ window.Browser = function (hooks) {
 
     function onSearchKey(code) {
         if (code === KEY.ENTER || code === KEY.IME_DONE || code === KEY.DOWN) {
+            // Read the query before stopTyping redraws the bar and clears it.
+            var search = runSearch();
             stopTyping();
-            runSearch().then(function (found) {
+            search.then(function (found) {
                 if (found) setZone('items');
             });
         } else if (code === KEY.RETURN || code === KEY.ESCAPE || code === KEY.IME_CANCEL) {

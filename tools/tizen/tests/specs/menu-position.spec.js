@@ -28,6 +28,8 @@ for (const variant of [
         expect(variant.language === 'ar' ? labelBox.x + labelBox.width < iconBox.x : labelBox.x > iconBox.x + iconBox.width).toBe(true);
         if (variant.motion === 'off') expect(await rail.evaluate(node => getComputedStyle(node, '::before').transitionDuration)).toBe('0s');
         await press(page, 'ArrowUp');
+        await expect(rail.locator('.rail-search')).toHaveClass(/focused/);
+        await press(page, 'ArrowUp');
         await expect(rail.locator('.rail-profile')).toHaveClass(/focused/);
         await holdOK(page);
         await expect(page.locator('#menu.profile-menu')).toBeVisible();
@@ -74,13 +76,17 @@ test('the menu moves between the side and the top at once and keeps its keys', a
     await section(page, 'Movies');
     await expect(page.locator('#categories .row.focused')).toHaveCount(1);
     await enterItems(page);
-    await toolbar(page, 'search');
+    await toolbar(page, 'view');
     // ▲ from the toolbar goes up to the menu.
     await press(page, 'ArrowUp');
     await expect(focusedSection(page)).toHaveText('Movies');
     await moveTo(page, '#rail .rail-item.focused', 'Home', 'ArrowLeft');
     await press(page, 'ArrowLeft');
+    await expect(page.locator('#rail .rail-search.focused')).toHaveCount(1);
+    await press(page, 'ArrowLeft');
     await expect(page.locator('#rail .rail-profile.focused')).toHaveCount(1);
+    await press(page, 'ArrowRight');
+    await expect(page.locator('#rail .rail-search.focused')).toHaveCount(1);
     await press(page, 'ArrowRight');
     await expect(focusedSection(page)).toHaveText('Home');
 

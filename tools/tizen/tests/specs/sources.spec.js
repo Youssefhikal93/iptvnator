@@ -2,7 +2,7 @@ const { test, expect, boot, section, moveTo, press, back, category, sources, sou
 
 test('Sources remains reachable near the end of Settings and has no rail item (#95)', async ({ page }) => {
     await boot(page);
-    await expect(page.locator('#rail .rail-item')).toHaveText(['Home', 'Live TV', 'Movies', 'Series', 'Settings']);
+    await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveText(['Home', 'Live TV', 'Movies', 'Series', 'Settings']);
     await sources(page);
     await expect(page.locator('#settings .st-group').nth(8)).toHaveText('Sources');
     const rows = page.locator('#settings .st-section:visible .st-row');

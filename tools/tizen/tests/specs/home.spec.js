@@ -119,7 +119,7 @@ test('the top bar shows only where it works, and Top bar Off brings it up from t
     await section(page, 'Movies');
     await expect(page.locator('#header')).toBeHidden();
     await enterItems(page);
-    await toolbar(page, 'search');
+    await toolbar(page, 'view');
     await expect(page.locator('#header')).toBeVisible();
     await press(page, 'ArrowDown');
     await expect(page.locator('#header')).toBeHidden();

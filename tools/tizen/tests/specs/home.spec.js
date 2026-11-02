@@ -57,6 +57,9 @@ test('OK in Continue watching plays on from where it stopped; holding OK opens t
     await expect(page.locator('#menu .menu-row').nth(0)).toHaveText('Details');
     await expect(page.locator('#menu .menu-row').nth(1)).toHaveText('Play');
     await expect(page.locator('#menu .menu-row').nth(2)).toHaveText('Add to Favorites');
+    const options = await page.locator('#menu .menu-row').allTextContents();
+    expect(options.indexOf('Mark as watched')).toBeGreaterThan(2);
+    expect(options.indexOf('Mark as watched')).toBeLessThan(options.indexOf('Remove from Continue watching'));
     await expect(page.locator('#menu .menu-row.focused')).toHaveText('Details');
     await press(page, 'Enter');
     await expect(page.locator('#detail')).toContainText('Movie 24');

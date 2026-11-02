@@ -12,6 +12,12 @@ for (const language of ['en', 'ar']) {
                 rename: I18n.t('profile.renameMenu'), add: I18n.t('profile.addMenu'), remove: I18n.t('profile.delete'),
             }));
             await setting(page, labels.avatar, labels.settings);
+            for (const accent of ['blue', 'saffron', 'asphalt', 'violet', 'pink']) {
+                await page.evaluate(accent => Prefs.set('accent', accent), accent);
+                const focusFill = await page.locator('.st-row.focused').evaluate(node => getComputedStyle(node).backgroundColor);
+                await expect(page.locator('.st-avatar')).toHaveCSS('background-color', focusFill);
+                await expect(page.locator('.rail-avatar')).toHaveCSS('background-color', focusFill);
+            }
             if (language === 'ar') {
                 await expect(page.locator('.st-section:visible .st-group')).toHaveText('الملفات الشخصية');
                 expect([labels.avatar, labels.rename, labels.add, labels.remove]).toEqual(['الصورة الشخصية', 'إعادة التسمية…', 'إضافة ملف شخصي…', 'حذف الملف الشخصي']);
@@ -45,6 +51,9 @@ for (const language of ['en', 'ar']) {
             await expect(page.locator('.st-row.focused .st-label')).toHaveText(labels.avatar);
             await press(page, 'Enter');
             await expect(page.locator('#avatar-picker')).toBeVisible();
+            const pictureFills = await page.locator('.ap-avatar.drawn').evaluateAll(nodes => nodes.map(node => getComputedStyle(node).backgroundColor));
+            expect(pictureFills).toEqual(Array(12).fill('rgba(0, 0, 0, 0)'));
+            await expect(page.locator('.ap-avatar:not(.drawn)')).toHaveCSS('background-color', await page.locator('.st-avatar').evaluate(node => getComputedStyle(node).backgroundColor));
             await back(page);
             // The original linear route still reaches every action and toggle.
             for (const label of [labels.rename, labels.add, labels.remove]) {
@@ -53,6 +62,16 @@ for (const language of ['en', 'ar']) {
             }
             await press(page, 'ArrowDown');
             await expect(page.locator('.st-row.focused .st-switch')).toBeVisible();
+            await page.evaluate(() => ProfileStore.add('Family'));
+            await setting(page, labels.remove, labels.settings);
+            await press(page, 'Enter');
+            await expect(page.locator('#profile-dialog-ok .menu-icon[data-icon="trash"] svg')).toHaveCount(1);
+            await expect(page.locator('#profile-dialog-ok')).toHaveCSS('color', theme === 'light' ? 'rgb(179, 38, 30)' : 'rgb(255, 180, 171)');
+            await press(page, 'ArrowLeft');
+            await expect(page.locator('#profile-dialog-ok')).toBeFocused();
+            await expect(page.locator('#profile-dialog-ok')).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+            await expect(page.locator('#profile-dialog-ok')).toHaveCSS('color', 'rgb(255, 255, 255)');
+            await back(page);
         });
     }
 }

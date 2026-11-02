@@ -187,6 +187,9 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await expect(page.locator('.st-action-hint')).toBeEmpty();
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toContainText('Delete Anna?');
+    await expect(page.locator('#profile-dialog-ok .menu-icon[data-icon="trash"] svg')).toHaveCount(1);
+    await expect(page.locator('#profile-dialog-ok')).toHaveCSS('color', 'rgb(255, 180, 171)');
+    expect(await page.locator('#profile-dialog').evaluate(node => getComputedStyle(node).boxShadow)).toContain('rgba(0, 0, 0, 0.58)');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
     expect((await profiles(page)).length).toBe(2);
@@ -194,6 +197,9 @@ test('delete asks to confirm, removes the profile data and the last profile cann
     await settingsRow(page, 'Delete profile');
     await press(page, 'Enter');
     await press(page, 'ArrowLeft');
+    await expect(page.locator('#profile-dialog-ok')).toBeFocused();
+    await expect(page.locator('#profile-dialog-ok')).toHaveCSS('background-color', 'rgb(179, 38, 30)');
+    await expect(page.locator('#profile-dialog-ok')).toHaveCSS('color', 'rgb(255, 255, 255)');
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toHaveCount(0);
     expect((await profiles(page)).map(p => p.name)).toEqual(['Me']);
@@ -282,6 +288,7 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await expect(page.locator('#avatar-picker')).toHaveCount(0);
     expect((await profiles(page))[1].avatar).toBe('fox');
     await expect(page.locator('#rail .rail-avatar.drawn .avatar-art')).toHaveCount(1);
+    await expect(page.locator('#rail .rail-avatar.drawn')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 
     for (let i = 0; i < 12 && !await page.locator('#rail .focused').count(); i++) await back(page);
     for (let i = 0; i < 8 && !await page.locator('.rail-profile.focused').count(); i++) await press(page, 'ArrowUp');
@@ -289,11 +296,13 @@ test('a drawn avatar chosen in Settings shows on the rail, in its menu with ever
     await expect(page.locator('#menu .menu-row.with-icon .menu-label')).toHaveText(['Me', 'Anna']);
     await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-check')).toHaveCount(1);
     await expect(page.locator('#menu .menu-row.with-icon').nth(1).locator('.menu-avatar.drawn .avatar-art')).toHaveCount(1);
+    await expect(page.locator('#menu .menu-avatar.drawn')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await back(page);
 
     await page.reload();
     await expect(page.locator('#profiles')).toBeVisible();
     await expect(page.locator('#profiles .pf-tile.focused .pf-avatar.drawn .avatar-art')).toHaveCount(1);
+    await expect(page.locator('#profiles .pf-avatar.drawn')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     // ▲ on Who's watching opens the same picker from a held OK; Return keeps the avatar.
     await holdOK(page);
     await press(page, 'ArrowDown');

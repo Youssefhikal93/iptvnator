@@ -65,8 +65,8 @@ for (const density of ['comfortable', 'compact']) {
         await page.setViewportSize({ width: 1920, height: 1080 });
         await boot(page, { storage: { settings: { density } } });
         await section(page, 'Settings');
-        // Display is the fifth group and longer than the screen.
-        for (let i = 0; i < 4; i++) await press(page, 'ArrowDown');
+        // Display is the third group and longer than the screen.
+        for (let i = 0; i < 2; i++) await press(page, 'ArrowDown');
         await press(page, 'ArrowRight');
         for (let i = 0; i < 12; i++) await press(page, 'ArrowDown');
         await expect.poll(() => page.locator('.st-panes').evaluate(p => p.scrollTop)).toBeGreaterThan(0);

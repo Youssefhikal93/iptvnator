@@ -1,0 +1,92 @@
+/* The rail's layout footprint never changes. Only its surface and pills
+   grow over the page; labels fade in beside the stationary icons. */
+body:not(.menu-top) #rail {
+    z-index: 1;
+    background: transparent;
+    padding-top: 150px;
+    isolation: isolate;
+    --rail-origin: left center;
+}
+body:not(.menu-top) #rail::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 360px;
+    z-index: -1;
+    background: var(--rail-bg);
+    transform: scaleX(0.311111);
+    transform-origin: var(--rail-origin);
+    transition: transform var(--control-time) ease-out;
+}
+body:not(.menu-top) #rail:has(.focused) { z-index: 12; }
+body:not(.menu-top) #rail:has(.focused)::before { transform: scaleX(1); }
+body:not(.menu-top) #rail :is(.rail-item, .rail-profile) {
+    position: relative;
+    inset-inline: auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 88px;
+    height: 88px;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0 12px 18px;
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    isolation: isolate;
+}
+body:not(.menu-top) #rail .rail-profile {
+    position: absolute;
+    top: 28px;
+    margin-bottom: 0;
+}
+body:not(.menu-top) #rail .rail-bottom { position: absolute; bottom: 24px; }
+body:not(.menu-top) #rail :is(.rail-item, .rail-profile)::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 328px;
+    border-radius: var(--control-radius);
+    background: transparent;
+    z-index: -1;
+    transform: scaleX(0.268293);
+    transform-origin: var(--rail-origin);
+    transition: transform var(--control-time) ease-out;
+}
+body:not(.menu-top) #rail .rail-item.active::before { background: var(--selection-surface); }
+body:not(.menu-top) #rail .rail-item.active:not(.focused) { background: transparent; box-shadow: none; }
+body:not(.menu-top) #rail :is(.rail-item, .rail-profile).focused::before { background: var(--selection); }
+body:not(.menu-top) #rail:has(.focused) :is(.rail-item, .rail-profile)::before { transform: scaleX(1); }
+body:not(.menu-top) #rail :is(.rail-item, .rail-profile) > span {
+    position: absolute;
+    inset-inline-start: 96px;
+    width: 216px;
+    max-width: none;
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 26px;
+    margin: 0;
+    opacity: 0;
+    transform: translateX(-12px);
+    transition: opacity var(--control-time) ease-out, transform var(--control-time) ease-out;
+}
+body:not(.menu-top) #rail:has(.focused) :is(.rail-item, .rail-profile) > span { opacity: 1; transform: none; }
+body:not(.menu-top) #menu.profile-menu { inset-inline-start: 382px; inset-inline-end: auto; }
+
+/* Arabic uses the same slim content offset and opens towards the left.
+   Existing screen key paths and the optional top menu are unchanged. */
+:is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #rail {
+    left: auto;
+    right: 0;
+    direction: rtl;
+    --rail-origin: right center;
+}
+:is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #rail :is(.rail-item, .rail-profile) > span { transform: translateX(12px); }
+:is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #rail:has(.focused) :is(.rail-item, .rail-profile) > span { transform: none; }
+:is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) :is(#content, #header, #load-error) { left: 0; right: var(--menu-w); }
+:is(html:lang(ar), html[dir="rtl"]) body:not(.menu-top) #menu.profile-menu { left: auto; right: 382px; }

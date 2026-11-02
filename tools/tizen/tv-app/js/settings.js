@@ -78,8 +78,7 @@ window.Settings = function (hooks) {
     // Background refresh (#86): the last row of Sources, after Refresh content now.
     const autoRefresh = { get label() { return I18n.t('settings.autoRefresh'); }, get hint() { return I18n.t('describe.autoRefresh'); }, key: 'autoRefresh', choices: ['night', 'twelve', 'off'], get labels() { return [I18n.t('settings.refreshNight'), I18n.t('settings.refreshTwelve'), I18n.t('common.off')]; } };
 
-    // Sources come first (#51) and are read on every draw, as the list
-    // changes. A row that names a group starts it.
+    // Sources are read on every draw as the saved list changes.
     function groups() {
         const list = [];
         SourceSettings.rows(hooks.sources).concat([autoRefresh], rows, RemoteSettings.rows(render)).forEach((row) => {
@@ -88,7 +87,10 @@ window.Settings = function (hooks) {
             if (name || !list.length) list.push({ name, rows: [] });
             list[list.length - 1].rows.push(row);
         });
-        return list;
+        const order = ['settings.playback', 'picture.subtitles', 'settings.display', 'profile.group',
+            'settings.parentalLock', 'remote.general', 'TMDB', 'settings.backup', 'rail.sources', 'settings.about']
+            .map((key) => key === 'TMDB' ? key : I18n.t(key));
+        return list.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
     }
 
     const choice = (row) => Math.max(0, row.choices.indexOf(row.read ? row.read() : Prefs.get(row.key)));

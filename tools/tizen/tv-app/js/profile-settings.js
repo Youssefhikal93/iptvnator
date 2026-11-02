@@ -38,6 +38,7 @@ window.ProfileSettings = (function () {
                 title: I18n.t('profile.delete'),
                 text: I18n.t('profile.deleteHint', { name: profile.name }),
                 ok: I18n.t('profile.deleteButton'),
+                destructive: true,
                 done: function (confirmed) {
                     if (confirmed) {
                         ProfileStore.remove(profile.id);

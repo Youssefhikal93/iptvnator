@@ -2,8 +2,8 @@
 
 Ticket #31's screen changes reuse `tv-app/theme-accents.css` and
 `tv-app/appearance.css`, loaded after the base palette and most screen styles
-respectively. `tv-app/controls.css` loads last and owns the shared pill controls
-and avatar polish (#95). Keep screen layouts in their own stylesheets; these files own
+respectively. `tv-app/controls.css` owns the shared pill controls
+and avatar polish; `tv-app/rail.css` follows it for the overlay rail (#95). Keep screen layouts in their own stylesheets; these files own
 the shared tokens, focus language and main-screen safe area.
 
 Hold-OK options use `glyph` text symbols in a 40px column with a 22px gap,
@@ -65,8 +65,24 @@ Destructive controls use the normal idle surface with `--destructive` text.
 Focus uses `--destructive-fill` (#b3261e) and `--destructive-on` (white).
 Forget all phones uses a content-sized pill rather than a full Settings row.
 
-The rail (208px), header and content keep their full-width geometry; only the
-hint bar moved up to 24px from the bottom edge. Player geometry is unchanged.
+The side rail reserves 112px at all times. Outside rail focus, only the avatar
+and section icons show. Rail focus reveals horizontal labels over a 360px solid
+theme surface without moving the header or content. The surface and pill
+backgrounds scale with `transform`; labels use `transform` and `opacity`.
+Arabic/`dir=rtl` puts the rail on the right and opens it leftwards. Motion Off
+removes these transitions. The optional top menu keeps its existing layout.
+The collapsed rail stays below full-screen details and forms; only rail focus
+raises it over browsing content.
+
+Picture avatars have transparent backgrounds; letter avatars use `--selection`
+and `--selection-on`, including in the picker. Existing focus rings remain.
+Floating profile and key-entry dialogs use a static rgba scrim without blur.
+Destructive confirmation buttons carry a trash icon, red idle text and red focus fill.
+
+Settings opens on Playback and orders its sections: Playback, Subtitles, Display,
+Profiles, Parental lock, General, TMDB, Backup, Sources, About. Empty-source startup
+still opens Add Xtream account in Sources. Movie/show/unfinished-episode options
+place Mark watched before removal from Continue watching or Recently watched.
 
 Theme, Accent colour and Density render as pills (`pills: true` on a Settings
 row): every choice is visible, LEFT/RIGHT move between them and stop at the
@@ -80,8 +96,8 @@ Movies on the way to Settings loads neither (#53).
 New appearance translations live in `tests/i18n/appearance-translations.json`
 as well as the shipped tables. The table builder retains them when desktop
 translations are regenerated. Existing browser specs seed Compact in
-`tests/specs/helpers.js`; `i18n-theme.spec.js` inspects the outer shadow ring
-instead of the former translucent border. Real-TV verification is required.
+`tests/specs/helpers.js`; `i18n-theme.spec.js` inspects the rail's filled
+pseudo-element. Real-TV verification is required.
 
 ## Motion (#42)
 
@@ -120,7 +136,7 @@ out by flooding inward from the edges.
 Retired saved IDs remain supported: `princess` resolves to `unicorn`, `wizard`
 to `owl` and `pig` to `monkey`,
 without rewriting profile storage. `Kit.Avatar` draws a profile's
-`avatar` on its colour, or its initial when it has none. Settings > Profiles >
+`avatar` on a transparent surface, or its initial on the current accent. Settings > Profiles >
 Avatar and hold OK > Change avatar on Who's watching open `AvatarPicker`; `ProfileStore.setAvatar`
 saves the choice in the profile list. Who's watching follows design review
 13, polished in #95: 220 px avatars that grow 6% inside a ring, a filled name
@@ -172,7 +188,7 @@ up over the list while the remote is on it (`body.no-bar`, `body.bar-off`).
 ## Menu position and Back (#50)
 
 Settings > Appearance > Menu position (`menuPosition`, per profile) is Side
-(default) or Top. Side is the 208px rail with its items 12px in from the edge;
+(default) or Top. Side is the 112px rail with its items 12px in from the edge;
 Top turns the same `#rail` into a 96px bar (`body.menu-top`, `menu.css`) with
 the profile first and Settings at the far end. The header, content, load error
 and hints start after the menu through `--menu-w` and `--menu-h`; the hints sit

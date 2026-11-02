@@ -72,14 +72,14 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await boot(page);
     await section(page, 'Settings');
     const groups = page.locator('#settings .st-group-item');
-    await expect(groups.first()).toContainText('Sources');
+    await expect(groups.locator(':scope > span:not(.menu-icon):not(.n)')).toHaveText([
+        'Playback', 'Subtitles', 'Display', 'Profiles', 'Parental lock', 'General', 'TMDB', 'Backup', 'Sources', 'About',
+    ]);
     await expect(groups.first()).toHaveClass(/focused/);
     // No key-hint bar: the screen speaks for itself.
     await expect(page.locator('#hints')).toHaveCount(0);
-    // ▼ shows the next group's rows at once; only that group is visible.
-    await press(page, 'ArrowDown');
-    await press(page, 'ArrowDown');
-    await expect(groups.nth(2)).toContainText('Playback');
+    // The first group opens Playback; only that group's rows are visible.
+    await expect(groups.first()).toContainText('Playback');
     await expect(page.locator('#settings .st-section:visible .st-group')).toHaveText('Playback');
     // Playback, then its Picture and Start-up parts (#52); Start-up has the home screen tiles (#91).
     await expect(page.locator('#settings .st-section:visible .st-row')).toHaveCount(9);
@@ -96,7 +96,7 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await expect(page.locator('#settings .st-row.focused .st-value')).toHaveText('Off');
     // Return goes back to the groups, then to the menu.
     await back(page);
-    await expect(groups.nth(2)).toHaveClass(/focused/);
+    await expect(groups.first()).toHaveClass(/focused/);
     await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
     await back(page);
     await expect(page.locator('#rail .focused')).toHaveText('Settings');

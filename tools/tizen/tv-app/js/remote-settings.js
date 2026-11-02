@@ -71,7 +71,7 @@
             list.push({ part: index === 0 ? t('paired') : null, icon: 'phone', label: phone.name, hint: t('lastUsed', { time: I18n.date(phone.lastUsed, { year: 'numeric', month: 'short', day: 'numeric' }) + ' ' + I18n.time(phone.lastUsed) }), actions: actions(phone) });
         });
         list.push({ label: t('forgetAll'), destructive: true, compactAction: true, icon: 'trash', text: '', run: function () {
-            ProfileDialog.open({ title: t('forgetAll'), text: t('forgetAllText'), ok: t('forgetAll'), done: function (yes) { if (yes) change('/app/forget', { id: 'all' }); } });
+            ProfileDialog.open({ title: t('forgetAll'), text: t('forgetAllText'), ok: t('forgetAll'), destructive: true, done: function (yes) { if (yes) change('/app/forget', { id: 'all' }); } });
         } });
         return list;
     }

@@ -147,7 +147,7 @@ svg {
    the header, content and hints start after it. The hints sit in a 54 px
    bottom margin, inside the TV's safe area. */
 :root {
-    --menu-w: 208px;
+    --menu-w: 112px;
     --menu-h: 0px;
 }
 

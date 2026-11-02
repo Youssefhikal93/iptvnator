@@ -28,6 +28,7 @@ test('01–02 Home artwork, rail sections and profile focus', async ({ page }) =
     await boot(page, seed());
     await expect(page.locator('.hm-hero-buttons .focus')).toBeVisible();
     await shot(page, '01-home', 'en-dark-hero');
+    await shot(page, '02-rail-menu', 'en-dark-collapsed-home');
     await press(page, 'ArrowDown');
     await expect(page.locator('.hm-card.focus')).toBeVisible();
     await shot(page, '01-home');
@@ -195,6 +196,9 @@ test('08–09 Profile card and actions, avatars, confirmation, PIN and picker', 
     await press(page, 'Enter');
     await expect(page.locator('#profile-dialog')).toBeVisible();
     await shot(page, '09-dialogs', 'en-dark-confirm');
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('#profile-dialog-ok')).toBeFocused();
+    await shot(page, '09-dialogs', 'en-dark-delete-focused');
     await back(page);
     await setting(page, 'PIN');
     await press(page, 'Enter');
@@ -231,6 +235,9 @@ for (const variant of [
         const prefix = variant.language + '-' + variant.theme + '-' + variant.accent;
         if (variant.language === 'ar') await page.locator('html').evaluate(node => { node.dir = 'rtl'; });
         await shot(page, variant.folder, prefix + '-home');
+        await back(page);
+        await expect(page.locator('#rail .focused')).toHaveCount(1);
+        await shot(page, variant.folder, prefix + '-rail-open');
         const settingsName = await page.evaluate(() => I18n.t('rail.settings'));
         const current = await page.evaluate(() => I18n.t('profile.current'));
         await setting(page, current, settingsName);
@@ -247,3 +254,33 @@ for (const variant of [
         await shot(page, variant.folder, prefix + '-picker');
     });
 }
+
+test('08 Yellow accent keeps picture avatars clear and letter avatars filled', async ({ page }) => {
+    await boot(page, seed({ accent: 'saffron' }));
+    await page.evaluate(() => {
+        ProfileStore.setAvatar(ProfileStore.active().id, Avatars.ids[0]);
+        ProfileStore.add('Family');
+    });
+    await section(page, 'Home');
+    await shot(page, '02-rail-menu', 'en-dark-yellow-picture-collapsed');
+    await back(page);
+    await press(page, 'ArrowUp');
+    await shot(page, '02-rail-menu', 'en-dark-yellow-picture-open');
+    await setting(page, 'Current profile');
+    await shot(page, '08-profiles', 'en-dark-yellow-picture-card');
+    await press(page, 'Enter');
+    await expect(page.locator('#profiles')).toBeVisible();
+    await shot(page, '08-profiles', 'en-dark-yellow-picture-and-letter');
+    await back(page);
+    await setting(page, 'Avatar');
+    await press(page, 'Enter');
+    await expect(page.locator('#avatar-picker')).toBeVisible();
+    await shot(page, '08-profiles', 'en-dark-yellow-avatar-picker');
+    await press(page, 'ArrowLeft');
+    await press(page, 'Enter');
+    await section(page, 'Home');
+    await shot(page, '02-rail-menu', 'en-dark-yellow-letter-collapsed');
+    await back(page);
+    await press(page, 'ArrowUp');
+    await shot(page, '02-rail-menu', 'en-dark-yellow-letter-open');
+});

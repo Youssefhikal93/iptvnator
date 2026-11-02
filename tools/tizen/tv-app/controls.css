@@ -70,6 +70,7 @@
 .menu-icon.svg-icon svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; }
 .pl-menu-group .label { flex: 1; }
 .pl-menu-group .value { max-width: 210px; }
+#player .pl-ep-pill.active { background: var(--pc-accent-strong); color: var(--pc-accent-on); }
 .pl-menu-item { gap: 18px; }
 .pl-menu-item .dot:empty::before { content: '○'; opacity: 0.4; }
 .pl-menu-action .menu-icon, .pl-menu-group .menu-icon { font-size: 28px; }
@@ -93,9 +94,12 @@
 .rail-profile { border-radius: 40px; }
 :is(.rail-avatar, .pf-avatar, .ap-avatar, .menu-avatar, .st-avatar) {
     border-radius: 50%;
-    background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.12));
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+    background: var(--selection);
+    color: var(--selection-on);
+    box-shadow: none;
 }
+:is(.rail-avatar, .pf-avatar, .ap-avatar, .menu-avatar, .st-avatar).drawn { background: transparent; }
+.pf-avatar.pf-add { background: var(--overlay); color: var(--muted); }
 .rail-avatar { width: 64px; height: 64px; }
 .pf-tile.focused .pf-avatar, .ap-choice.focused .ap-avatar {
     transform: scale(1.06);
@@ -104,12 +108,16 @@
 .pf-name { border-radius: 999px; padding: 8px 12px; }
 .pf-tile.focused .pf-name { background: var(--selection); color: var(--selection-on); font-size: 34px; }
 .pf-tile .pf-avatar, .ap-choice .ap-avatar { transition: transform var(--control-time) ease-out; }
-.pf-dialog { border: 1px solid var(--line); border-radius: 36px; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4); }
+.pf-dialog { border: 1px solid var(--line); border-radius: 36px; }
+.pf-dialog, .tm-dialog, #pl-resume { box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4), 0 0 0 100vmax rgba(0, 0, 0, 0.58); }
 .pf-dialog button { padding-inline: 32px; margin-inline: 0 20px; }
+.pf-dialog button, .tm-dialog button { color: var(--on-surface); }
+.pf-dialog button.destructive { display: inline-flex; align-items: center; gap: 10px; background: var(--overlay); color: var(--destructive); }
+#profile-dialog button.destructive:focus { background: var(--destructive-fill); color: var(--destructive-on); }
 
 /* Profile actions keep their linear Up/Down path and also accept Left/Right. */
 #settings .st-row.st-profile-card { min-height: 176px; padding: 20px 32px; border-radius: 32px; }
-.st-avatar { flex: none; display: flex; align-items: center; justify-content: center; width: 128px; height: 128px; font-size: 64px; color: #071225; }
+.st-avatar { flex: none; display: flex; align-items: center; justify-content: center; width: 128px; height: 128px; font-size: 64px; }
 .st-profile-card .st-value { font-size: 40px; }
 .st-profile-actions { display: flex; gap: 14px; padding: 12px 4px 8px; }
 .st-profile-actions .st-action { flex: 1; min-width: 0; min-height: 76px; margin: 0; padding: 12px 18px; gap: 8px; flex-wrap: nowrap; justify-content: center; }

@@ -1,13 +1,56 @@
-const { test, expect, boot, section, enterItems, toolbar, press, back, moveTo, setting, choose } = require('./helpers');
+const { test, expect, boot, section, enterItems, toolbar, press, back, moveTo, setting, choose, holdOK } = require('./helpers');
 
 // Settings > Appearance > Menu position: Side (rail) or Top (bar), and Back
 // from inside a screen goes straight to the menu (#50).
 const focusedSection = (page) => page.locator('#rail .rail-item.focused');
 
+for (const variant of [
+    { language: 'en', theme: 'dark', density: 'comfortable', motion: 'on' },
+    { language: 'ar', theme: 'light', density: 'compact', motion: 'off' },
+]) {
+    test(`#95 rail overlays stationary content in ${variant.language}, ${variant.theme}, ${variant.density}`, async ({ page }) => {
+        await boot(page, { storage: { settings: variant } });
+        const rail = page.locator('#rail');
+        const label = rail.locator('.rail-item > span').first();
+        await expect(label).toHaveCSS('opacity', '0');
+        const before = await page.locator('#content').boundingBox();
+        const railBox = await rail.boundingBox();
+        expect(railBox.width).toBe(112);
+        expect(railBox.x).toBe(variant.language === 'ar' ? 1808 : 0);
+        expect(variant.language === 'ar' ? before.x + before.width : before.x).toBe(variant.language === 'ar' ? 1808 : 112);
+        await press(page, 'ArrowLeft');
+        await expect(focusedSection(page)).toHaveCount(1);
+        await expect(label).toHaveCSS('opacity', '1');
+        expect(await page.locator('#content').boundingBox()).toEqual(before);
+        const iconBox = await rail.locator('.glyph').first().boundingBox();
+        const labelBox = await label.boundingBox();
+        expect(Math.abs(labelBox.y + labelBox.height / 2 - iconBox.y - iconBox.height / 2)).toBeLessThan(2);
+        expect(variant.language === 'ar' ? labelBox.x + labelBox.width < iconBox.x : labelBox.x > iconBox.x + iconBox.width).toBe(true);
+        if (variant.motion === 'off') expect(await rail.evaluate(node => getComputedStyle(node, '::before').transitionDuration)).toBe('0s');
+        await press(page, 'ArrowUp');
+        await expect(rail.locator('.rail-profile')).toHaveClass(/focused/);
+        await holdOK(page);
+        await expect(page.locator('#menu.profile-menu')).toBeVisible();
+        await back(page);
+        await press(page, 'ArrowDown');
+        await press(page, 'ArrowRight');
+        await expect(label).toHaveCSS('opacity', '0');
+        expect(await page.locator('#content').boundingBox()).toEqual(before);
+        await section(page, await page.evaluate(() => I18n.t('rail.movies')));
+        await expect(page.locator('#categories .row.focused')).toHaveCount(1);
+        await expect(page.locator('#items .card').first()).toBeVisible();
+        await expect(page.locator('#items .skeleton')).toHaveCount(0);
+        await enterItems(page);
+        await press(page, 'Enter');
+        await expect(page.locator('#detail')).toBeVisible();
+        expect(await page.evaluate(rtl => !!document.elementFromPoint(rtl ? 1864 : 56, 72).closest('#detail'), variant.language === 'ar')).toBe(true);
+    });
+}
+
 test('the menu moves between the side and the top at once and keeps its keys', async ({ page }) => {
     await boot(page, { storage: { settings: { density: 'comfortable' } } });
     const rail = await page.locator('#rail').boundingBox();
-    expect(rail.width).toBe(208);
+    expect(rail.width).toBe(112);
     await expect(page.locator('body')).not.toHaveClass(/menu-top/);
 
     await setting(page, 'Menu position');

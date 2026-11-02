@@ -168,7 +168,7 @@ test('Light theme sets data-theme, changes the background, keeps a visible focus
     // The rail uses the same filled focus pill.
     await backToRail(page);
     const ring = await page.locator('#rail .rail-item.focused').evaluate(node => {
-        const css = getComputedStyle(node);
+        const css = getComputedStyle(node, '::before');
         return { background: css.backgroundColor, radius: css.borderRadius };
     });
     expect(ring).toEqual({ background: 'rgb(29, 99, 224)', radius: '999px' });

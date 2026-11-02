@@ -329,4 +329,6 @@ Settings > General > Phone remote > Pair a phone shows a QR code and address, va
 
 The phone has the remote keys, volume, section jumps, search and a More sheet with numbers and colour keys. Its actions follow the TV: for example Next episode, available Skip intro, tracks, or Play on a detail page. A TV text field opens phone text entry; results stay on the TV. Film and episode seek buttons use the TV's accelerating steps. Phone volume shows a level bar on the TV. On the home screen the page has its own remote icon. Language and accent follow the TV.
 
+The phone controls fit a 390×844 screen (#95). A slim title/status strip shows Info only during playback. A large Back button sits directly below the D-pad beside volume; all eight section shortcuts stay within reach. Smaller 375×667 phones use a tighter D-pad and may need a short scroll during playback. Every button gives a light tap flash and a slight press, including context actions and More controls.
+
 It works while Jotv is open on the same home network. A page left open reconnects by itself when Jotv returns. It cannot turn the TV on or control Samsung Home, Source or other apps.

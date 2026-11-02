@@ -171,7 +171,7 @@ window.Browser = function (hooks) {
     });
 
     var categories = List($('categories'), {
-        rows: 11,
+        rows: 13,
         title: function () {
             return I18n.t('browser.categoriesOf', { section: sectionOf(state.section).label });
         },
@@ -262,7 +262,7 @@ window.Browser = function (hooks) {
         redraw: function () { if (items.items().length) items.select(items.index()); },
     });
     var items = List($('items'), {
-        rows: 9,
+        rows: 10,
         title: function () {
             if (state.collection) return state.collection.found.label;
             if (currentList.showingSearch()) return I18n.t('browser.searchTitle', { query: state.search.query });
@@ -1096,8 +1096,6 @@ window.Browser = function (hooks) {
         });
         if (hideAvailable()) tools = tools.concat(['hide-watched']);
         if (genres.names().length) tools = ['search', 'genre'].concat(tools.slice(1));
-        // The search box shows only once Search in the menu opens it (#95).
-        if (!searchShown()) tools = tools.filter(function (tool) { return tool !== 'search'; });
         // Help (#89) is always last, next to the TV guide.
         return (guideAvailable() ? tools.concat(['guide']) : tools).concat(['help']);
     }
@@ -1395,6 +1393,7 @@ window.Browser = function (hooks) {
         document.body.classList.toggle('bar-off', off);
         $('searchbar').classList.toggle('focused', focus === 'search');
         $('searchbar').classList.toggle('shown', searchShown());
+        document.body.classList.toggle('searching', searchShown());
         var input = $('search-input');
         input.placeholder = on ? searchPlaceholder() : I18n.t('browser.search');
         if (!state.searching) input.value = currentList.showingSearch() ? state.search.query : '';

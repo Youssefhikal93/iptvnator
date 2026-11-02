@@ -42,10 +42,12 @@
 }
 /* Full-width rows do not grow: in a scrolling pane even 2% pushes their
    rounded ends past the pane's edge, which clips them. Pills still lift. */
-:is(.row, .menu-row, .st-group-item, .st-row:not(.st-profile-actions .st-row), .pl-menu-item,
+:is(.row, .menu-row, .st-group-item, .st-row, .pl-menu-item,
     .pl-channel, .pl-ep-row, .kp-source, .kp-cat, .sync-line, .gd-programme, .list-action):is(.focused, .focus) {
     transform: none;
 }
+/* The profile's action pills are short: they still lift. */
+.st-profile-actions .st-row:is(.focused, .focus) { transform: scale(var(--control-lift)); }
 /* Values and icons inherit the filled pill's contrast, including active rows. */
 :is(.focused, .focus) :is(.menu-icon, .menu-check, .st-value, .st-label, .st-sub,
     .st-arrow, .st-group-item .n, .pl-menu-note, .value, .chev, .dot, .epg-now) { color: inherit; }
@@ -154,10 +156,34 @@
 /* Motion-off remains the final authority, including on the shared controls. */
 [data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after { transition: none !important; animation: none !important; }
 
-/* Search opens from the menu (#95): the section's box shows only while
-   typing or showing results; the buttons keep their place on the right. */
-#searchbar:not(.shown) { display: none; }
-#view-toggle { margin-inline-start: auto; }
+/* The toolbar sits on the list title row (#95), so the lists start right
+   under the menu. Search is an icon beside the buttons until it is typed in
+   or shows results; then the box spans the list's side and the list moves
+   down under it. */
+#content, body.no-bar #content, body.bar-off #content { top: var(--menu-h); }
+#header { z-index: 4; top: calc(var(--menu-h) + 8px); height: 72px; gap: 12px; padding: 0 24px; justify-content: flex-end; background: transparent; }
+body.bar-off #header { box-shadow: none; }
+body.searching #header#header { left: calc(var(--menu-w) + 560px); right: 0; }
+:is(html:lang(ar), html[dir="rtl"]) body.searching #header#header { left: 0; right: calc(var(--menu-w) + 560px); }
+body.searching:not(.no-bar) #items.pane { padding-top: 92px; }
+#searchbar:not(.shown) { flex: none; width: 62px; height: 62px; padding: 0; justify-content: center; border: 0; background: var(--search-bg); }
+#searchbar:not(.shown) input { display: none; }
+#searchbar:not(.shown) svg { fill: currentColor; }
+body:not(.no-bar) #items .list-header { padding-inline-end: 572px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Live preview: the buttons sit over the preview, which moves down under them. */
+#content.previewing #items .list-header { padding-inline-end: 16px; }
+body:not(.no-bar) #content.previewing #live-preview { padding-top: 96px; }
+/* Side menu: the grid holds three rows; the top menu's leaves the third peeking. */
+:root { --grid-rows: 3; }
+body.menu-top { --grid-rows: 2; }
+/* Pills keep artwork and titles clear of their rounded ends. */
+.pane.main .row { padding-inline: 24px; }
+.pane.main .row.channel { padding-inline-start: 22px; }
+:is(#categories, #items) .row.focused { transform: none; }
+#items .card:not(.box) { padding: 10px 10px 14px; }
+#items .card:not(.box) .card-title { padding-inline: 8px; }
+/* The next row peeks in, dimmed and fading out, so the list visibly goes on. */
+.row.peek { opacity: 0.5; -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%); mask-image: linear-gradient(to bottom, #000 0%, transparent 85%); }
 /* While typing the box stays readable: its own surface, an accent edge. */
 #header #searchbar.typing { background: var(--search-bg); color: var(--on-surface); border-color: var(--selection); box-shadow: 0 0 0 3px var(--selection); transform: none; }
 #header #searchbar.typing input { color: var(--on-surface); }

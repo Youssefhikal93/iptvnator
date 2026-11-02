@@ -128,10 +128,11 @@ window.List = function (el, options) {
 
         if (state.grid) return renderGrid(start, count, grid);
 
-        for (var i = start; i < Math.min(count, start + rows); i++) {
+        // One row past the window peeks in, dimmed, when the list goes on.
+        for (var i = start; i < Math.min(count, start + rows + 1); i++) {
             var item = state.items[i];
             var row = document.createElement('div');
-            row.className = 'row';
+            row.className = i < start + rows ? 'row' : 'row peek';
             if (i === state.index) row.className += state.active ? ' focused' : ' selected';
             var src = options.icon && options.icon(item);
             if (plates()) {

@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- The toolbar shares the list title row, so lists start under the menu and show more rows; the next row peeks in, dimmed. Search is an icon beside View and Sort and searches the category in use; Search in the menu does the same (#95).
 - The side menu stays slim until focused, then opens over the page with names beside the icons; Arabic mirrors it. Picture avatars have clear backgrounds and letter avatars follow the accent. Confirmation dialogs dim the page and use readable destructive pills. Settings starts with Playback, and Mark watched precedes removal actions (#95).
 - Rounded controls across Jotv use filled accent focus with a gentle lift. Profiles have an avatar card and action pills; paired phones have separate Rename and Forget pills. The logo screen saver moves more slowly (#95).
 - Settings and player menus use distinct line icons. Inactive rail entries stay clear, destructive actions turn red on focus, unavailable Delete stays one line with its reason below, and profile settings are translated into Arabic (#95).

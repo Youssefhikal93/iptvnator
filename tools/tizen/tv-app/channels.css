@@ -52,13 +52,13 @@
 /* Live TV list: a 150 x 84 plate, bold name, now-title, progress and time left. */
 #items.channels {
     --item-row-h: 104px;
-    --visible-rows: 7;
+    --visible-rows: 8;
     --grid-cols: 4;
     --grid-rows: 3;
 }
 [data-density="compact"] #items.channels {
     --item-row-h: 84px;
-    --visible-rows: 9;
+    --visible-rows: 10;
     --grid-cols: 5;
     --grid-rows: 4;
 }

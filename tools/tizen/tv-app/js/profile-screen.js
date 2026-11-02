@@ -19,12 +19,17 @@ window.ProfileScreen = (() => {
         return list.length < ProfileStore.max ? list.concat([null]) : list;
     };
 
+    // A padlock before the name marks a profile that asks for a PIN (#95).
+    const lock = () => html`<svg class="pf-lock" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z"/></svg>`;
+
     const tile = (profile, focused) => html`<div class=${'pf-tile' + (focused ? ' focused' : '')}>
         ${profile
             ? html`<${Kit.Avatar} cls="pf-avatar" profile=${profile} />`
             : html`<div class="pf-avatar pf-add">+</div>`}
-        <div class="pf-name">${profile ? profile.name : I18n.t('profile.add')}</div>
-        ${profile && ProfileStore.hasPin(profile.id) ? html`<span class="pf-lock">PIN</span>` : null}
+        <div class="pf-name">
+            ${profile && ProfileStore.hasPin(profile.id) ? lock() : null}
+            <span class="pf-name-text">${profile ? profile.name : I18n.t('profile.add')}</span>
+        </div>
     </div>`;
 
     const render = () => {

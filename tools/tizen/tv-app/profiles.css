@@ -34,19 +34,10 @@ body:has(> #profiles) #menu { z-index: 61; }
 }
 .pf-tile.focused .pf-avatar { transform: scale(1.1); box-shadow: 0 0 0 6px var(--shell-bg), 0 0 0 12px var(--focus-ring), 0 20px 40px rgba(0, 0, 0, 0.45); }
 .pf-avatar.pf-add { background: var(--widget-bg); color: var(--muted); }
-.pf-name { font-size: 34px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-name { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 34px; white-space: nowrap; }
+.pf-name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .pf-tile.focused .pf-name { font-size: 38px; font-weight: 700; }
-.pf-lock {
-    position: absolute;
-    top: 14px;
-    right: 22px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: var(--shell-bg);
-    color: var(--on-surface);
-    font-size: 22px;
-    font-weight: 700;
-}
+.pf-lock { flex: none; width: 0.8em; height: 0.8em; fill: currentColor; opacity: 0.85; }
 .pf-hint { min-height: 34px; margin: 60px 0 0; font-size: 26px; color: var(--muted); }
 
 /* Drawn avatars fill their circle or square. */

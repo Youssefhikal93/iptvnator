@@ -1,13 +1,11 @@
-const { test, expect, boot, section, press, moveTo, enterItems, toolbar, menuChoice } = require('./helpers');
+const { test, expect, boot, section, press, moveTo, menuSearch, enterItems, toolbar, menuChoice } = require('./helpers');
 
-// Search everything (#31): the icon at the top right of Home opens a bar;
+// Search everything (#31): Search in the menu (#95) opens Home's bar there;
 // the results take the place of the rows, movies first.
 test('Home search shows movies, series and Live TV results and Return closes it', async ({ page }) => {
     await boot(page);
-    await expect(page.locator('.hm-search-icon')).toBeVisible();
-    await press(page, 'ArrowUp');
-    await expect(page.locator('.hm-search-icon')).toHaveClass(/focus/);
-    await press(page, 'Enter');
+    await expect(page.locator('#home .hm-search-icon, #home .hm-help-icon')).toHaveCount(0);
+    await menuSearch(page);
     await expect(page.locator('.hm-search-bar')).toHaveClass(/typing/);
     await expect(page.locator('.hm-search-note')).toHaveText('Type a movie, series or channel name.');
     await page.keyboard.type('1');
@@ -22,7 +20,17 @@ test('Home search shows movies, series and Live TV results and Return closes it'
     await expect(page.locator('.hm-search-bar')).toBeVisible();
     await press(page, 'Escape');
     await expect(page.locator('.hm-search')).toHaveCount(0);
-    await expect(page.locator('.hm-search-icon')).toBeVisible();
+    await expect(page.locator('#home .hm-row').first()).toBeVisible();
+});
+
+test('#95 menu Search in Movies types into the Movies bar, which searches the open category', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Movies');
+    await enterItems(page);
+    await menuSearch(page);
+    await expect(page.locator('#searchbar')).toHaveClass(/typing/);
+    await expect(page.locator('#search-input')).toHaveAttribute('placeholder', /^Search in /);
+    await expect(page.locator('#home .hm-search')).toHaveCount(0);
 });
 
 // Recently added holds every title; the genre button opens the menu.

@@ -10,8 +10,7 @@
 //      progress(entry) -> Progress.of shape or null, watched(entry) -> boolean,
 //      isNew(entry) -> whether a show has new episodes since it was watched,
 //      programme(item) -> the programme on now for a channel, or null
-//      search(query) -> Promise of result rows (optional: without it Home
-//      has no search icon)
+//      search(query) -> Promise of result rows (optional; the menu opens it)
 window.Home = (api, element) => {
     'use strict';
 
@@ -25,10 +24,8 @@ window.Home = (api, element) => {
     Prefs.onChange((name) => {
         if (name === 'homeLayout' || name === 'programmeGuide' || name === 'density') render();
     });
-    // With search, block 0 is the icon at the top right; the focus starts
-    // on the block under it.
-    // icon is 'search' or 'help' on block 0; q.button is Search programmes beside the bar.
-    const fresh = () => ({ block: api.search ? 1 : 0, icon: 'search', hero: 0, button: 0, rows: {}, details: {}, q: { open: false, text: '', typing: false, busy: false, found: null, token: 0, button: false } });
+    // Search opens from the menu (#95). q.button is Search programmes beside the bar.
+    const fresh = () => ({ block: 0, hero: 0, button: 0, rows: {}, details: {}, q: { open: false, text: '', typing: false, busy: false, found: null, token: 0, button: false } });
     let s = fresh();
 
     // Host and file name only: enough to tell which logo server fails.
@@ -63,11 +60,11 @@ window.Home = (api, element) => {
         return Object.assign({}, row, { entries: row.entries.filter((entry) => entryKey(entry) !== shown) });
     };
 
-    // Blocks top to bottom: the search icon, the hero (when there is
-    // history), then rows. An open search has its bar and the results.
+    // Blocks top to bottom: the hero (when there is history), then rows.
+    // Search opens from the menu (#95); an open search has its bar and the results.
     const blocks = () => {
         if (s.q.open) return [{ box: true }].concat((s.q.found || []).map((row) => ({ row })));
-        const list = api.search ? [{ icon: true }] : [];
+        const list = [];
         const hero = layout() === 'cinema' ? api.hero() : [];
         if (hero.length) list.push({ hero });
         api.rows().forEach((row) => {
@@ -298,23 +295,22 @@ window.Home = (api, element) => {
     // ---- Search -----------------------------------------------------------
 
     const input = { current: null };
-    const SearchIcon = ({ focused }) => html`<span class=${'hm-search-icon' + (focused ? ' focus' : '')} aria-label=${I18n.t('browser.search')}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>`;
-    // Help (#89) sits left of the search icon.
-    const HelpIcon = ({ focused }) => html`<span class=${'hm-help-icon' + (focused ? ' focus' : '')} role="button" aria-label=${I18n.t('help.title')}>?</span>`;
     const SearchBar = ({ focused }) => {
         const q = s.q;
         const note = q.busy ? I18n.t('find.searching')
             : !q.text.trim() ? I18n.t(api.searchHint || 'find.hint')
             : q.found && !q.found.length ? I18n.t('empty.search.title', { query: q.text.trim() }) + ' · ' + I18n.t('empty.search.hint')
             : '';
+        // Search programmes sits beside the bar, ▶ from it (#89, #95).
         return html`<div class="hm-search">
-            <div class=${'hm-search-bar' + (focused && !q.typing && !q.button ? ' focused' : '') + (q.typing ? ' typing' : '')}>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input ref=${input} autocomplete="off" value=${q.text} placeholder=${I18n.t(api.searchPlaceholder || 'find.placeholder')} onInput=${typed} />
+            <div class="hm-search-row">
+                <div class=${'hm-search-bar' + (focused && !q.typing && !q.button ? ' focused' : '') + (q.typing ? ' typing' : '')}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input ref=${input} autocomplete="off" value=${q.text} placeholder=${I18n.t(api.searchPlaceholder || 'find.placeholder')} onInput=${typed} />
+                </div>
+                ${api.programmes ? html`<button class=${'dt-btn hm-programmes' + (focused && q.button ? ' focus' : '')} onClick=${searchProgrammes}>${KeyHelp.view(I18n.t('programmeSearch.shortcut'))}</button>` : null}
             </div>
             ${note ? html`<div class="hm-search-note">${note}</div>` : null}
-            ${api.programmes ? html`<button class=${'dt-btn small' + (focused && q.button ? ' focus' : '')} onClick=${searchProgrammes}>${KeyHelp.view(I18n.t('programmeSearch.shortcut'))}</button>` : null}
         </div>`;
     };
 
@@ -368,7 +364,7 @@ window.Home = (api, element) => {
         if (input.current) input.current.blur();
         ++s.q.token;
         s.q = fresh().q;
-        s.block = 1;
+        s.block = 0;
         s.blockKey = null;
         render();
     };
@@ -401,33 +397,31 @@ window.Home = (api, element) => {
         root.classList.toggle('backdrop', mode === 'backdrop');
         root.classList.toggle('searching', s.q.open);
         const list = blocks();
-        const onIcons = s.active && s.block === 0 && api.search && !s.q.open;
-        const icon = api.search && !s.q.open ? html`${api.help ? html`<${HelpIcon} key="help-icon" focused=${onIcons && s.icon === 'help'} />` : null}<${SearchIcon} key="search-icon" focused=${onIcons && s.icon !== 'help'} />` : null;
-        if (!list.filter((block) => !block.icon).length) {
+        if (!list.length) {
             UI.render(html`<div class="hm-empty">${I18n.t('home.nothingHere')}<small>${I18n.t('home.nothingHint')}</small></div>`, root);
             return;
         }
-        const keyOf = (block) => (block.icon ? 'icon' : block.box ? 'box' : block.hero ? 'hero' : block.row.id);
+        const keyOf = (block) => (block.box ? 'box' : block.hero ? 'hero' : block.row.id);
         list.forEach((block, index) => {
             if (keyOf(block) === s.blockKey) s.block = index;
         });
         s.block = Math.min(s.block, list.length - 1);
         s.blockKey = keyOf(list[s.block]);
         if (mode === 'backdrop') {
-            UI.render(html`${icon}<${Stage} list=${list} />`, root);
+            UI.render(html`<${Stage} list=${list} />`, root);
             return;
         }
         // The icon, bar and hero show while they or the block under them
         // have the focus; further down, the focused row moves to the top,
         // under the bottom edge of the block above it.
-        const lead = (block) => block.icon || block.box || block.hero;
+        const lead = (block) => block.box || block.hero;
         let first = s.block;
         while (first > 0 && (lead(list[first]) || lead(list[first - 1])) && !(list[first].row && list[first - 1].hero)) first--;
         const above = first > 0 && (list[first - 1].row || list[first - 1].hero) ? list[first - 1] : null;
         // Three blocks, and the search bar above them when it is open.
-        const rest = list.slice(first).filter((block) => !block.icon);
+        const rest = list.slice(first);
         const shown = rest.slice(0, rest[0] && rest[0].box ? 4 : 3);
-        UI.render(html`${icon}${above ? html`<${Peek} key="peek" block=${above} />` : null}${shown.map((block) => {
+        UI.render(html`${above ? html`<${Peek} key="peek" block=${above} />` : null}${shown.map((block) => {
             const focused = s.active && list.indexOf(block) === s.block;
             return block.box
                 ? html`<${SearchBar} key="search" focused=${focused} />`
@@ -471,15 +465,7 @@ window.Home = (api, element) => {
         if ((code === KEY.UP && s.block > 0) || (code === KEY.DOWN && s.block < list.length - 1)) {
             s.block += code === KEY.UP ? -1 : 1;
             s.blockKey = null;
-            s.icon = 'search';
             s.q.button = false;
-        } else if (block.icon) {
-            // ◀ from the search icon reaches Help (#89); OK opens either.
-            const help = !!api.help && s.icon === 'help';
-            if (code === KEY.ENTER) return help ? KeyHelp.open(window.Home.help(!!api.programmes)) : openSearch();
-            if (code === KEY.LEFT && !help && api.help) s.icon = 'help';
-            else if (code === KEY.RIGHT && help) s.icon = 'search';
-            else if (code === KEY.LEFT) return 'left';
         } else if (block.box) {
             // ▶ from the bar reaches Search programmes, so Blue is never needed (#89).
             if (code === KEY.ENTER) return s.q.button ? searchProgrammes() : startTyping();

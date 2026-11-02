@@ -1,4 +1,4 @@
-const { test, expect, boot, section, enterItems, press, back, moveTo, toolbar, setting, playing } = require('./helpers');
+const { test, expect, boot, section, enterItems, press, back, moveTo, menuSearch, toolbar, setting, playing } = require('./helpers');
 
 // #89: Help on every screen and every coloured-key action without coloured
 // keys. These tests use only arrows, OK and Return, like a 2023 Smart Remote.
@@ -74,18 +74,12 @@ test('the TV guide header reaches Search programmes, Reminders and Help without 
     await expect(page.locator('#guide')).toBeHidden();
 });
 
-test('Home has Help left of its search icon, and its search reaches Search programmes with ▶', async ({ page }) => {
+test('Home search from the menu reaches Search programmes with ▶', async ({ page }) => {
     await boot(page);
     await section(page, 'Home');
-    await press(page, 'ArrowUp');
-    await expect(page.locator('#home .hm-search-icon')).toHaveClass(/focus/);
-    await press(page, 'ArrowLeft');
-    await expect(page.locator('#home .hm-help-icon')).toHaveClass(/focus/);
-    await press(page, 'Enter');
-    await expectHelp(page, 'In search: Search programmes', ['blue']);
-    await press(page, 'ArrowRight');
-    await expect(page.locator('#home .hm-search-icon')).toHaveClass(/focus/);
-    await press(page, 'Enter');
+    // Home has no buttons of its own (#95): Search is in the menu, Help in Settings › About.
+    await expect(page.locator('#home .hm-search-icon, #home .hm-help-icon')).toHaveCount(0);
+    await menuSearch(page);
     await expect(page.locator('#home .hm-search-bar')).toHaveClass(/typing/);
     await press(page, 'ArrowDown');
     await expect(page.locator('#home .hm-search-bar')).toHaveClass(/focused/);

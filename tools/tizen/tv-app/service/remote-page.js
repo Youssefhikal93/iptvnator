@@ -1,9 +1,12 @@
 ﻿'use strict';
 var fs = require('fs');
 var crypto = require('crypto');
-var css = fs.readFileSync(__dirname + '/remote-page.css', 'utf8');
-var markup = fs.readFileSync(__dirname + '/remote-page.html', 'utf8');
-var client = fs.readFileSync(__dirname + '/remote-page-client.js', 'utf8');
+// Browsers hash inline scripts after turning CRLF into LF, and a Windows
+// checkout packages CRLF files: hash and serve the same LF text.
+function read(name) { return fs.readFileSync(__dirname + '/' + name, 'utf8').replace(/\r\n?/g, '\n'); }
+var css = read('remote-page.css');
+var markup = read('remote-page.html');
+var client = read('remote-page-client.js');
 function escape(text) {
     return String(text || '').replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
 }

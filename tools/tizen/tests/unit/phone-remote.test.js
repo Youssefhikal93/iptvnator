@@ -86,6 +86,13 @@ test('page builder escapes TV words and metadata, preserves RTL and allows only 
     assert.ok(!Page.build({ accent: '" onload="bad' }).includes('data-accent=""'));
 });
 
+test('the page script matches its CSP hash the way a browser reads it, even from a CRLF checkout', () => {
+    const script = Page.build({}).match(/<script>([\s\S]*?)<\/script><\/body>/)[1];
+    // HTML parsing turns CRLF into LF before the browser hashes the script.
+    const seen = require('crypto').createHash('sha256').update(script.replace(/\r\n?/g, '\n'), 'utf8').digest('base64');
+    assert.ok(Page.csp.includes("'sha256-" + seen + "'"));
+});
+
 const context = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../../tv-app/js/remote-context.js'), 'utf8'), context);
 const mapping = { episode: ['next', 'skip', 'subtitles', 'audio'], film: ['subtitles', 'audio', 'sync', 'speed'], live: ['startover', 'lastch', 'channels', 'subtitles'], details: ['play', 'trailer', 'favourite'], saver: ['wake'], home: [] };

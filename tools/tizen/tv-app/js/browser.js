@@ -2507,10 +2507,16 @@ window.Browser = function (hooks) {
         var src = sourceId();
         var channels = available('live') ? Library.recent(src, 'live').map(function (item) { return { item: item, section: 'live' }; }) : [];
         var allowed = function (entry) { return tileAllowed(entry.section, entry.item); };
-        return HubTiles.build(src, {
-            continue: continueEntries().filter(allowed).map(tileOf),
-            live: channels.filter(allowed).map(tileOf),
-        });
+        var watching = continueEntries();
+        var lists = { continue: watching.filter(allowed).map(tileOf), live: channels.filter(allowed).map(tileOf) };
+        var text = HubTiles.build(src, lists);
+        if (JSON.parse(text).sections.length) return text;
+        // Nothing to show: keep the tiles already on the TV, and say why.
+        var pictured = function (list) { return list.filter(function (t) { return /^https?:\/\//i.test(t.image || ''); }).length; };
+        Log.info('HUBTILES kept old tiles, nothing to show: continue ' + watching.length + ' (' + lists.continue.length + ' allowed, '
+            + pictured(lists.continue) + ' with picture), channels ' + channels.length + ' (' + lists.live.length + ' allowed, '
+            + pictured(lists.live) + ' with picture)');
+        return null;
     }
 
     // A picked tile plays what it shows: Continue watching resumes without

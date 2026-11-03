@@ -148,7 +148,7 @@ Home → Continue watching brings back unfinished films and episodes with their 
 
 ### Tiles on the Samsung home screen (#91)
 
-Press Home on the remote and move to the Jotv icon: up to six Continue watching titles and six recently watched channels from the active source show as tiles. All tiles are wide; a film or show uses its backdrop when Jotv already has one. Pick one to open Jotv and play it; a film or episode continues where it stopped (#95). The tiles change when you leave Jotv, at most once every 10 minutes (a Samsung limit). Titles from a locked category never show. Turn them off in Settings → Playback → Samsung home screen tiles. Setup and removal: HOME-TILES.md.
+Press Home on the remote and move to the Jotv icon: up to six Continue watching titles and six recently watched channels from the active source show as tiles. All tiles are wide; a film or show uses its backdrop when Jotv already has one. Pick one to open Jotv and play it; a film or episode continues where it stopped (#95). The tiles change when you leave Jotv, at most once every 10 minutes (a Samsung limit); with nothing to show, the tiles already there stay. Titles from a locked category never show. Turn them off in Settings → Playback → Samsung home screen tiles. Setup and removal: HOME-TILES.md.
 
 ### Favorites and recents across sources (#24)
 

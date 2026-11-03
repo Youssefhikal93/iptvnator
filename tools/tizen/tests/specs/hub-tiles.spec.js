@@ -63,6 +63,15 @@ test('#91 a channel of a locked category never becomes a tile, even while the PI
     expect(preview.sections.map((part) => part.title)).toEqual(['Continue watching']);
 });
 
+test('#91 with tiles On but nothing to show, the tiles already on the TV stay', async ({ page }) => {
+    await fakeTv(page);
+    await page.clock.install();
+    await boot(page);
+    await page.clock.fastForward(31_000);
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(await page.evaluate(() => window.__tilesSent)).toEqual([]);
+});
+
 test('#91 Samsung home screen tiles Off leaves the home screen empty', async ({ page }) => {
     await fakeTv(page);
     await page.clock.install();

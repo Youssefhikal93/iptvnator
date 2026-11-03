@@ -12,13 +12,13 @@ Backups go to `Projects\jotv-backup\` (next to the repo, never committed). They 
    ```
    It prints an **address** (like `192.168.0.21:8766`) and a **code**.
 2. On the TV: Settings → Backup → **Send everything to computer…**, enter the address and code, choose **Send**.
-3. The computer prints `Saved jotv-backup-<date>.json`. Stop the receiver with Ctrl+C.
+3. The computer saves it in a new folder named by the date, e.g. `2026-11-03 17.05 Jotv backup`, and prints its name. Stop the receiver with Ctrl+C.
 
 ## Import (computer → TV)
 
 1. On the computer, run the receiver again (new code each time).
 2. On the TV: Settings → Backup → **Restore from computer…**, enter the address and code, choose **Restore**, then confirm.
-3. Jotv restarts with everything as it was. It restores the newest file in the folder.
+3. Jotv restarts with everything as it was. It restores the newest backup in the folder.
 
 ## Reinstall Jotv (or move to a new TV)
 

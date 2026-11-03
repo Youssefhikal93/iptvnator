@@ -21,9 +21,32 @@ function addresses() {
         .map((net) => net.address);
 }
 
+// Each backup is a folder named by its date, "2026-11-03 17.05 Jotv backup",
+// holding jotv-backup.json; older backups were jotv-backup-<date>.json files.
+const FILE = 'jotv-backup.json';
+
+function stamp(date) {
+    const two = (n) => String(n).padStart(2, '0');
+    return date.getFullYear() + '-' + two(date.getMonth() + 1) + '-' + two(date.getDate()) + ' ' + two(date.getHours()) + '.' + two(date.getMinutes());
+}
+
+// The newest backup, folder or older file, by when it was saved.
 function newest() {
-    const files = fs.readdirSync(dir).filter((name) => /^jotv-backup-.*\.json$/.test(name)).sort();
-    return files.length ? files[files.length - 1] : null;
+    const found = [];
+    for (const name of fs.readdirSync(dir)) {
+        const file = /^jotv-backup-.*\.json$/.test(name) ? name : / Jotv backup( \(\d+\))?$/.test(name) ? path.join(name, FILE) : null;
+        if (file && fs.existsSync(path.join(dir, file))) found.push({ file, time: fs.statSync(path.join(dir, file)).mtimeMs });
+    }
+    found.sort((a, b) => a.time - b.time);
+    return found.length ? found[found.length - 1].file : null;
+}
+
+function newFolder() {
+    const base = stamp(new Date()) + ' Jotv backup';
+    let name = base;
+    for (let i = 2; fs.existsSync(path.join(dir, name)); i++) name = base + ' (' + i + ')';
+    fs.mkdirSync(path.join(dir, name));
+    return name;
 }
 
 function reply(res, status, body) {
@@ -59,8 +82,8 @@ http.createServer((req, res) => {
         try {
             const backup = JSON.parse(Buffer.concat(parts).toString('utf8'));
             if (backup.kind !== 'jotv-full-backup' || !backup.data) return reply(res, 400, { error: 'not a Jotv full backup' });
-            const name = 'jotv-backup-' + new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-') + '.json';
-            fs.writeFileSync(path.join(dir, name), JSON.stringify(backup, null, 1));
+            const name = newFolder();
+            fs.writeFileSync(path.join(dir, name, FILE), JSON.stringify(backup, null, 1));
             console.log('Saved ' + name + ' (' + Object.keys(backup.data).length + ' records)');
             reply(res, 200, { file: name });
         } catch (e) {

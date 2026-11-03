@@ -36,10 +36,12 @@ test('Send everything to computer, change the TV, then Restore from computer put
 
         await openRow(page, 'Send everything to computer…', box.code);
         await page.locator('#backup-screen button', { hasText: 'Send' }).click();
-        await expect(page.locator('#backup-screen')).toContainText(/Saved on the computer as jotv-backup-\d{8}-\d{6}\.json/);
+        // Each backup gets its own folder named by the date (2026-11-03 17.05 Jotv backup).
+        await expect(page.locator('#backup-screen')).toContainText(/Saved on the computer as \d{4}-\d{2}-\d{2} \d{2}\.\d{2} Jotv backup/);
         const files = fs.readdirSync(box.dir);
         expect(files).toHaveLength(1);
-        expect(JSON.parse(fs.readFileSync(path.join(box.dir, files[0]), 'utf8')).data['iptvnator-tv:favorites:s1']).toBe(before['iptvnator-tv:favorites:s1']);
+        expect(files[0]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}\.\d{2} Jotv backup$/);
+        expect(JSON.parse(fs.readFileSync(path.join(box.dir, files[0], 'jotv-backup.json'), 'utf8')).data['iptvnator-tv:favorites:s1']).toBe(before['iptvnator-tv:favorites:s1']);
         await press(page, 'Enter');
 
         // The TV changes after the backup.

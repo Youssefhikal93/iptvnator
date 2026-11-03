@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Catch-up channels can pause live TV, resume behind live and rewind; their Catch-up label appears in the lists and while browsing channels during playback (#97).
 - The toolbar shares the list title row, so lists start under the menu and show more rows; the next row peeks in, dimmed. Search is an icon beside View and Sort and searches the category in use; Search in the menu does the same. Picture avatars show whole, with no disc; focus outlines the picture (#95).
 - The side menu stays slim until focused, then opens over the page with names beside the icons; Arabic mirrors it. Picture avatars have clear backgrounds and letter avatars follow the accent. Confirmation dialogs dim the page and use readable destructive pills. Settings starts with Playback, and Mark watched precedes removal actions (#95).
 - Rounded controls across Jotv use filled accent focus with a gentle lift. Profiles have an avatar card and action pills; paired phones have separate Rename and Forget pills. The logo screen saver moves more slowly (#95).
@@ -55,6 +56,10 @@ While watching a live channel, press Blue, or hold OK → Multi-view, and choose
 ### Reconnect after a live interruption (#14)
 
 If live TV stops, Jotv shows Reconnecting… and tries again after closing the old connection. If it cannot reconnect, choose Retry playback with the arrows and OK, or Back to leave the player.
+
+### Pause and rewind live TV (#97)
+
+Xtream channels with a known catch-up window show a short Catch-up label. Press OK to show controls, then OK to pause; Play resumes behind live and shows the delay. Use ▶ to choose Rewind 1 min or Forward 1 min and OK to jump, or press ▲ then ◀/▶ on the catch-up timeline. Back to live returns immediately. Hold OK also offers Pause. Starts use whole provider minutes, so a jump can land up to a minute earlier. Channels without catch-up keep their usual controls.
 
 ## TV guide
 

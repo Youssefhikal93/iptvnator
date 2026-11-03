@@ -513,6 +513,16 @@ window.Browser = function (hooks) {
         // What the zap banner shows (#79).
         req.banner = { name: channel.name, num: channel.num, logo: channel.stream_icon || channel.logo || '' };
         if (state.source.type === 'xtream' && CatchUp.available(channel)) {
+            req.backToLive = function () { hooks.play(req); };
+            req.liveReplay = function (time) {
+                var login = Object.assign({}, state.source, { server_info: state.info && state.info.server_info });
+                var archive = CatchUp.liveRequest(channel, time, login);
+                if (!archive) return;
+                archive.returnTo = req;
+                archive.backToLive = req.backToLive;
+                archive.liveReplay = req.liveReplay;
+                hooks.play(archive);
+            };
             req.watchFromStart = function (programme) {
                 var archive = catchUpRequest(channel, programme);
                 if (!archive) return;

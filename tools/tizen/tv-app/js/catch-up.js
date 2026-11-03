@@ -54,6 +54,18 @@ window.CatchUp = (function () {
         };
     }
 
+    // Whole-minute starts stay inside retention, including its oldest minute.
+    function liveRequest(channel, time, account) {
+        var now = Date.now();
+        if (!available(channel) || !isFinite(time)) return null;
+        var oldest = Math.ceil((now - days(channel) * 86400000) / 60000) * 60000;
+        var start = Math.max(oldest, Math.floor(Math.min(time, now - 1) / 60000) * 60000);
+        var end = Math.max(start + 60000, Math.ceil(now / 60000) * 60000);
+        var req = request(channel, { start: start, end: end, title: I18n.t('catchUp.short') }, account);
+        if (req) req.liveTimeshift = true;
+        return req;
+    }
+
     function livePosition(programme) {
         return Math.max(0, Math.min(programme.end, Date.now()) - programme.start);
     }
@@ -62,7 +74,7 @@ window.CatchUp = (function () {
         if (!available(channel)) return;
         var badge = document.createElement('span');
         badge.className = 'catch-up-badge';
-        badge.textContent = I18n.t('catchUp.badge', { n: days(channel) });
+        badge.textContent = I18n.t('catchUp.short');
         el.appendChild(badge);
     }
 
@@ -70,5 +82,5 @@ window.CatchUp = (function () {
         return I18n.time(time);
     }
 
-    return { available: available, days: days, playable: playable, request: request, decorate: decorate, clock: clock, livePosition: livePosition };
+    return { liveRequest: liveRequest, available: available, days: days, playable: playable, request: request, decorate: decorate, clock: clock, livePosition: livePosition };
 })();

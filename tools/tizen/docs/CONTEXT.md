@@ -242,6 +242,12 @@ Back to live is available in the catch-up controls and is offered when playback 
 `Player.startOver()` shares the action with the future programme banner; without a current
 playable programme it does nothing.
 
+Xtream live requests with a known positive catch-up window also carry `liveReplay(time)`.
+Pause releases the engine and keeps its wall-clock cursor only in memory; Play and minute
+jumps reuse `CatchUp.liveRequest` and `CatchUp.request`, rounding starts inside retention
+in the server time zone. Completed segments reopen from their cursor or return to live.
+Lists and the channel overlay share the short translated Catch-up badge.
+
 **Guide**:
 Programmes over time for the current Live TV category, opened with the TV guide button or the remote's Guide key.
 _Avoid_: EPG grid (use TV guide only for the button label)

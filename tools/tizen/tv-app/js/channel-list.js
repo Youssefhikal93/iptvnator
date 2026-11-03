@@ -58,6 +58,7 @@ window.ChannelList = function (hooks) {
         label.appendChild(element('div', 'pl-channel-name', I18n.isolate(channel.name || I18n.t('player.hint.channel'))));
         programme(label, channel);
         node.appendChild(label);
+        if (Sources.current().type === 'xtream') CatchUp.decorate(node, channel);
         return node;
     }
 

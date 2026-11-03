@@ -47,7 +47,9 @@ export async function startLocalServer(
                 new URL(request.url, 'http://x').pathname
             );
         } catch (error) {
-            if (!(error instanceof URIError)) throw error;
+            // Bad percent-encoding (URIError) or a target URL rejects (TypeError).
+            if (!(error instanceof URIError || error instanceof TypeError))
+                throw error;
             return send(400, Buffer.from('bad request'), 'text/plain');
         }
         if (pathname === '/fake.m3u')

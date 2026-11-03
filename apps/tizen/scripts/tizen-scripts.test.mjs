@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { startLocalServer } from './local-server.mjs';
@@ -270,6 +271,16 @@ test('local server returns 400 for malformed encoding and keeps serving requests
         assert.equal(malformed.status, 400);
         await malformed.text();
     }
+    // A raw target that the URL constructor itself rejects.
+    const status = await new Promise((resolve, reject) => {
+        const request = httpRequest(origin, { path: '//[' }, (response) => {
+            response.resume();
+            resolve(response.statusCode);
+        });
+        request.on('error', reject);
+        request.end();
+    });
+    assert.equal(status, 400);
     const home = await fetch(origin + '/');
     assert.equal(home.status, 200);
     assert.equal(await home.text(), 'widget home');

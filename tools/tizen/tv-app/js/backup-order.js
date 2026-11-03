@@ -88,11 +88,13 @@ window.BackupOrder = (function () {
         if (!object(state)) return invalid();
         return { order: state.order === undefined ? {} : parseOrder(state.order),
             groups: state.groups === undefined ? [] : parseGroups(state.groups, item),
-            guide: state.guide === undefined ? null : parseGuide(state.guide) };
+            guide: state.guide === undefined ? null : parseGuide(state.guide),
+            edits: state.channelEdits === undefined ? {} : ChannelEdits.clean(state.channelEdits) };
     }
 
     function build(sourceId, entry) {
         entry.tvState = Object.assign({}, entry.tvState, {
+            channelEdits: BackupStore.read('channel-edits:' + sourceId, {}) || {},
             order: BackupStore.read('list-order:' + sourceId, {}) || {},
             groups: BackupStore.read('channel-groups:' + sourceId, []) || [],
             guide: guideOf(sourceId),

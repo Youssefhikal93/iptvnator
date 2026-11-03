@@ -78,7 +78,7 @@ window.BackupStore = (function () {
         var orders = [];
         var picks = {};
         if (mode === 'replace') existing.forEach(function (source) {
-            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:', 'list-order:', 'channel-groups:', 'guide-pick:'].forEach(function (kind) { writes[kind + source.id] = null; });
+            ['favorites:', 'recent:', 'recent-channels:', 'last-channel:', 'backup:', 'progress:', 'list-order:', 'channel-groups:', 'channel-edits:', 'guide-pick:'].forEach(function (kind) { writes[kind + source.id] = null; });
         });
         backup.sources.forEach(function (entry, index) {
             var match = sources.filter(function (source) { return fingerprint(source) === fingerprint(entry.source); })[0];
@@ -105,6 +105,9 @@ window.BackupStore = (function () {
             var groupsKey = 'channel-groups:' + source.id;
             var savedGroups = writes[groupsKey] || (mode === 'merge' ? read(groupsKey, null) : null);
             writes[groupsKey] = savedGroups ? BackupOrder.merge(savedGroups, browse.groups) : browse.groups;
+            var editsKey = 'channel-edits:' + source.id;
+            var savedEdits = writes[editsKey] || (mode === 'merge' ? read(editsKey, {}) : {});
+            writes[editsKey] = Object.assign({}, browse.edits || {}, savedEdits);
             var channelsKey = 'recent-channels:' + source.id;
             var savedChannels = writes[channelsKey] || (mode === 'merge' ? read(channelsKey, []) : []);
             writes[channelsKey] = Library.mergeRecentChannels(savedChannels, entry.recentChannels || []);

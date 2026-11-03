@@ -66,7 +66,7 @@ _Avoid_: Sync, reload
 ### What the viewer keeps
 
 **Library**:
-Everything kept for one viewer per source: favorites, recently watched and progress. Each profile has its own.
+Everything kept for one viewer per source: favorites, recently watched, progress and live channel name/logo edits. Each profile has its own.
 _Avoid_: History (for all of it)
 
 **Profile**:
@@ -124,6 +124,11 @@ once it has channels. Group members retain their provider
 category for Kids and parental restrictions. Opening a group resolves its
 channels against the current live catalogue before applying those restrictions.
 Movies and series have no own groups.
+
+Live channel edits use `js/channel-edits.js` and `channel-edits:<sourceId>`
+through ProfileStore and Stored. Presentation views read the active profile's
+name and logo; catalogue rows and saved channel snapshots keep provider values
+for Reset, guide matching and quality choices. Both backup formats include edits.
 
 `js/move-mode.js` owns pure order operations and the lift transaction;
 `js/list-order.js` saves `list-order:<sourceId>` through ProfileStore and Stored,

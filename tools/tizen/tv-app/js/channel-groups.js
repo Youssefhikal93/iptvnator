@@ -24,10 +24,11 @@ window.ChannelGroups = (function () {
     function items(sourceId, id, catalogue) {
         var group = read(sourceId).filter(function (entry) { return entry.id === id; })[0];
         if (!group) return [];
-        if (!catalogue) return group.channels;
+        if (!catalogue) return window.ChannelEdits ? ChannelEdits.list(sourceId, group.channels) : group.channels;
         var known = Object.create(null);
         catalogue.forEach(function (channel) { known[Library.keyOf('live', channel)] = channel; });
-        return group.channels.map(function (channel) { return known[Library.keyOf('live', channel)]; }).filter(Boolean);
+        var channels = group.channels.map(function (channel) { return known[Library.keyOf('live', channel)]; }).filter(Boolean);
+        return window.ChannelEdits ? ChannelEdits.list(sourceId, channels) : channels;
     }
 
     return {

@@ -55,13 +55,15 @@ window.Quality = (function () {
     // The copies of `item` in `list` (itself included), best first, or null
     // when there is no choice: one copy per quality, at least two qualities.
     function copies(item, list, live) {
+        if (live && window.ChannelEdits) item = ChannelEdits.original(item);
         var own = parse(item && item.name, live);
         if (!own.base || !list || !list.length) return null;
         var seen = Object.create(null);
         var found = [];
         [item].concat(list).forEach(function (entry) {
             if (!entry) return;
-            var copy = parse(entry.name, live);
+            var provider = live && window.ChannelEdits ? ChannelEdits.original(entry) : entry;
+            var copy = parse(provider.name, live);
             if (copy.base !== own.base || seen[copy.tag]) return;
             seen[copy.tag] = true;
             found.push({ tag: copy.tag, item: entry });

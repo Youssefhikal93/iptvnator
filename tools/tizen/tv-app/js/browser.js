@@ -50,6 +50,26 @@ window.Browser = function (hooks) {
         $('move-hint').textContent = text;
         $('move-hint').classList.toggle('hidden', !text);
     });
+    var channelEdit = ChannelEditMenu({
+        changed: function () {
+            drawItems(items.index(), true);
+            refreshLibrary();
+            if (hooks.preview.active()) hooks.preview.refresh();
+        },
+        catalogue: function (source) {
+            var loading = source.id === sourceId() ? loadCatalogue({ section: 'live', kind: 'items' }) : Catalogue.get(source.id, 'live:items:').then(function (saved) {
+                if (saved) return saved;
+                var adapter = source.type === 'xtream' ? XtreamSource(source, { quiet: true }) : M3uSource(source);
+                return adapter.account().then(function () { return adapter.items('live', ''); }).then(function (channels) {
+                    return Catalogue.put(source.id, 'live:items:', channels).then(function () { return channels; });
+                });
+            });
+            return loading.then(function (channels) {
+                return channels.filter(function (channel) { return visibility.allows('live', channel, { sourceId: source.id, withHidden: true }); });
+            });
+        },
+        toast: toast,
+    });
     var groupMenu = GroupMenu({ sourceId: sourceId, changed: function () { categoriesChanged('live'); } });
     // The Recent channels list (#80); a channel joins after 10 s on screen.
     var recentChannels = RecentChannels({
@@ -222,7 +242,7 @@ window.Browser = function (hooks) {
         },
         items: function (section) {
             return state.catalogue.load({ section: section, kind: 'items' }, { screen: false }).then(function (all) {
-                return visibility.items(section, all);
+                return visibility.items(section, section === 'live' ? ChannelEdits.list(sourceId(), all) : all);
             });
         },
     });
@@ -342,7 +362,7 @@ window.Browser = function (hooks) {
         });
         var schedules = channels.then(function (all) {
             if (state.source !== source) return [];
-            return savedGuide.cached(visibility.items('live', all || []), epg);
+            return savedGuide.cached(visibility.items('live', ChannelEdits.list(source.id, all || [])), epg);
         }).catch(function () {
             toast(I18n.t('guide.failed'));
             return [];
@@ -508,10 +528,19 @@ window.Browser = function (hooks) {
     }
 
     function liveRequest(channel) {
+        channel = ChannelEdits.view(sourceId(), channel);
         var req = state.adapter.liveRequest(channel);
+        // Editing a playing preview changes its labels without reopening its stream.
+        Object.defineProperty(req, 'title', { enumerable: true, get: function () {
+            return (channel.num ? channel.num + '. ' : '') + channel.name;
+        } });
         req.channel = sourceId() + '|' + Library.keyOf('live', channel);
         // What the zap banner shows (#79).
-        req.banner = { name: channel.name, num: channel.num, logo: channel.stream_icon || channel.logo || '' };
+        req.banner = { num: channel.num };
+        Object.defineProperties(req.banner, {
+            name: { enumerable: true, get: function () { return channel.name; } },
+            logo: { enumerable: true, get: function () { return channel.stream_icon || channel.logo || ''; } },
+        });
         if (state.source.type === 'xtream' && CatchUp.available(channel)) {
             req.watchFromStart = function (programme) {
                 var archive = catchUpRequest(channel, programme);
@@ -549,14 +578,14 @@ window.Browser = function (hooks) {
     }
 
     function copyKey(section, item) {
-        return section + '|' + sourceId() + '|' + Quality.parse(item.name, section === 'live').base;
+        return section + '|' + sourceId() + '|' + Quality.parse(section === 'live' ? ChannelEdits.original(item).name : item.name, section === 'live').base;
     }
 
     function withCopies(req, item, list, section, sourcesOf) {
         if (otherSource(item)) return req;
         var found = Quality.copies(item, list.filter(function (entry) { return copyAllowed(section, item, entry); }), section === 'live');
         if (!found) return req;
-        var own = Quality.parse(item.name, section === 'live').tag;
+        var own = Quality.parse(section === 'live' ? ChannelEdits.original(item).name : item.name, section === 'live').tag;
         var copies = found.map(function (copy) {
             return { tag: copy.tag, sources: copy.item === item ? req.sources : sourcesOf(copy.item) };
         });
@@ -894,6 +923,12 @@ window.Browser = function (hooks) {
             },
         };
         options.push(favorite);
+        if (section === 'live') {
+            options.push({ label: I18n.t('channelEdit.title'), glyph: '✎', run: function () {
+                var source = otherSource(item) ? Sources.all().filter(function (saved) { return saved.id === item.sourceId; })[0] : state.source;
+                if (source) channelEdit.open(source, item);
+            } });
+        }
         if (section === 'live' && !KidsProfile.on() && !otherSource(item)) {
             var row = state.section === 'live' ? shownCategory() : null;
             options = options.concat(groupMenu.channel(item, row));
@@ -1279,11 +1314,15 @@ window.Browser = function (hooks) {
     }
 
     function loadCatalogue(what, onFresh) {
+        var source = sourceId();
+        function present(list) {
+            return what.section === 'live' && what.kind === 'items' ? ChannelEdits.list(source, list) : list;
+        }
         return state.catalogue.load(what, {
             screen: !Player.isOpen() || hooks.preview.active(),
             active: function () { return currentList.wants(what); },
-            onFresh: onFresh,
-        });
+            onFresh: onFresh ? function (list) { onFresh(present(list)); } : null,
+        }).then(present);
     }
 
     function itemId(item) {

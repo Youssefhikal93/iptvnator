@@ -4,7 +4,7 @@ var test = require('node:test');
 var assert = require('node:assert/strict');
 var fixture = require('../fixtures/backup/desktop-backup.json');
 var load = require('./sandbox');
-var files = ['profile-store.js', 'sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'move-mode.js', 'list-order.js', 'channel-groups.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'];
+var files = ['profile-store.js', 'sources.js', 'progress-migration.js', 'library.js', 'progress.js', 'm3u-vod.js', 'm3u.js', 'audio-choice.js', 'move-mode.js', 'list-order.js', 'channel-groups.js', 'channel-edits.js', 'backup-order.js', 'backup-store.js', 'backup-m3u.js', 'backup.js'];
 
 function app() {
     return load(files, {}, { URL: URL, SourceRequest: function () { return Promise.resolve(fixture.playlists[2].source.rawM3u); } });

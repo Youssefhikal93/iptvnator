@@ -1297,6 +1297,13 @@ window.Player = (function () {
         return run;
     }
 
+    function renderTitle() {
+        var title = current.title;
+        // Quality fallbacks copy requests; their banner retains the live presentation.
+        if (current.live && current.banner) title = (current.banner.num ? current.banner.num + '. ' : '') + current.banner.name;
+        ui.title.textContent = current.live ? I18n.isolate(title) : title;
+    }
+
     // One playback attempt chain. `onAttempt` is set by a reconnect try: it
     // keeps the Reconnecting status and hears null (playing) or the failure.
     function start(req, onAttempt, rect) {
@@ -1309,7 +1316,7 @@ window.Player = (function () {
         if (rect !== undefined) setBox(rect);
         playerEl.classList.remove('hidden', 'av', 'controls-on');
         hideControls();
-        ui.title.textContent = req.live ? I18n.isolate(req.title) : req.title;
+        renderTitle();
         ui.subtitle.textContent = req.subtitle || '';
         epg.load(req);
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
@@ -1380,6 +1387,7 @@ window.Player = (function () {
     // Takes the playing stream full screen, as if it had just started.
     function fullscreen() {
         setBox(null);
+        renderTitle();
         showControls();
     }
 

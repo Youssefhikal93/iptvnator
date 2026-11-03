@@ -1,6 +1,17 @@
 // English is the source table and the fallback for any key a language lacks.
 // Placeholders are {name}; plural forms are 'key.one' / 'key.other' picked by params.count.
 I18n.tables.en = {
+    "channelEdit.title": "Edit channel",
+    "channelEdit.name": "Name",
+    "channelEdit.logo": "Logo",
+    "channelEdit.reset": "Reset to provider's",
+    "channelEdit.needName": "Enter a channel name.",
+    "channelEdit.loading": "Finding logos…",
+    "channelEdit.guideLogo": "Guide {n} logo",
+    "channelEdit.noLogos": "No other logos available.",
+    "channelEdit.loadFailed": "Could not load logos. Try again.",
+    "channelEdit.saveFailed": "Could not save the channel. Free TV storage and try again.",
+
     'remote.settingsTitle': 'Phone remote',
     'remote.speed': 'Speed',
     'remote.rewind': '−10 s',

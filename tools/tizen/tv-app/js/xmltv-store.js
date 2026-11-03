@@ -125,6 +125,14 @@ window.XmltvStore = (function () {
         });
     }
     return {
+        icon: function (source, channel) {
+            return Promise.all([manifest(source.id), chosenFor(source, channel)]).then(function (found) {
+                var saved = found[0];
+                if (!saved) return null;
+                var id = matchIn(source, channel, saved.index, found[1]);
+                return id && saved.index.icons ? saved.index.icons[id] || null : null;
+            });
+        },
         cached: cached,
         programmes: programmes,
         // A link's guide channels for choosing one by hand (#90): { id, label,

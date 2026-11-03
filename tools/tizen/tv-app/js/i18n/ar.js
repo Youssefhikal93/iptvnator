@@ -2,6 +2,17 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ar = {
+    "channelEdit.title": "تعديل القناة",
+    "channelEdit.name": "الاسم",
+    "channelEdit.logo": "الشعار",
+    "channelEdit.reset": "استعادة بيانات المصدر",
+    "channelEdit.needName": "أدخل اسم القناة.",
+    "channelEdit.loading": "جارٍ البحث عن الشعارات…",
+    "channelEdit.guideLogo": "شعار الدليل {n}",
+    "channelEdit.noLogos": "لا توجد شعارات أخرى.",
+    "channelEdit.loadFailed": "تعذّر تحميل الشعارات. حاول مجددًا.",
+    "channelEdit.saveFailed": "تعذّر حفظ القناة. حرّر مساحة على التلفزيون وحاول مجددًا.",
+
     'settings.display': 'العرض',
     'profile.group': 'الملفات الشخصية',
     'profile.current': 'الملف الشخصي الحالي',

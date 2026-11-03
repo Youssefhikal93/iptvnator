@@ -176,6 +176,8 @@ body.searching:not(.no-bar) #items.pane { padding-top: 92px; }
 #searchbar:not(.shown) input { display: none; }
 #searchbar:not(.shown) svg { fill: currentColor; }
 body:not(.no-bar) #items .list-header { padding-inline-end: 572px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The first rows start below the buttons, never under them; both lists line up. */
+body:not(.no-bar) :is(#categories, #items) .list-header { margin-bottom: 14px; }
 /* Live preview: the buttons sit over the preview, which moves down under them. */
 #content.previewing #items .list-header { padding-inline-end: 16px; }
 body:not(.no-bar) #content.previewing #live-preview { padding-top: 96px; }

@@ -29,3 +29,6 @@
     color: var(--selection);
     font-size: 22px;
 }
+/* In the channel list while watching, the label keeps to the row's right end, inside its rounded shape. */
+.pl-channel .catch-up-badge { margin-left: auto; margin-right: 8px; border-radius: 999px; }
+.pl-channel-label { flex: 1; }

@@ -167,7 +167,7 @@
         var live = !!playing && playing.live;
         var zapStep = code === KEY.CH_UP || code === KEY.UP ? 1 : code === KEY.CH_DOWN || code === KEY.DOWN ? -1 : 0;
         if (channelList.key(code)) return true;
-        if (live && !playing.catchUp && code === KEY.BLUE && Player.canOpenChannelList()) {
+        if (live && !playing.catchUp && code === KEY.BLUE && Player.canBrowseLive()) {
             multiView.open();
             return true;
         }

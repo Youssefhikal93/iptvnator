@@ -72,6 +72,7 @@ window.Player = (function () {
     var REOPEN_GAP_MS = 60000;
     var lastReopen = { id: null, at: 0 }; // the last film reopened after a drop while playing
     var liveOffered = false;
+    var livePauseAt = null;
     var errorFocus = 0;
     var speed = 1;
     var hideAt = 0;
@@ -160,6 +161,7 @@ window.Player = (function () {
         position: position,
         duration: duration,
         seekTo: jumpTo,
+        nudge: nudge,
         isEnded: function () {
             return ended;
         },
@@ -170,7 +172,36 @@ window.Player = (function () {
         play: play,
         openMenu: openMenu,
         showControls: showControls,
+        behind: liveBehind,
     });
+
+    // The live info and programme bar (#97).
+    var liveView = PlayerLive({
+        current: function () {
+            return current;
+        },
+        behind: liveBehind,
+        clock: fmt,
+        programmes: function () {
+            return epg.programmes();
+        },
+        onBar: function () {
+            return series.onBar();
+        },
+    });
+
+    // How far behind live a catch-up channel plays, or 0 at live.
+    function liveBehind() {
+        if (!current) return 0;
+        if (livePauseAt !== null) return Math.max(0, Date.now() - livePauseAt);
+        if (current.liveTimeshift && current.catchUp) return Math.max(0, Date.now() - (current.catchUp.start + position()));
+        return 0;
+    }
+
+    // Now and Next belong to the live channel, also while a timeshift plays.
+    function guideOf(req) {
+        return req.liveTimeshift && req.returnTo ? req.returnTo : req;
+    }
 
     PlayerPicture.init({
         root: playerEl,
@@ -221,6 +252,7 @@ window.Player = (function () {
     // ---- Engine access (AVPlay or <video>) --------------------------------
 
     function position() {
+        if (livePauseAt !== null && current && current.catchUp) return livePauseAt - current.catchUp.start;
         try {
             return usingAv ? avplay().getCurrentTime() : video.currentTime * 1000;
         } catch (e) {
@@ -239,6 +271,7 @@ window.Player = (function () {
     }
 
     function isPaused() {
+        if (livePauseAt !== null) return true;
         try {
             return usingAv ? avplay().getState() === 'PAUSED' : video.paused;
         } catch (e) {
@@ -366,7 +399,8 @@ window.Player = (function () {
 
     // Live channels list their keys; movies and shows keep a plain bar.
     function hintHtml() {
-        if (!current.live) return [];
+        // The live player's buttons say what they do; its keys are in Help.
+        if (!current.live || liveView.applies(current)) return [];
         return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.options')],
             ['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]];
     }
@@ -384,17 +418,25 @@ window.Player = (function () {
     function render() {
         if (!current || !ready) return;
         var live = current.live;
+        var liveUi = liveView.applies(current);
+        playerEl.classList.toggle('live-ui', liveUi);
+        if (liveUi) {
+            if (!live) epg.render();
+            liveView.render();
+        }
         ui.seekbox.classList.toggle('live', live);
-        ui.live.classList.toggle('hidden', !live);
+        ui.live.classList.toggle('hidden', !live || livePauseAt !== null);
         var paused = isPaused() || lostPaused;
         ui.state.textContent = ended ? '■' : paused ? '❚❚' : '▶';
         // The transport row (#48): OK acts on the play/pause circle, so it
         // shows what OK does next; ▼ moves to the buttons beside it.
-        ui.transport.classList.toggle('hidden', live);
+        ui.transport.classList.toggle('hidden', live && !current.liveReplay);
         ui.transport.classList.toggle('on-buttons', series.busy() || series.onBar());
         ui.seekbox.classList.toggle('focus', !live && series.onBar());
         ui.play.textContent = ended ? '■' : paused ? '▶' : '❚❚';
-        ui.now.textContent = I18n.time(Date.now());
+        ui.play.setAttribute('aria-label', I18n.t(paused ? 'player.playLive' : 'player.pauseLive'));
+        var behind = current.liveReplay && (livePauseAt !== null ? livePauseAt : current.catchUp && current.catchUp.start + position());
+        ui.now.textContent = behind ? I18n.t('player.behindLive', { time: fmt(Date.now() - behind) }) : I18n.time(Date.now());
         ui.ends.textContent = '';
         if (live) return epg.render();
         var dur = duration();
@@ -471,7 +513,8 @@ window.Player = (function () {
     // The provider cannot serve future programme time; offer live at that edge.
     function offerLive() {
         if (!current || !current.catchUp || !current.returnTo || !started || progressBlocked()) return;
-        if (position() < CatchUp.livePosition(current.catchUp) - 1000 || menu.open) return;
+        var edge = current.liveTimeshift ? Date.now() - current.catchUp.start : CatchUp.livePosition(current.catchUp);
+        if (position() < edge - 1000 || menu.open) return;
         if (liveOffered) return;
         liveOffered = true;
         pause();
@@ -480,7 +523,7 @@ window.Player = (function () {
 
     function tick() {
         offerLive();
-        if (current && current.catchUp && !ended && position() >= duration()) {
+        if (current && current.catchUp && livePauseAt === null && !ended && position() >= duration()) {
             pause();
             onCompleted();
         }
@@ -508,6 +551,13 @@ window.Player = (function () {
     }
 
     function nudge(dir) {
+        if (current.liveReplay) {
+            var at = livePauseAt !== null ? livePauseAt : current.catchUp ? current.catchUp.start + position() : Date.now();
+            var target = at + dir * 60000;
+            if (target >= Date.now() && current.backToLive) current.backToLive();
+            else current.liveReplay(target);
+            return;
+        }
         restoration.cancel();
         var now = Date.now();
         var dur = duration();
@@ -728,6 +778,7 @@ window.Player = (function () {
         var watch = epg.watchFromStart();
         if (watch) m.item(I18n.t('player.startOver'), false, startOver, null, '\u21BA');
         if (current.backToLive) m.item(I18n.t('player.backToLive'), false, current.backToLive, null, '\u25B6');
+        if (current.liveReplay) m.item(I18n.t(isPaused() ? 'player.playLive' : 'player.pauseLive'), false, function () { togglePause(); }, null, '\u275A');
         PlayerHelp.menuEntries(m.item, current);
         quality.menuEntries(m.head, m.item);
         m.head(I18n.t('player.audio'));
@@ -765,7 +816,7 @@ window.Player = (function () {
         title: function () {
             if (menu.part === 'caught-up') return I18n.t('player.caughtUp');
             if (menu.part === 'settings') return I18n.t('rail.settings');
-            return I18n.t(current.live ? 'player.hint.options' : 'player.hint.audioSubs');
+            return I18n.t(current.live || liveView.applies(current) ? 'player.hint.options' : 'player.hint.audioSubs');
         },
         run: function (action) {
             try {
@@ -1206,6 +1257,12 @@ window.Player = (function () {
     }
 
     function onCompleted() {
+        if (current && current.liveTimeshift) {
+            // TS timestamps can end a few frames short or long of a whole minute.
+            var at = current.catchUp.start + Math.max(1, Math.round(position() / 60000)) * 60000;
+            if (at >= Date.now() - 1000) return current.backToLive();
+            return current.liveReplay(at);
+        }
         if (!current) return;
         if (current.live) return streamLost('stream ended', I18n.t('player.stopped'));
         if (!started || progressBlocked()) return;
@@ -1304,6 +1361,7 @@ window.Player = (function () {
         heldPaused = lostPaused = false;
         release();
         current = req;
+        livePauseAt = null;
         opening = req.live ? OpenTiming.off : OpenTiming.begin(req.openKind || (req.episodes ? 'episode' : 'film'));
         languagePrefs = LanguageChoice.read();
         if (rect !== undefined) setBox(rect);
@@ -1311,7 +1369,7 @@ window.Player = (function () {
         hideControls();
         ui.title.textContent = req.live ? I18n.isolate(req.title) : req.title;
         ui.subtitle.textContent = req.subtitle || '';
-        epg.load(req);
+        epg.load(guideOf(req));
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
 
         var attempts = req.sources.map(function (source) {
@@ -1334,7 +1392,7 @@ window.Player = (function () {
                 Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + ms + 'ms');
                 release();
                 // release() also clears the now/next guide; the next player needs it again.
-                epg.load(req);
+                epg.load(guideOf(req));
             },
             giveUp: function (kind) {
                 // A chosen copy that does not play goes back to the one before (#94).
@@ -1358,6 +1416,7 @@ window.Player = (function () {
         banner.hide();
         streamInfo.hide();
         current = null;
+        livePauseAt = null;
         hideStatus();
         hideControls();
         setBox(null);
@@ -1384,6 +1443,22 @@ window.Player = (function () {
     }
 
     function togglePause(force) {
+        if (current && current.liveReplay) {
+            var shouldPause = force === undefined ? livePauseAt === null : force;
+            if (!shouldPause && livePauseAt !== null) return current.liveReplay(livePauseAt);
+            if (!shouldPause || livePauseAt !== null) return;
+            var at = current.catchUp ? current.catchUp.start + position() : Date.now();
+            freeze.capture();
+            reconnect.cancel();
+            chain.cancel();
+            release();
+            livePauseAt = at;
+            ready = true;
+            showControls();
+            tickTimer = setInterval(tick, TICK_MS);
+            return;
+        }
+        if (current && current.live) return;
         var wantPause = force === undefined ? !(isPaused() || lostPaused) : force;
         if (!wantPause && lostPaused) return reopenLost();
         heldPaused = wantPause;
@@ -1426,13 +1501,26 @@ window.Player = (function () {
             streamInfo.hide();
             return true;
         }
-        // The first ◀ ▶ ▼ only brings the controls up, with play/pause focused.
-        var arrow = code === KEY.LEFT || code === KEY.RIGHT || code === KEY.DOWN;
-        if (!live && arrow && ui.controls.classList.contains('hidden')) {
-            showControls();
+        if (current.liveReplay && (code === KEY.REWIND || code === KEY.FAST_FORWARD)) {
+            nudge(code === KEY.REWIND ? -1 : 1);
             return true;
         }
-        if (!live && series.key(code)) return true;
+        var hidden = ui.controls.classList.contains('hidden');
+        if (current.live && code === KEY.ENTER && hidden) {
+            showControls();
+            series.engage();
+            return true;
+        }
+        // The first ◀ ▶ ▼ only brings the controls up, with play/pause focused.
+        // On live TV ◀ keeps opening the channel list and ▼ changes channel.
+        var arrow = code === KEY.LEFT || code === KEY.RIGHT || code === KEY.DOWN;
+        if ((!live || code === KEY.RIGHT) && arrow && hidden) {
+            showControls();
+            series.engage();
+            return true;
+        }
+        // With the controls up, live buttons take ◀ ▶ OK (#97).
+        if ((!live || !hidden) && series.key(code)) return true;
         var wantsMenu = code === KEY.YELLOW || code === KEY.INFO || (!live && code === KEY.UP);
         if (wantsMenu) {
             openMenu();
@@ -1444,7 +1532,7 @@ window.Player = (function () {
             return true;
         }
         showControls();
-        if (live || ended) return code === KEY.ENTER;
+        if ((live && !current.liveReplay) || ended) return code === KEY.ENTER;
         if (code === KEY.ENTER) {
             if (seek.target !== null) commitSeek();
             else togglePause();
@@ -1494,9 +1582,13 @@ window.Player = (function () {
         preview: preview,
         fullscreen: fullscreen,
         key: key,
-        // Live controls have no use for ◀, so it opens the list even while they show.
-        canOpenChannelList: function () {
+        // Blue (multi-view) and the phone's channel list work whatever the controls show.
+        canBrowseLive: function () {
             return ready && current.live && !menu.open && !resume.open && ui.status.classList.contains('hidden');
+        },
+        // Left opens channels with the controls hidden or from the row's first button (#97).
+        canOpenChannelList: function () {
+            return ready && current.live && (ui.controls.classList.contains('hidden') || series.atStart()) && !menu.open && !resume.open && ui.status.classList.contains('hidden');
         },
         // Hold OK on live TV opens the menu (#89), when nothing else is open.
         canHoldMenu: function () {

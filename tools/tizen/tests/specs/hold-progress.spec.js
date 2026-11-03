@@ -97,7 +97,8 @@ test('holding OK on live TV fills a larger ring near the bottom of the picture u
     await back(page);
     await expect(page.locator('#pl-menu')).toBeHidden();
     await press(page, 'Enter');
-    await expect(page.locator('#pl-hint')).toBeVisible();
+    // The live player's row of buttons replaces the key hints (#97).
+    await expect(page.locator('#pl-buttons [data-id="options"]')).toBeVisible();
 });
 
 // Whether the ring showed at any moment while ct ran.

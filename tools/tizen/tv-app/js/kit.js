@@ -41,6 +41,7 @@ window.Kit = (() => {
     const Backdrop = ({ src, fallback }) => html`${img('dt-backdrop', src, fallback)}<div class="dt-shade"></div>`;
 
     const ICONS = {
+        pause: 'M8 5v14M16 5v14',
         sources: 'M8 6h13M8 12h13M8 18h13M3 6h1M3 12h1M3 18h1',
         person: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2',
         play: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M10 8l6 4-6 4z',
@@ -69,7 +70,7 @@ window.Kit = (() => {
         grid: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
         help: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17h.01',
     };
-    const GLYPH_ICONS = { '?': 'help', '›': 'chevron', '▶': 'play', '↺': 'restart', '⇆': 'swap', '▦': 'grid', '↻': 'restart' };
+    const GLYPH_ICONS = { '?': 'help', '›': 'chevron', '▶': 'play', '❚': 'pause', '↺': 'restart', '⇆': 'swap', '▦': 'grid', '↻': 'restart' };
     const MenuIcon = ({ glyph, name }) => {
         const icon = name || GLYPH_ICONS[glyph];
         return html`<span class=${'menu-icon' + (icon ? ' svg-icon' : '')} data-glyph=${glyph} data-icon=${icon} aria-hidden="true">

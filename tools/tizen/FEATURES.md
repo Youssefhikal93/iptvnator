@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Live TV has its own player: the channel, the programme, a LIVE badge and one programme bar, with the buttons in one row. Catch-up channels can pause live TV, resume behind live and rewind; their Catch-up label appears in the lists and in the channel list while watching (#97).
 - The toolbar shares the list title row, so lists start under the menu and show more rows; the next row peeks in, dimmed. Search is an icon beside View and Sort and searches the category in use; Search in the menu does the same. Picture avatars show whole, with no disc; focus outlines the picture (#95).
 - The side menu stays slim until focused, then opens over the page with names beside the icons; Arabic mirrors it. Picture avatars have clear backgrounds and letter avatars follow the accent. Confirmation dialogs dim the page and use readable destructive pills. Settings starts with Playback, and Mark watched precedes removal actions (#95).
 - Rounded controls across Jotv use filled accent focus with a gentle lift. Profiles have an avatar card and action pills; paired phones have separate Rename and Forget pills. The logo screen saver moves more slowly (#95).
@@ -55,6 +56,12 @@ While watching a live channel, press Blue, or hold OK → Multi-view, and choose
 ### Reconnect after a live interruption (#14)
 
 If live TV stops, Jotv shows Reconnecting… and tries again after closing the old connection. If it cannot reconnect, choose Retry playback with the arrows and OK, or Back to leave the player.
+
+### Pause and rewind live TV (#97)
+
+Press OK while watching to show the live controls: the channel, the programme with its times, a red LIVE badge and a bar from the programme's start to its end. One row holds the buttons; ◀/▶ move along it, OK chooses, and Options (also Hold OK) opens the full menu. With the controls hidden, ◀ opens the channel list and ▲/▼ change channel.
+
+Xtream channels with a known catch-up window show a short Catch-up label and add ⏪ ⏸ ⏩ to the row. OK on ⏸ pauses; play resumes behind live, the badge shows how far (−1:05) and a LIVE button appears: OK on it returns to live. ⏪ and ⏩, the remote's rewind and fast-forward keys, or ▲ to the bar and then ◀/▶ move one minute. On these channels ▲/▼ move between the bar and the buttons while the controls show; CH + / − change channel. Starts use whole provider minutes, so a jump can land up to a minute earlier.
 
 ## TV guide
 

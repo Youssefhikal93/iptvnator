@@ -14,7 +14,7 @@ window.RemoteApp = function (api) {
         if (!player) return [];
         if (player.kind === 'live') {
             if (api.browser.live.previousChannel()) player.offered.lastch = { label: I18n.t('remote.lastch'), run: api.previous };
-            if (Player.canOpenChannelList()) player.offered.channels = { label: I18n.t('remote.channels'), run: api.channels };
+            if (Player.canBrowseLive()) player.offered.channels = { label: I18n.t('remote.channels'), run: api.channels };
         }
         return RemoteContext.select(player.kind, player.offered);
     }

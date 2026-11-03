@@ -39,7 +39,8 @@ window.Keys = (function () {
     function showBar(target) {
         var node = typeof target === 'function' ? target() : target;
         if (!node || !node.getBoundingClientRect) return;
-        var art = (node.querySelector && node.querySelector('.hm-poster, .poster, .pf-avatar, .plate')) || node;
+        // The player itself is the target there, not the channel logo in its controls (#97).
+        var art = (node.id !== 'player' && node.querySelector && node.querySelector('.hm-poster, .poster, .pf-avatar, .plate')) || node;
         var box = art.getBoundingClientRect();
         if (!box.width || !box.height) return;
         var player = box.width > 1200;

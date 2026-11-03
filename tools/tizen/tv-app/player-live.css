@@ -1,0 +1,296 @@
+/* The live player (#97): channel and programme, one programme bar and one
+   row of buttons. Films and episodes keep the bar in player.css. */
+.pl-lv-info,
+.pl-lv-barbox {
+    display: none;
+}
+#player.live-ui .pl-top,
+#player.live-ui #pl-seekbox,
+#player.live-ui #pl-hint {
+    display: none;
+}
+#player.live-ui .pl-dock {
+    padding-top: 220px;
+}
+#player.live-ui .pl-lv-info {
+    display: flex;
+    align-items: flex-end;
+    gap: 32px;
+}
+.pl-lv-main {
+    flex: 1;
+    min-width: 0;
+}
+.pl-lv-head {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--pc-text-secondary);
+}
+.pl-lv-logo {
+    width: 132px;
+    border-radius: 14px;
+}
+.pl-lv-logo .plate-name {
+    font-size: 20px;
+}
+.pl-lv-name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--pc-text);
+}
+.pl-lv-zap {
+    flex: none;
+    padding: 2px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    font-size: 22px;
+    color: var(--pc-text-secondary);
+}
+.pl-lv-side {
+    flex: none;
+    padding-bottom: 6px;
+}
+#player.live-ui #pl-live,
+.pl-lv-behind {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 26px;
+    border-radius: 999px;
+    font-size: 28px;
+    font-weight: 700;
+}
+#player.live-ui #pl-live::before {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+}
+#player.live-ui #pl-live.hidden,
+.pl-lv-behind.hidden {
+    display: none;
+}
+.pl-lv-behind {
+    background: rgba(255, 255, 255, 0.14);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Now and Next under the channel: the programme's title large, its times
+   and minutes left under it; Next and the description small. */
+#player.live-ui #pl-epg {
+    margin: 18px 0 0;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+#player.live-ui .pl-epg-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 16px;
+    margin: 0;
+}
+#player.live-ui .pl-epg-row:first-child .pl-epg-tag,
+#player.live-ui .pl-epg-bar {
+    display: none;
+}
+#player.live-ui .pl-epg-row:first-child .pl-epg-title {
+    order: -1;
+    flex-basis: 100%;
+    font-size: 54px;
+    font-weight: 700;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#player.live-ui .pl-epg-row:first-child :is(.pl-epg-time, .pl-epg-left) {
+    margin-top: 8px;
+    font-size: 28px;
+    color: var(--pc-text-secondary);
+}
+#player.live-ui .pl-epg-row + .pl-epg-row,
+#player.live-ui .pl-epg-desc + .pl-epg-row {
+    margin-top: 10px;
+    font-size: 24px;
+    color: var(--pc-text-secondary);
+}
+#player.live-ui .pl-epg-desc {
+    margin-top: 8px;
+    font-size: 24px;
+    color: var(--pc-text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* The programme bar: red up to now at live; behind live it turns the accent,
+   with a white knob where playback is and a red tick at live. */
+#player.live-ui .pl-lv-barbox {
+    display: block;
+    margin-top: 30px;
+}
+#player.live-ui .pl-lv-barbox.hidden {
+    display: none;
+}
+.pl-lv-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.18);
+}
+.pl-lv-barbox.focus .pl-lv-bar {
+    height: 16px;
+    border-radius: 8px;
+    box-shadow: 0 0 0 3px var(--pc-focus);
+}
+.pl-lv-buf,
+.pl-lv-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: inherit;
+}
+.pl-lv-buf {
+    background: rgba(255, 255, 255, 0.38);
+}
+.pl-lv-fill {
+    background: var(--pc-live);
+}
+.pl-lv-barbox.behind .pl-lv-fill {
+    background: var(--pc-accent);
+}
+.pl-lv-edge {
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+    width: 4px;
+    margin-left: -2px;
+    border-radius: 2px;
+    background: var(--pc-live);
+}
+.pl-lv-knob {
+    position: absolute;
+    top: 50%;
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.3);
+}
+.pl-lv-tip {
+    position: absolute;
+    bottom: 30px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: #fff;
+    color: #111;
+    font-size: 26px;
+    font-weight: 700;
+    white-space: nowrap;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+}
+.pl-lv-edge.hidden,
+.pl-lv-knob.hidden,
+.pl-lv-tip.hidden {
+    display: none;
+}
+.pl-lv-times {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 24px;
+    color: var(--pc-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* One row: ⏪ ⏸ ⏩ and LIVE on the left, Audio and Options on the right. */
+#player.live-ui #pl-transport {
+    gap: 22px;
+}
+#player.live-ui #pl-transport.hidden {
+    display: flex;
+}
+#player.live-ui #pl-buttons {
+    display: contents;
+}
+#player.live-ui .pl-btn[data-id='rewind'] {
+    -webkit-box-ordinal-group: 0;
+    order: -1;
+}
+#player.live-ui .pl-play {
+    width: 100px;
+    height: 100px;
+}
+.pl-round {
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+}
+#player.live-ui .pl-btn:not(.pl-round) {
+    height: 84px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.12);
+}
+#player.live-ui .pl-btn.focus {
+    background: var(--pc-accent-strong);
+    box-shadow: 0 0 0 4px var(--pc-focus);
+}
+#player.live-ui .pl-golive {
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    background: none;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+.pl-golive-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--pc-live);
+}
+#player.live-ui .pl-end {
+    margin-left: auto;
+}
+#player.live-ui:lang(ar) .pl-end,
+html[dir='rtl'] #player.live-ui .pl-end {
+    margin-left: 0;
+    margin-right: auto;
+}
+.pl-btn-note {
+    margin-left: 4px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--pc-text-secondary);
+}
+.pl-btn.focus .pl-btn-note {
+    color: inherit;
+}
+.pl-icon-rewind {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.4'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M11%206%205%2012l6%206M19%206l-6%206%206%206'%2F%3E%3C%2Fsvg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.4'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M11%206%205%2012l6%206M19%206l-6%206%206%206'%2F%3E%3C%2Fsvg%3E");
+}
+.pl-icon-forward {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.4'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'm13%206%206%206-6%206M5%206l6%206-6%206'%2F%3E%3C%2Fsvg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.4'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'm13%206%206%206-6%206M5%206l6%206-6%206'%2F%3E%3C%2Fsvg%3E");
+}
+/* The Options panel covers the right side: the controls step back. */
+#player.live-ui.menu-on .pl-dock {
+    visibility: hidden;
+}
+/* A channel without catch-up has nothing to pause. */
+#player.live-ui #pl-transport.hidden .pl-play {
+    display: none;
+}

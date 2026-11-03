@@ -366,3 +366,23 @@ test('a home-screen copy with its own storage stays paired, and an unpaired page
     await expect(fresh.locator('#code')).toBeHidden();
     expect(fresh.url()).toMatch(/#k=[0-9a-f]{64}$/);
 });
+
+test('a home-screen address with an old key keeps the pairing typed in later', async ({ page, browser }) => {
+    await boot(page);
+    // The icon was added before the TV forgot it (a reinstall): its address has an old key.
+    const icon = BASE + '/#k=' + 'a'.repeat(64);
+    const home = await (await browser.newContext()).newPage();
+    await home.goto(icon);
+    await expect(home.locator('#code')).toBeVisible();
+    await setting(page, 'Pair a phone');
+    await press(page, 'Enter');
+    await expect(page.locator('#remote-url')).toHaveText(/\/r\/[A-Z0-9]{6}$/);
+    await home.locator('#code').fill((await page.locator('#remote-url').innerText()).slice(-6));
+    await home.locator('#code-go').click();
+    await expect(home.locator('#linkText')).toHaveText('Connected');
+    // Opening the icon again starts from the same old address.
+    await home.goto('about:blank');
+    await home.goto(icon);
+    await expect(home.locator('#linkText')).toHaveText('Connected');
+    await expect(home.locator('#code')).toBeHidden();
+});

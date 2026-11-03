@@ -135,28 +135,34 @@
             poll();
         }).catch(function (error) { closed(error.message === 'limit' ? 'limit' : 'expired'); });
     }
-    function connect() {
-        var pair = /^#pair=([A-Za-z0-9]{6})$/.exec(location.hash);
-        var saved = /^#k=([0-9a-f]{64})$/.exec(location.hash);
-        try { key = localStorage.getItem('jotv-remote-key') || ''; }
-        catch (error) { key = ''; }
-        if (saved && saved[1] !== key) key = saved[1];
-        if (!pair) {
-            if (!key) return closed('forgotten');
-            remember();
-            return poll();
-        }
-        if (!key) return redeem(pair[1]);
-        // Scanning again must not leave an unreachable duplicate pairing behind.
+    // Try each known key until the TV accepts one. A home-screen icon always
+    // opens the address it was added with, whose key may be from an older
+    // pairing; a code typed in later is in storage. Scanning again must not
+    // leave an unreachable duplicate pairing behind.
+    function tryKeys(keys, none) {
+        if (!keys.length) { key = ''; return none(); }
+        key = keys[0];
         call('/events?since=-1').then(function (update) {
             remember();
             revision = update.revision;
             render(update.state);
             poll();
         }).catch(function (error) {
-            if (error.message === 'forgotten') { key = ''; return redeem(pair[1]); }
+            if (error.message === 'forgotten') return tryKeys(keys.slice(1), none);
             closed();
             setTimeout(connect, 1500);
+        });
+    }
+    function connect() {
+        var pair = /^#pair=([A-Za-z0-9]{6})$/.exec(location.hash);
+        var saved = /^#k=([0-9a-f]{64})$/.exec(location.hash);
+        var stored = '';
+        try { stored = localStorage.getItem('jotv-remote-key') || ''; }
+        catch (error) { stored = ''; }
+        var keys = [stored, saved ? saved[1] : ''].filter(function (each, index, list) { return each && list.indexOf(each) === index; });
+        tryKeys(keys, function () {
+            if (pair) return redeem(pair[1]);
+            closed('forgotten');
         });
     }
     var arrows = { up: 38, down: 40, left: 37, right: 39, ok: 13, back: 10009, info: 457 };

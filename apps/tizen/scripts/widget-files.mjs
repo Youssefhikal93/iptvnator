@@ -55,7 +55,14 @@ export function toTizenVersion(npmVersion) {
  * credentials is accepted.
  */
 export function renderAppConfig(backendUrl) {
-    const url = new URL(backendUrl);
+    let url;
+    try {
+        url = new URL(backendUrl);
+    } catch (error) {
+        if (!(error instanceof TypeError)) throw error;
+        // URL's native error includes its input, which can contain credentials.
+        throw new Error('backend URL must be http(s) without credentials');
+    }
     if (!/^https?:$/.test(url.protocol) || url.username || url.password) {
         throw new Error('backend URL must be http(s) without credentials');
     }

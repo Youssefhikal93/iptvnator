@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { runInNewContext } from 'node:vm';
+import { widgetBootReport } from './boot-report.mjs';
 import { inflateRawSync } from 'node:zlib';
 import { CSS_RULES, JS_RULES, scanText } from './compat-rules.mjs';
 import { createFakeM3u } from './fake-playlist.mjs';
@@ -52,7 +54,10 @@ test('committed config.xml has its own id, package, name and TV profile', async 
 
 test('web:build:tizen has no service worker, an index base and hash routing', async () => {
     const project = JSON.parse(
-        await readFile(new URL('../../web/project.json', import.meta.url), 'utf8')
+        await readFile(
+            new URL('../../web/project.json', import.meta.url),
+            'utf8'
+        )
     );
     const tizen = project.targets.build.configurations.tizen;
     assert.equal(tizen.serviceWorker, false);
@@ -66,7 +71,9 @@ test('web:build:tizen has no service worker, an index base and hash routing', as
         )
     );
     // Only the tizen configuration swaps the router location.
-    for (const [name, config] of Object.entries(project.targets.build.configurations)) {
+    for (const [name, config] of Object.entries(
+        project.targets.build.configurations
+    )) {
         if (name === 'tizen') continue;
         const replacements = JSON.stringify(config.fileReplacements ?? []);
         assert.doesNotMatch(replacements, /router-location/, name);
@@ -124,6 +131,16 @@ test('renderAppConfig sets only an http(s) backend without credentials', () => {
         /without credentials/
     );
     assert.throws(() => renderAppConfig('file:///etc'), /http\(s\)/);
+    assert.throws(
+        () => renderAppConfig('http://private-user:private-secret@'),
+        (error) => {
+            assert.doesNotMatch(
+                JSON.stringify(error) + error.message,
+                /private-user|private-secret/
+            );
+            return true;
+        }
+    );
 });
 
 test('scanText reports features newer than the baseline', () => {
@@ -141,5 +158,74 @@ test('scanText reports features newer than the baseline', () => {
     assert.equal(
         scanText('structuredClone(x);structuredClone(y)', JS_RULES)[0].count,
         2
+    );
+});
+
+test('file-origin boot fails for probe errors, capped readiness or missing rendering', () => {
+    const ready = {
+        screen: 'app-dashboard',
+        firstRender: 10,
+        appReadyCapped: false,
+        errors: [],
+    };
+    for (const [patch, fragment, consoleErrors, expected] of [
+        [{}, '#/workspace/dashboard', 0, true],
+        [{ errors: ['private error text'] }, '#/workspace/dashboard', 0, false],
+        [{ appReadyCapped: true }, '#/workspace/dashboard', 0, false],
+        [{ firstRender: null }, '#/workspace/dashboard', 0, false],
+        [{ screen: null }, '#/workspace/dashboard', 0, false],
+        [{}, '', 0, false],
+        [{}, '#/workspace/dashboard', 1, false],
+    ]) {
+        const report = widgetBootReport(
+            { ...ready, ...patch },
+            fragment,
+            consoleErrors
+        );
+        assert.equal(report.ok, expected);
+        assert.doesNotMatch(JSON.stringify(report), /private error text/);
+    }
+});
+
+test('startup diagnostics omit credentials, playlist URLs and arbitrary resource names', async () => {
+    const listeners = new Map();
+    const window = {
+        performance: { now: () => 0 },
+        addEventListener: (name, listener) => listeners.set(name, listener),
+    };
+    const probe = await readFile(
+        new URL('../src/tizen-startup-probe.js', import.meta.url),
+        'utf8'
+    );
+    runInNewContext(probe, {
+        window,
+        navigator: { userAgent: '' },
+        document: {
+            addEventListener() {
+                // Keep startup pending while dispatching errors at the browser boundary.
+            },
+        },
+    });
+    listeners.get('error')({
+        target: window,
+        message: 'password=private-secret',
+    });
+    listeners.get('unhandledrejection')({
+        reason: new Error('username=private-user'),
+    });
+    for (const src of [
+        'http://provider.invalid/live/user/secret',
+        'https://provider.invalid/chunk-ABC123.js?password=secret',
+    ]) {
+        listeners.get('error')({ target: { tagName: 'SCRIPT', src } });
+    }
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(window.__TIZEN_STARTUP__.errors)),
+        [
+            'script error (details omitted)',
+            'unhandled rejection (details omitted)',
+            'resource load failed (details omitted)',
+            'resource load failed (details omitted)',
+        ]
     );
 });

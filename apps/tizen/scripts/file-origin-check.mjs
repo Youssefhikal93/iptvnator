@@ -10,6 +10,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
+import { widgetBootReport } from './boot-report.mjs';
 
 const { values } = parseArgs({
     options: { widget: { type: 'string', default: 'dist/apps/tizen/widget' } },
@@ -24,10 +25,9 @@ try {
         viewport: { width: 1920, height: 1080 },
     });
     await page.route(/^(?:https?|wss?):/, (route) => route.abort());
-    const consoleErrors = [];
+    let consoleErrorCount = 0;
     page.on('console', (message) => {
-        if (message.type() === 'error')
-            consoleErrors.push(message.text().slice(0, 160));
+        if (message.type() === 'error') consoleErrorCount += 1;
     });
     await page.goto(index);
     await page.waitForFunction(
@@ -38,19 +38,14 @@ try {
         }
     );
     const probe = await page.evaluate(() => window.__TIZEN_STARTUP__);
-    const report = {
-        screen: probe.screen,
-        fragmentRoute: new URL(page.url()).hash,
-        probeErrors: probe.errors,
-        consoleErrors,
-    };
+    const report = widgetBootReport(
+        probe,
+        new URL(page.url()).hash,
+        consoleErrorCount
+    );
     console.log(JSON.stringify(report, null, 2));
-    const ok =
-        probe.screen &&
-        report.fragmentRoute.startsWith('#/') &&
-        consoleErrors.length === 0;
-    console.log(ok ? 'file:// boot ok' : 'file:// boot FAILED');
-    process.exitCode = ok ? 0 : 1;
+    console.log(report.ok ? 'file:// boot ok' : 'file:// boot FAILED');
+    process.exitCode = report.ok ? 0 : 1;
 } finally {
     await browser.close();
 }

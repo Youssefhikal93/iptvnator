@@ -18,8 +18,8 @@
  *                the last change. Capped at CAP_MS.
  *
  * It never records URLs, query strings, playlist data or credentials:
- * failed resources are reported by file name only, error messages have
- * anything URL-like removed.
+ * resource names and free-form error messages are omitted because they can
+ * contain provider credentials or playlist URLs.
  *
  * Results: console line "[tizen-startup] {json}", window.__TIZEN_STARTUP__,
  * the last five runs in localStorage "iptvnator-tizen-startup", and a small
@@ -64,18 +64,6 @@
         return match ? match[1] : null;
     }
 
-    function clean(text) {
-        return String(text || '')
-            .replace(/[a-z][a-z0-9+.-]*:\/\/\S*/gi, '<url>')
-            .replace(/\?\S*/g, '')
-            .slice(0, 160);
-    }
-
-    function fileName(src) {
-        var path = String(src || '').split(/[?#]/)[0];
-        return path.substring(path.lastIndexOf('/') + 1).slice(0, 80);
-    }
-
     function addError(text) {
         if (result.errors.length < 5) result.errors.push(text);
     }
@@ -85,24 +73,15 @@
         function (event) {
             var target = event.target;
             if (target && target !== window && target.tagName) {
-                addError(
-                    'load failed: ' +
-                        target.tagName.toLowerCase() +
-                        ' ' +
-                        fileName(target.src || target.href)
-                );
+                addError('resource load failed (details omitted)');
             } else {
-                addError('error: ' + clean(event.message));
+                addError('script error (details omitted)');
             }
         },
         true
     );
-    window.addEventListener('unhandledrejection', function (event) {
-        var reason = event.reason;
-        addError(
-            'rejection: ' +
-                clean(reason && reason.message ? reason.message : reason)
-        );
+    window.addEventListener('unhandledrejection', function () {
+        addError('unhandled rejection (details omitted)');
     });
 
     if (window.PerformanceObserver) {

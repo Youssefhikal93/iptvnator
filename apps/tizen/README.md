@@ -4,13 +4,13 @@ Phase 0 (feasibility) of issue #18: the real IPTVnator web build, wrapped as a
 Samsung Tizen web app (`.wgt`) that installs **next to** Jo-TV with its own
 id. Nothing here changes the web, PWA or Electron apps.
 
-| | |
-| --- | --- |
-| App name | IPTVnator |
-| Package / app id | `IPTVnSmTV` / `IPTVnSmTV.IPTVnator` (Jo-TV is `IPTVnTVApp`) |
-| Profile, minimum platform | `tv-samsung`, `required_version="7.0"` (2023 TVs) |
-| Privileges | `internet`, `tv.inputdevice`; `<access origin="*">` so providers can be reached directly |
-| Icon | `apps/web/src/assets/icons/favicon.512x512.png` (the app icon) |
+|                           |                                                                                          |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| App name                  | IPTVnator                                                                                |
+| Package / app id          | `IPTVnSmTV` / `IPTVnSmTV.IPTVnator` (Jo-TV is `IPTVnTVApp`)                              |
+| Profile, minimum platform | `tv-samsung`, `required_version="7.0"` (2023 TVs)                                        |
+| Privileges                | `internet`, `tv.inputdevice`; `<access origin="*">` so providers can be reached directly |
+| Icon                      | `apps/web/src/assets/icons/favicon.512x512.png` (the app icon)                           |
 
 ## How the wrapper works
 
@@ -20,7 +20,8 @@ id. Nothing here changes the web, PWA or Electron apps.
    (`router-location.providers.tizen.ts` replaces
    `router-location.providers.ts`). A widget runs from a `file:` origin,
    where `history.replaceState` rejects path changes; `index.html#/route`
-   keeps the document path. Other builds are unchanged.
+   keeps the document path. Nx caches the configuration's own output directory;
+   other builds are unchanged.
 2. `tizen:wrap` copies that output to `dist/apps/tizen/widget`, removes any
    service-worker files, adds `config.xml` (version from `package.json`) and
    `icon.png`, and injects the startup and scroll probes as the first
@@ -97,8 +98,8 @@ even when the engine cannot run the app). Times are from navigation start:
 - **first render**: Angular has bootstrapped and replaced the splash.
 - **ready**: the first screen (dashboard, playlist...) is in the DOM and
   nothing changed for 1 s. This is the go/no-go number (8 s or less).
-- **heap**: used JS heap at ready; **errors**: failed scripts by file name
-  and error messages with URLs removed. It never logs URLs or credentials.
+- **heap**: used JS heap at ready; **errors**: resource, script and rejection
+  counts with details omitted. It never logs URLs or credentials.
 
 Ways to read it:
 
@@ -107,7 +108,7 @@ Ways to read it:
    heap, error count. Photograph it.
 2. **Web Inspector** (when the TV allows debugging): `tizen run` is not
    enough; start with `C:\tizen-studio\tools\sdb.exe -s <TV-IP>:26101 shell 0
-   debug IPTVnSmTV.IPTVnator`, forward the printed port
+debug IPTVnSmTV.IPTVnator`, forward the printed port
    (`sdb -s <TV-IP>:26101 forward tcp:<port> tcp:<port>`) and open
    `http://localhost:<port>` in Chrome. The console has the line
    `[tizen-startup] {...}` and `localStorage["iptvnator-tizen-startup"]`
@@ -174,29 +175,34 @@ not the GPU, memory or storage of a TV: a proxy, not the verdict. A 2023
 Samsung TV CPU is expected somewhere around the 4x-6x rows; the TV probes
 give the real numbers.
 
-| Measure | 1x | 4x | 6x |
-| --- | --- | --- | --- |
-| Cold start: first render (splash replaced) | 0.3-0.6 s | 1.0-1.5 s | 1.6-2.4 s |
-| Cold start: **ready** (dashboard settled) | 0.8-1.7 s | 3.7-6.5 s | **7.0-9.5 s** |
-| Start with the 12k playlist saved: ready (warm HTTP cache) | 0.5-0.6 s | 2.2-2.9 s | 4.1-5.2 s |
-| JS heap at ready (cold) | 17 MB | 17 MB | 17 MB |
-| Import 12k M3U file (parse + save + open list) | 0.6-0.7 s | 3.9-5.4 s | 6.8-10.3 s |
-| JS heap after import and scrolling | 40 MB | 68-69 MB | 68-69 MB |
-| Fling scroll: fps (longest frame) | 119 (17-33 ms) | 15-25 (92-142 ms) | 8-16 (142-234 ms) |
-| Remote pace, 1 row / 100 ms: fps (longest frame) | 119 (10-17 ms) | 82-105 (50-167 ms) | 67-89 (117-167 ms) |
-| Jump to end of list | 16 ms | 74-114 ms | 122-194 ms |
-| Freeze (frame gap 500 ms or more) | none | none | none |
-| Requests to other hosts | none | none | none |
+| Measure                                                    | 1x             | 4x                 | 6x                 |
+| ---------------------------------------------------------- | -------------- | ------------------ | ------------------ |
+| Cold start: first render (splash replaced)                 | 0.3-0.6 s      | 1.0-1.5 s          | 1.6-2.4 s          |
+| Cold start: **ready** (dashboard settled)                  | 0.8-1.7 s      | 3.7-6.5 s          | **7.0-9.5 s**      |
+| Start with the 12k playlist saved: ready (warm HTTP cache) | 0.5-0.6 s      | 2.2-2.9 s          | 4.1-5.2 s          |
+| JS heap at ready (cold)                                    | 17 MB          | 17 MB              | 17 MB              |
+| Import 12k M3U file (parse + save + open list)             | 0.6-0.7 s      | 3.9-5.4 s          | 6.8-10.3 s         |
+| JS heap after import and scrolling                         | 40 MB          | 68-69 MB           | 68-69 MB           |
+| Fling scroll: fps (longest frame)                          | 119 (17-33 ms) | 15-25 (92-142 ms)  | 8-16 (142-234 ms)  |
+| Remote pace, 1 row / 100 ms: fps (longest frame)           | 119 (10-17 ms) | 82-105 (50-167 ms) | 67-89 (117-167 ms) |
+| Jump to end of list                                        | 16 ms          | 74-114 ms          | 122-194 ms         |
+| Freeze (frame gap 500 ms or more)                          | none           | none               | none               |
+| Requests to other hosts                                    | none           | none               | none               |
 
-Bundle (production `web:build:tizen`, probes included):
+Post-rebase smoke (2026-11-03, Chrome 156, 1x): first render 389 ms, ready
+1,001 ms, saved-playlist ready 594 ms, import 747 ms; 12,000 rows, no freeze
+and no external requests. The historical 4x/6x ranges above were not rerun.
 
-| | Size |
-| --- | --- |
-| Initial path (`renderer.initialBytes`: index, scripts, styles, preloads, static imports) | 1,215,170 B (1.16 MB) |
-| JavaScript loaded during cold start | 5.5 MB in 45 files (largest: 2.9 MB shared chunk with the player engines, 0.8 MB, 0.3 MB `main`) |
-| All JavaScript | 7.66 MB in 146 files (2.11 MB gzip) |
-| CSS | 280 KB |
-| Widget / unsigned `.wgt` | 15.6 MB / 6.9 MB |
+Bundle remeasured 2026-11-03 (production `web:build:tizen`, probes included;
+MB/KB below use binary units):
+
+|                                                                                          | Size                                                                                             |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Initial path (`renderer.initialBytes`: index, scripts, styles, preloads, static imports) | 1,215,662 B (1.16 MB)                                                                            |
+| JavaScript loaded during cold start                                                      | 5.6 MB in 57 files (largest: 2.9 MB shared chunk with the player engines, 0.8 MB, 0.3 MB `main`) |
+| All JavaScript                                                                           | 7.84 MB in 179 files (2.17 MB gzip)                                                              |
+| CSS                                                                                      | 280 KB                                                                                           |
+| Widget / unsigned `.wgt`                                                                 | 15.93 MB / 7.03 MB                                                                               |
 
 Reading: startup is CPU-bound in parsing and compiling JavaScript, and
 grows almost linearly with throttling; at 6x it straddles the 8 s limit. A
@@ -205,10 +211,10 @@ scrolling at remote speed stays fluid. The 2.9 MB chunk on the startup path
 is the first thing to cut if the TV is slow (phase 5).
 
 `file-origin-check`: the widget boots from `file://` to the dashboard with
-the route in the fragment (`#/workspace/dashboard`) and no console errors.
-Importing the fake playlist by URL through a web-backend (the TV check
-above) was also run from `file://`: 12,000 rows, scroll probe ran, no
-freeze.
+the route in the fragment (`#/workspace/dashboard`), no probe or console
+errors and uncapped readiness. Before the rebase, importing the fake playlist
+by URL through a web-backend (the TV check above) was also run from `file://`:
+12,000 rows, scroll probe ran, no freeze.
 
 ## Blockers and work for phases 1-3
 
@@ -218,11 +224,13 @@ Found while building phase 0, roughly in the order they can stop the TV run:
    ships Chromium M94; Tizen OS upgrades ship a newer engine (the owner's
    Q60C reported Tizen 9.0 after updates). The badge prints the real engine.
    `tizen:compat-scan` lists what the current build uses that M94 lacks:
-   `color-mix()` in 749 places (Material 3 colours: wrong or missing colours),
-   container queries (51), `:has()` (29), `text-wrap` (17), cascade layers (7),
-   `AbortSignal.timeout` (7, source sync), `structuredClone` (2, one in the
-   playlists service on the startup path) and `Promise.withResolvers`
-   (shaka-player, feature-guarded polyfill: harmless). ES2022 syntax is fine.
+   `color-mix()` in 723 places (Material 3 colours: wrong or missing colours),
+   container queries (54), `:has()` (29), `text-wrap` (17), cascade layers (7),
+   dynamic viewport units (3), `AbortSignal.timeout` (7, source sync),
+   `structuredClone` (2, one in the playlists service on the startup path) and
+   `Promise.withResolvers`
+   (37, shaka-player supplies a feature-guarded polyfill). The scan covers
+   180 JS/CSS files; ES2022 syntax is fine.
    On M94 the JS gaps need polyfills (small) and the CSS needs a lowering
    step or overrides (large). On M108+ only `color-mix()`/`text-wrap` remain,
    on M120+ nothing material.
@@ -230,8 +238,8 @@ Found while building phase 0, roughly in the order they can stop the TV run:
    dynamic imports. Desktop Chromium refuses module scripts from `file://`
    unless file access from files is allowed (`file-origin-check` runs with
    it). Tizen's runtime is expected to allow it for packaged widgets, but
-   only the TV can confirm: if not, the badge shows `load failed: link
-   chunk-…` errors and `splash never removed`.
+   only the TV can confirm: if not, the badge reports resource/script errors
+   and `splash never removed`.
 3. **Routing on `file:`.** Fixed in phase 0: path routing threw
    `SecurityError` in `history.replaceState`; the tizen build uses hash
    routing and `<base href="index.html">`.

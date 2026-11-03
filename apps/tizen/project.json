@@ -38,7 +38,11 @@
             "cache": true,
             "inputs": [
                 "{projectRoot}/**/*",
-                { "externalDependencies": ["eslint"] }
+                "{workspaceRoot}/apps/web/project.json",
+                "sharedGlobals",
+                {
+                    "externalDependencies": ["eslint"]
+                }
             ],
             "command": "node --test apps/tizen/scripts/tizen-scripts.test.mjs"
         },

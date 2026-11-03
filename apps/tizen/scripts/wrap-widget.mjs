@@ -60,7 +60,7 @@ if (values['backend-url']) {
         path.join(out, 'assets/app-config.js'),
         renderAppConfig(values['backend-url'])
     );
-    console.log(`BACKEND_URL set to ${new URL(values['backend-url']).origin}`);
+    console.log('BACKEND_URL override configured');
 }
 
 console.log(`Tizen widget ready in ${path.relative(process.cwd(), out)}`);

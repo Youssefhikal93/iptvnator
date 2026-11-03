@@ -48,6 +48,16 @@ test('XMLTV timezone and viewer offset both shift absolute programme times', fun
     assert.ok(Number.isNaN(parser.time('not a time', 0)));
 });
 
+test('#96 channel icons survive streamed XML and entity decoding without using programme icons', function () {
+    var xml = '<tv><channel id="c1"><display-name>Sports</display-name><icon src="http://localhost:8262/icon.png?a=1&amp;b=2"/></channel>' +
+        programme(now, now + 3600000, 'Sports').replace('</programme>', '<icon src="http://localhost:8262/show.png"/></programme>') + '</tv>';
+    [1, 7, xml.length].forEach(function (size) {
+        var records = parse(xml, size);
+        assert.equal(records[0].record.icon, 'http://localhost:8262/icon.png?a=1&b=2');
+        assert.equal(records[1].record.icon, undefined);
+    });
+});
+
 test('XMLTV retains only programmes overlapping the three-hour/two-day window', function () {
     var from = now - 3 * 3600000;
     var to = now + 2 * 86400000;

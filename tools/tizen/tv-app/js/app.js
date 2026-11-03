@@ -82,6 +82,9 @@
             active: function () {
                 return preview.active();
             },
+            refresh: function () {
+                preview.refresh();
+            },
             stop: function () {
                 preview.stop();
             },

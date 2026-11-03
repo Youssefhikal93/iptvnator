@@ -10,11 +10,12 @@ window.LibraryAll = (function () {
         var merged = [];
         sources.forEach(function (source) {
             Library[kind](source.id, section).forEach(function (item) {
+                if (section === 'live' && window.ChannelEdits) item = ChannelEdits.original(item);
                 var entry = {};
                 Object.keys(item).forEach(function (key) { entry[key] = item[key]; });
                 entry.sourceId = source.id;
                 entry.sourceName = source.name;
-                merged.push(entry);
+                merged.push(section === 'live' && window.ChannelEdits ? ChannelEdits.view(source.id, entry) : entry);
             });
         });
         return merged;

@@ -27,6 +27,7 @@ window.Library = (function () {
     }
 
     function snapshot(item) {
+        if (window.ChannelEdits) item = ChannelEdits.original(item);
         var copy = {};
         FIELDS.forEach(function (field) {
             if (item[field] !== undefined && item[field] !== '') copy[field] = item[field];
@@ -42,13 +43,14 @@ window.Library = (function () {
     }
 
     function listOf(kind, sourceId, section) {
-        return read(PREFIX + kind + ':' + sourceId, {})[section] || [];
+        var list = read(PREFIX + kind + ':' + sourceId, {})[section] || [];
+        return section === 'live' && window.ChannelEdits ? ChannelEdits.list(sourceId, list) : list;
     }
 
     function save(kind, sourceId, section, list) {
         var key = PREFIX + kind + ':' + sourceId;
         var all = read(key, {});
-        all[section] = list;
+        all[section] = section === 'live' && window.ChannelEdits ? list.map(ChannelEdits.original) : list;
         write(key, all);
     }
 
@@ -73,14 +75,16 @@ window.Library = (function () {
             delete wanted[key];
             return true;
         });
-        return matched.concat(saved.filter(function (item) {
+        var list = matched.concat(saved.filter(function (item) {
             return wanted[keyOf(section, item)];
         }));
+        return section === 'live' && window.ChannelEdits ? ChannelEdits.list(sourceId, list) : list;
     }
 
     return {
         lastChannel: function (sourceId) {
-            return read(PREFIX + 'last-channel:' + sourceId, null);
+            var channel = read(PREFIX + 'last-channel:' + sourceId, null);
+            return channel && window.ChannelEdits ? ChannelEdits.view(sourceId, channel) : channel;
         },
         setLastChannel: function (sourceId, channel) {
             write(PREFIX + 'last-channel:' + sourceId, snapshot(channel));
@@ -88,13 +92,16 @@ window.Library = (function () {
         // The last channels watched for 10 s or more (#80), newest first.
         recentChannels: function (sourceId) {
             var saved = read(PREFIX + 'recent-channels:' + sourceId, []);
-            return Array.isArray(saved) ? saved : [];
+            var list = Array.isArray(saved) ? saved : [];
+            return window.ChannelEdits ? ChannelEdits.list(sourceId, list) : list;
         },
         addRecentChannel: function (sourceId, channel) {
             var entry = snapshot(channel);
             entry.watchedAt = Date.now();
             var list = without(Library.recentChannels(sourceId), 'live', entry);
-            write(PREFIX + 'recent-channels:' + sourceId, [entry].concat(list).slice(0, RECENT_CHANNELS_MAX));
+            write(PREFIX + 'recent-channels:' + sourceId, [entry].concat(list).slice(0, RECENT_CHANNELS_MAX).map(function (channel) {
+                return window.ChannelEdits ? ChannelEdits.original(channel) : channel;
+            }));
         },
         clearRecentChannels: function (sourceId) {
             write(PREFIX + 'recent-channels:' + sourceId, []);

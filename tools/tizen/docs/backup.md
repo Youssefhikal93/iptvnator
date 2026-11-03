@@ -111,6 +111,13 @@ library; Merge keeps existing orders and existing groups with the same ID,
 and adds incoming scopes/groups with different IDs. The checked backup write
 and rollback covers these records too. Desktop import ignores this extension.
 
+Each playlist also carries `tvState.channelEdits`, the active profile's
+`channel-edits:<sourceId>` record. Live channel keys use Xtream IDs or hashed
+M3U identities; values contain an optional name and artwork address. Replace
+restores these edits, and Merge keeps existing edits on conflicts. Older
+backups without the field clear edits on Replace and retain them on Merge.
+Full backup includes every profile's edits.
+
 ## Export transport
 
 Export first shows **Contains your passwords**, with Cancel focused, before

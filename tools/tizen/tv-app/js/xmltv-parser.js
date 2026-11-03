@@ -73,6 +73,7 @@ window.XmltvParser = (function () {
             var a = attrs(value);
             if (name === 'channel') record = { id: a.id, names: [] };
             if (name === 'programme') record = { channel: a.channel, start: time(a.start, options.offset), end: time(a.stop, options.offset), title: '', desc: '' };
+            if (record && stack[stack.length - 2] === 'channel' && name === 'icon' && !record.icon) record.icon = a.src;
             if (record && /^(display-name|title|desc)$/.test(name)) { field = name; text = ''; }
             if (/\/\s*>$/.test(value)) close(name);
         }
@@ -182,6 +183,7 @@ window.XmltvParser = (function () {
     }
 
     function match(channel, index) {
+        if (window.ChannelEdits) channel = ChannelEdits.original(channel);
         var id = String(channel.epg_channel_id || channel.tvg_id || '').toLowerCase();
         if (Object.prototype.hasOwnProperty.call(index.ids, id)) return index.ids[id];
         var name = normalName(channel.name);

@@ -79,7 +79,7 @@ window.ProfileDialog = (function () {
             input = el('input');
             input.type = 'text';
             input.id = 'profile-name';
-            input.maxLength = 20;
+            input.maxLength = opts.maxLength || 20;
             input.autocomplete = 'off';
             input.setAttribute('aria-label', opts.inputLabel || I18n.t('profile.name'));
             input.value = opts.value;

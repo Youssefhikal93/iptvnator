@@ -111,6 +111,7 @@ window.LivePreview = function (hooks) {
     }
 
     return {
+        refresh: refresh,
         stop: stop,
         active: function () {
             return s.shown;

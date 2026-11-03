@@ -7,6 +7,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 ## What's new
 
 - Live TV has its own player: the channel, the programme, a LIVE badge and one programme bar, with the buttons in one row. Catch-up channels can pause live TV, resume behind live and rewind; their Catch-up label appears in the lists and in the channel list while watching (#97).
+- Hold OK on a live channel → Edit channel to change its name or choose a logo from your guide or another copy in the source. Reset to provider's clears both (#96).
 - The toolbar shares the list title row, so lists start under the menu and show more rows; the next row peeks in, dimmed. Search is an icon beside View and Sort and searches the category in use; Search in the menu does the same. Picture avatars show whole, with no disc; focus outlines the picture (#95).
 - The side menu stays slim until focused, then opens over the page with names beside the icons; Arabic mirrors it. Picture avatars have clear backgrounds and letter avatars follow the accent. Confirmation dialogs dim the page and use readable destructive pills. Settings starts with Playback, and Mark watched precedes removal actions (#95).
 - Rounded controls across Jotv use filled accent focus with a gentle lift. Profiles have an avatar card and action pills; paired phones have separate Rename and Forget pills. The logo screen saver moves more slowly (#95).
@@ -44,6 +45,10 @@ In the Live TV List view, press OK on a channel to play it beside the list, then
 ### Recent channels (#80)
 
 Live TV → Recent channels lists channels you watched for at least 10 seconds, newest first. It also appears among the categories in the channel list while watching. To empty it, hold OK on a channel inside Recent channels and choose Clear recent channels.
+
+### Edit a channel (#96)
+
+Hold OK on a live channel → Edit channel → Name or Logo. Name uses the TV keyboard or your paired phone; Logo offers matched guide icons and other copies in the same source. Changes belong to this profile and source account, appear wherever the channel is shown and travel with backups and Export. Search finds either name. Reset to provider's clears both.
 
 ### Your own live groups and channel order (#76)
 

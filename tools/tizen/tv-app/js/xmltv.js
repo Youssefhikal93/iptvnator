@@ -28,7 +28,7 @@ window.XmltvGuide = (function () {
         var source = job.source;
         var generation = Date.now() + '-' + Math.random();
         // labels: each channel's id as written and its first name, for choosing one by hand (#90).
-        var index = { ids: Object.create(null), names: Object.create(null), labels: Object.create(null) };
+        var index = { ids: Object.create(null), names: Object.create(null), labels: Object.create(null), icons: Object.create(null) };
         var rows = [];
         var channels = 0;
         var programmes = 0;
@@ -38,6 +38,7 @@ window.XmltvGuide = (function () {
             if (kind === 'channel') {
                 var id = record.id.toLowerCase();
                 index.ids[id] = id;
+                if (record.icon && window.ChannelEdits && ChannelEdits.image(record.icon)) index.icons[id] = record.icon;
                 if (!index.labels[id]) index.labels[id] = [record.id, record.names[0] || ''];
                 record.names.forEach(function (name) {
                     var key = XmltvParser.normalName(name);
@@ -80,7 +81,7 @@ window.XmltvGuide = (function () {
             published = true;
             if (job.cancelled) return;
             revisions[source.id] = (revisions[source.id] || 0) + 1;
-            notify(source.id, { updatedAt: Date.now(), state: 'ready', channels: channels, programmes: programmes, nameRules: XmltvParser.NAME_RULES });
+            notify(source.id, { updatedAt: Date.now(), state: 'ready', channels: channels, programmes: programmes, nameRules: XmltvParser.NAME_RULES, icons: true });
         }).catch(function () {
             if (job.reader) job.reader.cancel().catch(function () {});
             if (job.cancelled) return;
@@ -154,7 +155,7 @@ window.XmltvGuide = (function () {
     guide.ensure = function (source) {
         var saved = status(source.id);
         var last = Math.max(saved.updatedAt || 0, saved.failedAt || 0);
-        var oldNames = saved.state === 'ready' && saved.nameRules !== XmltvParser.NAME_RULES;
+        var oldNames = saved.state === 'ready' && (saved.nameRules !== XmltvParser.NAME_RULES || !saved.icons);
         if (source.epgUrl && (oldNames || Date.now() - last >= FRESH)) refresh(source);
     };
     // Something that changes which programmes a channel gets, such as a

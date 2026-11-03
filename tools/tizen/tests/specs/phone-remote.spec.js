@@ -1,4 +1,4 @@
-const { test, expect, boot, setting, press, back, openFirst, playing } = require('./helpers');
+const { test, expect, boot, setting, press, back, openFirst, playing, section, enterItems, holdOK, moveTo } = require('./helpers');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -206,6 +206,26 @@ test('TV text fields open phone entry; theme accent and Arabic follow TV setting
     await expect(phone.locator('html')).toHaveAttribute('data-accent', 'saffron');
     await expect(phone.locator('.dpad .down')).toHaveAttribute('aria-label', await page.evaluate(() => I18n.t('remote.down')));
     expect(await phone.locator('.dpad').evaluate(node => getComputedStyle(node.parentElement).direction)).toBe('ltr');
+});
+
+test('#96 the channel name dialog accepts phone text beyond profile-name length', async ({ page, context }) => {
+    const phone = await pair(page, context);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await holdOK(page);
+    await moveTo(page, '#menu .focused', 'Edit channel');
+    await press(page, 'Enter');
+    await press(page, 'Enter');
+    await expect(phone.locator('#text')).toHaveValue('Channel 1 (cat all)');
+    const name = 'Weekend sports with the family';
+    await phone.locator('#text').fill(name);
+    await expect(page.locator('#profile-name')).toHaveValue(name);
+    await press(page, 'ArrowDown');
+    await press(page, 'Enter');
+    await expect(page.locator('#items .focused .label')).toContainText(name);
+    await page.reload();
+    await section(page, 'Live TV');
+    await expect(page.locator('#items')).toContainText(name);
 });
 
 test('rename and Forget in Settings revoke a phone immediately', async ({ page, context }) => {

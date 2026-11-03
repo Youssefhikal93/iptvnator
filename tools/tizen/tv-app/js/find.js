@@ -36,7 +36,9 @@ window.Find.rank = (list, section, query, max) => {
     const contains = [];
     const genre = [];
     list.forEach((item) => {
-        const at = String(item.name || '').toLowerCase().indexOf(needle);
+        const provider = section === 'live' && window.ChannelEdits ? ChannelEdits.original(item) : item;
+        const matches = [item.name, provider.name].map(name => String(name || '').toLowerCase().indexOf(needle)).filter(at => at >= 0);
+        const at = matches.length ? Math.min.apply(null, matches) : -1;
         if (at === 0) starts.push(item);
         else if (at > 0) contains.push(item);
         else if (Genres.matches(item, section, query)) genre.push(item);

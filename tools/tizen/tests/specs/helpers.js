@@ -7,6 +7,7 @@ const { test: base, expect } = require('@playwright/test');
 const test = base.extend({
     page: async ({ page, request }, use) => {
         await request.get('/__fail');
+        await page.route(url => !['localhost', '127.0.0.1'].includes(url.hostname), route => route.abort());
         await page.addInitScript(() => { window.__storedCheck = true; });
         try {
             await use(page);

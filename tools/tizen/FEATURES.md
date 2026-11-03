@@ -48,7 +48,7 @@ Live TV → Recent channels lists channels you watched for at least 10 seconds, 
 
 ### Edit a channel (#96)
 
-Hold OK on a live channel → Edit channel → Name or Logo. Name uses the TV keyboard or your paired phone; Logo offers matched guide icons and other copies in the same source. Changes belong to this profile and source account, appear wherever the channel is shown and travel with backups and Export. Search finds either name. Reset to provider's clears both.
+Hold OK on a live channel → Edit channel → Name or Logo. Name uses the TV keyboard or your paired phone; Logo offers logos of channels with the same main name, from the guide and the source, the same channel first (beIN 1 finds UK| beIN Sports 1 4K HEVC; numbers must agree). It searches by the provider's name, also after a rename. Changes belong to this profile and source account, appear wherever the channel is shown and travel with backups and Export. Search finds either name. Reset to provider's clears both.
 
 ### Your own live groups and channel order (#76)
 

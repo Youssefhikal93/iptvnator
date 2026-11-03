@@ -141,9 +141,10 @@ window.XmltvStore = (function () {
             return manifest(source.id).then(function (saved) {
                 if (!saved) return [];
                 var labels = saved.index.labels || {};
+                var icons = saved.index.icons || {};
                 return Object.keys(saved.index.ids).map(function (id) {
                     var label = labels[id] || [id, ''];
-                    return { id: id, label: label[0], name: label[1] };
+                    return { id: id, label: label[0], name: label[1], icon: icons[id] || null };
                 });
             });
         },

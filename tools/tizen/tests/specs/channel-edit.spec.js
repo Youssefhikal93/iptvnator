@@ -61,9 +61,9 @@ test('#96 remote editor chooses guide/copy artwork, persists, searches either na
     await rename(page, null);
     await editor(page);
     await menuChoice(page, 'Logo');
-    await expect(page.locator('#menu .menu-row .menu-label')).toContainText(['Guide 1 logo', 'UK| SKY SPORTS MAIN EVENT HD', 'Cancel']);
-    await expect(page.locator('#menu .channel-edit-logo')).toHaveCount(2);
-    await expect(page.locator('#menu')).not.toContainText('US|');
+    // The same channel first; the same name from another country after it.
+    await expect(page.locator('#menu .menu-row .menu-label')).toContainText(['Guide 1 logo', 'UK| SKY SPORTS MAIN EVENT HD', 'US| SKY SPORTS MAIN EVENT HD', 'Cancel']);
+    await expect(page.locator('#menu .channel-edit-logo')).toHaveCount(3);
     await menuChoice(page, 'UK| SKY SPORTS MAIN EVENT HD');
     await expect(page.locator('#items .focused img').first()).toHaveAttribute('src', baseURL + '/img/backdrop.jpg');
     await editor(page);

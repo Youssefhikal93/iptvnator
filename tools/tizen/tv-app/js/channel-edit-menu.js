@@ -14,14 +14,18 @@ window.ChannelEditMenu = function (hooks) {
         hooks.catalogue(source).then(function (catalogue) {
             // Old favorites/recents lack guide IDs; match the current provider row.
             var provider = catalogue.filter(function (copy) { return ChannelEdits.keyOf(copy) === ChannelEdits.keyOf(channel); })[0] || channel;
+            // Each guide's logo for this channel, then its channels of a similar name.
             return Promise.all(GuideLinks.links(source).map(function (link) {
-                return XmltvStore.icon(link, ChannelEdits.original(provider)).then(function (icon) {
-                    return icon ? { label: I18n.t('channelEdit.guideLogo', { n: link.n }), logo: icon } : null;
+                return Promise.all([XmltvStore.icon(link, ChannelEdits.original(provider)), XmltvStore.channels(link)]).then(function (got) {
+                    var rows = got[0] ? [{ label: I18n.t('channelEdit.guideLogo', { n: link.n }), logo: got[0] }] : [];
+                    return rows.concat(got[1].filter(function (entry) {
+                        return entry.icon && ChannelEdits.matches(provider, entry.name || entry.label);
+                    }).slice(0, ChannelEdits.LOGOS_MAX).map(function (entry) { return { label: entry.name || entry.label, logo: entry.icon }; }));
                 });
-            })).then(function (icons) { return [catalogue, icons, provider]; });
+            })).then(function (icons) { return [catalogue, [].concat.apply([], icons), provider]; });
         }).then(function (found) {
             if (!active()) return;
-            var choices = found[1].filter(Boolean).concat(ChannelEdits.copies(found[2], found[0]).map(function (copy) {
+            var choices = found[1].concat(ChannelEdits.copies(found[2], found[0]).map(function (copy) {
                 return { label: copy.name, logo: copy.stream_icon || copy.logo };
             }));
             var seen = Object.create(null);

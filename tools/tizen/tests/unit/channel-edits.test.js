@@ -66,6 +66,29 @@ test('#96 channel copies ignore quality and RAW decorations but retain country, 
     assert.equal(g.ChannelEdits.copies({ name: 'Sport 1 HD', stream_id: 1 }, [{ name: 'Sport 2 HD', stream_id: 2, stream_icon: logo }]).length, 0);
 });
 
+test('#96 logos come from channels of the same main name: same channel first, then same country; numbers must agree', function () {
+    var g = app().globals;
+    var art = function (name) { return 'http://localhost:8262/img/' + name + '.jpg'; };
+    var bein = { stream_id: 1, name: 'UK| beIN Sports 1 HD', stream_icon: art('own') };
+    var catalogue = [
+        { stream_id: 5, name: 'beIN 1', stream_icon: art('d') },
+        { stream_id: 3, name: 'AR| beIN Sports 1 HD', stream_icon: art('b') },
+        { stream_id: 4, name: 'UK| beIN Sport 1', stream_icon: art('c') },
+        { stream_id: 2, name: 'UK| BEIN SPORTS 1 4K HEVC', stream_icon: art('a') },
+        { stream_id: 8, name: 'UK| beIN Sports 1 FHD', stream_icon: art('a') },
+        { stream_id: 6, name: 'UK| beIN Sports 2 HD', stream_icon: art('e') },
+        { stream_id: 7, name: 'UK| Sky Sports 1', stream_icon: art('f') },
+    ];
+    var ids = function (list) { return Array.from(list, function (channel) { return channel.stream_id; }); };
+    // A renamed channel still searches by the provider's name.
+    g.ChannelEdits.save('s1', bein, { name: 'Football' });
+    assert.deepEqual(ids(g.ChannelEdits.copies(g.ChannelEdits.view('s1', bein), catalogue)), [2, 4, 5, 3]);
+    assert.deepEqual(ids(g.ChannelEdits.copies({ stream_id: 9, name: 'beIN Sport HD' }, catalogue)), [5, 3, 4, 2, 6]);
+    assert.equal(g.ChannelEdits.matches(bein, 'beIN SPORTS 1.qa'), true);
+    assert.equal(g.ChannelEdits.matches(bein, 'beIN SPORTS 2.qa'), false);
+    assert.equal(g.ChannelEdits.matches(bein, 'Sky Sports 1'), false);
+});
+
 test('#96 search matches either name; guide and playback quality matching retain provider identity', function () {
     var g = app().globals;
     var channel = { stream_id: 1, name: 'Sports 1 HD' };

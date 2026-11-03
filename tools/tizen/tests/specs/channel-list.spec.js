@@ -39,7 +39,7 @@ test('channel drawer previews focus, switches on OK, recalls previous and return
     await expect(page.locator('#items .focused > .label')).toContainText('2. Channel 2 (cat all)');
 });
 
-test('◀ opens the channel drawer while the live controls are showing', async ({ page }) => {
+test('◀ opens the channel drawer from the first live button while the controls are showing', async ({ page }) => {
     await boot(page);
     await section(page, 'Live TV');
     await enterItems(page);
@@ -47,6 +47,10 @@ test('◀ opens the channel drawer while the live controls are showing', async (
     await playing(page);
     await press(page, 'Enter');
     await expect(page.locator('#pl-controls')).toBeVisible();
+    // Channel 1 has catch-up: ◀ first reaches ⏪, the row's first button (#97).
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('#pl-buttons .focus')).toHaveAttribute('data-id', 'rewind');
+    await expect(page.locator('#pl-channels')).toBeHidden();
     await press(page, 'ArrowLeft');
     await expect(page.locator('#pl-channels')).toBeVisible();
     await expect(page.locator('#pl-controls')).toBeHidden();

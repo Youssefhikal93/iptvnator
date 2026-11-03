@@ -172,7 +172,36 @@ window.Player = (function () {
         play: play,
         openMenu: openMenu,
         showControls: showControls,
+        behind: liveBehind,
     });
+
+    // The live info and programme bar (#97).
+    var liveView = PlayerLive({
+        current: function () {
+            return current;
+        },
+        behind: liveBehind,
+        clock: fmt,
+        programmes: function () {
+            return epg.programmes();
+        },
+        onBar: function () {
+            return series.onBar();
+        },
+    });
+
+    // How far behind live a catch-up channel plays, or 0 at live.
+    function liveBehind() {
+        if (!current) return 0;
+        if (livePauseAt !== null) return Math.max(0, Date.now() - livePauseAt);
+        if (current.liveTimeshift && current.catchUp) return Math.max(0, Date.now() - (current.catchUp.start + position()));
+        return 0;
+    }
+
+    // Now and Next belong to the live channel, also while a timeshift plays.
+    function guideOf(req) {
+        return req.liveTimeshift && req.returnTo ? req.returnTo : req;
+    }
 
     PlayerPicture.init({
         root: playerEl,
@@ -370,7 +399,8 @@ window.Player = (function () {
 
     // Live channels list their keys; movies and shows keep a plain bar.
     function hintHtml() {
-        if (!current.live) return [];
+        // The live player's buttons say what they do; its keys are in Help.
+        if (!current.live || liveView.applies(current)) return [];
         return [['OK', I18n.t('player.hint.info')], ['▲▼', I18n.t('player.hint.channel')], ['◀', I18n.t('player.hint.channelList')], ['PRE-CH / {green}', I18n.t('player.hint.previous')], [I18n.t('help.key.holdOk') + ' / {yellow}', I18n.t('player.hint.options')],
             ['Return', I18n.t(ui.controls.classList.contains('hidden') ? 'player.hint.close' : 'player.hide')]];
     }
@@ -388,6 +418,12 @@ window.Player = (function () {
     function render() {
         if (!current || !ready) return;
         var live = current.live;
+        var liveUi = liveView.applies(current);
+        playerEl.classList.toggle('live-ui', liveUi);
+        if (liveUi) {
+            if (!live) epg.render();
+            liveView.render();
+        }
         ui.seekbox.classList.toggle('live', live);
         ui.live.classList.toggle('hidden', !live || livePauseAt !== null);
         var paused = isPaused() || lostPaused;
@@ -780,7 +816,7 @@ window.Player = (function () {
         title: function () {
             if (menu.part === 'caught-up') return I18n.t('player.caughtUp');
             if (menu.part === 'settings') return I18n.t('rail.settings');
-            return I18n.t(current.live ? 'player.hint.options' : 'player.hint.audioSubs');
+            return I18n.t(current.live || liveView.applies(current) ? 'player.hint.options' : 'player.hint.audioSubs');
         },
         run: function (action) {
             try {
@@ -1333,7 +1369,7 @@ window.Player = (function () {
         hideControls();
         ui.title.textContent = req.live ? I18n.isolate(req.title) : req.title;
         ui.subtitle.textContent = req.subtitle || '';
-        epg.load(req);
+        epg.load(guideOf(req));
         if (!onAttempt) showStatus(heading(req) + '\n' + I18n.t('common.loadingEllipsis'), false);
 
         var attempts = req.sources.map(function (source) {
@@ -1356,7 +1392,7 @@ window.Player = (function () {
                 Log.error('PLAY FAIL ' + name + ' ' + req.title + ' (' + error + ') after ' + ms + 'ms');
                 release();
                 // release() also clears the now/next guide; the next player needs it again.
-                epg.load(req);
+                epg.load(guideOf(req));
             },
             giveUp: function (kind) {
                 // A chosen copy that does not play goes back to the one before (#94).
@@ -1469,17 +1505,22 @@ window.Player = (function () {
             nudge(code === KEY.REWIND ? -1 : 1);
             return true;
         }
-        if (current.live && current.liveReplay && code === KEY.ENTER && ui.controls.classList.contains('hidden')) {
+        var hidden = ui.controls.classList.contains('hidden');
+        if (current.live && code === KEY.ENTER && hidden) {
             showControls();
+            series.engage();
             return true;
         }
         // The first ◀ ▶ ▼ only brings the controls up, with play/pause focused.
+        // On live TV ◀ keeps opening the channel list and ▼ changes channel.
         var arrow = code === KEY.LEFT || code === KEY.RIGHT || code === KEY.DOWN;
-        if ((!live || (current.liveReplay && code === KEY.RIGHT)) && arrow && ui.controls.classList.contains('hidden')) {
+        if ((!live || code === KEY.RIGHT) && arrow && hidden) {
             showControls();
+            series.engage();
             return true;
         }
-        if ((!live || (current.liveReplay && !ui.controls.classList.contains('hidden'))) && series.key(code)) return true;
+        // With the controls up, live buttons take ◀ ▶ OK (#97).
+        if ((!live || !hidden) && series.key(code)) return true;
         var wantsMenu = code === KEY.YELLOW || code === KEY.INFO || (!live && code === KEY.UP);
         if (wantsMenu) {
             openMenu();
@@ -1541,9 +1582,13 @@ window.Player = (function () {
         preview: preview,
         fullscreen: fullscreen,
         key: key,
-        // From play/pause, Left still opens channels; action buttons keep their arrows.
+        // Blue (multi-view) and the phone's channel list work whatever the controls show.
+        canBrowseLive: function () {
+            return ready && current.live && !menu.open && !resume.open && ui.status.classList.contains('hidden');
+        },
+        // Left opens channels with the controls hidden or from the row's first button (#97).
         canOpenChannelList: function () {
-            return ready && current.live && (!current.liveReplay || (!series.busy() && !series.onBar())) && !menu.open && !resume.open && ui.status.classList.contains('hidden');
+            return ready && current.live && (ui.controls.classList.contains('hidden') || series.atStart()) && !menu.open && !resume.open && ui.status.classList.contains('hidden');
         },
         // Hold OK on live TV opens the menu (#89), when nothing else is open.
         canHoldMenu: function () {

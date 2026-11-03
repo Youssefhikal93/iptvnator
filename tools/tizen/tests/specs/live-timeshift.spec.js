@@ -49,7 +49,7 @@ test('#97 pause releases live, resumes the remembered minute, rewinds and return
     await sendKeyCode(page, 415);
     await playing(page);
     await playerMenu(page);
-    await expect(page.locator('.pl-menu-item.focus')).toHaveText('Back to live');
+    await moveTo(page, '.pl-menu-item.focus', 'Back to live');
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-live')).toBeVisible();
@@ -109,11 +109,13 @@ test('#97 hold OK offers Pause; Back to live works while paused and zapping clea
     await expect(page.locator('#pl-menu')).toBeHidden();
     await expect(page.locator('#pl-play')).toHaveAttribute('aria-label', 'Play');
     await expect(page.locator('#pl-live')).toBeHidden();
+    // The live row: ⏪ ⏸ ⏩, then LIVE while behind (#97).
     await press(page, 'ArrowRight');
-    await expect(page.locator('#pl-buttons .focus')).toHaveText('Rewind 1 min');
+    await expect(page.locator('#pl-buttons .focus')).toHaveAttribute('data-id', 'forward');
+    await expect(page.locator('#pl-buttons .focus')).toHaveAttribute('aria-label', 'Forward 1 min');
     await press(page, 'ArrowRight');
-    await press(page, 'ArrowRight');
-    await expect(page.locator('#pl-buttons .focus')).toHaveText('Back to live');
+    await expect(page.locator('#pl-buttons .focus')).toHaveAttribute('aria-label', 'Back to live');
+    await expect(page.locator('#pl-buttons .focus')).toHaveText('LIVE');
     await press(page, 'Enter');
     await playing(page);
     await sendKeyCode(page, 19);

@@ -63,7 +63,7 @@ function scene(settings, Hls) {
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js', 'key-help.js', 'player-help.js',
         'subtitle-file.js', 'subtitle-rank.js', 'open-timing.js', 'movie-hash.js', 'media-sniff.js', 'subtitle-store.js', 'subtitle-sync.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'playback-chain.js', 'player-tracks.js', 'player-reconnect.js',
-        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-picture.js', 'quality.js', 'player-quality.js', 'player-menu.js', 'zap-banner.js', 'stream-info.js', 'audio-choice.js', 'language-choice.js', 'remote-context.js', 'player-remote.js', 'player.js',
+        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-live.js', 'player-picture.js', 'quality.js', 'player-quality.js', 'player-menu.js', 'zap-banner.js', 'stream-info.js', 'audio-choice.js', 'language-choice.js', 'remote-context.js', 'player-remote.js', 'player.js',
     ], { 'iptvnator-tv:settings': JSON.stringify(settings || {}) }, {
         Hls: Hls,
         UI: uiSandbox.UI,
@@ -109,13 +109,13 @@ test('#37 Return hides movie, episode and live controls before allowing close, w
         if (kind === 'episode') request.episodes = { items: [{ label: 'Episode 1' }], index: 0 };
         await s.player.play(request, null);
         assert.equal(s.controls.classList.contains('hidden'), false);
-        // Live lists its keys; movies and shows keep a plain bar.
-        assert.ok(kind === 'live' ? s.hint.textContent.indexOf('ReturnHide') >= 0 : s.hint.textContent === '');
+        // Live has its own row of buttons (#97); no player lists keys under its bar.
+        assert.equal(s.hint.textContent, '');
         assert.equal(s.player.key(s.keys.RETURN, request.live), true);
         assert.equal(s.controls.classList.contains('hidden'), true);
         assert.equal(s.video.paused, false);
         assert.equal(s.player.isOpen(), true);
-        assert.ok(kind === 'live' ? s.hint.textContent.indexOf('ReturnClose') >= 0 : s.hint.textContent === '');
+        assert.equal(s.hint.textContent, '');
         assert.equal(s.player.key(s.keys.RETURN, request.live), false);
         s.player.key(s.keys.ENTER, request.live);
         assert.equal(s.controls.classList.contains('hidden'), false);

@@ -86,9 +86,29 @@ window.PlayerSeries = function (api) {
         return pos >= Math.max(0, mark.from - EARLY_MS) && pos < mark.to;
     }
 
+    // A live channel, or a catch-up channel played behind live (#97).
+    function liveUi(req) {
+        return !!req && (!!req.live || !!req.liveTimeshift);
+    }
+
+    // Live: ⏪ ⏸ ⏩ on catch-up channels, LIVE while behind, then Audio and Options.
+    function liveButtons(req) {
+        var list = [];
+        if (req.liveReplay) {
+            list.push({ id: 'rewind', label: I18n.t('player.rewindLive'), icon: 'rewind', round: true, run: function () { api.nudge(-1); } });
+            list.push({ id: 'play', play: true, run: function () { api.togglePause(); } });
+            list.push({ id: 'forward', label: I18n.t('player.forwardLive'), icon: 'forward', round: true, run: function () { api.nudge(1); } });
+            if (api.behind() > 0 && req.backToLive) list.push({ id: 'backToLive', label: I18n.t('player.live'), live: true, aria: I18n.t('player.backToLive'), run: req.backToLive });
+        }
+        list.push({ id: 'tracks', label: I18n.t('player.hint.audioSubs'), icon: 'subs', end: true, run: function () { api.openMenu('tracks'); } });
+        list.push({ id: 'options', label: I18n.t('player.hint.options'), icon: 'gear', note: I18n.t('help.key.holdOk'), run: function () { api.openMenu(); } });
+        return list;
+    }
+
     function buttons() {
         var req = api.current();
-        if (!req || (req.live && !req.liveReplay)) return [];
+        if (!req) return [];
+        if (liveUi(req)) return liveButtons(req);
         var list = [];
         list.push({ id: 'play', play: true, run: function () { api.togglePause(); } });
         if (req.liveReplay) {
@@ -304,20 +324,31 @@ window.PlayerSeries = function (api) {
 
     // ---- Button row -------------------------------------------------------
 
+    // Where focus rests: play/pause when there is one, otherwise the first button.
+    function home() {
+        var list = buttons();
+        return !list.length || list.some(function (button) { return button.play; }) ? 'play' : list[0].id;
+    }
+
     function renderButtons() {
         var list = buttons();
         // Skip intro left the screen while focused: back to the timeline.
         if (s.focus === 'skip' && !skipShown()) s.focus = 'bar';
-        if (s.focus !== 'bar' && s.focus !== 'skip' && !list.some(function (button) { return button.id === s.focus; })) s.focus = 'play';
+        if (s.focus !== 'bar' && s.focus !== 'skip' && !list.some(function (button) { return button.id === s.focus; })) s.focus = home();
         ui.buttons.textContent = '';
         list.forEach(function (button) {
             // Play/pause is the circle before the row.
             if (button.play) return;
-            var node = el('span', 'pl-btn' + (button.gear ? ' pl-gear' : '') + (button.id === s.focus ? ' focus' : ''));
+            var node = el('span', 'pl-btn' + (button.gear ? ' pl-gear' : '') + (button.round ? ' pl-round' : '') + (button.live ? ' pl-golive' : '') +
+                (button.end ? ' pl-end' : '') + (button.id === s.focus ? ' focus' : ''));
+            node.setAttribute('data-id', button.id);
             if (button.icon) node.appendChild(el('span', 'pl-icon pl-icon-' + button.icon));
-            // The gear shows only its icon; its name is for screen readers.
-            if (button.gear) node.setAttribute('aria-label', button.label);
+            if (button.live) node.appendChild(el('span', 'pl-golive-dot'));
+            // The gear and the round buttons show only their icon; the name is for screen readers.
+            if (button.gear || button.round) node.setAttribute('aria-label', button.label);
             else node.appendChild(document.createTextNode(button.label));
+            if (button.aria) node.setAttribute('aria-label', button.aria);
+            if (button.note) node.appendChild(el('small', 'pl-btn-note', button.note));
             ui.buttons.appendChild(node);
         });
     }
@@ -334,6 +365,16 @@ window.PlayerSeries = function (api) {
             api.showControls();
             return true;
         }
+        // The live bar: ◀ ▶ move a minute, ▼ or Return go back to the buttons.
+        if (liveUi(api.current())) {
+            if (code === KEY.LEFT || code === KEY.RIGHT) api.nudge(code === KEY.LEFT ? -1 : 1);
+            else if (code === KEY.DOWN || Keys.isBack(code)) s.focus = 'play';
+            else if (code === KEY.ENTER) api.togglePause();
+            else if (code === KEY.UP) return api.openMenu(), true; // As on films: ▲ above the bar opens the menu.
+            else return false;
+            api.showControls();
+            return true;
+        }
         if (code === KEY.DOWN) s.focus = 'play';
         else if (code === KEY.UP && skipShown()) s.focus = 'skip';
         else return false;
@@ -342,19 +383,24 @@ window.PlayerSeries = function (api) {
     }
 
     function buttonsKey(code) {
+        s.engaged = true;
         var list = buttons();
         var at = Math.max(0, list.map(function (button) { return button.id; }).indexOf(s.focus));
         if (code === KEY.LEFT && at > 0) s.focus = list[at - 1].id;
         else if (code === KEY.RIGHT && at < list.length - 1) s.focus = list[at + 1].id;
         else if (code === KEY.UP) s.focus = 'bar';
         else if (code === KEY.ENTER) list[at].run();
+        else if (code === KEY.DOWN && liveUi(api.current())) return true; // Nothing below the live buttons.
         else if (code !== KEY.LEFT && code !== KEY.RIGHT && code !== KEY.DOWN) return false;
         api.showControls();
         return true;
     }
 
     function reset() {
+        // Pausing live releases the stream and resets the row; the viewer is still on it.
+        var engaged = s.engaged;
         s = fresh();
+        s.engaged = engaged;
         ui.panel.classList.add('hidden');
         ui.next.classList.add('hidden');
         ui.skip.classList.add('hidden');
@@ -367,10 +413,20 @@ window.PlayerSeries = function (api) {
         introEntries: introEntries,
         // Keeps the overlay up while the user is on a button or the panel.
         busy: function () {
-            return !!s.panel || (s.focus !== 'play' && s.focus !== 'bar');
+            return !!s.panel || (s.focus !== home() && s.focus !== 'bar');
         },
         onBar: function () {
             return s.focus === 'bar';
+        },
+        // Live: ◀ opens the channel list from the row's first button, or while
+        // the viewer has not turned to the buttons yet (controls shown on their own).
+        atStart: function () {
+            var list = buttons();
+            return !s.panel && !!list.length && (list[0].id === s.focus || (!s.engaged && s.focus === home()));
+        },
+        // The viewer brought the controls up with a key: arrows now move along the row.
+        engage: function () {
+            s.engaged = true;
         },
         // Called on every player tick and render.
         render: function (controlsOn) {
@@ -382,13 +438,16 @@ window.PlayerSeries = function (api) {
             renderUpNext();
         },
         onHide: function () {
-            s.focus = 'play';
+            s.engaged = false;
+            s.focus = home();
         },
         // Returns true when the key was consumed.
         key: function (code) {
             var req = api.current();
-            if (!req || (req.live && !req.liveReplay)) return false;
-            if (req.live && (code === KEY.UP || code === KEY.DOWN)) return false;
+            if (!req) return false;
+            // ▲▼ change channel, except once the viewer is on a catch-up channel's
+            // row: its bar sits above the buttons.
+            if (liveUi(req) && (!req.liveReplay || (req.live && !s.engaged && s.focus === home())) && (code === KEY.UP || code === KEY.DOWN)) return false;
             if (s.panel) return panelKey(code);
             if (upNextShown() && code === KEY.ENTER) return playNext(), true;
             if (upNextShown() && Keys.isBack(code)) {

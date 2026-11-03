@@ -1,14 +1,14 @@
 const { test, expect, playerMenu, teachIntro, boot, openFirst, press, playing, sendKeyCode, back, moveTo, playerGroup, section, enterItems } = require('./helpers');
 
 for (const [language, liveLabel, options] of [['en', 'Live TV', 'Options'], ['ar', 'تلفزيون مباشر', 'الخيارات']]) {
-    test('live menu and bottom hint say Options in ' + language, async ({ page }) => {
+    test('live menu and the Options button say Options in ' + language, async ({ page }) => {
         await boot(page, { storage: { settings: { language } } });
         await section(page, liveLabel);
         await expect(page.locator('#items .skeleton')).toHaveCount(0);
         await enterItems(page);
         await press(page, 'Enter');
         await playing(page);
-        await expect(page.locator('#pl-hint')).toContainText(options);
+        await expect(page.locator('#pl-buttons [data-id="options"]')).toContainText(options);
         await sendKeyCode(page, 405);
         await expect(page.locator('#pl-menu .pl-menu-title')).toHaveText(options);
         // Every action row above the groups has an icon, all in one column.

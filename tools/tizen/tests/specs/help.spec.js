@@ -109,10 +109,13 @@ test('on live TV, hold OK opens the menu with Previous channel and Help; a tap s
     await press(page, 'Enter');
     await expect(page.locator('#pl-controls')).toBeVisible();
     await expect(page.locator('#pl-menu')).toBeHidden();
-    await expect(page.locator('#pl-hint .key-dot-green')).toHaveCount(1);
-    await expect(page.locator('#pl-hint .key-dot-yellow')).toHaveCount(1);
-    await expect(page.locator('#pl-hint')).not.toContainText(/Yellow|Green/);
+    // The live row names Options and its Hold OK shortcut instead of a key list (#97).
+    await expect(page.locator('#pl-hint')).toBeHidden();
+    await expect(page.locator('#pl-buttons [data-id="options"]')).toContainText('Options');
+    await expect(page.locator('#pl-buttons [data-id="options"]')).toContainText('Hold OK');
     // Change channel, then go back to the first one from the menu, not with Green.
+    await back(page);
+    await expect(page.locator('#pl-controls')).toBeHidden();
     await press(page, 'ArrowUp');
     await playing(page);
     await expect(page.locator('#pl-title')).not.toContainText(first);

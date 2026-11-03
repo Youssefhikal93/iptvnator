@@ -2483,8 +2483,8 @@ window.Browser = function (hooks) {
         return state.catalogue.peek({ kind: 'movie', id: entry.item.stream_id });
     }
 
-    // Every tile is wide (#95): a title's backdrop when the app has one, else
-    // its poster, which Samsung fits into the wide box.
+    // Every tile is wide (#95) and shows the title's poster, which carries its
+    // name; a backdrop only when there is no poster.
     function tileOf(entry) {
         var item = entry.item;
         var show = item.show || item;
@@ -2497,7 +2497,7 @@ window.Browser = function (hooks) {
             key: Library.keyOf(entry.section, item),
             title: show.name || show.title || '',
             subtitle: [episode, left].filter(Boolean).join(' · '),
-            image: (d && d.backdrop) || show.stream_icon || show.cover || show.logo || '',
+            image: show.stream_icon || show.cover || (d && d.poster) || show.logo || (d && d.backdrop) || '',
         };
     }
 

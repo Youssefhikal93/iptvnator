@@ -309,6 +309,12 @@
         ],
         "tierB": [
             {
+                "name": "tizen",
+                "root": "apps/tizen",
+                "validationCommand": "pnpm nx test tizen",
+                "reason": "Phase 0 widget packaging, probes and local-server contracts use node:test; validate behavior without percentage coverage, like the packaging tooling."
+            },
+            {
                 "name": "tv",
                 "root": "apps/tv",
                 "validationCommand": "pnpm nx run tv:verify-build",

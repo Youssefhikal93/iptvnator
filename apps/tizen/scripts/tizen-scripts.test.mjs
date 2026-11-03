@@ -1,5 +1,8 @@
 import { strict as assert } from 'node:assert';
-import { readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { startLocalServer } from './local-server.mjs';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { widgetBootReport } from './boot-report.mjs';
@@ -44,7 +47,11 @@ test('committed config.xml has its own id, package, name and TV profile', async 
     );
     const xml = renderConfigXml(template, '0.25.0');
     assert.match(xml, /version="0\.25\.0"/);
-    assert.match(xml, /id="IPTVnSmTV\.IPTVnator" package="IPTVnSmTV"/);
+    const application = /<tizen:application\b[^>]*>/.exec(xml)[0];
+    const packageId = /\bpackage="([^"]+)"/.exec(application)[1];
+    const applicationId = /\bid="([^"]+)"/.exec(application)[1];
+    assert.match(packageId, /^[A-Za-z0-9]{10}$/);
+    assert.equal(applicationId, packageId + '.IPTVnator');
     assert.match(xml, /<name>IPTVnator<\/name>/);
     assert.match(xml, /<tizen:profile name="tv-samsung"\/>/);
     assert.match(xml, /privilege\/internet/);
@@ -228,4 +235,42 @@ test('startup diagnostics omit credentials, playlist URLs and arbitrary resource
             'resource load failed (details omitted)',
         ]
     );
+});
+
+async function localServerFixture(t) {
+    const directory = await mkdtemp(path.join(tmpdir(), 'tizen-local-server-'));
+    t.after(() => rm(directory, { recursive: true, force: true }));
+    const widget = path.join(directory, 'widget');
+    const privateDirectory = path.join(directory, 'widget-private');
+    await mkdir(widget);
+    await mkdir(privateDirectory);
+    await writeFile(path.join(widget, 'index.html'), 'widget home');
+    await writeFile(path.join(privateDirectory, 'x'), 'private sibling file');
+    const server = await startLocalServer(widget, { channels: 3 });
+    t.after(() => server.close());
+    return server.origin;
+}
+
+test('local server rejects encoded traversal to a sibling sharing the widget prefix', async (t) => {
+    const origin = await localServerFixture(t);
+    const escaped = await fetch(origin + '/..%2fwidget-private/x');
+    assert.equal(escaped.status, 403);
+    assert.doesNotMatch(await escaped.text(), /private sibling file/);
+    const home = await fetch(origin + '/');
+    assert.equal(home.status, 200);
+    assert.equal(await home.text(), 'widget home');
+});
+
+test('local server returns 400 for malformed encoding and keeps serving requests', async (t) => {
+    const origin = await localServerFixture(t);
+    for (const pathname of ['/%', '/%E0%A4%A']) {
+        const malformed = await fetch(origin + pathname, {
+            signal: AbortSignal.timeout(2000),
+        });
+        assert.equal(malformed.status, 400);
+        await malformed.text();
+    }
+    const home = await fetch(origin + '/');
+    assert.equal(home.status, 200);
+    assert.equal(await home.text(), 'widget home');
 });

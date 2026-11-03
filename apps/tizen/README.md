@@ -7,7 +7,7 @@ id. Nothing here changes the web, PWA or Electron apps.
 |                           |                                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------------- |
 | App name                  | IPTVnator                                                                                |
-| Package / app id          | `IPTVnSmTV` / `IPTVnSmTV.IPTVnator` (Jo-TV is `IPTVnTVApp`)                              |
+| Package / app id          | `IPTVnSamTV` / `IPTVnSamTV.IPTVnator` (Jo-TV is `IPTVnTVApp`)                            |
 | Profile, minimum platform | `tv-samsung`, `required_version="7.0"` (2023 TVs)                                        |
 | Privileges                | `internet`, `tv.inputdevice`; `<access origin="*">` so providers can be reached directly |
 | Icon                      | `apps/web/src/assets/icons/favicon.512x512.png` (the app icon)                           |
@@ -72,7 +72,7 @@ branch). The same profile signs this app; no new certificate is needed.
 
 The script runs `tizen:wrap`, signs a copy in `%TEMP%\iptvnator-samsungtv`
 (`tizen package -t wgt -s <profile>`), then `sdb connect`, `tizen install`
-and `tizen run -p IPTVnSmTV.IPTVnator`. Reinstalling the same package keeps
+and `tizen run -p IPTVnSamTV.IPTVnator`. Reinstalling the same package keeps
 the app's data. Nothing is committed: no certificates, no `.wgt`.
 
 By hand, the same steps are:
@@ -87,7 +87,7 @@ Get-ChildItem $build -Filter *.wgt | Rename-Item -NewName iptvnator-samsungtv.wg
 C:\tizen-studio\tools\sdb.exe connect <TV-IP>:26101
 cd $build
 C:\tizen-studio\tools\ide\bin\tizen.bat install -n iptvnator-samsungtv.wgt -s <TV-IP>:26101 -- .
-C:\tizen-studio\tools\ide\bin\tizen.bat run -p IPTVnSmTV.IPTVnator -s <TV-IP>:26101
+C:\tizen-studio\tools\ide\bin\tizen.bat run -p IPTVnSamTV.IPTVnator -s <TV-IP>:26101
 ```
 
 ## Reading the startup timing on the TV
@@ -108,7 +108,7 @@ Ways to read it:
    heap, error count. Photograph it.
 2. **Web Inspector** (when the TV allows debugging): `tizen run` is not
    enough; start with `C:\tizen-studio\tools\sdb.exe -s <TV-IP>:26101 shell 0
-debug IPTVnSmTV.IPTVnator`, forward the printed port
+debug IPTVnSamTV.IPTVnator`, forward the printed port
    (`sdb -s <TV-IP>:26101 forward tcp:<port> tcp:<port>`) and open
    `http://localhost:<port>` in Chrome. The console has the line
    `[tizen-startup] {...}` and `localStorage["iptvnator-tizen-startup"]`

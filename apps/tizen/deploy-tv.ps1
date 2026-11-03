@@ -1,6 +1,6 @@
 # DRAFT (phase 0, issue #18): builds the IPTVnator Tizen widget, signs it with a
 # Samsung certificate profile, installs it on the TV over Developer Mode and
-# starts it. Installs next to Jo-TV (own package IPTVnSmTV); reinstalling keeps
+# starts it. Installs next to Jo-TV (own package IPTVnSamTV); reinstalling keeps
 # the app's data. Run from the repository root, only with the owner's OK.
 #
 # Usage: .\apps\tizen\deploy-tv.ps1 [-TvIp 192.168.0.18] [-CertProfile iptvnator-tv]
@@ -16,7 +16,7 @@ param(
     [switch]$NoRun
 )
 $ErrorActionPreference = 'Stop'
-$appId = 'IPTVnSmTV.IPTVnator'
+$appId = 'IPTVnSamTV.IPTVnator'
 $tizen = Join-Path $TizenStudio 'tools\ide\bin\tizen.bat'
 $sdb = Join-Path $TizenStudio 'tools\sdb.exe'
 $widget = Join-Path (Get-Location) 'dist\apps\tizen\widget'

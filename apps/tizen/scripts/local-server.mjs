@@ -34,9 +34,6 @@ export async function startLocalServer(
     const root = path.resolve(widgetDir);
     let playlist = '';
     const server = createServer(async (request, response) => {
-        const pathname = decodeURIComponent(
-            new URL(request.url, 'http://x').pathname
-        );
         const send = (status, body, type) => {
             response.writeHead(status, {
                 'content-type': type,
@@ -44,6 +41,15 @@ export async function startLocalServer(
             });
             response.end(body);
         };
+        let pathname;
+        try {
+            pathname = decodeURIComponent(
+                new URL(request.url, 'http://x').pathname
+            );
+        } catch (error) {
+            if (!(error instanceof URIError)) throw error;
+            return send(400, Buffer.from('bad request'), 'text/plain');
+        }
         if (pathname === '/fake.m3u')
             return send(200, Buffer.from(playlist), 'audio/x-mpegurl');
         if (pathname.startsWith('/logo/')) return send(200, LOGO, 'image/png');
@@ -51,7 +57,12 @@ export async function startLocalServer(
             root,
             pathname === '/' ? 'index.html' : pathname
         );
-        if (!file.startsWith(root))
+        const relative = path.relative(root, file);
+        if (
+            relative === '..' ||
+            relative.startsWith('..' + path.sep) ||
+            path.isAbsolute(relative)
+        )
             return send(403, Buffer.alloc(0), 'text/plain');
         try {
             const body = await readFile(file);

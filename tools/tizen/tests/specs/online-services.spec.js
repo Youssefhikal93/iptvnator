@@ -94,27 +94,27 @@ test('#98 Arabic switches and warning use translated text with RTL layout', asyn
     await expect(page.locator('#profile-dialog-message')).toContainText('حسب أسمائها');
 });
 
-test('#98 Artwork Off also blocks provider-supplied TMDB posters but keeps channel logos', async ({ page }) => {
+test('#98 Artwork Off hides artwork found on TMDB but keeps the provider covers, even ones on the TMDB image server', async ({ page }) => {
+    const catalogue = require('../fixtures/tmdb/catalogue.json');
     const seen = [];
-    await page.route('https://image.tmdb.org/**', route => { seen.push(route.request().url()); return route.abort(); });
+    await page.route('https://image.tmdb.org/**', route => { seen.push(new URL(route.request().url()).pathname); return route.abort(); });
+    await page.route('https://api.themoviedb.org/**', route => {
+        const found = { ...catalogue['movie/125'], poster_path: '/found-poster.jpg', backdrop_path: '/found-backdrop.jpg' };
+        return route.fulfill({ json: new URL(route.request().url()).pathname.includes('/search/') ? { results: [found] } : found });
+    });
     await page.route('**/player_api.php*', async route => {
         const action = new URL(route.request().url()).searchParams.get('action');
-        if (!['get_vod_streams', 'get_vod_info', 'get_live_streams'].includes(action)) return route.continue();
+        if (!['get_vod_streams', 'get_vod_info'].includes(action)) return route.continue();
         const response = await route.fetch();
         const body = await response.json();
         if (Array.isArray(body)) body.forEach(item => { item.stream_icon = 'https://image.tmdb.org/t/p/w342/provider.jpg'; });
-        else {
-            body.info.movie_image = 'https://image.tmdb.org/t/p/w342/detail.jpg';
-            body.info.backdrop_path = ['https://image.tmdb.org/t/p/w1280/backdrop.jpg'];
-        }
+        else body.info.movie_image = 'https://image.tmdb.org/t/p/w342/provider.jpg';
         await route.fulfill({ response, json: body });
     });
-    await boot(page, { storage: { settings: { tmdbArtwork: false } } });
+    await boot(page, { storage: { settings: { tmdbApiKey: 'fixture-key', tmdbArtwork: false } } });
     await openFirst(page, 'Movies');
-    await expect(page.locator('#detail .dt-poster')).not.toHaveAttribute('src', /image\.tmdb\.org/);
+    await expect(page.locator('#detail .dt-poster')).toHaveAttribute('src', /provider.jpg$/);
     await page.waitForTimeout(400);
-    expect(seen).toEqual([]);
-    await back(page);
-    await section(page, 'Live TV');
-    await expect.poll(() => seen.length).toBeGreaterThan(0);
+    expect(seen.some(path => path.includes('found-'))).toBe(false);
+    expect(seen.some(path => path.endsWith('provider.jpg'))).toBe(true);
 });

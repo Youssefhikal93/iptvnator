@@ -95,7 +95,7 @@ window.DetailEpisodes = function (opts) {
         var length = runtime(ep.seconds);
         return html`<div key=${ep.id} class=${'dt-ep' + (focused ? ' focus' : '')}>
             <div class=${'dt-ep-thumb' + (ep.image ? '' : ' fallback')}>
-                ${ep.image || art ? UI.img(undefined, OnlineServices.artwork(ep.image || art)) : null}
+                ${ep.image || art ? UI.img(undefined, ep.image || art) : null}
                 <span class="dt-ep-num">${ep.num}</span>
                 ${length ? html`<span class="dt-ep-length">${length}</span>` : null}
                 ${watched(ep) ? html`<span class="watched-tick" aria-label=${I18n.t('browser.watched')}>✓</span>` : null}

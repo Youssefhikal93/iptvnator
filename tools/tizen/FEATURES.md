@@ -350,10 +350,12 @@ It works while Jotv is open on the same home network. A page left open reconnect
 
 ## Online services (#98)
 
-Settings groups TMDB, Subtitles and Trailers offer one On/Off row per feature,
-all On by default. TMDB has separate switches for details, artwork, cast,
-Collections look-up, similar titles, genre checks and browsing box facts.
-Subtitles has OpenSubtitles, SubDL, SubSource and DeepL; Trailers has YouTube.
+Settings → External services holds every outside service with its key and
+On/Off switches, all On by default: TMDB (details, artwork, cast, Collections
+look-up, similar titles, genre checks, browsing box facts), Subtitles
+(OpenSubtitles, SubDL, SubSource), Translation (DeepL) and Trailers (YouTube).
+The other Settings tabs keep only what works without a key. Artwork Off hides
+only artwork found on TMDB; the provider's own covers always show.
 Turning Off asks for confirmation, hides saved answers and drops waiting requests.
 Turning On makes saved answers available again. Choices belong to each profile
 and travel in backups. Sources, guides, provider channel logos and PC receivers

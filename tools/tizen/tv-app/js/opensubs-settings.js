@@ -123,11 +123,14 @@ window.OpenSubsSettings = (function () {
     }
 
     return {
-        rows: keyRows('opensubs', 'opensubs.group').concat(keyRows('subdl'), [
-            { get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
+        // Settings → Subtitles: what the app searches for and when.
+        rows: [
+            { get part() { return I18n.t('opensubs.group'); }, get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
             { get part() { return I18n.t('opensubs.backupGroup'); }, get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
                 key: 'subtitleFallback', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
-        ], keyRows('subsource'), keyRows('deepl')),
+        ],
+        // Settings → External services: each provider's switch and key.
+        serviceRows: keyRows('opensubs', 'picture.subtitles').concat(keyRows('subdl'), keyRows('subsource'), keyRows('deepl', 'services.translation')),
         act: act,
         isOpen: function () { return !!dialog; },
         onKey: function (event) {

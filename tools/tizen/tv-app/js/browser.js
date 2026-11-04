@@ -299,7 +299,7 @@ window.Browser = function (hooks) {
         },
         icon: function (it) {
             var url = it.stream_icon || it.cover || it.logo || '';
-            return state.section === 'live' ? url : OnlineServices.artwork(url);
+            return url;
         },
         facts: function (it) {
             var show = state.section === 'series' && !otherSource(it) ? state.catalogue.peek({ kind: 'show', id: it.series_id }) : null;
@@ -982,7 +982,7 @@ window.Browser = function (hooks) {
         var shown = shownCategory();
         if (section === 'live' && shown && shown.virtual === 'recent-channels') options.push(clearRecent);
         var header = {
-            image: section === 'live' ? item.stream_icon || item.cover || item.logo || '' : OnlineServices.artwork(item.stream_icon || item.cover || item.logo),
+            image: item.stream_icon || item.cover || item.logo || '',
             sub: [I18n.t(section === 'live' ? 'rail.live' : section === 'movies' ? 'rail.movies' : 'rail.series'), item.year].filter(Boolean).join('  ·  '),
         };
         // A kids profile (#62) keeps Favorite and Mark watched only.
@@ -2547,7 +2547,7 @@ window.Browser = function (hooks) {
             key: Library.keyOf(entry.section, item),
             title: show.name || show.title || '',
             subtitle: [episode, left].filter(Boolean).join(' · '),
-            image: entry.section === 'live' ? show.stream_icon || show.cover || show.logo || '' : OnlineServices.artwork(show.stream_icon || show.cover || (d && d.poster) || show.logo || (d && d.backdrop)),
+            image: entry.section === 'live' ? show.stream_icon || show.cover || show.logo || '' : show.stream_icon || show.cover || OnlineServices.artwork(d && d.poster) || show.logo || OnlineServices.artwork(d && d.backdrop),
         };
     }
 

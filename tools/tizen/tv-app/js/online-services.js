@@ -20,12 +20,14 @@ window.OnlineServices = (function () {
     }
 
     return {
+        // Artwork the app found on TMDB; '' while Artwork is Off. The provider's
+        // own covers never pass through here, so they always show.
         artwork: function (url) {
-            return /^(?:https?:)?\/\/image\.tmdb\.org(?=[:/]|$)/i.test(url || '') && Prefs.get('tmdbArtwork') === false ? '' : url || '';
+            return Prefs.get('tmdbArtwork') === false ? '' : url || '';
         },
         rows: function (group) {
             var rows = FEATURES[group].map(row);
-            if (group === 'trailers') Object.defineProperty(rows[0], 'group', { get: function () { return I18n.t('services.trailers'); } });
+            if (group === 'trailers') Object.defineProperty(rows[0], 'part', { get: function () { return I18n.t('services.trailers'); }, enumerable: true });
             return rows;
         },
     };

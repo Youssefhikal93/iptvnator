@@ -2,12 +2,14 @@
 // Placeholders are {name}; plural forms are 'key.one' / 'key.other' picked by params.count.
 I18n.tables.en = {
     "services.trailers": "Trailers",
+    "services.translation": "Translation",
+    "settings.external": "External services",
     "services.turnOff": "Turn off",
     "services.turnOffTitle": "Turn off {feature}?",
     "services.details": "Details and facts",
     "services.detailsOff": "Detail pages will show provider information only. Saved TMDB details stay on the TV.",
     "services.artwork": "Artwork",
-    "services.artworkOff": "TMDB posters and backdrops will be hidden. Other provider artwork stays visible.",
+    "services.artworkOff": "Posters and backdrops found on TMDB will be hidden. Your provider’s own covers stay visible.",
     "services.cast": "Cast and actor pages",
     "services.castOff": "TMDB cast rows and actor pages will be hidden.",
     "services.collections": "Collections look-up",

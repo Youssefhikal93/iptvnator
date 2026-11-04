@@ -10,7 +10,7 @@ window.TmdbView = (() => {
     };
 
     // A catalogue match as a Kit.Tile.
-    const catalogueCard = (entry) => ({ name: entry.item.name, image: OnlineServices.artwork(entry.item.stream_icon || entry.item.cover) });
+    const catalogueCard = (entry) => ({ name: entry.item.name, image: entry.item.stream_icon || entry.item.cover || '' });
 
     const scroll = (root) => {
         const selected = root.querySelector('.focus');

@@ -214,8 +214,8 @@ test('#52 a SubDL key is one row: OK opens Test, Change and Remove, and the row 
         return json({}, 403);
     });
     var api = env.globals;
-    var row = api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === 'opensubs-subdl-key'; })[0];
-    var opensubs = api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === 'opensubs-key'; })[0];
+    var row = api.OpenSubsSettings.serviceRows.filter(function (entry) { return entry.action === 'opensubs-subdl-key'; })[0];
+    var opensubs = api.OpenSubsSettings.serviceRows.filter(function (entry) { return entry.action === 'opensubs-key'; })[0];
     assert.equal(row.text(), 'Not set');
     assert.equal(row.hint, '');
     api.Prefs.set('subdlApiKey', 'subdl-key');

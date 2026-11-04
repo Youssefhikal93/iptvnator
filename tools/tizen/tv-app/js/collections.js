@@ -48,7 +48,7 @@ window.Collections = function (deps) {
         if (known && Tmdb.on('collections')) CollectionLookup.start(lookupDeps(known));
     }
 
-    function icon(item) { return OnlineServices.artwork(item.stream_icon || item.cover); }
+    function icon(item) { return item.stream_icon || item.cover || ''; }
 
     function counted(parts) {
         var have = parts.filter(function (part) { return part.item; }).length;

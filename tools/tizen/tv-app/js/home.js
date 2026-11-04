@@ -42,7 +42,7 @@ window.Home = (api, element) => {
     const art = (item, section) => {
         const show = item.show || item;
         const url = show.stream_icon || show.cover || show.logo || '';
-        return section === 'live' ? url : OnlineServices.artwork(url);
+        return url;
     };
     const titleOf = (entry) => entry.programme ? entry.programme.title : (entry.item.show ? entry.item.show.name : entry.item.name);
     const episodeOf = (entry) => {
@@ -154,7 +154,7 @@ window.Home = (api, element) => {
         : null);
     const minutesLeft = (p) => (p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '');
 
-    const heroArt = (entry, d) => UI.img('hm-hero-art', entry.section === 'live' ? art(entry.item, entry.section) : OnlineServices.artwork(d.backdrop || d.poster || art(entry.item, entry.section)));
+    const heroArt = (entry, d) => UI.img('hm-hero-art', entry.section === 'live' ? art(entry.item, entry.section) : OnlineServices.artwork(d.backdrop || d.poster) || art(entry.item, entry.section));
 
     const Hero = ({ hero, focused }) => {
         const entry = hero[heroIndex(hero)];
@@ -199,7 +199,7 @@ window.Home = (api, element) => {
     // time left.
     const tile = (entry, big) => {
         const live = entry.section === 'live';
-        const src = big && !live ? OnlineServices.artwork(heroDetails(entry).backdrop || art(entry.item, entry.section)) : art(entry.item, entry.section);
+        const src = big && !live ? OnlineServices.artwork(heroDetails(entry).backdrop) || art(entry.item, entry.section) : art(entry.item, entry.section);
         const item = entry.item;
         const chip = item.sourceId && item.sourceId !== Sources.current().id ? html`<span class="source-chip">${item.sourceName}</span>` : null;
         let overlays;
@@ -278,7 +278,7 @@ window.Home = (api, element) => {
         const above = at > 0 ? list[at - 1].row : null;
         const below = list[at + 1] ? list[at + 1].row : null;
         return html`<div class=${'hm-stage' + (live ? ' live' : '')}>
-            ${entry ? UI.img('hm-stage-art', live ? art(entry.item, entry.section) : OnlineServices.artwork(d.backdrop || d.poster || art(entry.item, entry.section))) : null}
+            ${entry ? UI.img('hm-stage-art', live ? art(entry.item, entry.section) : OnlineServices.artwork(d.backdrop || d.poster) || art(entry.item, entry.section)) : null}
             <div class="hm-stage-shade"></div>
             ${entry ? html`<div class="hm-stage-text">
                 <div class="hm-hero-title">${titleOf(entry)}</div>

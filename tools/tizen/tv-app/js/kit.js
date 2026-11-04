@@ -69,6 +69,7 @@ window.Kit = (() => {
         restart: 'M3 11a9 9 0 1 1 2 7M3 4v7h7',
         swap: 'M3 7h18l-4-4M21 17H3l4 4',
         grid: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
+        globe: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20',
         help: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5M12 17h.01',
     };
     const GLYPH_ICONS = { '?': 'help', '›': 'chevron', '▶': 'play', '❚': 'pause', '↺': 'restart', '⇆': 'swap', '▦': 'grid', '↻': 'restart' };

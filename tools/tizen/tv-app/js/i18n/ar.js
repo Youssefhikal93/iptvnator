@@ -2,13 +2,15 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ar = {
+    "services.translation": "الترجمة الآلية",
+    "settings.external": "الخدمات الخارجية",
     "services.trailers": "الإعلانات التشويقية",
     "services.turnOff": "إيقاف",
     "services.turnOffTitle": "إيقاف {feature}؟",
     "services.details": "التفاصيل والمعلومات",
     "services.detailsOff": "تعرض صفحات التفاصيل معلومات المصدر فقط. تبقى معلومات TMDB المحفوظة على التلفاز.",
     "services.artwork": "الصور والملصقات",
-    "services.artworkOff": "تختفي ملصقات وخلفيات TMDB. تبقى صور المصدر الأخرى ظاهرة.",
+    "services.artworkOff": "تختفي الملصقات والخلفيات القادمة من TMDB. تبقى صور مزوّدك ظاهرة.",
     "services.cast": "الممثلون وصفحاتهم",
     "services.castOff": "تختفي صفوف ممثلي TMDB وصفحات الممثلين.",
     "services.collections": "البحث عن مجموعات الأفلام",

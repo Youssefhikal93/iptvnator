@@ -209,7 +209,7 @@ window.PlayerSeries = function (api) {
         var next = episodes().items[nextIndex()];
         ui.nextTitle.textContent = next.label;
         // The episode's still beside its name (#48), set only when it changes.
-        var art = OnlineServices.artwork(next.image);
+        var art = next.image || '';
         if (art !== s.art) {
             s.art = art;
             ui.nextArt.src = art;

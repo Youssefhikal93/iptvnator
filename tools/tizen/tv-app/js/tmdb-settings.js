@@ -64,7 +64,7 @@ window.TmdbSettings = (function () {
     return {
         rows: [
             // One row: the value shows the key's end and its last test; OK offers Test, Change, Remove.
-            { group: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key',
+            { get group() { return I18n.t('settings.external'); }, part: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key',
                 get hint() { return Prefs.get('tmdbApiKey') ? I18n.t('keys.hint') : ''; },
                 text: function () {
                     var secret = Prefs.get('tmdbApiKey');

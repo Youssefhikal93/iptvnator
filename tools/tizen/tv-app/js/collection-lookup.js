@@ -20,6 +20,10 @@ window.CollectionLookup = (function () {
     var lastKey = 0;
     var run = null;
 
+    Prefs.onChange(function (name) {
+        if (name === 'tmdbCollections' && Prefs.get(name) === false) stop();
+    });
+
     document.addEventListener('keydown', function () { lastKey = Date.now(); }, true);
 
     function busy() {
@@ -84,7 +88,7 @@ window.CollectionLookup = (function () {
         function step() {
             timer = null;
             if (run !== self) return;
-            if (!Tmdb.enabled()) return stop();
+            if (!Tmdb.on('collections')) return stop();
             var movies = deps.movies();
             if (!movies) return later(QUIET_MS);
             if (busy() || Tmdb.throttled()) return later(Math.max(QUIET_MS, Tmdb.throttled()));
@@ -146,7 +150,7 @@ window.CollectionLookup = (function () {
                 return;
             }
             stop();
-            if (!Tmdb.enabled()) return;
+            if (!Tmdb.on('collections')) return;
             run = Run(deps);
             deps.index.ready().then(function () { if (run && run.deps === deps) run.start(); });
         },
@@ -154,7 +158,7 @@ window.CollectionLookup = (function () {
         // Refresh (#67): the index is marked and the look-up goes through every
         // film again, at the same pace and only while the remote rests.
         refresh: function (deps) {
-            if (!Tmdb.enabled()) return;
+            if (!Tmdb.on('collections')) return;
             deps.index.ready().then(function () {
                 deps.index.refresh();
                 if (!run || run.deps.index !== deps.index) {

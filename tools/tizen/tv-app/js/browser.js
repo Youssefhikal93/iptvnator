@@ -298,7 +298,8 @@ window.Browser = function (hooks) {
             return state.section === 'live';
         },
         icon: function (it) {
-            return it.stream_icon || it.cover || it.logo || null;
+            var url = it.stream_icon || it.cover || it.logo || '';
+            return url;
         },
         facts: function (it) {
             var show = state.section === 'series' && !otherSource(it) ? state.catalogue.peek({ kind: 'show', id: it.series_id }) : null;
@@ -757,7 +758,7 @@ window.Browser = function (hooks) {
     // shelf itself is shown. ▲ from its top row reaches it.
     function refreshAvailable() {
         var row = shownCategory();
-        return state.section === 'movies' && !!row && row.virtual === 'collections' && !state.collection && Tmdb.enabled() && !currentList.showingSearch();
+        return state.section === 'movies' && !!row && row.virtual === 'collections' && !state.collection && Tmdb.on('collections') && !currentList.showingSearch();
     }
 
     function focusRefresh(on) {
@@ -800,8 +801,8 @@ window.Browser = function (hooks) {
     function filmCollection(movie, provider) {
         if (otherSource(movie)) return Promise.resolve(null);
         var lookup = Object.assign({}, movie, { year: provider.year || movie.year, tmdb_id: provider.tmdb_id || movie.tmdb_id || movie.tmdb });
-        return (Tmdb.enabled() ? Tmdb.match(lookup, 'movie') : Promise.resolve(null)).then(function (body) {
-            if (Tmdb.enabled() && !body) return null;
+        return (Tmdb.on('collections') ? Tmdb.match(lookup, 'movie', null, 'collections') : Promise.resolve(null)).then(function (body) {
+            if (Tmdb.on('collections') && !body) return null;
             return collections.forFilm(movie, body, tmdbCatalogue);
         }).then(function (found) {
             return found && CollectionView.row(found, function (item) { openEntry(item, 'movies'); });
@@ -1888,12 +1889,12 @@ window.Browser = function (hooks) {
     // After playback: finds TMDB's similar titles for the latest movie and
     // show watched, when their saved lists are missing or a week old.
     function learnSimilar() {
-        if (!Tmdb.enabled() || !state.adapter) return;
+        if (!Tmdb.on('similar') || !state.adapter) return;
         var adapter = state.adapter;
         var id = sourceId();
         BecauseRows.wanted(id).forEach(function (title) {
             var type = title.section === 'movies' ? 'movie' : 'tv';
-            Tmdb.match(title.item, type).then(function (body) {
+            Tmdb.match(title.item, type, null, 'similar').then(function (body) {
                 if (!body || adapter !== state.adapter) return null;
                 return tmdbCatalogue().then(function (catalogue) {
                     if (adapter !== state.adapter) return;
@@ -2009,7 +2010,7 @@ window.Browser = function (hooks) {
     function openMovie(movie) {
         detail.open({
             item: movie,
-            found: function (d) { keepFacts(movie, 'movies', { minutes: d.seconds / 60 }); },
+            found: function (d) { keepFacts(movie, 'movies', { minutes: d.seconds / 60, tmdb: !!d.tmdbFacts }); },
             catalogue: tmdbCatalogue,
             similarFound: keepSimilar.bind(null, 'movies', movie),
             related: relatedTitles.bind(null, movie, 'movies'),
@@ -2076,7 +2077,7 @@ window.Browser = function (hooks) {
             // TMDB's count only when the provider's episodes gave none.
             found: function (d) {
                 var kept = TitleFacts.get(show.sourceId || sourceId(), 'series', show);
-                if (!(kept && kept.seasons)) keepFacts(show, 'series', { seasons: d.seasons });
+                if (!(kept && kept.seasons)) keepFacts(show, 'series', { seasons: d.seasons, tmdb: !!d.tmdbFacts });
             },
             load: function () {
                 var fresh = function (info) {
@@ -2546,7 +2547,7 @@ window.Browser = function (hooks) {
             key: Library.keyOf(entry.section, item),
             title: show.name || show.title || '',
             subtitle: [episode, left].filter(Boolean).join(' · '),
-            image: show.stream_icon || show.cover || (d && d.poster) || show.logo || (d && d.backdrop) || '',
+            image: entry.section === 'live' ? show.stream_icon || show.cover || show.logo || '' : show.stream_icon || show.cover || OnlineServices.artwork(d && d.poster) || show.logo || OnlineServices.artwork(d && d.backdrop),
         };
     }
 

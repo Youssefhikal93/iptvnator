@@ -23,13 +23,15 @@ window.BoxLookup = function (hooks) {
     var tmdbOn = null;
     // A new key also lets the titles that failed under the old one be asked at once.
     if (window.Prefs && Prefs.onChange) Prefs.onChange(function (name) {
-        if (name !== 'tmdbApiKey') return;
+        if (name !== 'tmdbApiKey' && name !== 'tmdbBoxes') return;
         tmdbOn = null;
+        queue.forEach(function (job) { delete asked[job.key]; });
+        queue = [];
         Object.keys(asked).forEach(function (key) { if (asked[key] !== true) delete asked[key]; });
     });
 
     function enabled() {
-        if (tmdbOn === null) tmdbOn = Tmdb.enabled();
+        if (tmdbOn === null) tmdbOn = Tmdb.on('boxes');
         return tmdbOn;
     }
 
@@ -51,12 +53,13 @@ window.BoxLookup = function (hooks) {
         var mine = generation;
         running++;
         function failed() { asked[job.key] = Date.now() + RETRY_MS; }
-        Tmdb.lookup(job.item, type).then(function (result) {
+        Tmdb.lookup(job.item, type, false, 'boxes').then(function (result) {
             // A failed request is asked again after RETRY_MS; "no such title"
             // or an answer without the number is noted and left for 30 days.
             if (result.status === 'failed') return failed();
             var body = result.status === 'found' ? result.body : {};
             var found = type === 'tv' ? { seasons: body.number_of_seasons } : { minutes: body.runtime };
+            found.tmdb = true;
             var kept = TitleFacts.save(job.sourceId, job.section, job.item, found);
             if (!kept && !known(job.item, job.section, job.sourceId)) TitleFacts.missing(job.sourceId, job.section, job.item);
             if (kept && mine === generation) redraw();
@@ -69,6 +72,7 @@ window.BoxLookup = function (hooks) {
     function pump() {
         clearTimeout(timer);
         timer = null;
+        if (!enabled()) { queue = []; return; }
         if (!queue.length) return;
         var wait = Tmdb.throttled();
         if (wait) {

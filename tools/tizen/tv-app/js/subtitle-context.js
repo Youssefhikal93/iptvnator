@@ -19,7 +19,7 @@ window.SubtitleContext = (function () {
     // Providers name a show "Love is blind, Habibi- الحب أعمى حبيبي"; TMDB's
     // English name (and a movie's IMDb id) find far more subtitles.
     function withTmdb(context, info) {
-        if (!window.Tmdb || !Tmdb.enabled()) return Promise.resolve(info);
+        if (!window.Tmdb || !Tmdb.on('details')) return Promise.resolve(info);
         var item = Object.assign({}, context.item, info.tmdb_id ? { tmdb_id: info.tmdb_id } : {});
         return Tmdb.match(item, context.episode ? 'tv' : 'movie').then(function (body) {
             if (!body) return info;

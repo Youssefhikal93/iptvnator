@@ -45,7 +45,7 @@ window.Collections = function (deps) {
 
     function start() {
         var known = current();
-        if (known && Tmdb.enabled()) CollectionLookup.start(lookupDeps(known));
+        if (known && Tmdb.on('collections')) CollectionLookup.start(lookupDeps(known));
     }
 
     function icon(item) { return item.stream_icon || item.cover || ''; }
@@ -91,7 +91,7 @@ window.Collections = function (deps) {
         var movies = deps.movies();
         if (!movies) return [];
         var list;
-        if (!Tmdb.enabled()) list = namedGroups(movies);
+        if (!Tmdb.on('collections')) list = namedGroups(movies);
         else list = current().shelf(movies).map(function (entry) {
             var parts = tmdbParts(entry.info, entry.films, []);
             return { name: entry.info.name, label: entry.info.name, sub: counted(parts), poster: Tmdb.image(entry.info.poster, 'w342'), parts: parts, entry: entry };
@@ -106,12 +106,12 @@ window.Collections = function (deps) {
         // Asks TMDB about every film again in the background (#67).
         refresh: function () {
             var known = current();
-            if (known && Tmdb.enabled()) CollectionLookup.refresh(lookupDeps(known));
+            if (known && Tmdb.on('collections')) CollectionLookup.refresh(lookupDeps(known));
         },
         // The Collections row for the category list, or null when there is none.
         row: function () {
             var list = shelf();
-            var progress = Tmdb.enabled() ? CollectionLookup.progress() : null;
+            var progress = Tmdb.on('collections') ? CollectionLookup.progress() : null;
             if (!list.length && !progress) return null;
             return {
                 category_id: '__collections',
@@ -126,7 +126,7 @@ window.Collections = function (deps) {
         },
         // "Finding collections… x of y" while the look-up runs.
         progress: function () {
-            var progress = Tmdb.enabled() ? CollectionLookup.progress() : null;
+            var progress = Tmdb.on('collections') ? CollectionLookup.progress() : null;
             return progress ? I18n.t('collections.progress', progress) : '';
         },
         // An opened collection's films as list items; films the provider
@@ -143,8 +143,9 @@ window.Collections = function (deps) {
         // the catalogue as Tmdb.inLibrary takes it.
         forFilm: function (item, body, entries) {
             var movies = deps.movies() || [];
+            if (!Tmdb.on('collections')) body = null;
             if (!body) {
-                var group = Tmdb.enabled() ? null : NameGroups.of(item, deps.all() || movies);
+                var group = Tmdb.on('collections') ? null : NameGroups.of(item, deps.all() || movies);
                 if (!group) return Promise.resolve(null);
                 var local = named(group, new Set(movies));
                 if (local.parts.length < 2) return Promise.resolve(null);

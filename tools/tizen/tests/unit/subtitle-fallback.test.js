@@ -9,7 +9,7 @@ var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
 var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js',
-    'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'opensubs-settings.js'];
+    'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'online-services.js', 'opensubs-settings.js'];
 
 // One deflated file in a zip.
 function zip(name, text) {
@@ -238,12 +238,13 @@ test('#52 DeepL uses the paid host for a paid key, translates in batches of 50 a
     }
 });
 
-test('#52 Settings list the download and backup parts with the switch and the Subsource and DeepL key rows', function () {
+test('#52 #98 the language, providers, keys and backup switch are all in External services', function () {
     var api = fixture().globals;
-    var rows = api.OpenSubsSettings.rows;
-    var labels = rows.map(function (row) { return (row.part ? '[' + row.part + '] ' : '') + row.label; });
-    assert.equal(labels.join(' | '), '[Subtitles download] OpenSubtitles API key | SubDL API key | Subtitle language | ' +
-        '[Backup subtitles] Backup search | Subsource API key | DeepL API key');
+    var rows = api.OpenSubsSettings.serviceRows;
+    var label = function (row) { return (row.part ? '[' + row.part + '] ' : '') + row.label; };
+    assert.equal(api.OpenSubsSettings.rows.length, 0);
+    assert.equal(rows.map(label).join(' | '), '[Subtitles] Subtitle language | OpenSubtitles | OpenSubtitles API key | SubDL | SubDL API key | ' +
+        '[Backup subtitles] Backup search | SubSource | Subsource API key | DeepL translation | DeepL API key');
     var toggle = rows.filter(function (row) { return row.key === 'subtitleFallback'; })[0];
     assert.equal(toggle.labels.join(','), 'On,Off');
     assert.equal(api.Prefs.get('subtitleFallback'), true);

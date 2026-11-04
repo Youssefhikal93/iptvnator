@@ -135,7 +135,7 @@ test('#61 Off keeps no timer and hands the screen back to Samsung; choosing a ti
 });
 
 test('#61 slides come from Continue watching, favorites and recently added, once each, with what the app holds', function () {
-    var env = load(['screen-saver.js']).globals;
+    var env = load(['screen-saver.js'], {}, { Prefs: { get: function () { return undefined; } } }).globals;
     var movie = function (n, extra) { return Object.assign({ name: 'Movie ' + n, stream_id: n, stream_icon: 'p' + n + '.jpg' }, extra); };
     var rows = [
         { id: 'live', title: 'Live', entries: [{ section: 'live', item: { name: 'Channel', stream_id: 1, stream_icon: 'c.png' } }] },
@@ -163,7 +163,7 @@ test('#61 slides come from Continue watching, favorites and recently added, once
 });
 
 test('#61 at most forty slides', function () {
-    var env = load(['screen-saver.js']).globals;
+    var env = load(['screen-saver.js'], {}, { Prefs: { get: function () { return undefined; } } }).globals;
     var entries = [];
     for (var i = 0; i < 60; i++) entries.push({ section: 'movies', item: { name: 'M' + i, stream_id: i, stream_icon: i + '.jpg' } });
     var slides = env.ScreenSaver.slides([{ id: 'new-movies', title: 'New', entries: entries }], { details: function () { return null; }, progress: function () { return null; } });

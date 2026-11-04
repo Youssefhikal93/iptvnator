@@ -10,7 +10,7 @@ async function view(page, label) {
     await press(page, 'ArrowDown');
 }
 
-test('#91 a film\'s length and a show\'s seasons, learnt on its page, show in Info boxes and after a restart', async ({ page }) => {
+test('#91 a film\'s length and a show\'s seasons, learnt on its page, show in Info boxes and after a restart', async ({ page }, testInfo) => {
     await boot(page);
     await section(page, 'Movies');
     await view(page, 'Info boxes');
@@ -31,13 +31,13 @@ test('#91 a film\'s length and a show\'s seasons, learnt on its page, show in In
     await expect(page.locator('#detail .dt-ep-pill').first()).toBeVisible();
     await back(page);
     await expect(page.locator('#items .card.box.info').filter({ hasText: name }).locator('.box-meta')).toContainText('2 seasons');
-    await page.screenshot({ path: 'C:/Users/YoussefHikal/Desktop/screenshots/movie-length/series-info-seasons.png' });
+    await page.screenshot({ path: testInfo.outputPath('series-info-seasons.png') });
 
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
     await section(page, 'Movies');
     await expect(page.locator('#items .card.box.info').filter({ hasText: title }).locator('.box-meta')).toContainText('1 h 52 min');
-    await page.screenshot({ path: 'C:/Users/YoussefHikal/Desktop/screenshots/movie-length/movies-info-length.png' });
+    await page.screenshot({ path: testInfo.outputPath('movies-info-length.png') });
     await section(page, 'Series');
     await expect(page.locator('#items .card.box.info').filter({ hasText: name }).locator('.box-meta')).toContainText('2 seasons');
 });

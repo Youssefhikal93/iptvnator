@@ -27,8 +27,9 @@ window.OpenSubsSettings = (function () {
                 if (!Prefs.get(provider.pref)) return I18n.t('tmdb.notSet');
                 return '••••' + (status[id] ? ' · ' + status[id] : '');
             } };
-        if (part) Object.defineProperty(row, 'part', { get: function () { return I18n.t(part); }, enumerable: true });
-        return [row];
+        var rows = OnlineServices.rows(id === 'opensubs' ? 'opensubtitles' : id).concat([row]);
+        if (part) Object.defineProperty(rows[0], 'part', { get: function () { return I18n.t(part); }, enumerable: true });
+        return rows;
     }
 
     // "opensubs-key" for OpenSubtitles, "opensubs-subdl-test" for the others.
@@ -122,9 +123,15 @@ window.OpenSubsSettings = (function () {
     }
 
     return {
-        rows: keyRows('opensubs', 'opensubs.group').concat(keyRows('subdl'), [
-            { get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
+        // Settings → Subtitles keeps only the style; everything here needs a
+        // service, so it sits in External services (#98).
+        rows: [],
+        serviceRows: [
+            { get part() { return I18n.t('picture.subtitles'); }, get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
+        ].concat(keyRows('opensubs'), keyRows('subdl'), [
+            // Above the two services it owns; Off turns both off (OnlineServices).
             { get part() { return I18n.t('opensubs.backupGroup'); }, get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
+                get warning() { return I18n.t('opensubs.backupOff'); },
                 key: 'subtitleFallback', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
         ], keyRows('subsource'), keyRows('deepl')),
         act: act,

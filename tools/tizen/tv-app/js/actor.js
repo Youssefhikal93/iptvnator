@@ -31,6 +31,7 @@ window.Actor = (() => {
 
     return {
         open: (person, page) => {
+            if (!Tmdb.on('cast')) return;
             close();
             root = TmdbView.el('section', 'tm-screen');
             root.id = 'actor';
@@ -38,8 +39,8 @@ window.Actor = (() => {
             state = { person, entries: [], focus: 0, page, loading: true };
             const mine = state;
             render();
-            Promise.all([Tmdb.request('/person/' + person.id, { append_to_response: 'combined_credits' }), page.catalogue()]).then(([found, catalogue]) => {
-                if (state !== mine || !Tmdb.enabled()) return;
+            Promise.all([Tmdb.request('/person/' + person.id, { append_to_response: 'combined_credits' }, false, 'cast'), page.catalogue()]).then(([found, catalogue]) => {
+                if (state !== mine || !Tmdb.on('cast')) return;
                 if (found) {
                     state.person = found;
                     state.entries = Tmdb.inLibrary((found.combined_credits || {}).cast || [], catalogue);

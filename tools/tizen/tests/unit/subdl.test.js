@@ -7,7 +7,7 @@ var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
 var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js',
-    'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'opensubs-settings.js'];
+    'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'online-services.js', 'opensubs-settings.js'];
 
 // A zip built the way SubDL serves them: each file stored or deflated.
 function zip(files) {
@@ -214,8 +214,8 @@ test('#52 a SubDL key is one row: OK opens Test, Change and Remove, and the row 
         return json({}, 403);
     });
     var api = env.globals;
-    var row = api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === 'opensubs-subdl-key'; })[0];
-    var opensubs = api.OpenSubsSettings.rows.filter(function (entry) { return entry.action === 'opensubs-key'; })[0];
+    var row = api.OpenSubsSettings.serviceRows.filter(function (entry) { return entry.action === 'opensubs-subdl-key'; })[0];
+    var opensubs = api.OpenSubsSettings.serviceRows.filter(function (entry) { return entry.action === 'opensubs-key'; })[0];
     assert.equal(row.text(), 'Not set');
     assert.equal(row.hint, '');
     api.Prefs.set('subdlApiKey', 'subdl-key');

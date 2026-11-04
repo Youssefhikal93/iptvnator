@@ -40,6 +40,7 @@ window.YouTube = (function () {
     }
 
     function available(callback) {
+        if (Prefs.get('youtubeOn') === false) return callback(false);
         if (cached !== null) return callback(cached);
         waiting.push(callback);
         if (waiting.length > 1) return;
@@ -56,6 +57,7 @@ window.YouTube = (function () {
     }
 
     function launch(id, onFail) {
+        if (Prefs.get('youtubeOn') === false) return;
         function failed() {
             Log.error('trailer launch failed: default');
             onFail();
@@ -70,6 +72,7 @@ window.YouTube = (function () {
     }
 
     function open(text, onFail) {
+        if (Prefs.get('youtubeOn') === false) return;
         function unavailable() {
             document.dispatchEvent(new Event('trailer-unavailable'));
             if (onFail) onFail();

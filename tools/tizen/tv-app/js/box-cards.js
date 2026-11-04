@@ -6,7 +6,7 @@ window.BoxCards = (function () {
 
     // Matches made this session only; checking the key would read storage.
     function saved(item, section) {
-        return Tmdb.cached(item, section === 'series' ? 'tv' : 'movie');
+        return Tmdb.cached(item, section === 'series' ? 'tv' : 'movie', 'boxes');
     }
 
     // Out of 10, one decimal: "7.4", or ''.
@@ -71,7 +71,7 @@ window.BoxCards = (function () {
         facts: function (item, section, show, sourceId) {
             if (item.sub) return { sub: item.sub };
             var tmdb = saved(item, section);
-            var known = sourceId ? TitleFacts.get(sourceId, section, item) : null;
+            var known = sourceId ? (Tmdb.on('boxes') ? TitleFacts.get : TitleFacts.provider)(sourceId, section, item) : null;
             var count = section === 'series' ? seasons(show, known, tmdb) : 0;
             return {
                 year: year(item, tmdb),

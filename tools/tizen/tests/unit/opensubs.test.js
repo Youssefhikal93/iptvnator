@@ -5,7 +5,7 @@ var assert = require('node:assert/strict');
 var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
-var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'language-settings.js', 'opensubs-settings.js'];
+var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js', 'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'language-settings.js', 'online-services.js', 'opensubs-settings.js'];
 
 function node() {
     var children = [];
@@ -335,7 +335,7 @@ test('title queries use + for spaces, the form the API does not redirect', funct
 
 test('subtitle language choices map app locales and retain a saved language when the UI language changes', function () {
     var api = fixture().globals;
-    var row = api.OpenSubsSettings.rows.filter(function (entry) { return entry.key === 'subtitleLanguages'; })[0];
+    var row = api.OpenSubsSettings.serviceRows.filter(function (entry) { return entry.key === 'subtitleLanguages'; })[0];
     [['en', 'en,ar'], ['ar', 'en,ar'], ['by', 'en,ar,be'],
         ['zhtw', 'en,ar,zh-tw'], ['de', 'en,ar,de']].forEach(function (scenario) {
         api.Prefs.set('language', scenario[0]);
@@ -709,7 +709,7 @@ test('with a TMDB key the subtitle search uses TMDB\'s English name and IMDb id,
     var asked = [];
     var env = load(['subtitle-context.js'], {}, {
         Tmdb: {
-            enabled: function () { return true; },
+            on: function () { return true; }, enabled: function () { return true; },
             match: function (item, type) {
                 asked.push(type + ' ' + item.tmdb_id);
                 return Promise.resolve({ id: 230000, name: 'Love Is Blind, Habibi', original_name: 'الحب أعمى حبيبي', imdb_id: 'tt32000000' });

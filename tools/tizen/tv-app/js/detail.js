@@ -48,7 +48,7 @@ window.Detail = function () {
     function buttons() {
         var d = details();
         var list = s.page.actions(d);
-        if (s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ remoteId: 'trailer', label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
+        if (Prefs.get('youtubeOn') !== false && s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ remoteId: 'trailer', label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
         if (s.clipped) list.push({ label: I18n.t('detail.more'), run: openMore });
         return list;
     }

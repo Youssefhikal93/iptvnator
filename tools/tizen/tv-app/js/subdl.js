@@ -18,6 +18,7 @@ window.SubDL = (function () {
     }
 
     function fetchBody(url, kind) {
+        if (Prefs.get('subdlOn') === false) return Promise.reject(failure(401));
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, 12000);
         return fetch(url, { signal: controller.signal, credentials: 'omit', headers: { Accept: kind === 'json' ? 'application/json' : '*/*' } })

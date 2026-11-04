@@ -13,6 +13,7 @@ function boxCards(cached) {
             return key === 'unit.hoursMinutes' ? p.h + ' h ' + p.m + ' min' : p.m + ' min';
         } },
         Tmdb: {
+            on: function () { return true; },
             year: function (item) { var m = /\b(19|20)\d{2}\b/.exec(item.name || ''); return m ? m[0] : ''; },
             cached: function (item, type) { asked.push(type); return cached || null; },
             enabled: function () { throw new Error('reads the key from storage'); },

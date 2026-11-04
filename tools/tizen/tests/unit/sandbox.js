@@ -34,7 +34,9 @@ module.exports = function (files, stored, overrides) {
     sandbox.window = sandbox;
     vm.createContext(sandbox);
     // Every module may ask I18n for its English text; guide code reads a source's links (#90).
-    ['i18n.js', 'i18n/en.js', 'stored.js', 'guide-links.js'].concat(files.filter(function (file) { return file !== 'guide-links.js'; })).forEach(function (file) {
+    // Settings come before OnlineServices, which links switches through Prefs (#98).
+    var early = ['i18n.js', 'i18n/en.js', 'stored.js', 'guide-links.js'].concat(files.indexOf('settings-store.js') >= 0 ? ['settings-store.js'] : [], ['online-services.js']);
+    early.concat(files.filter(function (file) { return early.indexOf(file) < 0; })).forEach(function (file) {
         var filename = path.join(__dirname, '../../tv-app/js', file);
         vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: filename });
     });

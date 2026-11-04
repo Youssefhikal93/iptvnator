@@ -60,7 +60,7 @@ test('#91 a box takes the list item\'s length, then the kept one, then TMDB\'s; 
     var tmdb = { runtime: 112, number_of_seasons: 5 };
     var env = load(['title-facts.js', 'box-cards.js'], {}, {
         Log: LOG,
-        Tmdb: { year: function () { return ''; }, cached: function () { return tmdb; } },
+        Tmdb: { on: function () { return true; }, year: function () { return ''; }, cached: function () { return tmdb; } },
     });
     var api = env.globals.BoxCards;
     var kept = env.globals.TitleFacts;
@@ -85,7 +85,7 @@ function lookup(answers, options) {
         Tmdb: {
             year: function () { return ''; },
             cached: function () { return null; },
-            enabled: function () { return !(options && options.off); },
+            on: function () { return !(options && options.off); },
             throttled: function () { return 0; },
             lookup: function (item, type) {
                 asked.push(type + ':' + item.name);
@@ -159,7 +159,7 @@ test('#91 a title TMDB cannot size is noted, kept across a restart, and not aske
     var restarted = load(['title-facts.js', 'box-cards.js', 'box-lookup.js'], made.env.stored, {
         Log: LOG,
         KidsProfile: { on: function () { return false; } },
-        Tmdb: { year: function () { return ''; }, cached: function () { return null; }, enabled: function () { return true; }, throttled: function () { return 0; },
+        Tmdb: { year: function () { return ''; }, cached: function () { return null; }, on: function () { return true; }, throttled: function () { return 0; },
             lookup: function (item) { made.asked.push('again:' + item.name); return Promise.resolve({ status: 'none' }); } },
     });
     restarted.globals.BoxLookup({ sourceId: function () { return 's1'; }, redraw: function () {} }).want([{ stream_id: 1, name: 'A' }, { stream_id: 2, name: 'Nowhere' }], 'movies');
@@ -181,7 +181,7 @@ test('#91 a failed lookup is asked again after ten minutes, or at once after a n
         Tmdb: {
             year: function () { return ''; },
             cached: function () { return null; },
-            enabled: function () { return true; },
+            on: function () { return true; },
             throttled: function () { return 0; },
             lookup: function (item) { asked.push(item.name); return Promise.resolve({ status: 'failed' }); },
         },

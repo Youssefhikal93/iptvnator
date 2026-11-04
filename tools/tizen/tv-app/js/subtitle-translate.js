@@ -19,7 +19,7 @@ window.SubtitleTranslate = (function () {
 
     function translate(texts, from, to) {
         var key = Prefs.get('deeplApiKey');
-        if (!key) return Promise.reject(failure(401));
+        if (!key || Prefs.get('deeplOn') === false) return Promise.reject(failure(401));
         // Free keys end in ":fx" and have their own host.
         var host = /:fx$/.test(key) ? 'https://api-free.deepl.com' : 'https://api.deepl.com';
         var controller = new AbortController();
@@ -81,6 +81,7 @@ window.SubtitleTranslate = (function () {
 
     // match: { source (the subtitle to translate), from, to, progress }.
     function download(fileId, match) {
+        if (Prefs.get('deeplOn') === false) return Promise.reject(failure(401));
         if (!match || !match.source) return Promise.reject(failure(0));
         return SubtitleStore.obtain(match.source.file_id, match.source).then(function (result) {
             return cues(result.text, match.from, match.to, match.progress);

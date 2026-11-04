@@ -31,7 +31,11 @@ async function openRow(page, label, code) {
 test('Send everything to computer, change the TV, then Restore from computer puts every record back', async ({ page }) => {
     const box = await receiver();
     try {
-        await boot(page, { storage: { 'favorites:s1': { live: [channel(3)] }, settings: { homeTiles: false } } });
+        await boot(page, { storage: { 'favorites:s1': { live: [channel(3)] }, settings: {
+            homeTiles: false, tmdbDetails: false, tmdbArtwork: false, tmdbCast: false,
+            tmdbCollections: false, tmdbSimilar: false, tmdbGenres: false, tmdbBoxes: false,
+            opensubtitlesOn: false, subdlOn: false, subsourceOn: false, deeplOn: false, youtubeOn: false,
+        } } });
         const before = await page.evaluate(() => Object.fromEntries(Object.keys(localStorage).filter((k) => k.startsWith('iptvnator-tv:')).map((k) => [k, localStorage.getItem(k)])));
 
         await openRow(page, 'Send everything to computer…', box.code);

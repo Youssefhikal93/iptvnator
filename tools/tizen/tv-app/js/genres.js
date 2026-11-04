@@ -31,8 +31,8 @@ window.Genres = (() => {
     };
 
     const tmdb = (item, section) => {
-        if (!window.Tmdb || !Tmdb.enabled()) return [];
-        const body = Tmdb.cached(item, section === 'movies' ? 'movie' : 'tv');
+        if (!window.Tmdb || !Tmdb.on('genres')) return [];
+        const body = Tmdb.cached(item, section === 'movies' ? 'movie' : 'tv', 'genres');
         return body && body.genres ? body.genres.map((genre) => genre.name) : [];
     };
 

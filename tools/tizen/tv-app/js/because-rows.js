@@ -185,8 +185,9 @@ window.BecauseRows = (function () {
     }
 
     function rows(sourceId, keep, shown) {
+        if (!Tmdb.on('similar')) return [];
         var key = storeKey(sourceId);
-        if (!built || built.key !== key) built = { key: key, rows: Tmdb.enabled() ? build(sourceId, keep, shown) : [] };
+        if (!built || built.key !== key) built = { key: key, rows: build(sourceId, keep, shown) };
         return built.rows;
     }
 

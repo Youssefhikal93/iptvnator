@@ -9,7 +9,7 @@
 // deps: section() -> the open section
 //       ready() -> whether the section's list is loaded and can be filtered
 //       candidates() -> the list on screen, before the genre narrows it
-//       tmdb -> { enabled(), cached(item, type), match(item, type, wanted) }
+//       tmdb -> { on(feature), cached(item, type, feature), match(item, type, wanted, feature) }
 //       changed(listChanged) -> something to show again: the progress, and
 //           with listChanged also the narrowed list
 window.GenreFilter = function (deps) {
@@ -27,6 +27,14 @@ window.GenreFilter = function (deps) {
     var remaining = 0;
     var tried = [];
     var runs = 0;
+
+    if (window.Prefs && Prefs.onChange) Prefs.onChange(function (name) {
+        if (name !== 'tmdbGenres') return;
+        token++;
+        offers = {};
+        progress = null;
+        remaining = 0;
+    });
 
     function filterable(section) {
         return section === 'movies' || section === 'series';
@@ -55,24 +63,24 @@ window.GenreFilter = function (deps) {
             runs = 0;
         }
         runs++;
-        if (!genre || !deps.tmdb.enabled()) return;
+        if (!genre || !deps.tmdb.on('genres')) return;
         var type = section === 'movies' ? 'movie' : 'tv';
         var asked = tried;
         var open = function (item) { return !Genres.has(item, section, genre); };
         var waiting = function () {
             return deps.candidates().filter(function (item) {
-                return open(item) && asked.indexOf(item) === -1 && !deps.tmdb.cached(item, type);
+                return open(item) && asked.indexOf(item) === -1 && !deps.tmdb.cached(item, type, 'genres');
             });
         };
         var batch = waiting().slice(0, PAGE);
         if (!batch.length) return;
         var checking = progress = { done: 0, total: batch.length };
-        var live = function () { return mine === token; };
+        var live = function () { return mine === token && deps.tmdb.on('genres'); };
         var step = function () {
             if (!live() || !batch.length) return Promise.resolve();
             var item = batch.shift();
             asked.push(item);
-            return deps.tmdb.match(item, type, live).catch(function () {}).then(function () {
+            return deps.tmdb.match(item, type, live, 'genres').catch(function () {}).then(function () {
                 if (!live()) return;
                 checking.done++;
                 deps.changed(!open(item));
@@ -118,7 +126,7 @@ window.GenreFilter = function (deps) {
             if (offers[section]) return;
             // With TMDB every standard genre can be found; without it only the
             // genres the provider's list carries.
-            var pick = deps.tmdb.enabled() ? Genres.pills : Genres.common;
+            var pick = deps.tmdb.on('genres') ? Genres.pills : Genres.common;
             offers[section] = pick([], section, OFFER_MAX);
             load().then(function (list) {
                 if (list) offers[section] = pick(list, section, OFFER_MAX);
@@ -133,7 +141,7 @@ window.GenreFilter = function (deps) {
         },
         // Titles still to check for the picked genre; none while checking.
         pending: function () {
-            return current() && !progress ? remaining : 0;
+            return deps.tmdb.on('genres') && current() && !progress ? remaining : 0;
         },
         // The list narrowed to the picked genre and the text for when it
         // leaves nothing: still looking, more to check, or no title at all.
@@ -153,6 +161,7 @@ window.GenreFilter = function (deps) {
         },
         // What the status chip shows: the count while checking, else what is left.
         hint: function () {
+            if (!deps.tmdb.on('genres')) return '';
             if (progress) return I18n.t('find.progress', progress);
             if (remaining && current()) return I18n.t('find.moreHint', { n: remaining });
             return '';

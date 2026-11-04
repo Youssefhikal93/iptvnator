@@ -53,7 +53,7 @@ window.TmdbSettings = (function () {
         status = I18n.t('tmdb.checking');
         changed();
         var secret = Prefs.get('tmdbApiKey');
-        Tmdb.request('/configuration', {}, true).then(function (body) {
+        Tmdb.request('/configuration', {}, true, null).then(function (body) {
             if (secret !== Prefs.get('tmdbApiKey')) return;
             status = I18n.t(body ? 'tmdb.keyWorks' : 'tmdb.keyRefused');
             hooks.toast(status);
@@ -64,12 +64,13 @@ window.TmdbSettings = (function () {
     return {
         rows: [
             // One row: the value shows the key's end and its last test; OK offers Test, Change, Remove.
-            { group: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key',
+            { get group() { return I18n.t('settings.external'); }, part: 'TMDB', get label() { return I18n.t('tmdb.keyTitle'); }, action: 'tmdb-key',
                 get hint() { return Prefs.get('tmdbApiKey') ? I18n.t('keys.hint') : ''; },
                 text: function () {
                     var secret = Prefs.get('tmdbApiKey');
                     return secret ? I18n.t('tmdb.keySet', { last: secret.slice(-4) }) + (status ? ' · ' + status : '') : I18n.t('tmdb.notSet');
                 } },
+            ...OnlineServices.rows('tmdb'),
             { label: 'The Movie Database', text: I18n.t('tmdb.attribution') },
         ],
         act: act,

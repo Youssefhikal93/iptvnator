@@ -177,8 +177,8 @@ ScreenSaver.slides = function (rows, deps) {
             const key = entry.section + ':' + (item.series_id || item.stream_id);
             if (seen[key] || out.length >= ScreenSaver.MAX) return;
             const d = deps.details(entry) || {};
-            const poster = d.poster || item.stream_icon || item.cover || '';
-            const image = d.backdrop || poster;
+            const poster = OnlineServices.artwork(d.poster) || item.stream_icon || item.cover || '';
+            const image = OnlineServices.artwork(d.backdrop) || poster;
             if (!image) return;
             seen[key] = true;
             const genre = String(d.genre || item.genre || '').split(/\s*,\s*/).filter(Boolean).slice(0, 2).join(', ');
@@ -189,7 +189,7 @@ ScreenSaver.slides = function (rows, deps) {
                 title: item.name || '',
                 meta: [episode, d.year, genre, left].filter(Boolean).join(' · '),
                 image,
-                wide: !!d.backdrop,
+                wide: !!OnlineServices.artwork(d.backdrop),
             });
         });
     });

@@ -19,6 +19,8 @@ I18n.tables.ar = {
     "services.genres": "التحقق من التصنيف",
     "services.genresOff": "يختفي خيار التحقق من ٢٠ عملاً آخر. تستخدم تصفية التصنيفات معلومات المصدر فقط.",
     "services.boxes": "معلومات البطاقات العريضة والمفصلة",
+    "services.saver": "صور شاشة التوقف",
+    "services.saverOff": "سيستخدم عرض الصور صور مزوّدك فقط، دون خلفيات TMDB المحفوظة.",
     "services.boxesOff": "تعرض بطاقات التصفح معلومات المصدر فقط. تبقى معلومات TMDB المحفوظة على التلفاز.",
     "services.opensubtitles": "OpenSubtitles",
     "services.opensubtitlesOff": "يتوقف البحث والتنزيل وعرض الترجمات المحفوظة من OpenSubtitles.",

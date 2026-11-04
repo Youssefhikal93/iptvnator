@@ -154,6 +154,8 @@ test('#61 slides come from Continue watching, favorites and recently added, once
     var slides = JSON.parse(JSON.stringify(env.ScreenSaver.slides(rows, {
         details: function (entry) { return details[(entry.item.show || entry.item).series_id || entry.item.stream_id] || null; },
         progress: function (entry) { return entry.section === 'movies' ? { position: 600, duration: 4920 } : null; },
+        // Shuffle keeps the order when random() is just below 1.
+        random: function () { return 0.999; },
     })));
     assert.deepEqual(slides.map(function (s) { return s.title; }), ['Movie 1', 'Show 4', 'Movie 3']);
     assert.deepEqual(slides[0], { from: 'Continue watching', title: 'Movie 1', meta: '2008 · Action, Crime · 72 min left', image: 'b1.jpg', wide: true });
@@ -168,6 +170,45 @@ test('#61 at most forty slides', function () {
     for (var i = 0; i < 60; i++) entries.push({ section: 'movies', item: { name: 'M' + i, stream_id: i, stream_icon: i + '.jpg' } });
     var slides = env.ScreenSaver.slides([{ id: 'new-movies', title: 'New', entries: entries }], { details: function () { return null; }, progress: function () { return null; } });
     assert.equal(slides.length, 40);
+});
+
+test('#99 a title with only a poster uses a saved TMDB backdrop; too few titles add random library ones; the order is shuffled', function () {
+    var env = load(['screen-saver.js'], {}, { Prefs: { get: function () { return undefined; } } }).globals;
+    var movie = function (n) { return { name: 'Movie ' + n, stream_id: n, stream_icon: 'p' + n + '.jpg' }; };
+    var rows = [{ id: 'fav-movies', title: 'Favorite movies', entries: [{ section: 'movies', item: movie(1) }, { section: 'movies', item: movie(2) }] }];
+    var asked = [];
+    var deps = {
+        details: function () { return null; },
+        progress: function () { return null; },
+        backdrop: function (entry) { return entry.item.stream_id === 1 ? 'saved-b1.jpg' : ''; },
+        library: function (count) {
+            asked.push(count);
+            var list = [{ section: 'movies', item: movie(2) }];
+            for (var i = 10; i < 30; i++) list.push({ section: i % 2 ? 'series' : 'movies', item: i % 2 ? { name: 'Show ' + i, series_id: i, cover: 's' + i + '.jpg' } : movie(i) });
+            return list;
+        },
+        random: function () { return 0.999; },
+    };
+    var slides = JSON.parse(JSON.stringify(env.ScreenSaver.slides(rows, deps)));
+    assert.deepEqual(slides[0], { from: 'Favorite movies', title: 'Movie 1', meta: '', image: 'saved-b1.jpg', wide: true });
+    assert.equal(slides[1].image, 'p2.jpg');
+    assert.deepEqual(asked, [20]);
+    // Movie 2 is not repeated; the library adds the rest under Movies and Series.
+    assert.equal(slides.length, 22);
+    assert.equal(slides.filter(function (s) { return s.title === 'Movie 2'; }).length, 1);
+    assert.deepEqual(slides.slice(2, 4).map(function (s) { return s.from; }), ['Movies', 'Series']);
+    // Enough titles of the viewer's own: no library pick.
+    var many = [];
+    for (var n = 0; n < 12; n++) many.push({ section: 'movies', item: movie(100 + n) });
+    asked = [];
+    env.ScreenSaver.slides([{ id: 'new-movies', title: 'New', entries: many }], deps);
+    assert.deepEqual(asked, []);
+    // Another random order is another order.
+    var seq = 0;
+    deps.random = function () { seq = (seq + 0.37) % 1; return seq; };
+    var shuffled = JSON.parse(JSON.stringify(env.ScreenSaver.slides(rows, deps))).map(function (s) { return s.title; });
+    assert.notDeepEqual(shuffled, slides.map(function (s) { return s.title; }));
+    assert.deepEqual(shuffled.slice().sort(), slides.map(function (s) { return s.title; }).sort());
 });
 
 test('#74 Logo and clock waits like the slideshow, asks for no titles, and draws on the clock timer only', function () {

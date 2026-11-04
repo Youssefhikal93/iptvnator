@@ -25,6 +25,8 @@ window.ScreenSaver = function (deps) {
     let root = null;
     let list = [];
     let index = 0;
+    // The picture shown before this one, kept under it while it fades in (#99).
+    let previous = null;
     let kind = 'ours';
 
     function samsung(ours) {
@@ -63,10 +65,14 @@ window.ScreenSaver = function (deps) {
         ? UI.img('ss-art', slide.image)
         : html`<div class="ss-poster-back" style=${{ backgroundImage: 'url("' + slide.image + '")' }}></div>${UI.img('ss-poster', slide.image)}`);
 
-    const View = ({ slide, shift, time }) => {
+    // The last picture stays under the new one while it fades in (#99), and
+    // each picture drifts its own way.
+    const layer = (slide, at, cls) => html`<div class=${'ss-slide ' + cls + ' ss-drift-' + (at % 4)} key=${at + ':' + slide.image}><${Slide} slide=${slide} /></div>`;
+    const View = ({ slide, previous, shift, time }) => {
         const move = { transform: 'translate(' + shift[0] + 'px, ' + shift[1] + 'px)' };
         return html`<div class=${'ss-stage' + (slide ? '' : ' empty')}>
-            ${slide ? html`<div class="ss-slide" key=${index + ':' + slide.image}><${Slide} slide=${slide} /></div><div class="ss-shade"></div>` : null}
+            ${previous ? layer(previous, index - 1, 'ss-prev') : null}
+            ${slide ? html`${layer(slide, index, 'ss-now')}<div class="ss-shade"></div>` : null}
             <div class="ss-clock" style=${move}>${time}</div>
             ${slide ? html`<div class="ss-info" style=${move}>
                 <div class="ss-from">${slide.from}</div>
@@ -80,11 +86,17 @@ window.ScreenSaver = function (deps) {
     function show() {
         const slide = list.length ? list[index % list.length] : null;
         if (list.length > 1) Art.preload([list[(index + 1) % list.length].image]);
-        UI.render(html`<${View} slide=${slide} shift=${SHIFTS[index % SHIFTS.length]} time=${clock()} />`, root);
+        UI.render(html`<${View} slide=${slide} previous=${previous} shift=${SHIFTS[index % SHIFTS.length]} time=${clock()} />`, root);
     }
 
+    // After a full round the titles are read again: a new order, and rows
+    // that were still loading when it started (#99).
     function next() {
+        previous = list.length ? list[index % list.length] : null;
         index++;
+        if (index % Math.max(1, list.length) === 0) list = deps.slides();
+        const now = list.length ? list[index % list.length] : null;
+        if (previous && now && now.image === previous.image && now.title === previous.title) previous = null;
         show();
     }
 
@@ -115,6 +127,7 @@ window.ScreenSaver = function (deps) {
         if (kind === 'logo') return startLogo();
         list = deps.slides();
         index = 0;
+        previous = null;
         show();
         ticker = setInterval(next, SLIDE_MS);
         Log.info('SAVER on (' + list.length + ' titles)');
@@ -164,34 +177,44 @@ window.ScreenSaver = function (deps) {
 //       progress(entry) -> Progress.of shape or null
 ScreenSaver.ROWS = ['continue', 'fav-movies', 'fav-series', 'new-movies', 'new-series'];
 ScreenSaver.MAX = 40;
+ScreenSaver.FEW = 10;
 ScreenSaver.slides = function (rows, deps) {
     'use strict';
 
     const seen = {};
     const out = [];
+    const random = deps.random || Math.random;
     const minutesLeft = (p) => (p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '');
+    function add(entry, from, id) {
+        const item = entry.item.show || entry.item;
+        const key = entry.section + ':' + (item.series_id || item.stream_id);
+        if (seen[key] || out.length >= ScreenSaver.MAX) return;
+        const d = deps.details(entry) || {};
+        const poster = OnlineServices.artwork(d.poster) || item.stream_icon || item.cover || '';
+        // A wide picture: the title's own, else a TMDB backdrop already saved (#99).
+        const wide = OnlineServices.artwork(d.backdrop) || (deps.backdrop ? deps.backdrop(entry) : '');
+        const image = wide || poster;
+        if (!image) return;
+        seen[key] = true;
+        const genre = String(d.genre || item.genre || '').split(/\s*,\s*/).filter(Boolean).slice(0, 2).join(', ');
+        const episode = entry.item.episode ? String(entry.item.episode.label || '').replace(/\s+/g, ' ').trim() : '';
+        const left = id === 'continue' ? minutesLeft(deps.progress(entry)) : '';
+        out.push({ from: from, title: item.name || '', meta: [episode, d.year, genre, left].filter(Boolean).join(' · '), image: image, wide: !!wide });
+    }
     ScreenSaver.ROWS.forEach((id) => {
         const row = rows.filter((candidate) => candidate.id === id)[0];
-        (row ? row.entries : []).forEach((entry) => {
-            const item = entry.item.show || entry.item;
-            const key = entry.section + ':' + (item.series_id || item.stream_id);
-            if (seen[key] || out.length >= ScreenSaver.MAX) return;
-            const d = deps.details(entry) || {};
-            const poster = OnlineServices.artwork(d.poster) || item.stream_icon || item.cover || '';
-            const image = OnlineServices.artwork(d.backdrop) || poster;
-            if (!image) return;
-            seen[key] = true;
-            const genre = String(d.genre || item.genre || '').split(/\s*,\s*/).filter(Boolean).slice(0, 2).join(', ');
-            const episode = entry.item.episode ? String(entry.item.episode.label || '').replace(/\s+/g, ' ').trim() : '';
-            const left = id === 'continue' ? minutesLeft(deps.progress(entry)) : '';
-            out.push({
-                from: row.title,
-                title: item.name || '',
-                meta: [episode, d.year, genre, left].filter(Boolean).join(' · '),
-                image,
-                wide: !!OnlineServices.artwork(d.backdrop),
-            });
-        });
+        (row ? row.entries : []).forEach((entry) => add(entry, row.title, id));
     });
+    // Too few of the viewer's own: random films and series of the source (#99).
+    if (out.length < ScreenSaver.FEW && deps.library) {
+        deps.library(ScreenSaver.FEW * 2, random).forEach((entry) => add(entry, I18n.t(entry.section === 'series' ? 'rail.series' : 'rail.movies')));
+    }
+    // A new order every time it starts.
+    for (let i = out.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        const swap = out[i];
+        out[i] = out[j];
+        out[j] = swap;
+    }
     return out;
 };

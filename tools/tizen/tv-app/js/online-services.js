@@ -3,7 +3,7 @@ window.OnlineServices = (function () {
     'use strict';
 
     var FEATURES = {
-        tmdb: ['details', 'artwork', 'cast', 'collections', 'similar', 'genres', 'boxes'],
+        tmdb: ['details', 'artwork', 'cast', 'collections', 'similar', 'genres', 'boxes', 'saver'],
         opensubtitles: ['opensubtitles'], subdl: ['subdl'], subsource: ['subsource'], deepl: ['deepl'],
         trailers: ['youtube'],
     };
@@ -21,6 +21,7 @@ window.OnlineServices = (function () {
 
     // Backup search owns SubSource and DeepL (#98): turning it Off or On turns
     // both the same way; turning either back On turns Backup search On again.
+    // Artwork Off turns Screen saver artwork Off; that On turns Artwork On (#99).
     var linking = false;
     function link(name) {
         if (linking) return;
@@ -33,6 +34,11 @@ window.OnlineServices = (function () {
                 set('deeplOn', on);
             } else if ((name === 'subsourceOn' || name === 'deeplOn') && Prefs.get(name) !== false) {
                 set('subtitleFallback', true);
+            } else if (name === 'tmdbArtwork' && Prefs.get(name) === false) {
+                // The saver's backdrops are artwork too (#99).
+                set('tmdbSaver', false);
+            } else if (name === 'tmdbSaver' && Prefs.get(name) !== false) {
+                set('tmdbArtwork', true);
             }
         } finally {
             linking = false;

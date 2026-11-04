@@ -96,7 +96,8 @@ test('#98 switches belong to profiles and full backups retain every switch', fun
     var api = load(['profile-store.js', 'settings-store.js', 'online-services.js', 'full-backup.js']).globals;
     var rows = ['tmdb', 'opensubtitles', 'subdl', 'subsource', 'deepl', 'trailers'].flatMap(function (group) { return api.OnlineServices.rows(group); });
     var first = api.ProfileStore.active().id;
-    rows.forEach(function (row) { assert.equal(api.Prefs.get(row.key), true); api.Prefs.set(row.key, false); });
+    rows.forEach(function (row) { assert.equal(api.Prefs.get(row.key), true); });
+    rows.forEach(function (row) { api.Prefs.set(row.key, false); });
     var backup = api.FullBackup.collect();
     var second = api.ProfileStore.add('Second');
     api.ProfileStore.setActive(second.id);

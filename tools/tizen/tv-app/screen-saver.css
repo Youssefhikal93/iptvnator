@@ -2,7 +2,9 @@
    while nobody watches, and a dark screen is what protects the panel. */
 #screen-saver { position: fixed; inset: 0; z-index: 10000; background: #000; overflow: hidden; color: #fff; font-family: 'DM Sans', sans-serif; }
 #screen-saver .ss-stage { position: absolute; inset: 0; }
-#screen-saver .ss-slide { position: absolute; inset: 0; animation: ss-in 1.6s ease-out both; }
+#screen-saver .ss-slide { position: absolute; inset: 0; animation: ss-in 2s ease-in-out both; }
+/* Crossfade (#99): the last picture stays still underneath while the new one fades in. */
+#screen-saver .ss-slide.ss-prev { animation: none; }
 #screen-saver .ss-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: ss-drift 20s linear both; }
 /* A title with only a poster: the poster blurred behind, sharp on the right. */
 #screen-saver .ss-poster-back { position: absolute; inset: -60px; background-size: cover; background-position: center; filter: blur(48px) brightness(0.45); }
@@ -29,6 +31,13 @@
 
 @keyframes ss-in{ from { opacity: 0; } to { opacity: 1; } }
 @keyframes ss-drift { from { transform: scale(1.08) translate(-1.2%, -0.8%); } to { transform: scale(1.08) translate(1.2%, 0.8%); } }
+/* Each slide drifts its own way: zoom in, pan back, zoom out (#99). */
+@keyframes ss-drift-b { from { transform: scale(1.02); } to { transform: scale(1.12) translate(-1%, 0.6%); } }
+@keyframes ss-drift-c { from { transform: scale(1.08) translate(1.2%, 0.8%); } to { transform: scale(1.08) translate(-1.2%, -0.8%); } }
+@keyframes ss-drift-d { from { transform: scale(1.12) translate(0.8%, -0.6%); } to { transform: scale(1.02); } }
+#screen-saver .ss-drift-1 .ss-art, #screen-saver .ss-drift-1 .ss-poster { animation-name: ss-drift-b; }
+#screen-saver .ss-drift-2 .ss-art, #screen-saver .ss-drift-2 .ss-poster { animation-name: ss-drift-c; }
+#screen-saver .ss-drift-3 .ss-art, #screen-saver .ss-drift-3 .ss-poster { animation-name: ss-drift-d; }
 
 /* Animations off (Settings > Display): the picture still changes every 20 s,
    it just does not drift or fade. */

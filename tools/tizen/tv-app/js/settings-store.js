@@ -13,6 +13,7 @@ window.Prefs = (function () {
         tmdbSimilar: true,
         tmdbGenres: true,
         tmdbBoxes: true,
+        tmdbSaver: true,
         opensubtitlesOn: true,
         subdlOn: true,
         subsourceOn: true,

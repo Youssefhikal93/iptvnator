@@ -2523,6 +2523,33 @@ window.Browser = function (hooks) {
     }
 
     // The details the app already holds for a title; never a request.
+    // A backdrop TMDB already gave this session, for the screen saver (#99).
+    function savedBackdrop(entry) {
+        if (entry.section === 'live' || !Tmdb.on('saver')) return '';
+        var body = Tmdb.cached(entry.item.show || entry.item, entry.section === 'series' || entry.item.episode ? 'tv' : 'movie', 'saver');
+        return body ? Tmdb.image(body.backdrop_path, 'w1280') : '';
+    }
+
+    // Random films and series with a picture, for a saver with too few
+    // titles of its own (#99): up to count of each, within kids and hidden rules.
+    function libraryPicks(count, random) {
+        var picks = [];
+        ['movies', 'series'].forEach(function (section) {
+            if (!available(section) || !state.catalogue) return;
+            var list = state.catalogue.peek({ section: section, kind: 'items' });
+            // Not read yet: the saved copy is read for the next round.
+            if (!list) return state.catalogue.readSaved({ section: section, kind: 'items' });
+            var taken = 0;
+            for (var tries = 0; tries < count * 4 && taken < count && list.length; tries++) {
+                var item = list[Math.floor(random() * list.length)];
+                if (!item || !(item.stream_icon || item.cover) || !visibility.allows(section, item, { sourceId: item.sourceId })) continue;
+                picks.push({ item: item, section: section });
+                taken++;
+            }
+        });
+        return picks;
+    }
+
     function peekDetails(entry) {
         if (otherSource(entry.item)) return null;
         if (entry.item.episode || entry.section === 'series') {
@@ -2684,6 +2711,8 @@ window.Browser = function (hooks) {
             return ScreenSaver.slides(homeRows(), {
                 progress: progressOf,
                 details: peekDetails,
+                backdrop: savedBackdrop,
+                library: libraryPicks,
             });
         },
     };

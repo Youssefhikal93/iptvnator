@@ -179,6 +179,16 @@ window.CatalogueLoader = function (deps) {
         load: load,
         refreshed: refreshedSections,
         peek: function (what) { return memory[keyOf(what)]; },
+        // The copy saved on the TV only, never the provider (#99, the screen
+        // saver): peek() has it once it is read.
+        readSaved: function (what) {
+            var key = keyOf(what);
+            var mine = generation;
+            if (retired || memory[key] !== undefined || pending[key]) return;
+            ready.then(function () { return deps.store.get(deps.sourceId, key); }).then(function (saved) {
+                if (current(mine) && saved !== undefined && memory[key] === undefined) memory[key] = saved;
+            }).catch(function () {});
+        },
         drop: function () {
             forget();
             ready = deps.store.drop(deps.sourceId);

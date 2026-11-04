@@ -10,31 +10,52 @@ function seed(settings = {}) {
     return s;
 }
 
-test('after ten idle minutes on Home the slideshow shows the titles; the waking key does nothing else', async ({ page }) => {
+test('after ten idle minutes on Home the slideshow shows the titles in a shuffled order, crossfading; the waking key does nothing else', async ({ page }) => {
     await page.clock.install();
+    // Home's Recently added rows load right after start; idle only once they have.
+    const listed = page.waitForResponse(response => response.url().includes('get_vod_streams'));
     await boot(page, seed());
     await expect(page.locator('.hm-hero-title')).toHaveText('Movie 25');
     // The hero has asked for its details: the backdrop is now known.
     await page.clock.runFor(1000);
+    await listed;
+    await page.clock.runFor(1000);
+    await expect(page.locator('.hm-hero-art, .hm-stage-art').first()).toHaveAttribute('src', /backdrop.jpg/);
     await page.clock.fastForward(9 * 60 * 1000);
     await expect(saver(page)).toHaveCount(0);
     await page.clock.fastForward(61 * 1000);
     await expect(saver(page)).toBeVisible();
-    await expect(saver(page).locator('.ss-from')).toHaveText('Continue watching');
-    await expect(saver(page).locator('.ss-title')).toHaveText('Movie 25');
-    await expect(saver(page).locator('.ss-meta')).toContainText('min left');
-    await expect(saver(page).locator('.ss-art')).toHaveAttribute('src', /backdrop\.jpg/);
     await expect(saver(page).locator('.ss-hint')).toHaveText('Press any key to go back');
-    // Twenty seconds later the next title, and not one request on the way.
+    // Every twenty seconds the next title, and not one request on the way (#99: shuffled).
+    // Only the first minute: later the idle app may refresh its source (#86).
     const requests = [];
-    page.on('request', req => { if (!req.url().includes('/img/')) requests.push(req.url()); });
-    await page.clock.fastForward(20 * 1000);
-    // The favorite has no artwork in its saved snapshot, so Recently added is next.
-    await expect(saver(page).locator('.ss-from')).toHaveText('Recently added movies');
-    await expect(saver(page).locator('.ss-title')).not.toHaveText('Movie 25');
-    await page.clock.fastForward(20 * 1000);
-    await expect(saver(page).locator('.ss-from')).toHaveText('Recently added movies');
-    expect(requests).toEqual([]);
+    const listen = req => { if (!req.url().includes('/img/')) requests.push(req.url()); };
+    page.on('request', listen);
+    const shown = [];
+    let layers = 0;
+    const done = () => shown.some(slide => slide.title === 'Movie 25' && slide.from === 'Continue watching') && shown.some(slide => slide.from === 'Recently added movies');
+    for (let i = 0; i < 45 && !done(); i++) {
+        const now = saver(page).locator('.ss-slide.ss-now');
+        shown.push({
+            from: await saver(page).locator('.ss-from').textContent(),
+            title: await saver(page).locator('.ss-title').textContent(),
+            meta: await saver(page).locator('.ss-meta').count() ? await saver(page).locator('.ss-meta').textContent() : '',
+            art: await now.locator('.ss-art').count() ? await now.locator('.ss-art').getAttribute('src') : '',
+        });
+        await page.clock.fastForward(20 * 1000);
+        // The last picture stays under the new one while it fades in.
+        layers = Math.max(layers, await saver(page).locator('.ss-slide').count());
+        if (i === 2) {
+            page.off('request', listen);
+            expect(requests).toEqual([]);
+        }
+    }
+    expect(layers).toBe(2);
+    const resumed = shown.find(slide => slide.title === 'Movie 25' && slide.from === 'Continue watching');
+    expect(resumed).toBeTruthy();
+    expect(resumed.meta).toContain('min left');
+    expect(resumed.art).toMatch(/backdrop.jpg/);
+    expect(shown.some(slide => slide.from === 'Recently added movies')).toBe(true);
     await press(page, 'Enter');
     await expect(saver(page)).toHaveCount(0);
     await expect(page.locator('#player')).toBeHidden();

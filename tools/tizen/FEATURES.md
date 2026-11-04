@@ -308,9 +308,11 @@ Home and Movies cards share a single accent ring with a small gap. Only the acti
 
 Open Settings → Display → Language and choose with the arrows and OK. English, العربية (Arabic) and other available languages change menus and help text; Arabic also changes the reading direction. Source title names are supplied by the source.
 
-### Screen savers (#61, #71, #74)
+### Screen savers (#61, #71, #74, #99)
 
-The logo rises gently over a 5.5-second cycle; the smaller logos keep their different animations on 14–20-second cycles while they drift (#95).
+The logo rises gently over a 5.5-second cycle.
+
+This app's slideshow crossfades each picture over the last one, and each picture drifts its own way. Titles come in a new shuffled order every round; a title with only a poster uses a TMDB backdrop the app already has. With fewer than 10 of the viewer's own titles it adds random films and series saved on the TV. It never sends a request. External services → TMDB → Screen saver artwork (On) turns the TMDB backdrops off; Artwork Off turns it off too (#99).
 
 Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock shows only the bouncing logo with the clock and date centred below it; Animations Off keeps the logo still. Press any key to dismiss the app's saver; that press does not also select or play anything.
 

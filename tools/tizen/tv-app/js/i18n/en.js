@@ -18,6 +18,8 @@ I18n.tables.en = {
     "services.genres": "Genre check",
     "services.genresOff": "Check 20 more will be hidden. Genre filtering uses provider information only.",
     "services.boxes": "Facts in Wide and Info boxes",
+    "services.saver": "Screen saver artwork",
+    "services.saverOff": "The slideshow will use only your provider's pictures, never saved TMDB backdrops.",
     "services.boxesOff": "Browsing boxes will show provider facts only. Saved TMDB facts stay on the TV.",
     "services.opensubtitles": "OpenSubtitles",
     "services.opensubtitlesOff": "OpenSubtitles searches, downloads and saved subtitles will be unavailable.",

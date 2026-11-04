@@ -138,17 +138,76 @@
     background: var(--now-line);
 }
 
-/* Home: the live row gets the same wide plates and a shorter row. */
-.hm-row.live {
-    height: auto;
-    padding-bottom: 26px;
-}
+/* Home: a live tile is a 2:3 poster like a film's. The logo sits on a light
+   plate in the upper half, the channel name under it and the programme on now
+   at the bottom over its progress bar. The name shows inside the poster, so
+   the lines under the tile go. */
 .hm-card.live .hm-poster.plate {
-    height: auto;
+    --plate-top: 50%;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    aspect-ratio: auto;
+    background: var(--widget-bg);
+}
+.hm-card.live .hm-poster.plate .plate-logo {
+    flex: 0 0 var(--plate-top);
+    height: var(--plate-top);
+    padding: 8% 12%;
     background: var(--plate-bg);
 }
-.hm-card.live .plate-name {
+[data-theme="light"] .hm-card.live .hm-poster.plate:not(.nologo) {
+    box-shadow: none;
+}
+.hm-card.live .plate:not(.nologo) .plate-name {
+    display: -webkit-box;
+    padding: 10px 14px 0;
+    color: var(--on-surface);
+    font-size: 24px;
+    text-align: center;
+}
+.hm-card.live .plate.nologo .plate-name {
+    flex: 0 0 var(--plate-top);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    background: var(--plate-bg);
     font-size: 26px;
+}
+/* No guide entry: the name fills the lower half instead of leaving it empty,
+   and a channel without a logo is one colour plate. */
+.hm-card.live.noguide .plate:not(.nologo) .plate-name {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0 16px;
+    font-size: 26px;
+}
+.hm-card.live.noguide .plate.nologo .plate-name {
+    flex: 1 1 auto;
+    font-size: 28px;
+}
+.hm-card.live .hm-now {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    padding: 0 16px;
+    color: var(--muted);
+    font-size: 21px;
+    line-height: 1.2;
+    text-align: center;
+}
+.hm-card.live.inside > span,
+.hm-card.live.inside > small {
+    display: none;
 }
 .hm-bar.live .hm-fill {
     background: var(--now-line);

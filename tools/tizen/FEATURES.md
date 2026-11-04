@@ -154,7 +154,7 @@ A film's detail page can show its collection: move down to the row and use ◀/�
 
 ### Home rows (#5)
 
-Choose Home in the main menu, then use the arrows and OK to open or play titles in its rows. Rows include Continue watching, favorites, recently watched channels and recently added titles when there is something to show. Settings → Display → Home layout offers Cinema, Big first row or Backdrop.
+Choose Home in the main menu, then use the arrows and OK to open or play titles in its rows. Rows include Continue watching, favorites, recently watched channels and recently added titles when there is something to show. Settings → Display → Home layout offers Cinema, Big first row or Backdrop. Live channel tiles are the same size as posters: the logo on top, the channel name under it and the programme on now with its progress bar; a channel without a guide entry shows its name larger instead.
 
 ### Continue watching (#31, #33)
 

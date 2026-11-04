@@ -77,3 +77,27 @@ test('the player drawer, the guide and the Home live row use the same plates', a
     await expect(page.locator('#pl-channels')).toBeVisible();
     await expect(page.locator('.pl-channel').first().locator('.pl-channel-logo.plate')).toBeVisible();
 });
+
+test('Home live tiles are posters like films; with no guide entry the name fills the tile', async ({ page }) => {
+    await logos(page);
+    await boot(page, { storage: {
+        settings: { density: 'comfortable' },
+        'favorites:s1': { live: [channel(1), channel(3)], movies: [{ stream_id: 2001, name: 'Film' }] },
+    } });
+    const live = page.locator('.hm-card.live');
+    await expect(live).toHaveCount(2);
+    const film = await page.locator('.hm-card:not(.live) .hm-poster').first().boundingBox();
+    // The second tile: the first has focus and is zoomed.
+    const tile = await live.nth(1).locator('.hm-poster').boundingBox();
+    expect(Math.round(tile.height)).toBe(Math.round(film.height));
+    expect(Math.round(tile.width)).toBe(Math.round(film.width));
+    // The name shows inside the poster, not under it.
+    await expect(live.first().locator('.plate-name')).toHaveText('Channel 1 (cat all)');
+    await expect(live.first().locator('> span').first()).toBeHidden();
+    // Each tile shows the programme on now, or is marked noguide.
+    for (let i = 0; i < 2; i++) {
+        const card = live.nth(i);
+        if (await card.locator('.hm-now').count()) await expect(card).not.toHaveClass(/noguide/);
+        else await expect(card).toHaveClass(/noguide/);
+    }
+});

@@ -209,8 +209,10 @@ window.Home = (api, element) => {
             sub = item.name + ' \u00b7 ' + I18n.date(p.start, { weekday: 'short', month: 'short', day: 'numeric' }) + ' \u00b7 ' + I18n.time(p.start) + ' - ' + I18n.time(p.end);
         } else if (live) {
             const now = api.programme(item);
-            sub = now && now.title;
-            overlays = [chip, now && now.end > now.start ? bar('hm-bar live', (Date.now() - now.start) / (now.end - now.start)) : null];
+            // The channel name and the programme on now sit inside the poster.
+            overlays = [chip,
+                now && now.title ? html`<span class="hm-now">${now.title}</span>` : null,
+                now && now.end > now.start ? bar('hm-bar live', (Date.now() - now.start) / (now.end - now.start)) : null];
         } else {
             const p = api.progress(entry);
             sub = episodeOf(entry).replace(/^S(\d+) E(\d+)\s.*$/, 'S$1 E$2');
@@ -226,7 +228,7 @@ window.Home = (api, element) => {
         const poster = live
             ? html`<${Kit.Plate} cls="hm-poster" name=${entry.programme ? item.name : name} logo=${src} onFail=${failed}>${overlays}</${Kit.Plate}>`
             : html`<${Poster} src=${src} initials=${name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase()}>${overlays}</${Poster}>`;
-        return { key: entryKey(entry), cls: 'hm-card' + (live ? ' live' : '') + (big ? ' big' : ''), poster, name, sub };
+        return { key: entryKey(entry), cls: 'hm-card' + (live ? ' live' + (entry.programme ? '' : ' inside' + (api.programme(item) && api.programme(item).title ? '' : ' noguide')) : '') + (big ? ' big' : ''), poster, name, sub };
     };
 
     const skeletons = (row) => Array.from({ length: visibleCount(row) }, (_, i) => ({ key: i, cls: 'hm-card skeleton', poster: html`<div class="hm-poster"></div>`, name: '' }));

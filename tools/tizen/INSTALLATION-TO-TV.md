@@ -131,7 +131,7 @@ certificate that lists the TV's DUID.
 7. Finish. The main window shows the profile with a check mark, an author
    certificate "Verified by: Samsung VD Author CA" and a distributor
    certificate "Verified by: VD DEVELOPER Public CA Class". Both expire
-   after one year; recreate the profile then. Certificates are stored in
+   after one year; renew them as in [RENEW-SAMSUNG-CERTIFICATE.md](RENEW-SAMSUNG-CERTIFICATE.md). Certificates are stored in
    `%USERPROFILE%\SamsungCertificate\iptvnator-tv\`. The profile is listed by:
 
    ```powershell

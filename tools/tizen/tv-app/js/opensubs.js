@@ -17,6 +17,7 @@ window.OpenSubs = (function () {
     }
 
     function fetchBody(url, options, kind) {
+        if (Prefs.get('opensubtitlesOn') === false) return Promise.reject(failure(401));
         var controller = new AbortController();
         options.signal = controller.signal;
         options.credentials = 'omit';
@@ -37,7 +38,7 @@ window.OpenSubs = (function () {
 
     function request(path, body) {
         var key = Prefs.get('opensubtitlesApiKey');
-        if (!key) return Promise.reject(failure(401));
+        if (!key || Prefs.get('opensubtitlesOn') === false) return Promise.reject(failure(401));
         // Chromium may drop a scripted User-Agent; the API reads X-User-Agent then.
         var headers = { 'Api-Key': key, 'User-Agent': AGENT, 'X-User-Agent': AGENT, 'Accept': 'application/json' };
         var options = { headers: headers, method: body ? 'POST' : 'GET' };

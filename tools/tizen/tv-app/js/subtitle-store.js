@@ -42,7 +42,13 @@ window.SubtitleStore = (function () {
 
     // match is the search result, which tells a provider which file of a zip
     // to take, or a translation what to translate.
+    function allowed(fileId) {
+        var feature = SubtitleTranslate.owns(fileId) ? 'deepl' : SubSource.owns(fileId) ? 'subsource' : SubDL.owns(fileId) ? 'subdl' : 'opensubtitles';
+        return Prefs.get(feature + 'On') !== false;
+    }
+
     function obtain(fileId, match) {
+        if (!allowed(fileId)) return Promise.reject(new Error('Subtitle service off'));
         var hit = read(CACHE)[fileId];
         if (hit && typeof hit.text === 'string' && SubtitleFile.parse(hit.text).length) return Promise.resolve({ text: hit.text, remaining: null });
         if (!pending[fileId]) pending[fileId] = provider(fileId).download(fileId, match).then(function (result) {
@@ -69,7 +75,9 @@ window.SubtitleStore = (function () {
 
     return {
         obtain: obtain,
+        allowed: allowed,
         cached: function (fileId) {
+            if (!allowed(fileId)) return '';
             var hit = read(CACHE)[fileId];
             return hit && typeof hit.text === 'string' ? hit.text : '';
         },

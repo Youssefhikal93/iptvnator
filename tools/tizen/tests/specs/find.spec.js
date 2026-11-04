@@ -73,7 +73,7 @@ async function tmdbThrillers(page) {
     await page.evaluate(() => {
         const said = {};
         window.tmdbAsked = 0;
-        Tmdb.enabled = () => true;
+        Tmdb.on = () => true;
         Tmdb.cached = (item) => said[item.name] || null;
         Tmdb.match = (item) => {
             window.tmdbAsked++;

@@ -13,6 +13,29 @@ window.Tmdb = (function () {
 
     function key() { return Prefs.get('tmdbApiKey') || ''; }
     function enabled() { return !!key(); }
+    var switches = {};
+    var switchesFor = null;
+    function on(feature) {
+        var profile = ProfileStore.key('settings');
+        if (switchesFor !== profile) { switchesFor = profile; switches = {}; }
+        if (switches[feature] !== undefined) return switches[feature];
+        if (feature === 'trailers') return switches[feature] = enabled() && Prefs.get('youtubeOn') !== false;
+        return switches[feature] = enabled() && Prefs.get('tmdb' + feature.charAt(0).toUpperCase() + feature.slice(1)) !== false;
+    }
+    var revisions = {};
+    Prefs.onChange(function (name) {
+        revisions[name] = (revisions[name] || 0) + 1;
+        switches = {};
+    });
+
+    function guard(feature) {
+        var name = feature === 'trailers' ? 'youtubeOn' : feature && 'tmdb' + feature.charAt(0).toUpperCase() + feature.slice(1);
+        var revision = revisions[name];
+        var profile = ProfileStore.key('settings');
+        return function () {
+            return profile === ProfileStore.key('settings') && revisions[name] === revision && (!feature || on(feature));
+        };
+    }
 
     function pump() {
         while (running < 3 && queue.length) {
@@ -59,10 +82,10 @@ window.Tmdb = (function () {
             queue.push(function () {
                 function finish(record) {
                     running--;
-                    resolve(key() === job.secret ? record : null);
+                    resolve(key() === job.secret && job.wanted() ? record : null);
                     pump();
                 }
-                if (key() !== job.secret) return finish(null);
+                if (key() !== job.secret || !job.wanted()) return finish(null);
                 fetchResponse(job).then(finish);
             });
             pump();
@@ -70,28 +93,37 @@ window.Tmdb = (function () {
     }
 
     // The saved or fetched record ({ body, failed, status }) or null.
-    function load(path, params, force) {
+    function load(path, params, force, feature) {
         var secret = key();
-        if (!secret) return Promise.resolve(null);
+        if (!secret || (feature && !on(feature))) return Promise.resolve(null);
+        var wanted = guard(feature);
         params = TmdbLanguage.parameters(path, params);
         var query = TmdbLanguage.query(params);
         var cacheKey = fingerprint(secret) + '|' + path + '?' + query;
         var legacyKey = params.language === 'en-US' ? fingerprint(secret) + '|' + path + '?' + TmdbLanguage.legacyQuery(params) : null;
-        if (pending[cacheKey]) return pending[cacheKey];
+        var pendingKey = ProfileStore.key('settings') + '|' + cacheKey;
+        var shared = pending[pendingKey];
+        if (shared) {
+            shared.readers.push(wanted);
+            return shared.promise.then(function (record) { return wanted() ? record : null; });
+        }
+        shared = { readers: [wanted] };
+        var needed = function () { return shared.readers.some(function (reader) { return reader(); }); };
         var promise = (force ? Promise.resolve(null) : TmdbStore.get(cacheKey, legacyKey)).then(function (saved) {
-            if (key() !== secret) return null;
-            return saved || schedule({ path: path, query: query, secret: secret, cacheKey: cacheKey });
+            if (key() !== secret || !needed()) return null;
+            return saved || schedule({ path: path, query: query, secret: secret, cacheKey: cacheKey, wanted: needed });
         });
-        pending[cacheKey] = promise.then(function (record) {
-            delete pending[cacheKey];
+        shared.promise = promise.then(function (record) {
+            delete pending[pendingKey];
             if (record && record.body && typeof record.body === 'object') expiries.set(record.body, record.expires);
             return record || null;
         });
-        return pending[cacheKey];
+        pending[pendingKey] = shared;
+        return shared.promise.then(function (record) { return wanted() ? record : null; });
     }
 
-    function request(path, params, force) {
-        return load(path, params, force).then(function (record) { return record ? record.body : null; });
+    function request(path, params, force, feature) {
+        return load(path, params, force, feature === undefined ? 'details' : feature).then(function (record) { return record ? record.body : null; });
     }
 
     function clean(title) {
@@ -129,12 +161,18 @@ window.Tmdb = (function () {
 
     function identity(item, type, language) { return (language || TmdbLanguage.tag(I18n.language())) + '|' + type + '|' + id(item) + '|' + normalize(title(item)) + '|' + year(item); }
 
-    function detail(path, language) {
-        var params = { append_to_response: 'credits,videos,similar', language: language };
-        return request(path, params).then(function (body) {
+    // Always the same query, so a saved answer is found whichever switches are
+    // on (#98); Cast, Similar and Trailer are hidden where they are shown.
+    function detailParams(language) {
+        return { append_to_response: 'credits,videos,similar', language: language };
+    }
+
+    function detail(path, language, feature) {
+        var params = detailParams(language);
+        return request(path, params, false, feature).then(function (body) {
             if (!body) return null;
             // Keep the translated facts and trailers when only the plot is missing.
-            var fallback = language !== 'en-US' && !body.overview ? request(path, Object.assign({}, params, { language: 'en-US' })) : Promise.resolve(null);
+            var fallback = language !== 'en-US' && !body.overview ? request(path, Object.assign({}, params, { language: 'en-US' }), false, feature) : Promise.resolve(null);
             return fallback.then(function (english) {
                 var localized = TmdbLanguage.fill(body, english, language);
                 expiries.set(localized, Math.min(expiries.get(body), english ? expiries.get(english) : Infinity));
@@ -143,17 +181,18 @@ window.Tmdb = (function () {
         });
     }
 
-    function match(item, type, wanted) {
-        if (!enabled() || (wanted && !wanted())) return Promise.resolve(null);
+    function match(item, type, wanted, feature) {
+        feature = feature || 'details';
+        if (!on(feature) || (wanted && !wanted())) return Promise.resolve(null);
         var language = TmdbLanguage.tag(I18n.language());
         var params = { query: clean(title(item)) };
         if (year(item)) params[type === 'movie' ? 'year' : 'first_air_date_year'] = year(item);
-        var resolving = id(item) ? Promise.resolve({ id: id(item) }) : request('/search/' + type, params).then(function (body) {
+        var resolving = id(item) ? Promise.resolve({ id: id(item) }) : request('/search/' + type, params, false, feature).then(function (body) {
             return body && pick(item, body.results);
         });
         return resolving.then(function (found) {
             if (!found || (wanted && !wanted())) return null;
-            return detail('/' + type + '/' + found.id, language);
+            return detail('/' + type + '/' + found.id, language, feature);
         }).then(function (body) {
             if (body) matches[identity(item, type, language)] = { body: body, expires: expiries.get(body) };
             return body;
@@ -164,22 +203,23 @@ window.Tmdb = (function () {
     // match() with what went wrong told apart: 'found' with the details,
     // 'none' when TMDB has no such title, 'failed' to try again later.
     // force: the details are asked again even when a saved answer is fresh (#67).
-    function lookup(item, type, force) {
-        if (!enabled()) return Promise.resolve({ status: 'failed' });
+    function lookup(item, type, force, feature) {
+        feature = feature || 'collections';
+        if (!on(feature)) return Promise.resolve({ status: 'failed' });
         var language = TmdbLanguage.tag(I18n.language());
         var params = { query: clean(title(item)) };
         if (year(item)) params[type === 'movie' ? 'year' : 'first_air_date_year'] = year(item);
-        var resolving = id(item) ? Promise.resolve({ found: { id: id(item) } }) : load('/search/' + type, params).then(function (record) {
+        var resolving = id(item) ? Promise.resolve({ found: { id: id(item) } }) : load('/search/' + type, params, false, feature).then(function (record) {
             return record && !record.failed ? { found: pick(item, (record.body || {}).results) } : null;
         });
         return resolving.then(function (result) {
             if (!result) return { status: 'failed' };
             if (!result.found) return { status: 'none' };
             var path = '/' + type + '/' + result.found.id;
-            return load(path, { append_to_response: 'credits,videos,similar', language: language }, force).then(function (record) {
+            return load(path, detailParams(language), force, feature).then(function (record) {
                 if (!record || (record.failed && record.status !== 404)) return { status: 'failed' };
                 if (record.failed) return { status: 'none' };
-                return detail(path, language).then(function (body) {
+                return detail(path, language, feature).then(function (body) {
                     if (!body) return { status: 'failed' };
                     matches[identity(item, type, language)] = { body: body, expires: expiries.get(body) };
                     return { status: 'found', body: body };
@@ -190,7 +230,7 @@ window.Tmdb = (function () {
 
     // A collection's parts (#58): { status, body } like lookup().
     function collection(collectionId, force) {
-        return load('/collection/' + collectionId, {}, force).then(function (record) {
+        return load('/collection/' + collectionId, {}, force, 'collections').then(function (record) {
             if (!record || (record.failed && record.status !== 404)) return { status: 'failed' };
             return record.failed ? { status: 'none' } : { status: 'found', body: record.body };
         });
@@ -222,10 +262,11 @@ window.Tmdb = (function () {
         });
     }
 
-    function image(path, size) { return enabled() && path ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
+    function image(path, size) { return on('artwork') && path ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
 
     return {
         enabled: enabled,
+        on: on,
         request: request,
         match: match,
         lookup: lookup,
@@ -238,7 +279,8 @@ window.Tmdb = (function () {
         pick: pick,
         inLibrary: inLibrary,
         image: image,
-        cached: function (item, type) {
+        cached: function (item, type, feature) {
+            if (!on(feature || 'details')) return null;
             var known = matches[identity(item, type)];
             return known && TmdbStore.fresh(known) ? known.body : null;
         },

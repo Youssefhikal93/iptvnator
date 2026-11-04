@@ -6,6 +6,18 @@ window.Prefs = (function () {
     var SHARED = { tmdbApiKey: true, opensubtitlesApiKey: true, subdlApiKey: true, subsourceApiKey: true, deeplApiKey: true, askProfile: true };
     var listeners = [];
     var DEFAULTS = {
+        tmdbDetails: true,
+        tmdbArtwork: true,
+        tmdbCast: true,
+        tmdbCollections: true,
+        tmdbSimilar: true,
+        tmdbGenres: true,
+        tmdbBoxes: true,
+        opensubtitlesOn: true,
+        subdlOn: true,
+        subsourceOn: true,
+        deeplOn: true,
+        youtubeOn: true,
         autoplayMs: 8000,
         programmeGuide: true,
         livePreview: true,

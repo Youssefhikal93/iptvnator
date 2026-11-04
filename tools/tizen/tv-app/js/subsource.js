@@ -23,7 +23,7 @@ window.SubSource = (function () {
 
     function request(path, kind) {
         var key = Prefs.get('subsourceApiKey');
-        if (!key) return Promise.reject(failure(401));
+        if (!key || Prefs.get('subsourceOn') === false) return Promise.reject(failure(401));
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, 12000);
         return fetch(BASE + path, { signal: controller.signal, credentials: 'omit',

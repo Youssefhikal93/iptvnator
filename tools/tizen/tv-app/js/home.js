@@ -39,9 +39,10 @@ window.Home = (api, element) => {
     };
     const failed = (src) => Log.error('Logo failed ' + logoHost(src));
 
-    const art = (item) => {
+    const art = (item, section) => {
         const show = item.show || item;
-        return show.stream_icon || show.cover || show.logo || '';
+        const url = show.stream_icon || show.cover || show.logo || '';
+        return section === 'live' ? url : OnlineServices.artwork(url);
     };
     const titleOf = (entry) => entry.programme ? entry.programme.title : (entry.item.show ? entry.item.show.name : entry.item.name);
     const episodeOf = (entry) => {
@@ -153,7 +154,7 @@ window.Home = (api, element) => {
         : null);
     const minutesLeft = (p) => (p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '');
 
-    const heroArt = (entry, d) => UI.img('hm-hero-art', d.backdrop || d.poster || art(entry.item));
+    const heroArt = (entry, d) => UI.img('hm-hero-art', entry.section === 'live' ? art(entry.item, entry.section) : OnlineServices.artwork(d.backdrop || d.poster || art(entry.item, entry.section)));
 
     const Hero = ({ hero, focused }) => {
         const entry = hero[heroIndex(hero)];
@@ -198,7 +199,7 @@ window.Home = (api, element) => {
     // time left.
     const tile = (entry, big) => {
         const live = entry.section === 'live';
-        const src = big && !live ? heroDetails(entry).backdrop || art(entry.item) : art(entry.item);
+        const src = big && !live ? OnlineServices.artwork(heroDetails(entry).backdrop || art(entry.item, entry.section)) : art(entry.item, entry.section);
         const item = entry.item;
         const chip = item.sourceId && item.sourceId !== Sources.current().id ? html`<span class="source-chip">${item.sourceName}</span>` : null;
         let overlays;
@@ -235,7 +236,7 @@ window.Home = (api, element) => {
         const r = rowState(row);
         const visible = visibleCount(row);
         // The tiles RIGHT scrolls to next load while this row is on screen.
-        Art.preload(row.entries.slice(r.offset + visible, r.offset + 2 * visible).map((entry) => art(entry.item)));
+        Art.preload(row.entries.slice(r.offset + visible, r.offset + 2 * visible).map((entry) => art(entry.item, entry.section)));
         // A row says when it goes on: its size (the place while focused),
         // ‹ › at its edges, and the last tile fades unless it has the focus.
         const total = row.entries.length;
@@ -277,7 +278,7 @@ window.Home = (api, element) => {
         const above = at > 0 ? list[at - 1].row : null;
         const below = list[at + 1] ? list[at + 1].row : null;
         return html`<div class=${'hm-stage' + (live ? ' live' : '')}>
-            ${entry ? UI.img('hm-stage-art', live ? art(entry.item) : d.backdrop || d.poster || art(entry.item)) : null}
+            ${entry ? UI.img('hm-stage-art', live ? art(entry.item, entry.section) : OnlineServices.artwork(d.backdrop || d.poster || art(entry.item, entry.section))) : null}
             <div class="hm-stage-shade"></div>
             ${entry ? html`<div class="hm-stage-text">
                 <div class="hm-hero-title">${titleOf(entry)}</div>
@@ -431,7 +432,7 @@ window.Home = (api, element) => {
         })}`, root);
         // And the row DOWN brings up.
         const next = list[first + 3];
-        if (next && next.row && next.row.entries) Art.preload(next.row.entries.slice(0, visibleCount(next.row)).map((entry) => art(entry.item)));
+        if (next && next.row && next.row.entries) Art.preload(next.row.entries.slice(0, visibleCount(next.row)).map((entry) => art(entry.item, entry.section)));
     }
 
     // ---- Keys -------------------------------------------------------------

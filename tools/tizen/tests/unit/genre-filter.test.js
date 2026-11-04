@@ -12,13 +12,13 @@ function settle() {
 // says which genre TMDB knows for a title (or nothing).
 function fakeTmdb(genreOf) {
     var tmdb = {
-        on: true,
+        switchedOn: true,
         cache: new Map(),
         calls: 0,
         active: 0,
         peak: 0,
         waiting: [],
-        enabled: function () { return tmdb.on; },
+        on: function () { return tmdb.switchedOn; },
         cached: function (item) { return tmdb.cache.get(item) || null; },
         match: function (item) {
             tmdb.calls++;
@@ -53,7 +53,7 @@ function titles(count) {
 
 function setup(genreOf, list, options) {
     var tmdb = fakeTmdb(genreOf);
-    tmdb.on = !(options && options.noTmdb);
+    tmdb.switchedOn = !(options && options.noTmdb);
     var g = load(['genres.js', 'genre-filter.js'], {}, { Tmdb: tmdb }).globals;
     var run = { tmdb: tmdb, list: list, section: 'movies', changes: [], g: g };
     run.filter = g.GenreFilter({

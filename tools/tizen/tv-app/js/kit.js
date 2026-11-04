@@ -49,6 +49,7 @@ window.Kit = (() => {
         display: 'M3 4h18v13H3zM12 17v4M8 21h8',
         lock: 'M5 10h14v11H5zM8 10V6a4 4 0 0 1 8 0v4M12 14v3',
         backup: 'M6 17H5a4 4 0 0 1-1-8 7 7 0 0 1 13-2 5 5 0 0 1 2 10h-1M12 21V11M8 15l4-4 4 4',
+        trailer: 'M3 5h18v14H3zM10 8l6 4-6 4z',
         film: 'M3 3h18v18H3zM7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4M10 9l4 3-4 3z',
         info: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0M12 11v6M12 7h.01',
         sliders: 'M3 6h5M12 6h9M3 18h9M16 18h5M8 3v6M16 15v6M3 12h12M19 12h2M15 9v6',

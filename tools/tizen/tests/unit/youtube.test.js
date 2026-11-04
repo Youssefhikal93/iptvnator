@@ -20,7 +20,7 @@ function platform(application) {
 }
 
 function client(tizen, events) {
-    return load(['youtube.js'], {}, {
+    return load(['settings-store.js', 'youtube.js'], {}, {
         tizen: tizen,
         URL: URL,
         Event: function (type) { this.type = type; },

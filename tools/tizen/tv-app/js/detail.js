@@ -32,8 +32,8 @@ window.Detail = function () {
         var item = s.page.item;
         return {
             title: d.title || item.name,
-            poster: d.poster || item.stream_icon || item.cover || '',
-            backdrop: d.backdrop || d.poster || item.cover || item.stream_icon || '',
+            poster: OnlineServices.artwork(d.poster || item.stream_icon || item.cover),
+            backdrop: OnlineServices.artwork(d.backdrop || d.poster || item.cover || item.stream_icon),
             year: d.year,
             rating: d.rating,
             genre: d.genre,
@@ -48,7 +48,7 @@ window.Detail = function () {
     function buttons() {
         var d = details();
         var list = s.page.actions(d);
-        if (s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ remoteId: 'trailer', label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
+        if (Prefs.get('youtubeOn') !== false && s.youtube && (d.trailer || (s.tmdb && s.tmdb.trailer()))) list.push({ remoteId: 'trailer', label: I18n.t('detail.trailer'), run: d.trailer ? openTrailer : s.tmdb.openTrailer });
         if (s.clipped) list.push({ label: I18n.t('detail.more'), run: openMore });
         return list;
     }
@@ -119,9 +119,9 @@ window.Detail = function () {
         var provider = s.provider || {};
         var eyebrow = [I18n.t(s.page.episodes ? 'rail.series' : 'rail.movies'), genres(d)[0]].filter(Boolean).join('  ·  ');
         return html`
-            <${Kit.Backdrop} src=${d.backdrop} fallback=${provider.backdrop || provider.poster} />
+            <${Kit.Backdrop} src=${d.backdrop} fallback=${OnlineServices.artwork(provider.backdrop || provider.poster)} />
             <div class="dt-body">
-                ${UI.img('dt-poster', d.poster, provider.poster)}
+                ${UI.img('dt-poster', d.poster, OnlineServices.artwork(provider.poster))}
                 <div class="dt-info">
                     <div class="dt-eyebrow">${eyebrow}</div>
                     <h1 class="dt-title">${d.title}</h1>

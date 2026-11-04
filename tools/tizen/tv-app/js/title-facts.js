@@ -22,6 +22,7 @@ window.TitleFacts = (function () {
         var good = saved && typeof saved.facts === 'object' && saved.facts && Array.isArray(saved.order);
         memo = good ? { order: saved.order.slice(), facts: Object.assign({}, saved.facts) } : { order: [], facts: {} };
         memo.missing = good && saved.missing && typeof saved.missing === 'object' ? Object.assign({}, saved.missing) : {};
+        memo.provider = good && saved.provider ? Object.assign({}, saved.provider) : {};
         return memo;
     }
 
@@ -53,12 +54,26 @@ window.TitleFacts = (function () {
         return number > 0 ? number : 0;
     }
 
+    function keepProvider(store, key, found) {
+        if (found.tmdb) return false;
+        var old = store.provider[key] || {};
+        var next = Object.assign({}, old);
+        if (whole(found.minutes)) next.minutes = whole(found.minutes);
+        if (whole(found.seasons)) next.seasons = whole(found.seasons);
+        if (next.minutes === old.minutes && next.seasons === old.seasons) return false;
+        store.provider[key] = next;
+        return true;
+    }
+
     return {
         key: keyOf,
         flush: flush,
         // { minutes, seasons } as far as known, or null.
         get: function (sourceId, section, item) {
             return all().facts[keyOf(sourceId, section, item)] || null;
+        },
+        provider: function (sourceId, section, item) {
+            return all().provider[keyOf(sourceId, section, item)] || null;
         },
         // found: { minutes } for a film, { seasons } for a show; nothing else is kept.
         // True when something new was kept.
@@ -69,13 +84,18 @@ window.TitleFacts = (function () {
             var next = Object.assign({}, old);
             if (whole(found.minutes)) next.minutes = whole(found.minutes);
             if (whole(found.seasons)) next.seasons = whole(found.seasons);
-            if (next.minutes === old.minutes && next.seasons === old.seasons) return false;
+            var providerChanged = keepProvider(store, key, found);
+            if (next.minutes === old.minutes && next.seasons === old.seasons && !providerChanged) return false;
             store.facts[key] = next;
             delete store.missing[key];
             var at = store.order.indexOf(key);
             if (at >= 0) store.order.splice(at, 1);
             store.order.push(key);
-            while (store.order.length > LIMIT) delete store.facts[store.order.shift()];
+            while (store.order.length > LIMIT) {
+                var oldest = store.order.shift();
+                delete store.facts[oldest];
+                delete store.provider[oldest];
+            }
             write();
             return true;
         },
@@ -104,7 +124,7 @@ window.TitleFacts = (function () {
             var kept = store.order.filter(function (key) { return key.indexOf(prefix) !== 0; });
             var missed = Object.keys(store.missing).filter(function (key) { return key.indexOf(prefix) === 0; });
             if (kept.length === store.order.length && !missed.length) return;
-            store.order.forEach(function (key) { if (key.indexOf(prefix) === 0) delete store.facts[key]; });
+            store.order.forEach(function (key) { if (key.indexOf(prefix) === 0) { delete store.facts[key]; delete store.provider[key]; } });
             missed.forEach(function (key) { delete store.missing[key]; });
             store.order = kept;
             write();

@@ -73,7 +73,7 @@ test('Settings shows groups on the left and one group of rows on the right (#49)
     await section(page, 'Settings');
     const groups = page.locator('#settings .st-group-item');
     await expect(groups.locator(':scope > span:not(.menu-icon):not(.n)')).toHaveText([
-        'Playback', 'Subtitles', 'Display', 'Profiles', 'Parental lock', 'General', 'TMDB', 'Backup', 'Sources', 'About',
+        'Playback', 'Subtitles', 'Display', 'Profiles', 'Parental lock', 'General', 'TMDB', 'Trailers', 'Backup', 'Sources', 'About',
     ]);
     await expect(groups.first()).toHaveClass(/focused/);
     // No key-hint bar: the screen speaks for itself.

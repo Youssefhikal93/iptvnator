@@ -34,7 +34,7 @@ module.exports = function (files, stored, overrides) {
     sandbox.window = sandbox;
     vm.createContext(sandbox);
     // Every module may ask I18n for its English text; guide code reads a source's links (#90).
-    ['i18n.js', 'i18n/en.js', 'stored.js', 'guide-links.js'].concat(files.filter(function (file) { return file !== 'guide-links.js'; })).forEach(function (file) {
+    ['i18n.js', 'i18n/en.js', 'stored.js', 'guide-links.js', 'online-services.js'].concat(files.filter(function (file) { return file !== 'guide-links.js' && file !== 'online-services.js'; })).forEach(function (file) {
         var filename = path.join(__dirname, '../../tv-app/js', file);
         vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: filename });
     });

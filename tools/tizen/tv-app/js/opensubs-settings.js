@@ -27,8 +27,9 @@ window.OpenSubsSettings = (function () {
                 if (!Prefs.get(provider.pref)) return I18n.t('tmdb.notSet');
                 return '••••' + (status[id] ? ' · ' + status[id] : '');
             } };
-        if (part) Object.defineProperty(row, 'part', { get: function () { return I18n.t(part); }, enumerable: true });
-        return [row];
+        var rows = OnlineServices.rows(id === 'opensubs' ? 'opensubtitles' : id).concat([row]);
+        if (part) Object.defineProperty(rows[0], 'part', { get: function () { return I18n.t(part); }, enumerable: true });
+        return rows;
     }
 
     // "opensubs-key" for OpenSubtitles, "opensubs-subdl-test" for the others.

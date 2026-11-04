@@ -9,7 +9,7 @@ var load = require('./sandbox');
 var uiSandbox = require('./ui-sandbox');
 var FILE = '1\n00:00:01,000 --> 00:00:03,000\nHello';
 var FILES = ['keys.js', 'settings-store.js', 'opensubs.js', 'zip-file.js', 'subdl.js', 'subsource.js', 'subtitle-file.js', 'subtitle-rank.js',
-    'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'opensubs-settings.js'];
+    'subtitle-translate.js', 'subtitle-store.js', 'subtitle-context.js', 'focus.js', 'kit.js', 'menu.js', 'audio-choice.js', 'subtitle-sync.js', 'subtitle-download.js', 'online-services.js', 'opensubs-settings.js'];
 
 // One deflated file in a zip.
 function zip(name, text) {
@@ -242,8 +242,8 @@ test('#52 Settings list the download and backup parts with the switch and the Su
     var api = fixture().globals;
     var rows = api.OpenSubsSettings.rows;
     var labels = rows.map(function (row) { return (row.part ? '[' + row.part + '] ' : '') + row.label; });
-    assert.equal(labels.join(' | '), '[Subtitles download] OpenSubtitles API key | SubDL API key | Subtitle language | ' +
-        '[Backup subtitles] Backup search | Subsource API key | DeepL API key');
+    assert.equal(labels.join(' | '), '[Subtitles download] OpenSubtitles | OpenSubtitles API key | SubDL | SubDL API key | Subtitle language | ' +
+        '[Backup subtitles] Backup search | SubSource | Subsource API key | DeepL translation | DeepL API key');
     var toggle = rows.filter(function (row) { return row.key === 'subtitleFallback'; })[0];
     assert.equal(toggle.labels.join(','), 'On,Off');
     assert.equal(api.Prefs.get('subtitleFallback'), true);

@@ -40,14 +40,14 @@ window.SubtitleDownload = function (hooks) {
     function backupOn() { return Prefs.get('subtitleFallback') !== false; }
 
     function providers(backup) {
-        return PROVIDERS.filter(function (provider) { return !!provider.backup === !!backup && !!Prefs.get(provider.pref); });
+        return PROVIDERS.filter(function (provider) { return !!provider.backup === !!backup && !!Prefs.get(provider.pref) && Prefs.get(provider.id + 'On') !== false; });
     }
 
-    function translator() { return backupOn() && !!Prefs.get('deeplApiKey'); }
+    function translator() { return backupOn() && Prefs.get('deeplOn') !== false && !!Prefs.get('deeplApiKey'); }
 
     // A changed or removed key makes an open search stale.
     function keys() {
-        return PROVIDERS.map(function (provider) { return Prefs.get(provider.pref) || ''; }).concat([Prefs.get('deeplApiKey') || '']).join('\n');
+        return PROVIDERS.map(function (provider) { return Prefs.get(provider.id + 'On') === false ? '' : Prefs.get(provider.pref) || ''; }).concat([Prefs.get('deeplOn') === false ? '' : Prefs.get('deeplApiKey') || '']).join('\n');
     }
 
     function remember() {
@@ -127,6 +127,7 @@ window.SubtitleDownload = function (hooks) {
     }
 
     function apply(text, id, stretch, title) {
+        if (!SubtitleStore.allowed(id)) return;
         var parsed = SubtitleFile.parse(text);
         if (!parsed.length) throw new Error('Invalid subtitle file');
         hooks.embeddedOff();
@@ -449,7 +450,7 @@ window.SubtitleDownload = function (hooks) {
         if (!current || current.live) return;
         if (!embeddedChoices) item(I18n.t('common.off'), !cues.length, function () { off(); AudioChoice.rememberSubtitle(current, false); });
         if (cues.length) item(name || I18n.t('opensubs.downloaded'), true, function () {});
-        item(I18n.t('opensubs.download'), false, function () { hooks.closeMenu(); search(); });
+        if (PROVIDERS.some(function (provider) { return Prefs.get(provider.id + 'On') !== false; })) item(I18n.t('opensubs.download'), false, function () { hooks.closeMenu(); search(); });
         // Subsource and translation, used only when the first search finds nothing.
         item(I18n.t('opensubs.backup', { state: I18n.t(backupOn() ? 'common.on' : 'common.off') }), false, function () {
             Prefs.set('subtitleFallback', !backupOn());

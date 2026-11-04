@@ -6,6 +6,8 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Per-profile switches for optional online features ask before turning Off and keep saved answers for when you turn them back On (#98).
+
 - Live TV has its own player: the channel, the programme, a LIVE badge and one programme bar, with the buttons in one row. Catch-up channels can pause live TV, resume behind live and rewind; their Catch-up label appears in the lists and in the channel list while watching (#97).
 - Hold OK on a live channel → Edit channel to change its name or choose a logo from your guide or another copy in the source. Reset to provider's clears both (#96).
 - The toolbar shares the list title row, so lists start under the menu and show more rows; the next row peeks in, dimmed. Search is an icon beside View and Sort and searches the category in use; Search in the menu does the same. Picture avatars show whole, with no disc; focus outlines the picture (#95).
@@ -345,3 +347,14 @@ The phone has the remote keys, volume, section jumps, search and a More sheet wi
 The phone controls fit a 390×844 screen (#95). A slim title/status strip shows Info only during playback. A large Back button sits directly below the D-pad beside volume; all eight section shortcuts stay within reach. Smaller 375×667 phones use a tighter D-pad and may need a short scroll during playback. Every button gives a light tap flash and a slight press, including context actions and More controls.
 
 It works while Jotv is open on the same home network. A page left open reconnects by itself when Jotv returns. It cannot turn the TV on or control Samsung Home, Source or other apps.
+
+## Online services (#98)
+
+Settings groups TMDB, Subtitles and Trailers offer one On/Off row per feature,
+all On by default. TMDB has separate switches for details, artwork, cast,
+Collections look-up, similar titles, genre checks and browsing box facts.
+Subtitles has OpenSubtitles, SubDL, SubSource and DeepL; Trailers has YouTube.
+Turning Off asks for confirmation, hides saved answers and drops waiting requests.
+Turning On makes saved answers available again. Choices belong to each profile
+and travel in backups. Sources, guides, provider channel logos and PC receivers
+keep working as before.

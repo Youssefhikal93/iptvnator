@@ -53,7 +53,7 @@ window.TmdbSettings = (function () {
         status = I18n.t('tmdb.checking');
         changed();
         var secret = Prefs.get('tmdbApiKey');
-        Tmdb.request('/configuration', {}, true).then(function (body) {
+        Tmdb.request('/configuration', {}, true, null).then(function (body) {
             if (secret !== Prefs.get('tmdbApiKey')) return;
             status = I18n.t(body ? 'tmdb.keyWorks' : 'tmdb.keyRefused');
             hooks.toast(status);
@@ -70,6 +70,7 @@ window.TmdbSettings = (function () {
                     var secret = Prefs.get('tmdbApiKey');
                     return secret ? I18n.t('tmdb.keySet', { last: secret.slice(-4) }) + (status ? ' · ' + status : '') : I18n.t('tmdb.notSet');
                 } },
+            ...OnlineServices.rows('tmdb'),
             { label: 'The Movie Database', text: I18n.t('tmdb.attribution') },
         ],
         act: act,

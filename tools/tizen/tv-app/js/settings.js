@@ -65,6 +65,7 @@ window.Settings = function (hooks) {
         { get part() { return I18n.t('settings.fullBackup'); }, get label() { return I18n.t('settings.sendToComputer'); }, get hint() { return I18n.t('describe.fullBackup'); }, backup: 'send', text: '' },
         { get label() { return I18n.t('settings.restoreFromComputer'); }, backup: 'restore', text: '' },
         ...TmdbSettings.rows,
+        ...OnlineServices.rows('trailers'),
         // Help (#89): the keys of Settings, and where the coloured keys are.
         { get group() { return I18n.t('settings.about'); }, get label() { return I18n.t('help.title'); }, get hint() { return I18n.t('help.colourKeys'); }, run: () => KeyHelp.open(window.Settings.help()), text: '?' },
         { get label() { return I18n.t('settings.appName'); }, text: 'Jotv' },
@@ -88,7 +89,7 @@ window.Settings = function (hooks) {
             list[list.length - 1].rows.push(row);
         });
         const order = ['settings.playback', 'picture.subtitles', 'settings.display', 'profile.group',
-            'settings.parentalLock', 'remote.general', 'TMDB', 'settings.backup', 'rail.sources', 'settings.about']
+            'settings.parentalLock', 'remote.general', 'TMDB', 'services.trailers', 'settings.backup', 'rail.sources', 'settings.about']
             .map((key) => key === 'TMDB' ? key : I18n.t(key));
         return list.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
     }
@@ -100,7 +101,7 @@ window.Settings = function (hooks) {
     const groupIcon = (name) => {
         if (name === 'TMDB') return 'film';
         const icons = [['rail.sources', 'sources'], ['profile.group', 'person'], ['settings.playback', 'play'],
-            ['picture.subtitles', 'subtitles'], ['settings.display', 'display'],
+            ['picture.subtitles', 'subtitles'], ['settings.display', 'display'], ['services.trailers', 'trailer'],
             ['settings.parentalLock', 'lock'], ['settings.backup', 'backup'], ['settings.about', 'info'], ['remote.general', 'sliders']];
         const match = icons.find(([key]) => I18n.t(key) === name);
         return match ? match[1] : 'sliders';
@@ -213,7 +214,14 @@ window.Settings = function (hooks) {
             if (row.action) hooks.manage(row.action);
             return;
         }
-        if (isSwitch(row)) return save(row, !Prefs.get(row.key));
+        if (isSwitch(row)) {
+            if (row.warning && Prefs.get(row.key) !== false) return ProfileDialog.open({
+                title: I18n.t('services.turnOffTitle', { feature: row.label }),
+                text: row.warning, ok: I18n.t('services.turnOff'), destructive: true,
+                done: (confirmed) => { if (confirmed) save(row, false); },
+            });
+            return save(row, !Prefs.get(row.key));
+        }
         // The choices as a list, the current one ticked, as for the language.
         const at = choice(row);
         Menu.open(row.label, row.labels.map((label, index) => ({

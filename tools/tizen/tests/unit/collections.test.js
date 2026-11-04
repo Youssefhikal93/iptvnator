@@ -132,7 +132,7 @@ function lookupClient(answers) {
     var forced = [];
     var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'collection-index.js', 'collection-lookup.js'], {}, {
         Tmdb: {
-            enabled: function () { return true; },
+            on: function () { return true; },
             throttled: function () { return 0; },
             fetches: function () { return 0; },
             lookup: function (item, type, force) { asked.push(item.name); forced.push(item.name + (force ? '!' : '')); return Promise.resolve(answers[item.name]); },
@@ -257,7 +257,7 @@ test('#58 pacing counts every request of a film: its search and details as well 
     var times = [];
     var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'collection-index.js', 'collection-lookup.js'], {}, {
         Tmdb: {
-            enabled: function () { return true; },
+            on: function () { return true; },
             throttled: function () { return 0; },
             fetches: function () { return spent; },
             // A film not seen before costs a search and its details.
@@ -282,7 +282,7 @@ test('#58 a look-up started for one source stops when another source opens; its 
     var films = { s1: [{ name: 'A', stream_id: 1 }, { name: 'A2', stream_id: 2 }], s2: [{ name: 'B', stream_id: 1 }, { name: 'B2', stream_id: 2 }] };
     var env = load(['settings-store.js', 'tmdb-store.js', 'tmdb-language.js', 'collection-index.js', 'collection-lookup.js', 'collections.js'], {}, {
         Tmdb: {
-            enabled: function () { return true; },
+            on: function () { return true; },
             throttled: function () { return 0; },
             fetches: function () { return 0; },
             lookup: function (item) { asked.push(item.name); return Promise.resolve({ status: 'found', body: { id: 500 + item.stream_id } }); },

@@ -360,7 +360,7 @@ ScreenSaver.slides = function (rows, deps) {
             if (seen[key] || out.length >= ScreenSaver.MAX) return;
             const d = deps.details(entry) || {};
             const poster = d.poster || item.stream_icon || item.cover || '';
-            const image = d.backdrop || poster;
+            const image = OnlineServices.artwork(d.backdrop || poster);
             if (!image) return;
             seen[key] = true;
             const genre = String(d.genre || item.genre || '').split(/\s*,\s*/).filter(Boolean).slice(0, 2).join(', ');

@@ -4,7 +4,7 @@ test('Sources remains reachable near the end of Settings and has no rail item (#
     await boot(page);
     await expect(page.locator('#rail .rail-item:not(.rail-search)')).toHaveText(['Home', 'Live TV', 'Movies', 'Series', 'Settings']);
     await sources(page);
-    await expect(page.locator('#settings .st-group').nth(8)).toHaveText('Sources');
+    expect((await page.locator('#settings .st-group').allTextContents()).slice(-2)).toEqual(['Sources', 'About']);
     const rows = page.locator('#settings .st-section:visible .st-row');
     await expect(rows.nth(0)).toHaveClass(/st-source/);
     await expect(rows.nth(0).locator('.st-label')).toHaveText('Regression TV');

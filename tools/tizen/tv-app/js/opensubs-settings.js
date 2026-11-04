@@ -129,9 +129,11 @@ window.OpenSubsSettings = (function () {
         serviceRows: [
             { get part() { return I18n.t('picture.subtitles'); }, get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
         ].concat(keyRows('opensubs'), keyRows('subdl'), [
-            { get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
+            // Above the two services it owns; Off turns both off (OnlineServices).
+            { get part() { return I18n.t('opensubs.backupGroup'); }, get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
+                get warning() { return I18n.t('opensubs.backupOff'); },
                 key: 'subtitleFallback', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
-        ], keyRows('subsource'), keyRows('deepl', 'services.translation')),
+        ], keyRows('subsource'), keyRows('deepl')),
         act: act,
         isOpen: function () { return !!dialog; },
         onKey: function (event) {

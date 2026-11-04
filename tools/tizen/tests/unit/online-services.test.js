@@ -214,3 +214,18 @@ test('#98 browsing facts Off preserves provider facts and hides TMDB and unclass
     again.Prefs.set('tmdbBoxes', false);
     assert.equal(again.BoxCards.facts(film, 'movies', null, 's1').length, '1 h 35 min');
 });
+
+test('#98 Backup search Off turns SubSource and DeepL off; On turns both on; either back On turns Backup search on', function () {
+    var api = client(function () { throw new Error('no request'); });
+    var state = function () { return [api.Prefs.get('subtitleFallback'), api.Prefs.get('subsourceOn'), api.Prefs.get('deeplOn')]; };
+    assert.deepEqual(state(), [true, true, true]);
+    api.Prefs.set('subtitleFallback', false);
+    assert.deepEqual(state(), [false, false, false]);
+    api.Prefs.set('subsourceOn', true);
+    assert.deepEqual(state(), [true, true, false]);
+    api.Prefs.set('subtitleFallback', false);
+    api.Prefs.set('subtitleFallback', true);
+    assert.deepEqual(state(), [true, true, true]);
+    api.Prefs.set('deeplOn', false);
+    assert.deepEqual(state(), [true, true, false]);
+});

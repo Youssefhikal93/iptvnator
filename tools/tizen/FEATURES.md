@@ -353,8 +353,8 @@ It works while Jotv is open on the same home network. A page left open reconnect
 Settings → External services holds every outside service with its key and
 On/Off switches, all On by default: TMDB (details, artwork, cast, Collections
 look-up, similar titles, genre checks, browsing box facts), Subtitles
-(OpenSubtitles, SubDL, SubSource), Translation (DeepL) and Trailers (YouTube).
-Subtitle language and Backup search sit in its Subtitles part; Settings → Subtitles keeps only the subtitle style, which works without a key. Artwork Off hides
+(OpenSubtitles, SubDL), Backup subtitles (SubSource, DeepL) and Trailers (YouTube).
+Subtitle language sits in its Subtitles part; Backup search heads a Backup subtitles part with SubSource and DeepL, and turning it Off turns both off (either back On turns it On); Settings → Subtitles keeps only the subtitle style, which works without a key. Artwork Off hides
 only artwork found on TMDB; the provider's own covers always show.
 Turning Off asks for confirmation, hides saved answers and drops waiting requests.
 Turning On makes saved answers available again. Choices belong to each profile

@@ -244,7 +244,7 @@ test('#52 #98 the language, providers, keys and backup switch are all in Externa
     var label = function (row) { return (row.part ? '[' + row.part + '] ' : '') + row.label; };
     assert.equal(api.OpenSubsSettings.rows.length, 0);
     assert.equal(rows.map(label).join(' | '), '[Subtitles] Subtitle language | OpenSubtitles | OpenSubtitles API key | SubDL | SubDL API key | ' +
-        'Backup search | SubSource | Subsource API key | [Translation] DeepL translation | DeepL API key');
+        '[Backup subtitles] Backup search | SubSource | Subsource API key | DeepL translation | DeepL API key');
     var toggle = rows.filter(function (row) { return row.key === 'subtitleFallback'; })[0];
     assert.equal(toggle.labels.join(','), 'On,Off');
     assert.equal(api.Prefs.get('subtitleFallback'), true);

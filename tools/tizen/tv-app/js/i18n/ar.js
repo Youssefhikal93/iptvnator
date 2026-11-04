@@ -2,7 +2,6 @@
 // Only keys whose desktop English text means the same are here; the rest fall back to English.
 // TV appearance terms come from tests/i18n/appearance-translations.json.
 I18n.tables.ar = {
-    "services.translation": "الترجمة الآلية",
     "settings.external": "الخدمات الخارجية",
     "services.trailers": "الإعلانات التشويقية",
     "services.turnOff": "إيقاف",
@@ -423,6 +422,7 @@ I18n.tables.ar = {
     'opensubs.backupGroup': 'ترجمات احتياطية',
     'opensubs.backupHint': 'يُستخدم Subsource والترجمة الآلية فقط عندما لا يجد OpenSubtitles وSubDL شيئًا.',
     'opensubs.backupSearch': 'البحث الاحتياطي',
+    'opensubs.backupOff': 'سيتم إيقاف SubSource وترجمة DeepL أيضًا. يستمر البحث في OpenSubtitles وSubDL.',
     'opensubs.fromBackup': 'احتياطي',
     'opensubs.noneIn': 'لا توجد ترجمات {language}',
     'opensubs.translateAny': 'ترجمة من لغة أخرى',

@@ -2,7 +2,6 @@
 // Placeholders are {name}; plural forms are 'key.one' / 'key.other' picked by params.count.
 I18n.tables.en = {
     "services.trailers": "Trailers",
-    "services.translation": "Translation",
     "settings.external": "External services",
     "services.turnOff": "Turn off",
     "services.turnOffTitle": "Turn off {feature}?",
@@ -567,6 +566,7 @@ I18n.tables.en = {
     'opensubs.backupGroup': 'Backup subtitles',
     'opensubs.backupHint': 'Subsource and translation are used only when OpenSubtitles and SubDL find nothing.',
     'opensubs.backupSearch': 'Backup search',
+    'opensubs.backupOff': 'SubSource and DeepL translation will be turned off too. OpenSubtitles and SubDL keep searching.',
     'opensubs.badKey': 'Bad OpenSubtitles key',
     'opensubs.connection': 'No connection to OpenSubtitles',
     'opensubs.download': 'Find subtitles online…',

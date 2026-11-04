@@ -19,6 +19,27 @@ window.OnlineServices = (function () {
         };
     }
 
+    // Backup search owns SubSource and DeepL (#98): turning it Off or On turns
+    // both the same way; turning either back On turns Backup search On again.
+    var linking = false;
+    function link(name) {
+        if (linking) return;
+        var set = function (key, value) { if (Prefs.get(key) !== value) Prefs.set(key, value); };
+        linking = true;
+        try {
+            if (name === 'subtitleFallback') {
+                var on = Prefs.get('subtitleFallback') !== false;
+                set('subsourceOn', on);
+                set('deeplOn', on);
+            } else if ((name === 'subsourceOn' || name === 'deeplOn') && Prefs.get(name) !== false) {
+                set('subtitleFallback', true);
+            }
+        } finally {
+            linking = false;
+        }
+    }
+    if (typeof Prefs !== 'undefined' && Prefs.onChange) Prefs.onChange(link);
+
     return {
         // Artwork the app found on TMDB; '' while Artwork is Off. The provider's
         // own covers never pass through here, so they always show.

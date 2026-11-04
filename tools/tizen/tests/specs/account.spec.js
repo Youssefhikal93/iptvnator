@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, sources, sourceMenu, menuChoice } = require('./helpers');
+const { test, expect, typeIn, boot, section, press, sources, sourceMenu, menuChoice } = require('./helpers');
 
 const DAY = 86400000;
 const seconds = days => String(Math.floor((Date.now() + days * DAY) / 1000));
@@ -166,7 +166,7 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
         return same;
     }, { intervals: [700] }).toBe(true);
     const before = calls.length;
-    await page.locator('#form-name').fill('Living room');
+    await typeIn(page, '#form-name', 'Living room');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Living room');
@@ -187,12 +187,12 @@ test('Edit source reuses the add form; a new name keeps everything, a new accoun
     // A login the provider refuses is not saved.
     await sourceMenu(page);
     await menuChoice(page, 'Edit source…');
-    await page.locator('#form-user').fill('bad');
+    await typeIn(page, '#form-user', 'bad');
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toContainText('Could not connect');
     await expect(page.locator('#form')).toBeVisible();
-    await page.locator('#form-user').fill('newuser');
-    await page.locator('#form-pass').fill('other');
+    await typeIn(page, '#form-user', 'newuser');
+    await typeIn(page, '#form-pass', 'other');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     // A new source account gets its own id; the old library stays stored separately.
@@ -224,7 +224,7 @@ test('editing another source drops its saved catalogue only when the login chang
     await expect(page.locator('#menu')).toContainText('Guide link…');
     await menuChoice(page, 'Edit source…');
     await expect(page.locator('#form-title')).toHaveText('Edit source');
-    await page.locator('#form-name').fill('Bedroom');
+    await typeIn(page, '#form-name', 'Bedroom');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');
@@ -232,7 +232,7 @@ test('editing another source drops its saved catalogue only when the login chang
     await expect(page.locator('#settings .st-source').nth(1)).toContainText('4 channels');
     await sourceMenu(page, 'Bedroom');
     await menuChoice(page, 'Edit source…');
-    await page.locator('#form-pass').fill('changed');
+    await typeIn(page, '#form-pass', 'changed');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('#settings .st-source').nth(1)).toContainText('Bedroom');
@@ -244,7 +244,7 @@ test('Return cancels Edit source and keeps the saved source', async ({ page }) =
     await boot(page);
     await sourceMenu(page);
     await menuChoice(page, 'Edit source…');
-    await page.locator('#form-name').fill('Nope');
+    await typeIn(page, '#form-name', 'Nope');
     await page.locator('#form-cancel').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Regression TV');

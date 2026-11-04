@@ -27,6 +27,8 @@ window.UI = (function () {
 
     return {
         html: html,
+        // For a view that skips redraws it does not need (Home rows, #95).
+        Component: preact.Component,
         img: img,
         render: function (view, root) {
             preact.render(view, root);

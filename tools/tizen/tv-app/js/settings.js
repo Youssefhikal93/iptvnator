@@ -154,7 +154,7 @@ window.Settings = function (hooks) {
         const sub = row.source ? row.sub : row.hint;
         return html`<div aria-disabled=${row.disabled ? 'true' : undefined} class=${classes('st-row', { 'st-profile-card': row.profileCard, 'st-action': row.strip, 'st-standalone-action': row.compactAction, disabled: row.disabled, 'has-actions': !!row.actions, destructive: row.destructive, 'st-source': !!row.source, 'st-current': !!row.current, 'st-add': !!row.add, warn: !!row.warn, focused })}>
             ${row.profileCard ? html`<${Kit.Avatar} cls="st-avatar" profile=${ProfileStore.active()} />` : row.icon || row.glyph ? html`<${Kit.MenuIcon} name=${row.icon} glyph=${row.glyph} />` : null}
-            <span class="st-text"><${Name} row=${row} />${sub ? html`<span class="st-sub">${sub}</span>` : null}</span>
+            <span class="st-text"><${Name} row=${row} />${sub ? html`<span class="st-sub">${sub}</span>` : null}${row.lines && row.lines.length ? row.lines.map((line, i) => html`<span key=${i} class="st-sub st-line">${line}</span>`) : null}</span>
             <${Value} row=${row} focused=${focused} />
         </div>`;
     };

@@ -288,4 +288,10 @@ const resumeSeed = (id = 2025) => ({ storage: {
     'recent:s1': { movies: [movie(id - 2000)] },
 } });
 
-module.exports = { test, expect, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, menuSearch, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };
+// The source form's boxes open for typing on OK or a click (#90).
+async function typeIn(page, selector, value) {
+    await page.locator(selector).click();
+    await page.locator(selector).fill(value);
+}
+
+module.exports = { test, expect, typeIn, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, menuSearch, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };

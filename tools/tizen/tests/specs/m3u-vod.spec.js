@@ -1,12 +1,12 @@
-const { test, expect, teachIntro, boot, press, back, section, category, moveTo, sources, sourceMenu, openFirst, playing } = require('./helpers');
+const { test, expect, typeIn, teachIntro, boot, press, back, section, category, moveTo, sources, sourceMenu, openFirst, playing } = require('./helpers');
 
 // Adds an M3U source through Settings > Sources, like a viewer would.
 async function addPlaylist(page, file) {
     await boot(page);
     await sources(page, '+  Add M3U playlist');
     await press(page, 'Enter');
-    await page.locator('#form-name').fill('VOD playlist');
-    await page.locator('#form-url').fill(new URL(page.url()).origin + file);
+    await typeIn(page, '#form-name', 'VOD playlist');
+    await typeIn(page, '#form-url', new URL(page.url()).origin + file);
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'VOD playlist');

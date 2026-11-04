@@ -196,6 +196,23 @@ window.XmltvGuide = (function () {
         return I18n.t('guide.updated', { time: I18n.time(saved.updatedAt) });
     }
 
+    // A line per guide link under its source's details (#90): how it stands
+    // and, with Refresh automatically on, when it updates next.
+    guide.lines = function (source) {
+        var links = GuideLinks.links(source);
+        if (!links.length) return [];
+        var when = function (at) { return I18n.isolate(I18n.date(at, { day: 'numeric', month: 'short' }) + ' ' + I18n.time(at)); };
+        return links.map(function (link) {
+            var saved = status(link.id);
+            var text = saved.state === 'updating' && jobs[link.id] ? I18n.t('guide.lineUpdating', { n: link.n })
+                : saved.state === 'failed' ? I18n.t('guide.lineFailed', { n: link.n })
+                : saved.updatedAt ? I18n.t('guide.lineUpdated', { n: link.n, when: when(saved.updatedAt) })
+                : I18n.t('guide.lineNever', { n: link.n });
+            var next = window.AutoRefresh ? AutoRefresh.nextAt(saved.updatedAt || 0) : 0;
+            return next ? text + ' · ' + I18n.t('guide.nextUpdate', { when: when(Math.max(next, Date.now())) }) : text;
+        });
+    };
+
     // One line for all of a source's links (#90): one still downloading, then
     // the ones that failed by number, else how the first one stands.
     guide.subtitle = function (source) {

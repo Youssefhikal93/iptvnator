@@ -78,7 +78,14 @@ window.Home = (api, element) => {
         return list;
     };
 
-    const visibleCount = (row) => (row && row.big ? AppearanceLayout.count('--home-big-cols', root) : AppearanceLayout.count('--home-cols'));
+    // Film and show rows show whole 2:3 posters, more to a row; live channel
+    // rows keep their own tiles.
+    const isLive = (row) => !!row && (row.id === 'live' || !!row.live || (!!row.entries && !!row.entries[0] && row.entries[0].section === 'live'));
+    const isPosters = (row) => !!row && !row.big && !isLive(row);
+    const visibleCount = (row) => {
+        if (row && row.big) return AppearanceLayout.count('--home-big-cols', root);
+        return isPosters(row) ? AppearanceLayout.count('--home-poster-cols', root) : AppearanceLayout.count('--home-cols');
+    };
 
     const rowState = (row) => {
         if (!s.rows[row.id]) s.rows[row.id] = { focus: 0, offset: 0 };
@@ -157,8 +164,18 @@ window.Home = (api, element) => {
     const heroArt = (entry, d) => UI.img('hm-hero-art', entry.section === 'live' ? art(entry.item, entry.section) : d.backdrop || d.poster || art(entry.item, entry.section));
 
     const Hero = ({ hero, focused }) => {
-        const entry = hero[heroIndex(hero)];
+        const at = heroIndex(hero);
+        const entry = hero[at];
         const d = heroDetails(entry);
+        // The titles ‹ › bring next get their details and backdrop ready now,
+        // so switching shows the picture at once (#95). Each is asked once.
+        if (hero.length > 1) {
+            [hero[(at + 1) % hero.length], hero[(at + hero.length - 1) % hero.length]].forEach((near) => {
+                const nd = heroDetails(near);
+                const art2 = near.section === 'live' ? '' : nd.backdrop || nd.poster;
+                if (art2) Art.preload([art2]);
+            });
+        }
         const p = api.progress(entry);
         const chips = chipsOf(entry, d);
         const left = minutesLeft(p);
@@ -235,7 +252,7 @@ window.Home = (api, element) => {
     const skeletons = (row) => Array.from({ length: visibleCount(row) }, (_, i) => ({ key: i, cls: 'hm-card skeleton', poster: html`<div class="hm-poster"></div>`, name: '' }));
 
     const HomeRow = ({ row, focused }) => {
-        if (row.loading) return html`<${Kit.Row} cls="hm" kind=${'loading' + (row.big ? ' big' : '')} label=${row.title} tiles=${skeletons(row)} />`;
+        if (row.loading) return html`<${Kit.Row} cls="hm" kind=${'loading' + (row.big ? ' big' : '') + (isPosters(row) ? ' posters' : '')} label=${row.title} tiles=${skeletons(row)} />`;
         const r = rowState(row);
         const visible = visibleCount(row);
         // The tiles RIGHT scrolls to next load while this row is on screen.
@@ -244,7 +261,7 @@ window.Home = (api, element) => {
         // ‹ › at its edges, and the last tile fades unless it has the focus.
         const total = row.entries.length;
         const right = r.offset + visible < total;
-        const kind = [row.id === 'live' || row.live ? 'live' : '', row.big ? 'big' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
+        const kind = [isLive(row) ? 'live' : '', row.big ? 'big' : '', isPosters(row) ? 'posters' : '', r.offset > 0 ? 'more-left' : '', right ? 'more-right' : '',
             right && !(focused && r.focus === r.offset + visible - 1) ? 'fade' : ''].filter(Boolean).join(' ');
         const aside = focused ? (r.focus + 1) + ' / ' + total : String(total);
         // "Because you watched" rows (#63) say whether they follow a movie or a show.
@@ -266,9 +283,62 @@ window.Home = (api, element) => {
 
     // ---- Backdrop ---------------------------------------------------------
 
+    // A channel's full-screen backdrop (#95): its logo drawn once into a tiny
+    // canvas on its plate colour, which the screen stretches soft, so the TV
+    // never runs a blur filter. Kept per logo; neither is read back, so
+    // logos from other servers draw as well.
+    const SOFT_MAX = 60;
+    const soft = new Map();
+    const hueOf = (name) => Array.from(String(name)).reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
+    const softArt = (src, name) => {
+        const key = (src || '') + '|' + name;
+        let canvas = soft.get(key);
+        if (canvas) {
+            soft.delete(key);
+            soft.set(key, canvas);
+            return canvas;
+        }
+        canvas = document.createElement('canvas');
+        canvas.width = 48;
+        canvas.height = 27;
+        const g = canvas.getContext('2d');
+        if (g) {
+            g.fillStyle = 'hsl(' + hueOf(name) + ', 40%, 26%)';
+            g.fillRect(0, 0, 48, 27);
+            if (src) {
+                const image = new Image();
+                image.onload = () => {
+                    // Small in the middle: it reads as a glow of the logo's colours.
+                    const scale = Math.min(22 / image.width, 12 / image.height);
+                    const w = image.width * scale;
+                    const h = image.height * scale;
+                    g.drawImage(image, (48 - w) / 2, (27 - h) / 2, w, h);
+                };
+                image.src = src;
+            }
+        }
+        soft.set(key, canvas);
+        if (soft.size > SOFT_MAX) soft.delete(soft.keys().next().value);
+        return canvas;
+    };
+    // Redraws only when the channel changes; other keys keep the drawn layer.
+    class SoftBack extends UI.Component {
+        shouldComponentUpdate(next) { return next.src !== this.props.src || next.name !== this.props.name; }
+        componentDidMount() { this.place(); }
+        componentDidUpdate() { this.place(); }
+        place() {
+            const canvas = softArt(this.props.src, this.props.name);
+            if (this.base && this.base.firstChild !== canvas) {
+                this.base.textContent = '';
+                this.base.appendChild(canvas);
+            }
+        }
+        render() { return html`<div class="hm-soft-back"></div>`; }
+    }
+
     // The focused title fills the screen behind one row of tiles. The row
     // above peeks in over it and the next row below, so the way up and down
-    // shows. A channel shows its logo on a colour.
+    // shows. A channel shows its logo over a soft copy of itself.
     const Stage = ({ list }) => {
         const at = list[s.block].row ? s.block : list.findIndex((block) => block.row);
         if (at === -1) return null;
@@ -280,7 +350,15 @@ window.Home = (api, element) => {
         const plot = live ? now && now.title : d.plot;
         const above = at > 0 ? list[at - 1].row : null;
         const below = list[at + 1] ? list[at + 1].row : null;
+        // The channels either side get their soft backdrop ready now.
+        if (live) {
+            const r = rowState(row);
+            [row.entries[r.focus - 1], row.entries[r.focus + 1]].forEach((near) => {
+                if (near && near.section === 'live') softArt(art(near.item, near.section), near.item.name);
+            });
+        }
         return html`<div class=${'hm-stage' + (live ? ' live' : '')}>
+            ${live ? html`<${SoftBack} src=${art(entry.item, entry.section)} name=${entry.item.name} />` : null}
             ${entry ? UI.img('hm-stage-art', live ? art(entry.item, entry.section) : d.backdrop || d.poster || art(entry.item, entry.section)) : null}
             <div class="hm-stage-shade"></div>
             ${entry ? html`<div class="hm-stage-text">
@@ -394,8 +472,26 @@ window.Home = (api, element) => {
         return true;
     };
 
+    // A row redraws only when what it shows changed (#95): a key press moves
+    // the focus, so rows it did not touch keep their tiles. Any other render
+    // (new data, details, the clock) redraws every row.
+    let byKey = false;
+    let version = 0;
+    class MemoRow extends UI.Component {
+        shouldComponentUpdate(next) { return next.sig !== this.props.sig; }
+        render(props) { return html`<${HomeRow} row=${props.row} focused=${props.focused} />`; }
+    }
+    const rowSig = (row, focused) => {
+        if (row.loading) return version + '|L|' + row.title;
+        const r = rowState(row);
+        const visible = visibleCount(row);
+        return [version, focused, r.focus, r.offset, row.entries.length, row.title, row.pill || '',
+            row.entries.slice(r.offset, r.offset + visible).map(entryKey).join(',')].join('|');
+    };
+
     function render() {
         renders++;
+        if (!byKey) version++;
         const mode = s.q.open ? 'cinema' : layout();
         root.classList.toggle('bigrow', mode === 'bigrow');
         root.classList.toggle('backdrop', mode === 'backdrop');
@@ -431,7 +527,7 @@ window.Home = (api, element) => {
                 ? html`<${SearchBar} key="search" focused=${focused} />`
                 : block.hero
                 ? html`<${Hero} key="hero" hero=${block.hero} focused=${focused} />`
-                : html`<${HomeRow} key=${block.row.id} row=${block.row} focused=${focused} />`;
+                : html`<${MemoRow} key=${block.row.id} row=${block.row} focused=${focused} sig=${rowSig(block.row, focused)} />`;
         })}`, root);
         // And the row DOWN brings up.
         const next = list[first + 3];
@@ -498,8 +594,15 @@ window.Home = (api, element) => {
             if (at >= 0) { s.block = at; s.blockKey = 'continue'; render(); }
         },
         openSearch,
-        render,
-        key,
+        // From outside, the data may have changed: every row redraws.
+        render: () => {
+            version++;
+            render();
+        },
+        key: (code) => {
+            byKey = true;
+            try { return key(code); } finally { byKey = false; }
+        },
         setActive: (active) => {
             s.active = active;
             if (!active && s.q.typing) stopTyping();

@@ -86,11 +86,14 @@ test('Home live tiles are posters like films; with no guide entry the name fills
     } });
     const live = page.locator('.hm-card.live');
     await expect(live).toHaveCount(2);
+    // Films are 2:3 posters, more to a row (#95); a live tile keeps the six-to-a-row
+    // width and is a little shorter than the old poster height (286 px).
     const film = await page.locator('.hm-card:not(.live) .hm-poster').first().boundingBox();
+    expect(Math.round(film.height)).toBe(Math.round(film.width * 1.5));
     // The second tile: the first has focus and is zoomed.
     const tile = await live.nth(1).locator('.hm-poster').boundingBox();
-    expect(Math.round(tile.height)).toBe(Math.round(film.height));
-    expect(Math.round(tile.width)).toBe(Math.round(film.width));
+    expect(Math.round(tile.height)).toBe(Math.round(286 * 0.85));
+    expect(tile.width).toBeGreaterThan(film.width);
     // The name shows inside the poster, not under it.
     await expect(live.first().locator('.plate-name')).toHaveText('Channel 1 (cat all)');
     await expect(live.first().locator('> span').first()).toBeHidden();

@@ -508,3 +508,21 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Film and show rows: whole 2:3 posters, more to a row, with no request
+   for other artwork. Live channel rows keep their own tiles. Padding, as TV
+   browsers before Chromium 88 have no aspect-ratio. */
+#home .hm-row.posters { height: auto; padding-bottom: 20px; }
+#home .hm-row.posters .hm-cards { grid-template-columns: repeat(var(--home-poster-cols), minmax(0, 1fr)); }
+#home .hm-row.posters .hm-poster { height: 0; padding-top: 150%; }
+#home .hm-row.posters .hm-initials { position: absolute; inset: 0; }
+#home .hm-row.posters .hm-poster > img { object-fit: contain; }
+/* Backdrop layout, a channel (#95): a soft, stretched copy of its logo fills
+   the screen under the same shade as a film, the sharp logo on top. */
+.hm-stage.live { background: var(--content-bg); }
+.hm-soft-back { position: absolute; inset: 0; overflow: hidden; }
+.hm-soft-back canvas { display: block; width: 100%; height: 100%; opacity: 0.7; }
+/* Provider logos are often small: never stretched past their own size, so no pixels show. */
+#home .hm-stage.live .hm-stage-art { left: auto; right: 120px; top: 110px; width: auto; height: auto; max-width: 300px; max-height: 170px; }
+/* Faded rows keep a channel's plate but not its programme or progress bar. */
+:is(.hm-peek, .hm-stage-below) .hm-card.live :is(.hm-now, .hm-bar) { display: none; }

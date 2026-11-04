@@ -40,8 +40,10 @@ window.SourceSettings = (function () {
     function rows(hooks) {
         var current = hooks.current();
         var list = Sources.all().map(function (source) {
-            var entry = SourceAccount.row(source, XmltvGuide.subtitle(source));
-            return { label: source.name, source: source, current: !!current && source.id === current.id, sub: [entry.detail, refreshedText(source)].filter(Boolean).map(I18n.isolate).join(' \u00b7 '), chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
+            // Source details first, then a line per guide link (#90).
+            var lines = XmltvGuide.lines(source);
+            var entry = SourceAccount.row(source, lines.length ? '' : XmltvGuide.subtitle(source));
+            return { label: source.name, source: source, current: !!current && source.id === current.id, sub: [entry.detail, refreshedText(source)].filter(Boolean).map(I18n.isolate).join(' \u00b7 '), lines: lines, chip: entry.chip, warn: entry.warn, run: function () { open(source, hooks); } };
         });
         list = list.concat(['xtream', 'm3u'].map(function (kind) {
             return { label: I18n.t(kind === 'xtream' ? 'sources.addXtream' : 'sources.addM3u'), add: kind, text: '', run: function () { hooks.add(kind); } };

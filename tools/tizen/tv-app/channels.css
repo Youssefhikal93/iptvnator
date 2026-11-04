@@ -142,6 +142,10 @@
    plate in the upper half, the channel name under it and the programme on now
    at the bottom over its progress bar. The name shows inside the poster, so
    the lines under the tile go. */
+/* A little shorter than a film poster, with a gentler focus zoom. */
+.hm-card.live { --focus-zoom: 1.02; }
+.hm-row.live { height: auto; padding-bottom: 26px; }
+.hm-card.live .hm-poster { height: calc(var(--home-poster-h) * 0.85); }
 .hm-card.live .hm-poster.plate {
     --plate-top: 50%;
     flex-direction: column;

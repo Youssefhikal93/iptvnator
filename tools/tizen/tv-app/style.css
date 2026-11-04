@@ -1166,3 +1166,43 @@ body.bar-off #header {
     color: var(--eyebrow);
     font-size: 24px;
 }
+
+/* A menu's search field (guide channel, #90): OK opens the keyboard, so the
+   focus can pass over it. A row's sub line (a guide channel's id). */
+.menu-search {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 76px;
+    margin: 0 0 10px;
+    padding: 0 22px;
+    box-sizing: border-box;
+    border: 3px solid var(--line);
+    border-radius: 18px;
+    background: var(--search-bg);
+    font-size: 30px;
+}
+.menu-search svg { flex: none; width: 34px; height: 34px; fill: var(--muted); }
+.menu-search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--on-surface);
+    font: inherit;
+}
+.menu-search input::placeholder { color: var(--muted); }
+.menu-search.focused { border-color: var(--selection-border); box-shadow: 0 0 18px var(--selection-glow); }
+.menu-search.focused svg { fill: var(--selection); }
+.menu-search.typing { border-color: var(--selection); }
+.menu-row.with-sub .menu-label { overflow: hidden; text-overflow: ellipsis; }
+.menu-row-sub {
+    display: block;
+    margin-top: 4px;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

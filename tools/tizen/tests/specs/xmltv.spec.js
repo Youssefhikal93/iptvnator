@@ -1,10 +1,10 @@
-const { test, expect, boot, section, press, back, sources, sourceMenu, menuChoice, moveTo, enterItems, playing } = require('./helpers');
+const { test, expect, typeIn, boot, section, press, back, sources, sourceMenu, menuChoice, moveTo, enterItems, playing } = require('./helpers');
 
 async function guideLink(page, path, prefer = 'yes') {
     await sourceMenu(page);
     await menuChoice(page, 'Guide link…');
     await expect(page.locator('#form-title')).toHaveText('Guide link');
-    await page.locator('#form-epg-url').fill(new URL(page.url()).origin + path);
+    await typeIn(page, '#form-epg-url', new URL(page.url()).origin + path);
     await page.locator('#form-epg-prefer').selectOption(prefer);
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
@@ -25,7 +25,7 @@ test('own gzip guide, provider-first fallback, player, saved reload and removal'
     page.on('request', req => { if (new URL(req.url()).pathname === '/epg.xml.gz') downloads++; });
     await boot(page);
     await guideLink(page, '/epg.xml.gz');
-    await expect(page.locator('#settings')).toContainText('Guide: updated');
+    await expect(page.locator('#settings')).toContainText('Guide 1 · updated');
     await section(page, 'Live TV');
     await expect(liveRow(page, 1).locator('.epg-now')).toContainText('XMLTV show');
     await expect(liveRow(page, 3).locator('.epg-now')).toContainText('XMLTV show');
@@ -82,9 +82,9 @@ test('M3U add form accepts a guide and exposes XMLTV now/next on live rows and p
     await expect(page.locator('#form-title')).toHaveText('Add M3U playlist');
     await expect(page.locator('#form-epg-preference')).toBeHidden();
     const origin = new URL(page.url()).origin;
-    await page.locator('#form-name').fill('Guided playlist');
-    await page.locator('#form-url').fill(origin + '/playlist.m3u');
-    await page.locator('#form-epg-url').fill(origin + '/epg.xml');
+    await typeIn(page, '#form-name', 'Guided playlist');
+    await typeIn(page, '#form-url', origin + '/playlist.m3u');
+    await typeIn(page, '#form-epg-url', origin + '/epg.xml');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await section(page, 'Live TV');
@@ -97,13 +97,13 @@ test('M3U add form accepts a guide and exposes XMLTV now/next on live rows and p
     await expect(page.locator('#pl-controls')).toBeHidden({ timeout: 10000 });
     await back(page);
     await sources(page, 'Guided playlist');
-    await expect(page.locator('#settings')).toContainText('Guide: updated');
+    await expect(page.locator('#settings')).toContainText('Guide 1 · updated');
 });
 
 test('404 guide reports failure while catalogue and provider guide remain usable', async ({ page }) => {
     await boot(page);
     await guideLink(page, '/missing-guide.xml');
-    await expect(page.locator('#settings')).toContainText('Guide: failed');
+    await expect(page.locator('#settings')).toContainText('Guide 1 · download failed');
     await section(page, 'Live TV');
     await expect(liveRow(page, 1).locator('.epg-now')).toHaveText('Nyheter på svenska 1001');
     await enterItems(page);
@@ -114,14 +114,14 @@ test('404 guide reports failure while catalogue and provider guide remain usable
 test('a truncated refresh preserves the previous guide; startup retries it 12 hours later', async ({ page }) => {
     await boot(page);
     await guideLink(page, '/epg.xml');
-    await expect(page.locator('#settings')).toContainText('Guide: updated');
+    await expect(page.locator('#settings')).toContainText('Guide 1 · updated');
     await page.route('**/epg.xml', async route => {
         const response = await route.fetch();
         await route.fulfill({ response, body: (await response.text()).replace('</tv>', '') });
     });
     await sourceMenu(page);
     await menuChoice(page, 'Refresh guide');
-    await expect(page.locator('#settings')).toContainText('Guide: failed');
+    await expect(page.locator('#settings')).toContainText('Guide 1 · download failed');
     await section(page, 'Live TV');
     await expect(liveRow(page, 3).locator('.epg-now')).toContainText('XMLTV show');
     await page.unroute('**/epg.xml');
@@ -135,7 +135,7 @@ test('a truncated refresh preserves the previous guide; startup retries it 12 ho
     });
     await page.reload();
     await sources(page);
-    await expect(page.locator('#settings')).toContainText('Guide: updated');
+    await expect(page.locator('#settings')).toContainText('Guide 1 · updated');
 });
 
 test('guide edit remote fields clamp offsets and Return or Cancel preserves the saved source', async ({ page }) => {
@@ -143,17 +143,25 @@ test('guide edit remote fields clamp offsets and Return or Cancel preserves the 
     await sourceMenu(page);
     await menuChoice(page, 'Guide link…');
     await expect(page.locator('#form-epg-url')).toBeFocused();
+    // Moving over a box keeps the keyboard closed; OK opens it, Return closes it.
+    await expect(page.locator('#form-epg-url')).not.toBeEditable();
+    await press(page, 'Enter');
+    await expect(page.locator('#form-epg-url')).toBeEditable();
+    await press(page, 'Escape');
+    await expect(page.locator('#form-epg-url')).not.toBeEditable();
+    await expect(page.locator('#form')).toBeVisible();
     // Guide links 2 and 3 (#90) come before the offset.
     await press(page, 'ArrowDown');
+    await expect(page.locator('#form-epg-url2')).not.toBeEditable();
     await expect(page.locator('#form-epg-url2')).toBeFocused();
     await press(page, 'ArrowDown');
     await expect(page.locator('#form-epg-url3')).toBeFocused();
     await press(page, 'ArrowDown');
     await expect(page.locator('#form-epg-offset')).toBeFocused();
-    await page.locator('#form-epg-offset').fill('12');
+    await typeIn(page, '#form-epg-offset', '12');
     await press(page, 'ArrowRight');
     await expect(page.locator('#form-epg-offset')).toHaveValue('12');
-    await page.locator('#form-epg-offset').fill('-12');
+    await typeIn(page, '#form-epg-offset', '-12');
     await press(page, 'ArrowLeft');
     await expect(page.locator('#form-epg-offset')).toHaveValue('-12');
     await press(page, 'ArrowDown');
@@ -164,7 +172,7 @@ test('guide edit remote fields clamp offsets and Return or Cancel preserves the 
     await expect(page.locator('#settings')).not.toContainText('Guide:');
     await sourceMenu(page);
     await menuChoice(page, 'Guide link…');
-    await page.locator('#form-epg-url').fill('bad link');
+    await typeIn(page, '#form-epg-url', 'bad link');
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toContainText('The guide link must start');
     await page.locator('#form-cancel').click();

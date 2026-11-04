@@ -33,6 +33,27 @@ window.Form = (function () {
         $('form-save').focus();
     }
 
+    // Text boxes stay read-only while the focus moves over them, so the TV's
+    // keyboard opens only on OK, and Done or ▲ ▼ close it again (#90).
+    var TEXT = ['form-name', 'form-url', 'form-user', 'form-pass', 'form-epg-url', 'form-epg-url2', 'form-epg-url3', 'form-epg-offset'];
+    var isText = function (el) { return !!el && TEXT.indexOf(el.id) !== -1; };
+
+    function lock() {
+        TEXT.forEach(function (id) { $(id).readOnly = true; });
+    }
+
+    function goTo(id) {
+        lock();
+        $(id).focus();
+    }
+
+    function edit(el) {
+        el.readOnly = false;
+        el.blur();
+        el.focus();
+        if (el.type !== 'number' && el.setSelectionRange) el.setSelectionRange(el.value.length, el.value.length);
+    }
+
     function message(text) {
         $('form-msg').textContent = text;
     }
@@ -68,7 +89,7 @@ window.Form = (function () {
         $('form-phone').classList.toggle('hidden', !!editing);
         message('');
         $('form').classList.remove('hidden');
-        $(editing && !whole ? 'form-epg-url' : whole ? 'form-name' : 'form-url').focus();
+        goTo(editing && !whole ? 'form-epg-url' : whole ? 'form-name' : 'form-url');
     }
 
     function close(source) {
@@ -130,6 +151,18 @@ window.Form = (function () {
         var list = fields();
         var index = list.indexOf(document.activeElement && document.activeElement.id);
         var code = event.keyCode;
+        var active = document.activeElement;
+        var typing = isText(active) && !active.readOnly;
+        // OK on a box opens the keyboard; OK again, Done or Return closes it.
+        if (code === KEY.ENTER && isText(active)) {
+            if (typing) lock();
+            else edit(active);
+            return event.preventDefault();
+        }
+        if (typing && (code === KEY.RETURN || code === KEY.ESCAPE || code === KEY.IME_CANCEL)) {
+            lock();
+            return event.preventDefault();
+        }
         var onButtons = index >= list.length - (editing ? 2 : 3);
         if ((code === KEY.LEFT || code === KEY.RIGHT) && document.activeElement.id === 'form-epg-offset') {
             $('form-epg-offset').value = Math.max(-12, Math.min(12, (Number($('form-epg-offset').value) || 0) + (code === KEY.LEFT ? -1 : 1)));
@@ -142,7 +175,7 @@ window.Form = (function () {
         // The keyboard's Done goes on to the next field, as ▼ does.
         var step = { 38: -1, 40: 1, 65376: 1 }[code] || (onButtons ? { 37: -1, 39: 1 }[code] : 0);
         if (step) {
-            $(list[Math.max(0, Math.min(list.length - 1, index + step))]).focus();
+            goTo(list[Math.max(0, Math.min(list.length - 1, index + step))]);
             event.preventDefault();
         } else if (code === KEY.RETURN || code === KEY.ESCAPE) {
             close(null);
@@ -150,6 +183,10 @@ window.Form = (function () {
         }
     }
 
+    // A click (a browser preview) types straight away.
+    TEXT.forEach(function (id) {
+        $(id).addEventListener('click', function () { if ($(id).readOnly) edit($(id)); });
+    });
     $('form-save').addEventListener('click', save);
     $('form-phone').addEventListener('click', function () {
         FormPhone.open(type, fill);

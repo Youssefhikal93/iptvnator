@@ -1,4 +1,4 @@
-const { test, expect, boot, section, press, back, sourceMenu, moveTo, holdOK, enterItems } = require('./helpers');
+const { test, expect, typeIn, boot, section, press, back, sourceMenu, moveTo, holdOK, enterItems } = require('./helpers');
 
 // A second guide that names its channels the way the provider does, plus one
 // channel no provider channel is called, for choosing by hand (#90).
@@ -33,15 +33,19 @@ test('two guide links pair by name, follow the chosen order, and a channel takes
     await expect(page.locator('label[for="form-epg-url"]')).toHaveText('Guide link 1 (optional)');
     await expect(page.locator('#form-guide-hint')).toContainText('XMLTV links');
     await expect(page.locator('#form-epg-prefer option')).toHaveText(['After my guides', 'Before my guides']);
-    await page.locator('#form-epg-url').fill(origin + '/names.xml');
-    await page.locator('#form-epg-url2').fill(origin + '/epg.xml.gz');
-    await page.locator('#form-epg-url3').fill('ftp://not-a-guide');
+    await typeIn(page, '#form-epg-url', origin + '/names.xml');
+    await typeIn(page, '#form-epg-url2', origin + '/epg.xml.gz');
+    await typeIn(page, '#form-epg-url3', 'ftp://not-a-guide');
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toHaveText('The guide link must start with http:// or https://');
-    await page.locator('#form-epg-url3').fill('');
+    await typeIn(page, '#form-epg-url3', '');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
-    await expect(page.locator('#settings')).toContainText('Guide: updated');
+    // Each guide link gets its own line under the source: updated, then the next update.
+    const lines = page.locator('#settings .st-source .st-line');
+    await expect(lines).toHaveCount(2);
+    await expect(lines.nth(0)).toContainText(/^Guide 1 · updated .+/);
+    await expect(lines.nth(1)).toContainText(/^Guide 2 · updated .+/);
 
     // Guide 1 pairs "Channel 2 (cat all)" by name; guide 2 has every channel by id.
     await section(page, 'Live TV');
@@ -69,8 +73,27 @@ test('two guide links pair by name, follow the chosen order, and a channel takes
     await expect(page.locator('#menu .menu-title')).toHaveText('Guide for Channel 1 (cat all)');
     await expect(page.locator('#menu .focused')).toHaveText('✓ Automatic');
     // Guide channels with a similar name come first, by name and id; the rest are under Show all.
-    await expect(page.locator('#menu .menu-row').nth(1)).toHaveText('Channel 2 (cat all) HD (two.guide) · Guide 1');
+    // The guide's name, with its id and guide on a line under it.
+    await expect(page.locator('#menu .menu-row').nth(1).locator('.menu-label')).toHaveText('Channel 2 (cat all) HDtwo.guide · Guide 1');
+    await expect(page.locator('#menu .menu-row').nth(1).locator('.menu-row-sub')).toHaveText('two.guide · Guide 1');
     await expect(page.locator('#menu .menu-row').nth(2)).toHaveText(/^Show all guide channels \(\d+\)$/);
+    // Up onto the search field only highlights it; OK opens the keyboard.
+    await press(page, 'ArrowUp');
+    await expect(page.locator('#menu .menu-search')).toHaveClass(/focused/);
+    await expect(page.locator('#menu .menu-search input')).not.toBeFocused();
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#menu .focused')).toHaveText('✓ Automatic');
+    await press(page, 'ArrowUp');
+    await press(page, 'Enter');
+    await expect(page.locator('#menu .menu-search input')).toBeFocused();
+    await page.keyboard.type('elsewhere');
+    await expect(page.locator('#menu .menu-row .menu-label')).toHaveText(['Somewhere elseelsewhere.guide · Guide 1']);
+    await press(page, 'Enter');
+    await expect(page.locator('#menu .menu-search input')).not.toBeFocused();
+    await expect(page.locator('#menu .focused .menu-label')).toContainText('Somewhere else');
+    await back(page);
+    await holdOK(page);
+    await chooseRow(page, 'Guide channel: Automatic');
     await press(page, 'ArrowDown');
     await press(page, 'ArrowDown');
     await press(page, 'Enter');
@@ -86,7 +109,7 @@ test('two guide links pair by name, follow the chosen order, and a channel takes
     await holdOK(page);
     await chooseRow(page, 'Guide channel: elsewhere.guide');
     // The chosen row is focused; Automatic is above it.
-    await expect(page.locator('#menu .focused')).toHaveText('✓ Somewhere else (elsewhere.guide) · Guide 1');
+    await expect(page.locator('#menu .focused .menu-label')).toHaveText('✓ Somewhere elseelsewhere.guide · Guide 1');
     await moveTo(page, '#menu .focused', 'Automatic', 'ArrowUp');
     await press(page, 'Enter');
     await expect(page.locator('#menu')).toBeHidden();

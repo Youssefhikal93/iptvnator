@@ -79,13 +79,27 @@ window.GuidePick = (function () {
         return !!a && !!b && a.n === b.n && String(a.id).toLowerCase() === String(b.id).toLowerCase();
     }
 
+    // The guide's name for the channel, with its id (and guide) on a line under it.
     function rows(source, channel, entries, chosen, several) {
         return entries.map(function (entry) {
+            var id = entry.label || entry.id;
+            var name = entry.name && entry.name !== id ? entry.name : id;
+            var sub = [name !== id ? id : '', several ? I18n.t('guide.linkN', { n: entry.n }) : ''].filter(Boolean).join(' · ');
             return {
-                label: (same(entry, chosen) ? TICK : '') + title(entry) + (several ? ' · ' + I18n.t('guide.linkN', { n: entry.n }) : ''),
+                label: (same(entry, chosen) ? TICK : '') + name,
+                sub: sub,
                 run: function () { set(source.id, channel, entry); },
             };
         });
+    }
+
+    // Guide channels whose name or id holds every typed word.
+    function matching(text, entries) {
+        var words = String(text).toLowerCase().split(/\s+/).filter(Boolean);
+        return alphabetical(entries.filter(function (entry) {
+            var hay = (String(entry.name || '') + ' ' + String(entry.label || '') + ' ' + String(entry.id)).toLowerCase();
+            return words.every(function (word) { return hay.indexOf(word) !== -1; });
+        }));
     }
 
     function focusOf(list) {
@@ -93,9 +107,14 @@ window.GuidePick = (function () {
     }
 
     function showAll(source, channel, all, chosen, several) {
-        var list = rows(source, channel, alphabetical(all).slice(0, ALL), chosen, several);
-        if (all.length > ALL) list.push({ label: I18n.t('guide.showingFirst', { shown: ALL, total: all.length }), note: true });
-        Menu.open(I18n.t('guide.pickTitle', { name: channel.name }), list, focusOf(list));
+        var build = function (text) {
+            var hits = String(text).trim() ? matching(text, all) : alphabetical(all);
+            var list = rows(source, channel, hits.slice(0, ALL), chosen, several);
+            if (!hits.length) list.push({ label: I18n.t('guide.noMatch'), note: true });
+            else if (hits.length > ALL) list.push({ label: I18n.t('guide.showingFirst', { shown: ALL, total: hits.length }), note: true });
+            return list;
+        };
+        Menu.search(I18n.t('guide.pickTitle', { name: channel.name }), I18n.t('guide.search'), build, focusOf(build('')));
     }
 
     function open(source, channel) {
@@ -112,14 +131,27 @@ window.GuidePick = (function () {
             if (chosen && !found.some(function (entry) { return same(entry, chosen); })) {
                 found.unshift(all.filter(function (entry) { return same(entry, chosen); })[0] || chosen);
             }
-            var list = [{ label: (chosen ? '' : TICK) + I18n.t('guide.automatic'), run: function () { set(source.id, channel, null); } }];
-            list = list.concat(rows(source, channel, found, chosen, several));
-            if (!all.length) list.push({ label: I18n.t('guide.noGuideChannels'), note: true });
-            else {
-                if (!found.length) list.push({ label: I18n.t('guide.noSimilar'), note: true });
-                list.push({ label: I18n.t('guide.showAll', { count: all.length }), run: function () { showAll(source, channel, all, chosen, several); } });
-            }
-            Menu.open(I18n.t('guide.pickTitle', { name: channel.name }), list, focusOf(list));
+            var suggested = function () {
+                var list = [{ label: (chosen ? '' : TICK) + I18n.t('guide.automatic'), run: function () { set(source.id, channel, null); } }];
+                list = list.concat(rows(source, channel, found, chosen, several));
+                if (!all.length) list.push({ label: I18n.t('guide.noGuideChannels'), note: true });
+                else {
+                    if (!found.length) list.push({ label: I18n.t('guide.noSimilar'), note: true });
+                    list.push({ label: I18n.t('guide.showAll', { count: all.length }), run: function () { showAll(source, channel, all, chosen, several); } });
+                }
+                return list;
+            };
+            // Typing a name or id lists every guide channel that matches (#90).
+            var build = function (text) {
+                if (!String(text).trim()) return suggested();
+                var hits = matching(text, all);
+                var list = rows(source, channel, hits.slice(0, ALL), chosen, several);
+                if (!hits.length) list.push({ label: I18n.t('guide.noMatch'), note: true });
+                else if (hits.length > ALL) list.push({ label: I18n.t('guide.showingFirst', { shown: ALL, total: hits.length }), note: true });
+                return list;
+            };
+            var first = suggested();
+            Menu.search(I18n.t('guide.pickTitle', { name: channel.name }), I18n.t('guide.search'), build, focusOf(first));
         });
     }
 

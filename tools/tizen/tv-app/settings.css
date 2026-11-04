@@ -216,3 +216,8 @@
 .st-group + .st-part {
     margin-top: 0;
 }
+
+/* A line per guide link (#90): when it was updated and when it updates next. */
+.st-source .st-line { padding-inline-start: 30px; }
+.st-source .st-line::before { content: none; }
+.st-source .st-sub + .st-line { margin-top: 6px; }

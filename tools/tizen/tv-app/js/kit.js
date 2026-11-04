@@ -88,7 +88,13 @@ window.Kit = (() => {
         ? html`<div class=${classes('menu-row with-icon', { focused })}>
             ${typeof option.icon === 'string' ? html`<${MenuIcon} glyph=${option.icon} />` : option.icon}<span class="menu-label">${option.label}</span>${option.check ? html`<span class="menu-check">✓</span>` : null}
         </div>`
-        : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view })} data-glyph=${option.note ? null : option.glyph || '›'}>${option.view || html`<span class="menu-label">${option.label}</span>`}</div>`);
+        : html`<div class=${classes('menu-row', { focused, note: option.note, rich: !!option.view, 'with-sub': !!option.sub })} data-glyph=${option.note ? null : option.glyph || '›'}>${option.view || html`<span class="menu-label">${option.label}${option.sub ? html`<small class="menu-row-sub">${option.sub}</small>` : null}</span>`}</div>`);
+
+    // A search field at the top of a menu; it takes the keyboard only after OK.
+    const MenuSearch = ({ search }) => html`<div class=${classes('menu-search', { focused: search.focused, typing: search.typing })}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input value=${search.text} placeholder=${search.placeholder} autocomplete="off" onInput=${search.onInput} />
+    </div>`;
 
     // header { image, sub } puts the item's artwork and a line beside the title (#48);
     // header { profile } puts the profile's avatar above its name.
@@ -101,7 +107,8 @@ window.Kit = (() => {
         </div></div>`
         : html`<div class="menu-title">${title}</div>`);
 
-    const SideMenu = ({ title, options, index, header }) => html`<${MenuHead} title=${title} header=${header} />
+    const SideMenu = ({ title, options, index, header, search }) => html`<${MenuHead} title=${title} header=${header} />
+        ${search ? html`<${MenuSearch} search=${search} />` : null}
         ${options.map((option, i) => html`<${MenuRow} option=${option} focused=${i === index} />`)}`;
 
     // A channel's 16:9 plate (#44): its logo on a light plate, or, without a

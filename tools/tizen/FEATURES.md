@@ -78,7 +78,7 @@ In Live TV, press Guide or move to the TV guide button above the list and press 
 
 ### Your own guide links (#7)
 
-Open Settings → Sources, press OK on a source → Guide link…, and fill in Guide link 1 (optional), Guide link 2 (optional) or Guide link 3 (optional). Use XMLTV links (.xml or .xml.gz), adjust Guide time offset (hours, -12 to +12) if needed, then choose Save. The source's menu also offers Refresh guide and Remove guide links once links are saved.
+Open Settings → Sources, press OK on a source → Guide link…, and fill in Guide link 1 (optional), Guide link 2 (optional) or Guide link 3 (optional). Use XMLTV links (.xml or .xml.gz), adjust Guide time offset (hours, -12 to +12) if needed, then choose Save. Moving over a box does not open the keyboard: press OK to type, and OK, Done or Return to close it. Under the source in Settings → Sources, each guide link has its own line with when it was updated and, with Refresh automatically on, when it updates next. The source's menu also offers Refresh guide and Remove guide links once links are saved.
 
 ### Guide order and automatic matching
 
@@ -86,7 +86,7 @@ For an Xtream source, the guide form's Provider's guide choice puts it Before my
 
 ### Choose a channel's guide by hand
 
-With guide links saved, hold OK on a channel in Live TV and choose Guide channel: Automatic, or the saved guide channel shown there. Choose a suggested name, or Show all guide channels followed by the count to browse names; very large guides show only the first 300 names there. Choose Automatic to return to automatic matching.
+With guide links saved, hold OK on a channel in Live TV and choose Guide channel: Automatic, or the saved guide channel shown there. Choose a suggested name, or Show all guide channels followed by the count to browse names; very large guides show only the first 300 names there. Each row shows the guide's name with its id under it. To search, press ▲ to the search field and OK to type a name or id; moving over the field does not open the keyboard. Choose Automatic to return to automatic matching.
 
 ### Past programmes and catch-up (#19)
 
@@ -154,7 +154,7 @@ A film's detail page can show its collection: move down to the row and use ◀/�
 
 ### Home rows (#5)
 
-Choose Home in the main menu, then use the arrows and OK to open or play titles in its rows. Rows include Continue watching, favorites, recently watched channels and recently added titles when there is something to show. Settings → Display → Home layout offers Cinema, Big first row or Backdrop. Live channel tiles are the same size as posters: the logo on top, the channel name under it and the programme on now with its progress bar; a channel without a guide entry shows its name larger instead.
+Choose Home in the main menu, then use the arrows and OK to open or play titles in its rows. Rows include Continue watching, favorites, recently watched channels and recently added titles when there is something to show. Settings → Display → Home layout offers Cinema, Big first row or Backdrop. Film and series rows show whole 2:3 posters, eight to a row (nine in Compact). Live channel tiles are the same size as posters: the logo on top, the channel name under it and the programme on now with its progress bar; a channel without a guide entry shows its name larger instead.
 
 ### Continue watching (#31, #33)
 

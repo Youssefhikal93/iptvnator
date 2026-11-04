@@ -181,6 +181,17 @@ window.AutoRefresh = (function () {
         // A refresh the viewer asked for counts as the last one.
         mark: function (id) { write(id, { at: Date.now() }); },
         refreshedAt: function (id) { return read(id).at || 0; },
+        // When something last refreshed at `last` is due again, or 0 with
+        // Refresh automatically Off. It runs then once the app is idle.
+        nextAt: function (last, mode) {
+            mode = mode || Prefs.get('autoRefresh');
+            if (mode !== 'night' && mode !== 'twelve') return 0;
+            if (!last) return Date.now();
+            if (mode === 'twelve') return last + TWELVE;
+            var night = new Date(nightStart(last));
+            night.setDate(night.getDate() + 1);
+            return Math.max(night.getTime(), last + NIGHT_MIN_AGE);
+        },
         forget: function (id) {
             try { Stored.remove(KEY + id); } catch (e) { /* Nothing saved. */ }
         },

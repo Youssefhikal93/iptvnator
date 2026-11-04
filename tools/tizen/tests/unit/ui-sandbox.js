@@ -10,6 +10,7 @@ function toNodes(view) {
     if (view === null || view === undefined || view === false || view === true) return [];
     if (Array.isArray(view)) return view.reduce(function (all, child) { return all.concat(toNodes(child)); }, []);
     if (typeof view !== 'object') return [{ textContent: String(view), children: [] }];
+    if (typeof view.type === 'function' && view.type.prototype && view.type.prototype.render) return toNodes(new view.type(view.props).render(view.props));
     if (typeof view.type === 'function') return toNodes(view.type(view.props));
     var children = toNodes(view.props.children);
     if (view.type === preact.Fragment) return children;
@@ -25,6 +26,7 @@ module.exports = {
     toNodes: toNodes,
     UI: {
         html: htm.bind(preact.h),
+        Component: preact.Component,
         img: function (cls, src) { return preact.h('img', { class: cls, src: src }); },
         render: function (view, root) {
             root.children = toNodes(view);

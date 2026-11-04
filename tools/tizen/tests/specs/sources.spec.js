@@ -1,4 +1,4 @@
-const { test, expect, boot, section, moveTo, press, back, category, sources, sourceMenu, menuChoice } = require('./helpers');
+const { test, expect, typeIn, boot, section, moveTo, press, back, category, sources, sourceMenu, menuChoice } = require('./helpers');
 
 test('Sources remains reachable near the end of Settings and has no rail item (#95)', async ({ page }) => {
     await boot(page);
@@ -43,12 +43,12 @@ test('add form validates Xtream fields, saves an account, and restores it after 
     await expect(page.locator('#form-title')).toHaveText('Add Xtream account');
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toHaveText('The link must start with http:// or https://');
-    await page.locator('#form-url').fill(new URL(page.url()).origin);
+    await typeIn(page, '#form-url', new URL(page.url()).origin);
     await page.locator('#form-save').click();
     await expect(page.locator('#form-msg')).toHaveText('Enter the username and password.');
-    await page.locator('#form-name').fill('Second account');
-    await page.locator('#form-user').fill('other');
-    await page.locator('#form-pass').fill('password');
+    await typeIn(page, '#form-name', 'Second account');
+    await typeIn(page, '#form-user', 'other');
+    await typeIn(page, '#form-pass', 'password');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await expect(page.locator('body')).toHaveAttribute('data-source', 'Second account');
@@ -67,8 +67,8 @@ test('M3U import preserves comma-containing group names and exposes only Live TV
     await sources(page, '+  Add M3U playlist');
     await press(page, 'Enter');
     await expect(page.locator('#form-login')).toBeHidden();
-    await page.locator('#form-name').fill('Test playlist');
-    await page.locator('#form-url').fill(new URL(page.url()).origin + '/playlist.m3u');
+    await typeIn(page, '#form-name', 'Test playlist');
+    await typeIn(page, '#form-url', new URL(page.url()).origin + '/playlist.m3u');
     await page.locator('#form-save').click();
     await expect(page.locator('#form')).toBeHidden();
     await section(page, 'Live TV');

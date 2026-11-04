@@ -1,4 +1,4 @@
-const { test, expect, boot, press, back, sources, sourceMenu, menuChoice } = require('./helpers');
+const { test, expect, typeIn, boot, press, back, sources, sourceMenu, menuChoice } = require('./helpers');
 
 // The Tizen service cannot run in the browser, so these tests stand in for it:
 // they answer the app's 127.0.0.1 requests and play the phone's submit by
@@ -136,7 +136,7 @@ test('Return closes the panel, stops the service and keeps what was typed', asyn
     await boot(page);
     await sources(page, '+  Add Xtream account');
     await press(page, 'Enter');
-    await page.locator('#form-name').fill('Typed');
+    await typeIn(page, '#form-name', 'Typed');
     await page.locator('#form-phone').focus();
     await press(page, 'Enter');
     await expect(page.locator('#phone-code')).toHaveText('Code: K7M2QX');

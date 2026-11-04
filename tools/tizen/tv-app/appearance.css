@@ -3,6 +3,7 @@
     --grid-cols: 5;
     --grid-rows: 2;
     --home-cols: 6;
+    --home-poster-cols: 8;
     --poster-h: 300px;
     --home-poster-h: 286px;
     /* Lists keep their rows in both densities: source details and guides must fit.
@@ -26,6 +27,7 @@
 [data-density="compact"] {
     --grid-cols: 6;
     --home-cols: 7;
+    --home-poster-cols: 9;
     --poster-h: 250px;
     --home-poster-h: 262px;
     --settings-row-h: 72px;

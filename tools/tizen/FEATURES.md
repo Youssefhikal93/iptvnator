@@ -310,7 +310,7 @@ Open Settings → Display → Language and choose with the arrows and OK. Englis
 
 The logo rises gently over a 5.5-second cycle; the smaller logos keep their different animations on 14–20-second cycles while they drift (#95).
 
-Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock keeps the clock and date centred below a bouncing logo, adding 2, then 6, then 14, then 28 smaller animated logos in free spots every two minutes before restarting with 2 in new spots. The smaller logos drift at a steady pace like balls, bouncing off the screen edges, the clock and each other (#95). With Animations Off, the logos still appear but stay still. Press any key to dismiss the app's saver; that press does not also select or play anything.
+Settings → Display → Screen saver chooses Off, 5 min, 10 min or 15 min before the app's saver appears on idle menus, paused video or live preview. Screen saver to use offers This app's for title pictures, Logo and clock, or The TV's own for Samsung's saver. Logo and clock shows only the bouncing logo with the clock and date centred below it; Animations Off keeps the logo still. Press any key to dismiss the app's saver; that press does not also select or play anything.
 
 A film or episode left paused keeps the saver coming even if the provider drops the stream; Play then reopens it where it was, without an error. One that drops while playing reopens on its own where it was; only a second drop within a minute shows the error.
 

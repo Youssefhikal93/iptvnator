@@ -211,7 +211,7 @@ test('08–09 Profile card and actions, avatars, confirmation, PIN and picker', 
     await shot(page, '09-dialogs', 'en-dark-picker');
 });
 
-test('10 Logo saver at two phases, with extras', async ({ page }) => {
+test('10 Logo saver at two phases', async ({ page }) => {
     await page.clock.install({ time: new Date('2026-11-02T20:30:00') });
     const gallery = seed({ screenSaverKind: 'logo', screenSaverMs: 300000 });
     gallery.screenSaver = true;
@@ -219,9 +219,7 @@ test('10 Logo saver at two phases, with extras', async ({ page }) => {
     await page.clock.fastForward(301000);
     await expect(page.locator('#screen-saver .ss-logo-icon')).toBeVisible();
     await shot(page, '10-screen-saver', 'en-dark-logo-frame-1');
-    // fastForward coalesces repeating timers; visit each two-minute step.
-    for (let step = 0; step < 4; step++) await page.clock.fastForward(120000);
-    await expect(page.locator('.ss-logo-extra')).toHaveCount(28);
+    await page.clock.fastForward(480000);
     await page.locator('#screen-saver').evaluate(stage => stage.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = 3000; }));
     await shot(page, '10-screen-saver', 'en-dark-logo-frame-2');
 });

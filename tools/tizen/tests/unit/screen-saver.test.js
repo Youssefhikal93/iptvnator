@@ -170,7 +170,7 @@ test('#61 at most forty slides', function () {
     assert.equal(slides.length, 40);
 });
 
-test('#74 Logo and clock waits like the slideshow, asks for no titles, draws on a clock timer, and swaps on another', function () {
+test('#74 Logo and clock waits like the slideshow, asks for no titles, and draws on the clock timer only', function () {
     var s = scene({ ms: 300000, kind: 'logo', allowed: false });
     s.elapse('idle');
     assert.equal(s.saver.isOn(), false);
@@ -178,7 +178,7 @@ test('#74 Logo and clock waits like the slideshow, asks for no titles, draws on 
     s.elapse('idle');
     assert.equal(s.saver.isOn(), true);
     assert.equal(s.slidesAsked(), 0);
-    assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000, 120000]);
+    assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000]);
     var event = s.press();
     assert.equal(event.prevented, true);
     assert.equal(event.stopped, true);
@@ -196,101 +196,13 @@ test("#74 an unknown stored kind is the slideshow; the TV's own never starts our
     assert.deepEqual(tv.samsung, [1]);
 });
 
-test('#74 logo steps use only the clock and two-minute intervals, even with Animations Off; waking clears both', function () {
+test('#74 logo and clock redraws only on the clock, even with Animations Off; waking clears it', function () {
     ['on', 'off'].forEach(function (motion) {
         var s = scene({ ms: 300000, kind: 'logo', motion: motion });
         s.elapse('idle');
-        var views = s.renders.length;
-        for (var step = 1; step <= 7; step++) {
-            s.timers().filter(function (t) { return t.ms === 120000; })[0].fn();
-            assert.equal(s.renders.length, views + step);
-            assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000, 120000]);
-        }
+        assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [20000]);
         s.saver.wake();
         assert.equal(s.saver.isOn(), false);
         assert.deepEqual(s.timers().map(function (t) { return t.ms; }), [300000]);
     });
-});
-
-test('#74 extras start at zero, accumulate to fourteen and repeat from two', function () {
-    var env = load(['screen-saver.js']).globals;
-    assert.deepEqual(Array.from({ length: 11 }, function (_, step) { return env.ScreenSaver.extraCount(step); }), [0, 2, 6, 14, 28, 2, 6, 14, 28, 2, 6]);
-});
-
-test('#74 random slots keep full animation envelopes on screen, outside the centre block and apart', function () {
-    var env = load(['screen-saver.js']).globals;
-    var state = 74;
-    var seeded = function () { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
-    // Empty, first pair, intermediate and full swarm; include both random extremes.
-    [0, 2, 6, 14, 28].forEach(function (count) {
-        [function () { return 0; }, function () { return 0.5; }, function () { return 1 - Number.EPSILON; }, seeded].forEach(function (random) {
-            var slots = env.ScreenSaver.positions(random, count);
-            assert.equal(slots.length, count);
-            slots.forEach(function (slot, i) {
-                assert.ok(!(slot.col >= 2 && slot.col <= 5 && slot.row >= 1 && slot.row <= 4), 'reserved centre cell');
-                var x = slot.x * 1920 / 100;
-                var y = slot.y * 1080 / 100;
-                var half = 80; // Covers rotation, flips, wobble and float, not just static icons.
-                assert.ok(x - half >= 0 && x + half <= 1920 && y - half >= 0 && y + half <= 1080, 'on screen');
-                assert.ok(x + half <= 480 || x - half >= 1440 || y + half <= 180 || y - half >= 900, 'outside centre block');
-                slots.slice(0, i).forEach(function (other) {
-                    assert.ok(Math.abs(x - other.x * 1920 / 100) >= half * 2 || Math.abs(y - other.y * 1080 / 100) >= half * 2, 'no overlap');
-                });
-            });
-        });
-    });
-    var first = JSON.stringify(env.ScreenSaver.positions(function () { return 0; }, 14));
-    assert.notEqual(JSON.stringify(env.ScreenSaver.positions(function () { return 0.99; }, 14)), first, 'randomness changes the layout');
-});
-
-test('#95 extras bounce off the edges and the logo block at a steady speed', function () {
-    var S = load(['screen-saver.js']).globals.ScreenSaver;
-    var box = { w: 1920, h: 1080, hole: { left: 576, top: 254, right: 1344, bottom: 826 } };
-    var wall = { x: 100, y: 540, vx: -S.SPEED, vy: 0 };
-    S.bounce([wall], 1, box);
-    assert.equal(wall.x, S.HIT_R);
-    assert.equal(wall.vx, S.SPEED);
-    var hole = { x: 480, y: 540, vx: S.SPEED, vy: 0 };
-    S.bounce([hole], 1, box);
-    assert.ok(hole.x <= box.hole.left - S.HIT_R + 1e-9, 'pushed out of the logo block');
-    assert.equal(hole.vx, -S.SPEED);
-});
-
-test('#95 two extras meeting head-on bounce apart without overlapping, at the same speed', function () {
-    var S = load(['screen-saver.js']).globals.ScreenSaver;
-    var box = { w: 1920, h: 1080 };
-    var a = { x: 300, y: 300, vx: S.SPEED, vy: 0 };
-    var b = { x: 300 + 2 * S.HIT_R + 10, y: 300, vx: -S.SPEED, vy: 0 };
-    S.bounce([a, b], 1, box);
-    assert.ok(b.x - a.x >= 2 * S.HIT_R - 1e-9);
-    assert.ok(a.vx < 0 && b.vx > 0, 'they turn back');
-    assert.ok(Math.abs(Math.hypot(a.vx, a.vy) - S.SPEED) < 1e-9);
-    assert.ok(Math.abs(Math.hypot(b.vx, b.vy) - S.SPEED) < 1e-9);
-});
-
-test('#95 a full swarm of 28 runs ten minutes on screen, out of the logo block and apart', function () {
-    var S = load(['screen-saver.js']).globals.ScreenSaver;
-    var state = 95;
-    var seeded = function () { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
-    var box = { w: 1920, h: 1080, hole: { left: 576, top: 254, right: 1344, bottom: 826 } };
-    var balls = S.positions(seeded, 28).map(function (slot) {
-        var angle = seeded() * 2 * Math.PI;
-        return { x: slot.x * 19.2, y: slot.y * 10.8, vx: Math.cos(angle) * S.SPEED, vy: Math.sin(angle) * S.SPEED };
-    });
-    var worst = 0;
-    for (var frame = 0; frame < 600 * 30; frame++) {
-        S.bounce(balls, 1 / 30, box);
-        balls.forEach(function (ball, i) {
-            assert.ok(ball.x >= S.HIT_R - 1e-6 && ball.x <= box.w - S.HIT_R + 1e-6 && ball.y >= S.HIT_R - 1e-6 && ball.y <= box.h - S.HIT_R + 1e-6, 'on screen');
-            var cx = Math.max(box.hole.left, Math.min(ball.x, box.hole.right));
-            var cy = Math.max(box.hole.top, Math.min(ball.y, box.hole.bottom));
-            assert.ok(Math.hypot(ball.x - cx, ball.y - cy) >= S.HIT_R - 1e-6, 'outside the logo block');
-            balls.slice(0, i).forEach(function (other) {
-                worst = Math.max(worst, 2 * S.HIT_R - Math.hypot(ball.x - other.x, ball.y - other.y));
-            });
-        });
-    }
-    // Crowded corners may squeeze two a little; never by more than a few px.
-    assert.ok(worst < 12, 'overlap ' + worst.toFixed(1) + ' px');
-    balls.forEach(function (ball) { assert.ok(Math.abs(Math.hypot(ball.vx, ball.vy) - S.SPEED) < 1e-6); });
 });

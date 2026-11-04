@@ -2574,7 +2574,7 @@ window.Browser = function (hooks) {
             key: Library.keyOf(entry.section, item),
             title: show.name || show.title || '',
             subtitle: [episode, left].filter(Boolean).join(' · '),
-            image: entry.section === 'live' ? show.stream_icon || show.cover || show.logo || '' : show.stream_icon || show.cover || OnlineServices.artwork(d && d.poster) || show.logo || OnlineServices.artwork(d && d.backdrop),
+            image: entry.section === 'live' ? show.stream_icon || show.cover || show.logo || '' : show.stream_icon || show.cover || (d && d.poster) || show.logo || (d && d.backdrop),
         };
     }
 

@@ -8,7 +8,7 @@ I18n.tables.en = {
     "services.details": "Details and facts",
     "services.detailsOff": "Detail pages will show provider information only. Saved TMDB details stay on the TV.",
     "services.artwork": "Artwork",
-    "services.artworkOff": "Posters and backdrops found on TMDB will be hidden. Your provider’s own covers stay visible.",
+    "services.artworkOff": "Posters and backdrops found on TMDB will be hidden. Your provider’s own posters and backdrops stay visible.",
     "services.cast": "Cast and actor pages",
     "services.castOff": "TMDB cast rows and actor pages will be hidden.",
     "services.collections": "Collections look-up",

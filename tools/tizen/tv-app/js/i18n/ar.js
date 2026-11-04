@@ -9,7 +9,7 @@ I18n.tables.ar = {
     "services.details": "التفاصيل والمعلومات",
     "services.detailsOff": "تعرض صفحات التفاصيل معلومات المصدر فقط. تبقى معلومات TMDB المحفوظة على التلفاز.",
     "services.artwork": "الصور والملصقات",
-    "services.artworkOff": "تختفي الملصقات والخلفيات القادمة من TMDB. تبقى صور مزوّدك ظاهرة.",
+    "services.artworkOff": "تختفي الملصقات والخلفيات القادمة من TMDB. تبقى ملصقات وخلفيات مزوّدك ظاهرة.",
     "services.cast": "الممثلون وصفحاتهم",
     "services.castOff": "تختفي صفوف ممثلي TMDB وصفحات الممثلين.",
     "services.collections": "البحث عن مجموعات الأفلام",

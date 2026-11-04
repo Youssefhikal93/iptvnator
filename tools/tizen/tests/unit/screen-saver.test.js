@@ -211,6 +211,27 @@ test('#99 a title with only a poster uses a saved TMDB backdrop; too few titles 
     assert.deepEqual(shuffled.slice().sort(), slides.map(function (s) { return s.title; }).sort());
 });
 
+test('#98 Artwork Off keeps the provider backdrop and poster; only saved TMDB backdrops go', function () {
+    var prefs = { tmdbArtwork: false, tmdbSaver: false };
+    var env = load(['settings-store.js', 'online-services.js', 'screen-saver.js'], {}, {}).globals;
+    Object.keys(prefs).forEach(function (key) { env.Prefs.set(key, prefs[key]); });
+    var rows = [{ id: 'continue', title: 'Continue watching', entries: [
+        { section: 'movies', item: { stream_id: 1, name: 'Wide' } },
+        { section: 'movies', item: { stream_id: 2, name: 'Tall' } },
+    ] }];
+    var given = { 1: { backdrop: 'provider-wide.jpg', poster: 'provider-tall.jpg' }, 2: { poster: 'provider-tall.jpg' } };
+    var slides = JSON.parse(JSON.stringify(env.ScreenSaver.slides(rows, {
+        details: function (entry) { return given[entry.item.stream_id]; },
+        progress: function () { return null; },
+        backdrop: function () { return ''; },
+        random: function () { return 0.999; },
+    })));
+    assert.deepEqual(slides.map(function (slide) { return [slide.title, slide.image, slide.wide]; }), [
+        ['Wide', 'provider-wide.jpg', true],
+        ['Tall', 'provider-tall.jpg', false],
+    ]);
+});
+
 test('#74 Logo and clock waits like the slideshow, asks for no titles, and draws on the clock timer only', function () {
     var s = scene({ ms: 300000, kind: 'logo', allowed: false });
     s.elapse('idle');

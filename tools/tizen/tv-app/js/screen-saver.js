@@ -190,9 +190,9 @@ ScreenSaver.slides = function (rows, deps) {
         const key = entry.section + ':' + (item.series_id || item.stream_id);
         if (seen[key] || out.length >= ScreenSaver.MAX) return;
         const d = deps.details(entry) || {};
-        const poster = OnlineServices.artwork(d.poster) || item.stream_icon || item.cover || '';
+        const poster = d.poster || item.stream_icon || item.cover || '';
         // A wide picture: the title's own, else a TMDB backdrop already saved (#99).
-        const wide = OnlineServices.artwork(d.backdrop) || (deps.backdrop ? deps.backdrop(entry) : '');
+        const wide = d.backdrop || (deps.backdrop ? deps.backdrop(entry) : '');
         const image = wide || poster;
         if (!image) return;
         seen[key] = true;

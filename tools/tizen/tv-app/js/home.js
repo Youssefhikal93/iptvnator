@@ -199,7 +199,8 @@ window.Home = (api, element) => {
     // time left.
     const tile = (entry, big) => {
         const live = entry.section === 'live';
-        const src = big && !live ? heroDetails(entry).backdrop || art(entry.item, entry.section) : art(entry.item, entry.section);
+        // With Artwork Off the big tiles show the poster, not a backdrop.
+        const src = big && !live && Prefs.get('tmdbArtwork') !== false ? heroDetails(entry).backdrop || art(entry.item, entry.section) : art(entry.item, entry.section);
         const item = entry.item;
         const chip = item.sourceId && item.sourceId !== Sources.current().id ? html`<span class="source-chip">${item.sourceName}</span>` : null;
         let overlays;

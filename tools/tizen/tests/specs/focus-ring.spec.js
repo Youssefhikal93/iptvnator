@@ -96,3 +96,22 @@ test('a focused Home row tile grows to 105% and a big tile to 104% (#68)', async
     await press(page, 'ArrowDown');
     await expect.poll(() => zoom('.hm-card.focus:not(.big)')).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
 });
+
+const bigArt = (page) => page.locator('.hm-card.big').first().evaluate((el) => {
+    const img = el.querySelector('img');
+    return (img && img.getAttribute('src')) || '';
+});
+
+for (const artwork of [false, true]) {
+    test(`Big first row: Artwork ${artwork ? 'On shows the backdrop' : 'Off keeps the poster'} on the big tiles`, async ({ page }) => {
+        const seed = homeSeed('comfortable', 'bigrow');
+        seed.storage.settings.tmdbArtwork = artwork;
+        await boot(page, seed);
+        await expect(page.locator('.hm-card.big')).not.toHaveCount(0);
+        if (artwork) await expect.poll(() => bigArt(page)).toContain('backdrop.jpg');
+        else {
+            await page.waitForTimeout(3000);
+            expect(await bigArt(page)).not.toContain('backdrop.jpg');
+        }
+    });
+}

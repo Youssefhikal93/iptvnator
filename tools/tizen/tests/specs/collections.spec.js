@@ -45,16 +45,16 @@ const keyed = { storage: { settings: { tmdbApiKey: 'test-key' } } };
 const lookups = asked => asked.filter(entry => /^\/(search\/movie|movie\/\d+|collection\/\d+)\?/.test(entry));
 const labels = page => page.locator('#categories .row .label').allTextContents();
 
-async function collectionsFound(page) {
+async function collectionsFound(page, title = 'Collections') {
     // The look-up runs while the remote rests: one film a second here.
-    await expect.poll(async () => (await labels(page)).includes('Collections'), { timeout: 90_000 }).toBe(true);
-    await expect.poll(() => page.locator('#categories .row').filter({ hasText: 'Collections' }).locator('.badge').innerText(), { timeout: 90_000 }).toBe('2');
+    await expect.poll(async () => (await labels(page)).includes(title), { timeout: 90_000 }).toBe(true);
+    await expect.poll(() => page.locator('#categories .row').filter({ hasText: title }).locator('.badge').innerText(), { timeout: 90_000 }).toBe('2');
     await expect.poll(() => page.evaluate(() => CollectionLookup.progress()), { timeout: 90_000 }).toBe(null);
 }
 
-async function openCollections(page) {
-    await moveTo(page, '#categories .focused .label', 'Collections', 'ArrowUp');
-    await expect(page.locator('#items .list-header')).toContainText('Collections');
+async function openCollections(page, title = 'Collections') {
+    await moveTo(page, '#categories .focused .label', title, 'ArrowUp');
+    await expect(page.locator('#items .list-header')).toContainText(title);
 }
 
 // Storage reads while moving through a list, as in hide-watched.spec.js.
@@ -222,3 +222,59 @@ test('Refresh in the Collections header asks every film again in the background 
     expect(new Set(again.filter(entry => entry.startsWith('/movie/'))).size).toBe(25);
     expect(again.filter(entry => entry.startsWith('/collection/')).sort()).toEqual(['/collection/900?', '/collection/901?', '/collection/902?'].map(e => expect.stringMatching('^' + e.replace('?', '\\?'))));
 });
+
+async function headerGeometry(page) {
+    return page.evaluate(() => {
+        const box = selector => {
+            const el = document.querySelector(selector);
+            if (!el) return null;
+            const rect = el.getBoundingClientRect();
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        };
+        return { refresh: box('#items .list-action'), search: box('#searchbar'), toolbar: box('#header'),
+            categories: box('#categories'), items: box('#items'), title: box('#items .list-caption'),
+            gap: Number.parseFloat(getComputedStyle(document.querySelector('#view-toggle')).gap) };
+    });
+}
+
+for (const language of ['en', 'ar']) {
+    test('Collections Refresh preserves the toolbar and panes and clears long titles in ' + language, async ({ page }) => {
+        test.setTimeout(180_000);
+        await tmdb(page);
+        await boot(page, { storage: { settings: { tmdbApiKey: 'test-key', language } } });
+        await section(page, await page.evaluate(() => I18n.t('rail.movies')));
+        const title = await page.evaluate(() => I18n.t('collections.title'));
+        const recent = await page.evaluate(() => I18n.t('browser.recentlyAdded'));
+        await collectionsFound(page, title);
+        await page.evaluate(() => document.fonts.ready);
+        for (const width of [1920, 1600, 1440, 1280, 1024]) {
+            await page.setViewportSize({ width, height: 1080 });
+            await moveTo(page, '#categories .focused .label', recent, 'ArrowUp');
+            await expect(page.locator('#items .list-header')).toContainText(recent);
+            const before = await headerGeometry(page);
+            await moveTo(page, '#categories .focused .label', title, 'ArrowDown');
+            await expect(page.locator('#items .list-header')).toContainText(title);
+            await enterItems(page);
+            await press(page, 'ArrowUp');
+            await expect(page.locator('#items .list-action.focused')).toBeVisible();
+            await page.locator('#items .list-caption').evaluate((caption, title) => { caption.textContent = title.repeat(20); }, title);
+            const shelf = await headerGeometry(page);
+            expect(shelf.search).toEqual(before.search);
+            expect(shelf.toolbar).toEqual(before.toolbar);
+            expect(shelf.categories).toEqual(before.categories);
+            expect(shelf.categories.x + shelf.categories.width).toBeLessThanOrEqual(shelf.items.x);
+            expect(shelf.refresh.y).toBe(shelf.search.y);
+            expect(shelf.refresh.height).toBe(shelf.search.height);
+            expect(shelf.search.x - shelf.refresh.x - shelf.refresh.width).toBe(shelf.gap);
+            if (shelf.title.width) expect(shelf.title.x + shelf.title.width).toBeLessThanOrEqual(shelf.refresh.x - shelf.gap);
+            await expect(page.locator('#items .list-caption')).toHaveCSS('text-overflow', 'ellipsis');
+            await press(page, 'ArrowLeft');
+        }
+        await enterItems(page);
+        const fonts = await page.evaluate(() => ['#items .list-action', '.view-btn[data-mode="hide-watched"]'].map(selector => {
+            const css = getComputedStyle(document.querySelector(selector));
+            return [css.fontSize, css.fontWeight];
+        }));
+        expect(fonts[0]).toEqual(fonts[1]);
+    });
+}

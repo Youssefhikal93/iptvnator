@@ -19,6 +19,7 @@
 .poster.missing .icon { opacity: 0.35; filter: grayscale(1); }
 .poster .cl-tag.na { z-index: 1; }
 
-/* The Collections shelf's Refresh pill (#67), at the end of the list header. */
-.list-header .list-action { float: right; margin-top: -6px; padding: 6px 20px; border: 3px solid var(--search-border); border-radius: 999px; background: var(--search-bg); color: var(--on-surface); font-size: 22px; font-weight: 600; }
-.list-header .list-action.focused { border-color: var(--focus-ring); background: var(--selection-surface-strong); }
+/* The Collections shelf's Refresh pill (#67) anchors to the search pill. */
+#items .list-header:has(.list-action) { min-height: 64px; box-sizing: border-box; padding-inline-end: 16px; }
+.list-header .list-caption { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.list-header .list-action { position: fixed; z-index: 5; display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 62px; padding: 0 20px; border: 3px solid transparent; color: var(--muted); font-size: 24px; font-weight: 500; white-space: nowrap; }

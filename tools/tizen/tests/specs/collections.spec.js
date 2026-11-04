@@ -187,7 +187,7 @@ test('without a key collections come from the film names and TMDB is never asked
     expect(asked).toHaveLength(0);
 });
 
-test('Refresh in the Collections header asks every film again in the background and keeps the shelf until new answers come', async ({ page }) => {
+test('Refresh above the Collections posters asks every film again in the background and keeps the shelf until new answers come', async ({ page }) => {
     test.setTimeout(240_000);
     const data = { collectionOf: { ...COLLECTION_OF }, parts: { ...PARTS } };
     const asked = await tmdb(page, data);
@@ -223,7 +223,7 @@ test('Refresh in the Collections header asks every film again in the background 
     expect(again.filter(entry => entry.startsWith('/collection/')).sort()).toEqual(['/collection/900?', '/collection/901?', '/collection/902?'].map(e => expect.stringMatching('^' + e.replace('?', '\\?'))));
 });
 
-async function headerGeometry(page) {
+async function collectionGeometry(page) {
     return page.evaluate(() => {
         const box = selector => {
             const el = document.querySelector(selector);
@@ -231,14 +231,13 @@ async function headerGeometry(page) {
             const rect = el.getBoundingClientRect();
             return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
         };
-        return { refresh: box('#items .list-action'), search: box('#searchbar'), toolbar: box('#header'),
-            categories: box('#categories'), items: box('#items'), title: box('#items .list-caption'),
-            gap: Number.parseFloat(getComputedStyle(document.querySelector('#view-toggle')).gap) };
+        return { header: box('#items .list-header'), refresh: box('#items .list-action'), poster: box('#items .grid .poster'),
+            search: box('#searchbar'), toolbar: box('#header'), categories: box('#categories'), items: box('#items') };
     });
 }
 
 for (const language of ['en', 'ar']) {
-    test('Collections Refresh preserves the toolbar and panes and clears long titles in ' + language, async ({ page }) => {
+    test('Collections Refresh sits above the first poster without moving the toolbar or panes in ' + language, async ({ page }) => {
         test.setTimeout(180_000);
         await tmdb(page);
         await boot(page, { storage: { settings: { tmdbApiKey: 'test-key', language } } });
@@ -251,23 +250,35 @@ for (const language of ['en', 'ar']) {
             await page.setViewportSize({ width, height: 1080 });
             await moveTo(page, '#categories .focused .label', recent, 'ArrowUp');
             await expect(page.locator('#items .list-header')).toContainText(recent);
-            const before = await headerGeometry(page);
+            const before = await collectionGeometry(page);
             await moveTo(page, '#categories .focused .label', title, 'ArrowDown');
             await expect(page.locator('#items .list-header')).toContainText(title);
             await enterItems(page);
             await press(page, 'ArrowUp');
             await expect(page.locator('#items .list-action.focused')).toBeVisible();
-            await page.locator('#items .list-caption').evaluate((caption, title) => { caption.textContent = title.repeat(20); }, title);
-            const shelf = await headerGeometry(page);
+            const shelf = await collectionGeometry(page);
             expect(shelf.search).toEqual(before.search);
             expect(shelf.toolbar).toEqual(before.toolbar);
             expect(shelf.categories).toEqual(before.categories);
+            expect(shelf.header).toEqual(before.header);
             expect(shelf.categories.x + shelf.categories.width).toBeLessThanOrEqual(shelf.items.x);
-            expect(shelf.refresh.y).toBe(shelf.search.y);
-            expect(shelf.refresh.height).toBe(shelf.search.height);
-            expect(shelf.search.x - shelf.refresh.x - shelf.refresh.width).toBe(shelf.gap);
-            if (shelf.title.width) expect(shelf.title.x + shelf.title.width).toBeLessThanOrEqual(shelf.refresh.x - shelf.gap);
-            await expect(page.locator('#items .list-caption')).toHaveCSS('text-overflow', 'ellipsis');
+            expect(shelf.refresh.y).toBeGreaterThan(shelf.header.y + shelf.header.height);
+            expect(shelf.refresh.height).toBe(62);
+            expect(shelf.poster.y - shelf.refresh.y - shelf.refresh.height).toBe(16);
+            const start = box => language === 'ar' ? box.x + box.width : box.x;
+            expect(start(shelf.refresh)).toBe(start(shelf.poster));
+            if (width === 1920) {
+                expect(shelf.refresh.x).toBeGreaterThanOrEqual(shelf.items.x);
+                expect(shelf.refresh.x + shelf.refresh.width).toBeLessThanOrEqual(shelf.items.x + shelf.items.width);
+                expect(shelf.refresh.y).toBeGreaterThanOrEqual(shelf.items.y);
+                expect(shelf.refresh.y + shelf.refresh.height).toBeLessThanOrEqual(shelf.items.y + shelf.items.height);
+            }
+            await page.locator('#items .list-actions').evaluate(row => { row.style.display = 'none'; });
+            const without = await collectionGeometry(page);
+            await page.locator('#items .list-actions').evaluate(row => { row.style.removeProperty('display'); });
+            expect(shelf.poster.y - without.poster.y).toBe(78);
+            await press(page, 'ArrowDown');
+            await expect(page.locator('#items .card.focused')).toHaveCount(1);
             await press(page, 'ArrowLeft');
         }
         await enterItems(page);

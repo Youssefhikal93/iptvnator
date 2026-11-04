@@ -19,7 +19,7 @@
 .poster.missing .icon { opacity: 0.35; filter: grayscale(1); }
 .poster .cl-tag.na { z-index: 1; }
 
-/* The Collections shelf's Refresh pill (#67) anchors to the search pill. */
-#items .list-header:has(.list-action) { min-height: 64px; box-sizing: border-box; padding-inline-end: 16px; }
-.list-header .list-caption { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.list-header .list-action { position: fixed; z-index: 5; display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 62px; padding: 0 20px; border: 3px solid transparent; color: var(--muted); font-size: 24px; font-weight: 500; white-space: nowrap; }
+/* Match the grid's 18px inset and cards' 13px poster inset. */
+.list-actions { display: grid; grid-template-columns: repeat(var(--grid-cols), minmax(0, 1fr)); column-gap: var(--gap); box-sizing: border-box; height: 78px; padding: 31px 24px 0; }
+.list-action { justify-self: start; display: flex; align-items: center; justify-content: center; box-sizing: border-box; height: 62px; margin-inline: 13px; padding: 0 24px; border: 3px solid transparent; border-radius: 999px; color: var(--muted); font-size: 24px; font-weight: 500; white-space: nowrap; }
+.list-actions:lang(ar) .list-action { justify-self: end; }

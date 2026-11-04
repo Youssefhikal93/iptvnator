@@ -89,7 +89,7 @@ id TMDB no longer knows is kept as none. The Movies search bar filters the
 Collections list by name with no request; a film's detail page may ask for its
 collection's parts once when the look-up has not reached it yet.
 
-The **Refresh** pill in the Collections header (#67; ▲ from the top row) marks
+The **Refresh** pill above the Collections posters (#67; ▲ from the top row) marks
 every known film (`recheck`) and stamps `refreshAt`. The same look-up then
 asks each film again at the same pace and only while the remote rests: the
 search answer stays saved, the film's details are fetched again (`force`), and

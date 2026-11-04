@@ -310,11 +310,6 @@ window.Browser = function (hooks) {
         },
         plot: function (it) { return BoxCards.plot(it, state.section); },
     });
-    // List redraws and translated toolbar labels can change the pill's anchor.
-    new MutationObserver(positionRefresh).observe($('items'), { childList: true });
-    var refreshResize = new ResizeObserver(positionRefresh);
-    ['header', 'view-toggle', 'items'].forEach(function (id) { refreshResize.observe($(id)); });
-
     var guide = TvGuide({
         play: function (channel) { openEntry(channel, 'live'); },
         catchUp: function (channel, programme) {
@@ -756,32 +751,6 @@ window.Browser = function (hooks) {
             var row = shownCategory();
             if (row && row.virtual === 'collections' && !state.collection) showVirtual(row, items.index());
         }, 2000);
-    }
-
-    function wrapRefreshTitle(pill) {
-        var header = pill.parentNode;
-        var caption = header.querySelector('.list-caption');
-        if (caption) return caption;
-        caption = document.createElement('span');
-        caption.className = 'list-caption';
-        while (header.firstChild !== pill) caption.appendChild(header.firstChild);
-        header.insertBefore(caption, pill);
-        return caption;
-    }
-
-    function positionRefresh() {
-        var pill = $('items').querySelector('.list-action');
-        if (!pill) return;
-        var caption = wrapRefreshTitle(pill);
-        var header = pill.parentNode.getBoundingClientRect();
-        var search = $('searchbar').getBoundingClientRect();
-        var gap = parseFloat(getComputedStyle($('view-toggle')).gap);
-        var end = search.width ? search.left - gap : header.right - 16;
-        var left = end - pill.getBoundingClientRect().width;
-        pill.style.left = left + 'px';
-        pill.style.top = (search.height ? search.top : header.top + 1) + 'px';
-        pill.style.height = (search.height || 62) + 'px';
-        caption.style.width = Math.max(0, Math.min(header.right - 16, left - gap) - caption.getBoundingClientRect().left) + 'px';
     }
 
     // The Collections shelf's Refresh pill (#67): with a TMDB key, while the

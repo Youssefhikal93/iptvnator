@@ -116,6 +116,8 @@ test('#94 an episode offers the same episode of the 4K copy of its show once tha
     await press(page, 'Enter');
     await playing(page);
     const opened = await request(page);
+    // The other copy's episodes load in the background; the menu lists it once known.
+    await expect.poll(() => page.evaluate(() => Player.request().quality.copies().length)).toBe(2);
     await playerMenu(page);
     await expect(qualityValue(page)).toHaveText(/^Auto \(/);
     await pick(page, opened.tag === '4K' ? 'Standard' : '4K');

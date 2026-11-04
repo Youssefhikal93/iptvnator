@@ -238,13 +238,13 @@ test('#52 DeepL uses the paid host for a paid key, translates in batches of 50 a
     }
 });
 
-test('#52 #98 Subtitles keep the language and backup switch; each provider and its key are in External services', function () {
+test('#52 #98 the language, providers, keys and backup switch are all in External services', function () {
     var api = fixture().globals;
-    var rows = api.OpenSubsSettings.rows;
+    var rows = api.OpenSubsSettings.serviceRows;
     var label = function (row) { return (row.part ? '[' + row.part + '] ' : '') + row.label; };
-    assert.equal(rows.map(label).join(' | '), '[Subtitles download] Subtitle language | [Backup subtitles] Backup search');
-    assert.equal(api.OpenSubsSettings.serviceRows.map(label).join(' | '), '[Subtitles] OpenSubtitles | OpenSubtitles API key | SubDL | SubDL API key | ' +
-        'SubSource | Subsource API key | [Translation] DeepL translation | DeepL API key');
+    assert.equal(api.OpenSubsSettings.rows.length, 0);
+    assert.equal(rows.map(label).join(' | '), '[Subtitles] Subtitle language | OpenSubtitles | OpenSubtitles API key | SubDL | SubDL API key | ' +
+        'Backup search | SubSource | Subsource API key | [Translation] DeepL translation | DeepL API key');
     var toggle = rows.filter(function (row) { return row.key === 'subtitleFallback'; })[0];
     assert.equal(toggle.labels.join(','), 'On,Off');
     assert.equal(api.Prefs.get('subtitleFallback'), true);

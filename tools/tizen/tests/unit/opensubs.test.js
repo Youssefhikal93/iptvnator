@@ -335,7 +335,7 @@ test('title queries use + for spaces, the form the API does not redirect', funct
 
 test('subtitle language choices map app locales and retain a saved language when the UI language changes', function () {
     var api = fixture().globals;
-    var row = api.OpenSubsSettings.rows.filter(function (entry) { return entry.key === 'subtitleLanguages'; })[0];
+    var row = api.OpenSubsSettings.serviceRows.filter(function (entry) { return entry.key === 'subtitleLanguages'; })[0];
     [['en', 'en,ar'], ['ar', 'en,ar'], ['by', 'en,ar,be'],
         ['zhtw', 'en,ar,zh-tw'], ['de', 'en,ar,de']].forEach(function (scenario) {
         api.Prefs.set('language', scenario[0]);

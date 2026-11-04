@@ -123,14 +123,15 @@ window.OpenSubsSettings = (function () {
     }
 
     return {
-        // Settings → Subtitles: what the app searches for and when.
-        rows: [
-            { get part() { return I18n.t('opensubs.group'); }, get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
-            { get part() { return I18n.t('opensubs.backupGroup'); }, get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
+        // Settings → Subtitles keeps only the style; everything here needs a
+        // service, so it sits in External services (#98).
+        rows: [],
+        serviceRows: [
+            { get part() { return I18n.t('picture.subtitles'); }, get label() { return I18n.t('opensubs.languages'); }, key: 'subtitleLanguages', get choices() { return languageChoices(); }, get labels() { return languageLabels(); } },
+        ].concat(keyRows('opensubs'), keyRows('subdl'), [
+            { get label() { return I18n.t('opensubs.backupSearch'); }, get hint() { return I18n.t('opensubs.backupHint'); },
                 key: 'subtitleFallback', choices: [true, false], get labels() { return [I18n.t('common.on'), I18n.t('common.off')]; } },
-        ],
-        // Settings → External services: each provider's switch and key.
-        serviceRows: keyRows('opensubs', 'picture.subtitles').concat(keyRows('subdl'), keyRows('subsource'), keyRows('deepl', 'services.translation')),
+        ], keyRows('subsource'), keyRows('deepl', 'services.translation')),
         act: act,
         isOpen: function () { return !!dialog; },
         onKey: function (event) {

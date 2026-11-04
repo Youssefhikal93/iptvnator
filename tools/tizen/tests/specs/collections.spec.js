@@ -237,7 +237,7 @@ async function collectionGeometry(page) {
 }
 
 for (const language of ['en', 'ar']) {
-    test('Collections Refresh sits above the first poster without moving the toolbar or panes in ' + language, async ({ page }) => {
+    test('Collections Refresh sits at the right above the posters without moving the toolbar or panes in ' + language, async ({ page }) => {
         test.setTimeout(180_000);
         await tmdb(page);
         await boot(page, { storage: { settings: { tmdbApiKey: 'test-key', language } } });
@@ -265,8 +265,8 @@ for (const language of ['en', 'ar']) {
             expect(shelf.refresh.y).toBeGreaterThan(shelf.header.y + shelf.header.height);
             expect(shelf.refresh.height).toBe(62);
             expect(shelf.poster.y - shelf.refresh.y - shelf.refresh.height).toBe(16);
-            const start = box => language === 'ar' ? box.x + box.width : box.x;
-            expect(start(shelf.refresh)).toBe(start(shelf.poster));
+            expect(shelf.items.x + shelf.items.width - shelf.refresh.x - shelf.refresh.width).toBe(61);
+            expect(shelf.refresh.x).toBeGreaterThan(shelf.poster.x + shelf.poster.width);
             if (width === 1920) {
                 expect(shelf.refresh.x).toBeGreaterThanOrEqual(shelf.items.x);
                 expect(shelf.refresh.x + shelf.refresh.width).toBeLessThanOrEqual(shelf.items.x + shelf.items.width);

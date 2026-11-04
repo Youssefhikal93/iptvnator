@@ -90,15 +90,19 @@ window.List = function (el, options) {
             position.textContent = state.index + 1 + ' / ' + count;
             header.appendChild(position);
         }
-        // A pill at the end of the header, such as Collections' Refresh (#67).
+        el.appendChild(header);
+
+        // Keep actions below the title and clear of its toolbar clipping (#67).
         var action = options.action && options.action();
         if (action) {
+            var actions = document.createElement('div');
+            actions.className = 'list-actions';
             var pill = document.createElement('span');
             pill.className = 'list-action' + (action.focused ? ' focused' : '');
             pill.textContent = action.label;
-            header.appendChild(pill);
+            actions.appendChild(pill);
+            el.appendChild(actions);
         }
-        el.appendChild(header);
 
         if (state.loading) return renderSkeleton(rows, grid);
         if (!count) {

@@ -45,16 +45,16 @@ const keyed = { storage: { settings: { tmdbApiKey: 'test-key' } } };
 const lookups = asked => asked.filter(entry => /^\/(search\/movie|movie\/\d+|collection\/\d+)\?/.test(entry));
 const labels = page => page.locator('#categories .row .label').allTextContents();
 
-async function collectionsFound(page) {
+async function collectionsFound(page, title = 'Collections') {
     // The look-up runs while the remote rests: one film a second here.
-    await expect.poll(async () => (await labels(page)).includes('Collections'), { timeout: 90_000 }).toBe(true);
-    await expect.poll(() => page.locator('#categories .row').filter({ hasText: 'Collections' }).locator('.badge').innerText(), { timeout: 90_000 }).toBe('2');
+    await expect.poll(async () => (await labels(page)).includes(title), { timeout: 90_000 }).toBe(true);
+    await expect.poll(() => page.locator('#categories .row').filter({ hasText: title }).locator('.badge').innerText(), { timeout: 90_000 }).toBe('2');
     await expect.poll(() => page.evaluate(() => CollectionLookup.progress()), { timeout: 90_000 }).toBe(null);
 }
 
-async function openCollections(page) {
-    await moveTo(page, '#categories .focused .label', 'Collections', 'ArrowUp');
-    await expect(page.locator('#items .list-header')).toContainText('Collections');
+async function openCollections(page, title = 'Collections') {
+    await moveTo(page, '#categories .focused .label', title, 'ArrowUp');
+    await expect(page.locator('#items .list-header')).toContainText(title);
 }
 
 // Storage reads while moving through a list, as in hide-watched.spec.js.
@@ -187,7 +187,7 @@ test('without a key collections come from the film names and TMDB is never asked
     expect(asked).toHaveLength(0);
 });
 
-test('Refresh in the Collections header asks every film again in the background and keeps the shelf until new answers come', async ({ page }) => {
+test('Refresh above the Collections posters asks every film again in the background and keeps the shelf until new answers come', async ({ page }) => {
     test.setTimeout(240_000);
     const data = { collectionOf: { ...COLLECTION_OF }, parts: { ...PARTS } };
     const asked = await tmdb(page, data);
@@ -222,3 +222,70 @@ test('Refresh in the Collections header asks every film again in the background 
     expect(new Set(again.filter(entry => entry.startsWith('/movie/'))).size).toBe(25);
     expect(again.filter(entry => entry.startsWith('/collection/')).sort()).toEqual(['/collection/900?', '/collection/901?', '/collection/902?'].map(e => expect.stringMatching('^' + e.replace('?', '\\?'))));
 });
+
+async function collectionGeometry(page) {
+    return page.evaluate(() => {
+        const box = selector => {
+            const el = document.querySelector(selector);
+            if (!el) return null;
+            const rect = el.getBoundingClientRect();
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        };
+        return { header: box('#items .list-header'), refresh: box('#items .list-action'), poster: box('#items .grid .poster'),
+            search: box('#searchbar'), toolbar: box('#header'), categories: box('#categories'), items: box('#items') };
+    });
+}
+
+for (const language of ['en', 'ar']) {
+    test('Collections Refresh sits at the right above the posters without moving the toolbar or panes in ' + language, async ({ page }) => {
+        test.setTimeout(180_000);
+        await tmdb(page);
+        await boot(page, { storage: { settings: { tmdbApiKey: 'test-key', language } } });
+        await section(page, await page.evaluate(() => I18n.t('rail.movies')));
+        const title = await page.evaluate(() => I18n.t('collections.title'));
+        const recent = await page.evaluate(() => I18n.t('browser.recentlyAdded'));
+        await collectionsFound(page, title);
+        await page.evaluate(() => document.fonts.ready);
+        for (const width of [1920, 1600, 1440, 1280, 1024]) {
+            await page.setViewportSize({ width, height: 1080 });
+            await moveTo(page, '#categories .focused .label', recent, 'ArrowUp');
+            await expect(page.locator('#items .list-header')).toContainText(recent);
+            const before = await collectionGeometry(page);
+            await moveTo(page, '#categories .focused .label', title, 'ArrowDown');
+            await expect(page.locator('#items .list-header')).toContainText(title);
+            await enterItems(page);
+            await press(page, 'ArrowUp');
+            await expect(page.locator('#items .list-action.focused')).toBeVisible();
+            const shelf = await collectionGeometry(page);
+            expect(shelf.search).toEqual(before.search);
+            expect(shelf.toolbar).toEqual(before.toolbar);
+            expect(shelf.categories).toEqual(before.categories);
+            expect(shelf.header).toEqual(before.header);
+            expect(shelf.categories.x + shelf.categories.width).toBeLessThanOrEqual(shelf.items.x);
+            expect(shelf.refresh.y).toBeGreaterThan(shelf.header.y + shelf.header.height);
+            expect(shelf.refresh.height).toBe(62);
+            expect(shelf.poster.y - shelf.refresh.y - shelf.refresh.height).toBe(16);
+            expect(shelf.items.x + shelf.items.width - shelf.refresh.x - shelf.refresh.width).toBe(61);
+            expect(shelf.refresh.x).toBeGreaterThan(shelf.poster.x + shelf.poster.width);
+            if (width === 1920) {
+                expect(shelf.refresh.x).toBeGreaterThanOrEqual(shelf.items.x);
+                expect(shelf.refresh.x + shelf.refresh.width).toBeLessThanOrEqual(shelf.items.x + shelf.items.width);
+                expect(shelf.refresh.y).toBeGreaterThanOrEqual(shelf.items.y);
+                expect(shelf.refresh.y + shelf.refresh.height).toBeLessThanOrEqual(shelf.items.y + shelf.items.height);
+            }
+            await page.locator('#items .list-actions').evaluate(row => { row.style.display = 'none'; });
+            const without = await collectionGeometry(page);
+            await page.locator('#items .list-actions').evaluate(row => { row.style.removeProperty('display'); });
+            expect(shelf.poster.y - without.poster.y).toBe(78);
+            await press(page, 'ArrowDown');
+            await expect(page.locator('#items .card.focused')).toHaveCount(1);
+            await press(page, 'ArrowLeft');
+        }
+        await enterItems(page);
+        const fonts = await page.evaluate(() => ['#items .list-action', '.view-btn[data-mode="hide-watched"]'].map(selector => {
+            const css = getComputedStyle(document.querySelector(selector));
+            return [css.fontSize, css.fontWeight];
+        }));
+        expect(fonts[0]).toEqual(fonts[1]);
+    });
+}

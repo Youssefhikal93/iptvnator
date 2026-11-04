@@ -20,14 +20,37 @@ openssl x509 -in distributor.crt -noout -enddate
 ## Renew, keeping your settings
 
 1. Take a Jo-TV backup first ([JOTV-BACKUP.md](JOTV-BACKUP.md)).
-2. Connect the TV ([INSTALLATION-TO-TV.md](INSTALLATION-TO-TV.md) step 6).
-3. Open the Certificate Manager (step 7), click **+**, choose **TV**, then
-   **Select an existing certificate profile** → `iptvnator-tv`.
-4. **Keep the existing author certificate.** It is the app's identity: with the
-   same author, the new build installs over the old app and its data stays.
-5. **Create a new distributor certificate.** Sign in with your Samsung account,
-   keep privilege **Public**, and check that every TV's DUID is listed.
-6. Check the new end dates (above), then install with `deploy-tv.ps1`.
+2. Turn on the TV and connect it, so the Certificate Manager picks up its DUID:
+
+   ```powershell
+   C:\tizen-studio\tools\sdb.exe connect <TV-IP>:26101
+   C:\tizen-studio\tools\sdb.exe devices
+   ```
+
+3. Open the Certificate Manager through its script (the `.exe` started from
+   another folder exits silently):
+
+   ```powershell
+   Start-Process cmd.exe -ArgumentList '/c','C:\tizen-studio\tools\certificate-manager\CertificateManager.bat' `
+     -WorkingDirectory C:\tizen-studio\tools\certificate-manager -WindowStyle Hidden
+   ```
+
+4. In the Certificate Manager window:
+   1. Click **+** (top right). Device type: **TV**, **Next**.
+   2. Choose **Select an existing certificate profile** → `iptvnator-tv`, **Next**.
+   3. Author certificate: **Select an existing author certificate** (keep it).
+      It is the app's identity: with the same author, the new build installs
+      over the old app and its data stays. If asked, sign in with your Samsung
+      account and enter the author password.
+   4. Distributor certificate: **Create a new distributor certificate**, keep
+      privilege **Public**, and check that every TV's DUID is listed (add it
+      from `sdb.exe -s <TV-IP>:26101 shell 0 getduid` if not). Sign in again
+      if the browser opens. **Next**.
+   5. **Finish**. The profile shows a check mark; the distributor certificate
+      shows its new expiry date.
+5. Check the new end dates (above), then install with
+   `.\tools\tizen\deploy-tv.ps1`. Your settings should still be there; if not,
+   restore the backup from step 1.
 
 If the author certificate itself has expired and Samsung will not renew it, you
 must create a new author certificate. The TV then rejects the update

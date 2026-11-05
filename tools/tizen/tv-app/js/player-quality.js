@@ -52,9 +52,9 @@ window.PlayerQuality = function (hooks) {
     function copyEntries(head, item, req, copies) {
         var q = req.quality;
         head(t('title'));
-        item(auto(Quality.label(q.auto ? q.tag : Quality.choose(null, copies).copy.tag)), q.auto, function () {
+        item(auto(Quality.label(q.auto ? q.tag : Quality.choose(null, copies, q.own).copy.tag)), q.auto, function () {
             Quality.remember(q.key, null);
-            switchCopy(req, Quality.choose(null, copies).copy, true);
+            switchCopy(req, Quality.choose(null, copies, q.own).copy, true);
         });
         copies.forEach(function (copy) {
             item(Quality.label(copy.tag), !q.auto && copy.tag === q.tag, function () {

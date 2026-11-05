@@ -45,6 +45,31 @@ test('#94 Auto plays the best copy the screen shows; a remembered pick wins unti
     assert.equal(quality().Quality.choose('k', copies).copy.tag, '4K');
 });
 
+test('#94 Open quality "The one I picked" keeps the opened copy on Auto; a remembered pick still wins', function () {
+    var Q = quality({ Prefs: { get: function (name) { return name === 'qualityOpen' ? 'picked' : undefined; } } }).Quality;
+    var copies = [{ tag: '4K' }, { tag: 'HD' }, { tag: '' }];
+    assert.deepEqual(plain(Q.choose('k', copies, 'HD')), { copy: { tag: 'HD' }, auto: true });
+    // Without the opened tag (or when that copy is gone) Auto takes the best.
+    assert.equal(Q.choose('k', copies).copy.tag, '4K');
+    assert.equal(Q.choose('k', copies, 'SD').copy.tag, '4K');
+    Q.remember('k', '');
+    assert.deepEqual(plain(Q.choose('k', copies, 'HD')), { copy: { tag: '' }, auto: false });
+    // Best quality (the default) ignores the opened tag.
+    assert.equal(quality().Quality.choose('k', copies, 'HD').copy.tag, '4K');
+});
+
+test('#94 copies run the allow check only on entries with the same name', function () {
+    var Q = quality().Quality;
+    var hd = { name: 'beIN SPORTS 1 HD' };
+    var checked = [];
+    var list = [{ name: 'beIN SPORTS 1 4K', locked: true }, { name: 'beIN SPORTS 1 4K' }, { name: 'News HD' }, { name: 'Sports 2 FHD' }];
+    var found = Q.copies(hd, list, true, function (entry) { checked.push(entry.name); return !entry.locked; });
+    assert.deepEqual(checked, ['beIN SPORTS 1 4K', 'beIN SPORTS 1 4K']);
+    // A locked copy does not hide an allowed one of the same quality.
+    assert.equal(found[0].item, list[1]);
+    assert.equal(Q.copies(hd, list.slice(0, 1), true, function () { return false; }), null);
+});
+
 test('#94 at most 200 titles keep a pick, newest kept', function () {
     var Q = quality().Quality;
     for (var i = 0; i < 205; i++) Q.remember('t' + i, 'HD');

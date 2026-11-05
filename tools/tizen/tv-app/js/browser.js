@@ -594,15 +594,15 @@ window.Browser = function (hooks) {
 
     function withCopies(req, item, list, section, sourcesOf) {
         if (otherSource(item)) return req;
-        var found = Quality.copies(item, list.filter(function (entry) { return copyAllowed(section, item, entry); }), section === 'live');
+        var found = Quality.copies(item, list, section === 'live', function (entry) { return copyAllowed(section, item, entry); });
         if (!found) return req;
         var own = Quality.parse(section === 'live' ? ChannelEdits.original(item).name : item.name, section === 'live').tag;
         var copies = found.map(function (copy) {
             return { tag: copy.tag, sources: copy.item === item ? req.sources : sourcesOf(copy.item) };
         });
         var key = copyKey(section, item);
-        var choice = Quality.choose(key, copies);
-        req.quality = { key: key, tag: choice.copy.tag, auto: choice.auto, copies: function () { return copies; } };
+        var choice = Quality.choose(key, copies, own);
+        req.quality = { key: key, own: own, tag: choice.copy.tag, auto: choice.auto, copies: function () { return copies; } };
         if (choice.copy.tag !== own) {
             req.qualityFallback = { tag: own, sources: req.sources };
             req.sources = choice.copy.sources;
@@ -614,7 +614,7 @@ window.Browser = function (hooks) {
     // Their episode lists load in the background and join the choices once
     // they are known; the remembered or best copy applies when already known.
     function withEpisodeCopies(req, show, episode) {
-        var shows = Quality.copies(show, savedItems('series', show).filter(function (entry) { return copyAllowed('series', show, entry); }), false);
+        var shows = Quality.copies(show, savedItems('series', show), false, function (entry) { return copyAllowed('series', show, entry); });
         if (otherSource(show) || !shows) return req;
         var own = Quality.parse(show.name, false).tag;
         if (episode.num === undefined || episode.num === null || episode.num === '') return req;
@@ -630,8 +630,8 @@ window.Browser = function (hooks) {
         shows.forEach(function (copy) { if (copy.item !== show) loadShow(copy.item).catch(function () {}); });
         var key = copyKey('series', show);
         var now = known();
-        var choice = now.length > 1 ? Quality.choose(key, now) : { copy: { tag: own }, auto: Quality.picked(key) === null };
-        req.quality = { key: key, tag: choice.copy.tag, auto: choice.auto, copies: function () { var list = known(); return list.length > 1 ? list : []; } };
+        var choice = now.length > 1 ? Quality.choose(key, now, own) : { copy: { tag: own }, auto: Quality.picked(key) === null };
+        req.quality = { key: key, own: own, tag: choice.copy.tag, auto: choice.auto, copies: function () { var list = known(); return list.length > 1 ? list : []; } };
         if (choice.copy.tag !== own) {
             req.qualityFallback = { tag: own, sources: req.sources };
             req.sources = choice.copy.sources;

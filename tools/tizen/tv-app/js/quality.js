@@ -54,7 +54,9 @@ window.Quality = (function () {
 
     // The copies of `item` in `list` (itself included), best first, or null
     // when there is no choice: one copy per quality, at least two qualities.
-    function copies(item, list, live) {
+    // `allow` (optional) runs only on entries with the same name, so long
+    // lists skip the costly checks.
+    function copies(item, list, live, allow) {
         if (live && window.ChannelEdits) item = ChannelEdits.original(item);
         var own = parse(item && item.name, live);
         if (!own.base || !list || !list.length) return null;
@@ -65,6 +67,7 @@ window.Quality = (function () {
             var provider = live && window.ChannelEdits ? ChannelEdits.original(entry) : entry;
             var copy = parse(provider.name, live);
             if (copy.base !== own.base || seen[copy.tag]) return;
+            if (allow && entry !== item && !allow(entry)) return;
             seen[copy.tag] = true;
             found.push({ tag: copy.tag, item: entry });
         });
@@ -117,12 +120,20 @@ window.Quality = (function () {
         Stored.save(storeKey(), saved);
     }
 
+    // Settings › Open quality: 'best' copy, or the 'picked' one the viewer opened.
+    function opensPicked() {
+        return !!window.Prefs && Prefs.get('qualityOpen') === 'picked';
+    }
+
     // The copy a title opens with: the remembered pick when that copy is
-    // still offered, otherwise the best one.
-    function choose(key, list) {
+    // still offered, otherwise the best one, or the opened copy (`own` tag)
+    // when Open quality is "The one I picked".
+    function choose(key, list, own) {
         var tag = picked(key);
         var mine = tag === null ? null : list.filter(function (copy) { return copy.tag === tag; })[0];
-        return { copy: mine || best(list), auto: !mine };
+        if (mine) return { copy: mine, auto: false };
+        var opened = own !== undefined && opensPicked() ? list.filter(function (copy) { return copy.tag === own; })[0] : null;
+        return { copy: opened || best(list), auto: true };
     }
 
     function label(tag) {

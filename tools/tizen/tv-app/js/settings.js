@@ -37,6 +37,7 @@ window.Settings = function (hooks) {
         { get label() { return I18n.t('settings.programmeGuide'); }, get hint() { return I18n.t('describe.programmeGuide'); }, key: 'programmeGuide', choices: [true, false], get labels() { return onOff(); } },
         { get label() { return I18n.t('reminders.title'); }, get hint() { return I18n.t('describe.reminders'); }, run: () => hooks.reminders(render), text: () => I18n.t('reminders.count', { count: Reminders.list().length }) },
         { get label() { return I18n.t('settings.livePreview'); }, get hint() { return I18n.t('describe.livePreview'); }, key: 'livePreview', choices: [true, false], get labels() { return onOff(); } },
+        { get label() { return I18n.t('settings.qualityOpen'); }, get hint() { return I18n.t('describe.qualityOpen'); }, key: 'qualityOpen', choices: ['best', 'picked'], get labels() { return [I18n.t('settings.qualityBest'), I18n.t('settings.qualityPicked')]; } },
         ...LanguageSettings.rows,
         placed(picture[4], null, 'picture.picture'),
         { get part() { return I18n.t('settings.startUp'); }, get label() { return I18n.t('settings.onStart'); }, get hint() { return I18n.t('describe.onStart'); }, key: 'onStart', choices: ['last-channel', 'home'], get labels() { return [I18n.t('settings.lastChannel'), I18n.t('rail.home')]; } },

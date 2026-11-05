@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Settings → Playback → Open quality: Best quality (as before) or The one I picked, which opens exactly the channel or title you chose; the player's Quality menu still lists the other copies (#94).
 - Per-profile switches for optional online features ask before turning Off and keep saved answers for when you turn them back On (#98).
 
 - Live TV has its own player: the channel, the programme, a LIVE badge and one programme bar, with the buttons in one row. Catch-up channels can pause live TV, resume behind live and rewind; their Catch-up label appears in the lists and in the channel list while watching (#97).
@@ -180,7 +181,7 @@ With TMDB set up, Home can offer Because you watched followed by a title, using 
 
 ### Quality (#94)
 
-When the provider lists the same channel, film or show more than once in different qualities (4K, FHD, HD, SD), the player's menu starts with Quality: Settings gear for films and episodes, ▲ / Options on Live TV. Auto plays the best copy this TV shows and names it, e.g. Auto (FHD). Pick a copy to switch where you are; the pick is kept for that channel or title until you choose Auto again. If a copy does not play, Jotv goes back to the one before and says so. An adaptive HLS stream with several sizes offers them (1080p, 720p…) in the same place. Lists still show every copy.
+When the provider lists the same channel, film or show more than once in different qualities (4K, FHD, HD, SD), the player's menu starts with Quality: Settings gear for films and episodes, ▲ / Options on Live TV. Auto plays the best copy this TV shows and names it, e.g. Auto (FHD); with Settings → Playback → Open quality set to The one I picked, Auto plays the copy you opened. Pick a copy to switch where you are; the pick is kept for that channel or title until you choose Auto again. If a copy does not play, Jotv goes back to the one before and says so. An adaptive HLS stream with several sizes offers them (1080p, 720p…) in the same place. Lists still show every copy.
 
 ### Pause, timeline and playback speed (#31)
 

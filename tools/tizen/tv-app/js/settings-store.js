@@ -20,6 +20,8 @@ window.Prefs = (function () {
         deeplOn: true,
         youtubeOn: true,
         autoplayMs: 8000,
+        // Copies of a title (#94): open the 'best' one or the 'picked' one.
+        qualityOpen: 'best',
         programmeGuide: true,
         livePreview: true,
         subtitleSize: 'm',

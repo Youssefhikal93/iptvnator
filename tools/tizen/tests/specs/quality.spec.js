@@ -94,6 +94,24 @@ test('#94 a live channel opens its FHD copy and Standard switches on the same ch
     await expect(page.locator('#pl-title')).toContainText('Channel 1 (cat');
 });
 
+test('#94 Open quality "The one I picked" opens the clicked channel and still offers its copies', async ({ page }) => {
+    await copies(page, 'get_live_streams', 'FHD', -1);
+    await boot(page, { storage: { settings: { qualityOpen: 'picked' } } });
+    await section(page, 'Live TV');
+    await expect(page.locator('#items .skeleton')).toHaveCount(0);
+    await enterItems(page);
+    // The first row is the copy without a tag; Best quality would open its FHD copy.
+    await expect(page.locator('#items .row.focused .label')).not.toContainText('FHD');
+    await press(page, 'Enter');
+    await playing(page);
+    expect(await request(page)).toMatchObject({ tag: '', auto: true });
+    await sendKeyCode(page, 457);
+    await expect(qualityValue(page)).toHaveText('Auto (Standard)');
+    await pick(page, 'FHD');
+    await playing(page);
+    expect(await request(page)).toMatchObject({ tag: 'FHD', auto: false });
+});
+
 test('#94 titles without copies show no Quality row', async ({ page }) => {
     await boot(page);
     await openFirst(page, 'Movies');

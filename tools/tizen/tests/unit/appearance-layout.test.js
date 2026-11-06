@@ -24,6 +24,8 @@ function node() {
     element.setAttribute = function (name, text) { element.attributes[name] = text; };
     element.getAttribute = function (name) { return element.attributes[name] === undefined ? null : element.attributes[name]; };
     element.classList = { toggle: function () {} };
+    // No pictures load here, so a render has none to keep (#90).
+    element.querySelectorAll = function () { return []; };
     element.querySelector = function () {
         var found = null;
         function visit(parent) {

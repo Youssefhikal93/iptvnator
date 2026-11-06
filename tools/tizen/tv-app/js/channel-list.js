@@ -51,9 +51,24 @@ window.ChannelList = function (hooks) {
         if (known && known.now) node.appendChild(element('div', 'pl-channel-now', known.now.title));
     }
 
+    // Plates from the last draw, kept for the same name and logo (#90):
+    // building them was most of a move in the list over the video.
+    var spare = {};
+
+    function plate(channel) {
+        var name = channel.name || '?';
+        var logo = channel.stream_icon || channel.logo || '';
+        var key = name + '\n' + logo;
+        var kept = spare[key] && spare[key].pop();
+        if (kept) return kept;
+        kept = Kit.plateNode({ cls: 'pl-channel-logo', name: name, logo: logo });
+        kept.__plate = key;
+        return kept;
+    }
+
     function row(channel, index) {
         var node = element('div', 'pl-channel' + (index === focus ? ' focused' : ''));
-        node.appendChild(Kit.plateNode({ cls: 'pl-channel-logo', name: channel.name || '?', logo: channel.stream_icon || channel.logo || '' }));
+        node.appendChild(plate(channel));
         var label = element('div', 'pl-channel-label');
         label.appendChild(element('div', 'pl-channel-name', I18n.isolate(channel.name || I18n.t('player.hint.channel'))));
         programme(label, channel);
@@ -75,6 +90,10 @@ window.ChannelList = function (hooks) {
     }
 
     function render() {
+        spare = {};
+        Array.prototype.forEach.call(panel.querySelectorAll('.pl-channel-logo'), function (kept) {
+            if (kept.__plate) (spare[kept.__plate] = spare[kept.__plate] || []).push(kept);
+        });
         panel.textContent = '';
         var category = categories[categoryIndex];
         panel.appendChild(element('div', 'pl-channel-header', '\u25c0  ' + (category ? I18n.categoryName(category) : I18n.t('player.hint.channelList')) + '  \u25b6'));

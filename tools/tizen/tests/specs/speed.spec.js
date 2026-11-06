@@ -1,4 +1,4 @@
-const { test, expect, boot, movie, show, channel, press } = require('./helpers');
+const { test, expect, boot, movie, show, channel, press, section, enterItems, sendKeyCode, playing } = require('./helpers');
 
 // A library the size a viewer builds up: 40 titles in progress, 30
 // favorites per section and 300 watched episodes.
@@ -69,4 +69,76 @@ test('the menu opens a section once its focus rests there, or at once with ▶ (
     await expect(page.locator('#rail .focused')).toHaveCount(0);
     await expect(page.locator('#rail .active')).toHaveText('Series');
     await expect(page.locator('#categories .row.focused')).toHaveCount(1);
+});
+
+test('#90 a grid move keeps the posters already on screen instead of loading them again', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Movies');
+    await enterItems(page);
+    const posters = page.locator('#items .card:not(.peek) img.icon');
+    await expect(posters.first()).toBeVisible();
+    await expect.poll(() => posters.evaluateAll((imgs) => imgs.length > 0 && imgs.every((img) => img.complete && img.naturalWidth > 0))).toBe(true);
+    await page.evaluate(() => { window.__shown = new Set(document.querySelectorAll('#items img.icon')); });
+    // The second ▼ scrolls the grid by a row: the two rows still shown keep their pictures.
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#items .count')).toHaveText(/^13 \//);
+    const kept = await page.evaluate(() => [...document.querySelectorAll('#items .card:not(.peek) img.icon')].filter((img) => window.__shown.has(img)).length);
+    expect(kept).toBeGreaterThanOrEqual(12);
+});
+test('#90 a Live TV move keeps the channel plates already on screen', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    const plates = page.locator('#items .row .row-plate');
+    await expect(plates.first()).toBeVisible();
+    const shown = await plates.count();
+    await page.evaluate(() => { window.__plates = new Set(document.querySelectorAll('#items .row-plate')); });
+    // Far enough down that the list scrolls: every plate but the one coming in is kept.
+    for (let i = 0; i < shown; i++) await press(page, 'ArrowDown');
+    await expect(page.locator('#items .count')).toHaveText(new RegExp('^' + (shown + 1) + ' /'));
+    await page.evaluate(() => { window.__plates = new Set(document.querySelectorAll('#items .row-plate')); });
+    await press(page, 'ArrowDown');
+    const kept = await page.evaluate(() => [...document.querySelectorAll('#items .row-plate')].filter((node) => window.__plates.has(node)).length);
+    expect(kept).toBeGreaterThanOrEqual(shown - 1);
+    await expect(page.locator('#items .row.focused .label')).toBeVisible();
+});
+test('#90 a guide move redraws only the rows it changes, and every row once a programme starts or ends', async ({ page }) => {
+    await page.clock.install();
+    await boot(page);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await sendKeyCode(page, 458);
+    await expect(page.locator('#guide .gd-programme.focused')).toContainText('Program');
+    await expect(page.locator('#guide .gd-loading')).toHaveCount(0);
+    const mark = () => page.evaluate(() => { window.__rows = new Set(document.querySelectorAll('#guide .gd-row')); });
+    const kept = () => page.evaluate(() => [...document.querySelectorAll('#guide .gd-row')].filter((row) => window.__rows.has(row)).length);
+    await mark();
+    await press(page, 'ArrowRight');
+    expect(await kept()).toBe(8);
+    await mark();
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#guide .gd-row.selected')).toHaveAttribute('data-index', '1');
+    expect(await kept()).toBe(7);
+    // An hour later what is airing has changed: the next move draws every row again.
+    await mark();
+    await page.clock.fastForward('01:00:00');
+    await press(page, 'ArrowLeft');
+    expect(await kept()).toBe(0);
+    await expect(page.locator('#guide .gd-row')).toHaveCount(9);
+});
+test('#90 a move in the channel list over the video keeps the plates already shown', async ({ page }) => {
+    await boot(page);
+    await section(page, 'Live TV');
+    await enterItems(page);
+    await press(page, 'Enter');
+    await playing(page);
+    await press(page, 'ArrowLeft');
+    await expect(page.locator('.pl-channel.focused .pl-channel-name')).toHaveText('Channel 1 (cat 2)');
+    const shown = await page.locator('.pl-channel-logo').count();
+    await page.evaluate(() => { window.__plates = new Set(document.querySelectorAll('.pl-channel-logo')); });
+    await press(page, 'ArrowDown');
+    await expect(page.locator('.pl-channel.focused .pl-channel-name')).toHaveText('Channel 2 (cat 2)');
+    const kept = await page.evaluate(() => [...document.querySelectorAll('.pl-channel-logo')].filter((node) => window.__plates.has(node)).length);
+    expect(kept).toBe(shown);
 });

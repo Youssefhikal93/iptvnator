@@ -21,13 +21,42 @@ window.TvGuide = function (hooks) {
             programmes: programmes(index), time: state.time, start: state.start });
     }
 
+    // What the last full draw showed, and until when nothing on it changes
+    // by itself: the first programme start or end after it, at most 30 s.
+    var drawn = null;
+
+    function boundary(index, until) {
+        var now = Date.now();
+        (programmes(index) || []).forEach(function (programme) {
+            if (programme.start > now) until = Math.min(until, programme.start);
+            if (programme.end > now) until = Math.min(until, programme.end);
+        });
+        return until;
+    }
+
     function render() {
         state.first = GuideTime.firstRow(state.index, state.channels.length, ROWS);
         view.times(state.start);
         view.clearRows();
-        for (var i = state.first; i < Math.min(state.channels.length, state.first + ROWS); i++) renderRow(i);
+        var until = Date.now() + 30000;
+        for (var i = state.first; i < Math.min(state.channels.length, state.first + ROWS); i++) {
+            renderRow(i);
+            until = boundary(i, until);
+        }
         if (!state.channels.length) view.empty();
         view.actions(state.action);
+        drawn = { first: state.first, start: state.start, count: state.channels.length, until: until };
+    }
+
+    // A move redraws only the row the focus left and the one it reached
+    // (#90) while the same rows and hours show and nothing started or ended
+    // since the last full draw; redrawing all rows made every move slow.
+    function redraw(previous) {
+        var first = GuideTime.firstRow(state.index, state.channels.length, ROWS);
+        if (!drawn || drawn.first !== first || drawn.start !== state.start || drawn.count !== state.channels.length || Date.now() >= drawn.until) return render();
+        view.times(state.start);
+        if (previous !== state.index) renderRow(previous);
+        renderRow(state.index);
     }
 
     function wanted(index) {
@@ -42,6 +71,7 @@ window.TvGuide = function (hooks) {
         if (state && !state.suspended && request.guide === state.guide) {
             var index = state.channels.indexOf(request.channel);
             if (index >= 0) renderRow(index);
+            if (index >= 0 && drawn) drawn.until = boundary(index, drawn.until);
         }
         pump();
     }
@@ -97,10 +127,11 @@ window.TvGuide = function (hooks) {
     }
 
     function moveChannel(step) {
+        var previous = state.index;
         state.index = Math.max(0, Math.min(state.channels.length - 1, state.index + step));
         state.time = GuideTime.clamp(state.time, Date.now(), state.channels[state.index]);
         state.start = GuideTime.windowStart(state.start, state.time, Date.now(), state.channels[state.index]);
-        render();
+        redraw(previous);
         wantRows();
     }
 
@@ -113,7 +144,7 @@ window.TvGuide = function (hooks) {
             current ? (direction > 0 ? current.end : current.start - 1) : state.time + direction * GuideTime.step;
         state.time = GuideTime.clamp(time, Date.now(), state.channels[state.index]);
         state.start = GuideTime.windowStart(state.start, state.time, Date.now(), state.channels[state.index]);
-        render();
+        redraw(state.index);
         wantRows();
     }
 

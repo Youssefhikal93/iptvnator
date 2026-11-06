@@ -38,5 +38,15 @@ window.Art = (() => {
         });
     };
 
-    return { prepare, preload, seen: (src) => seen.has(src), remember };
+    // A TMDB picture at `width` (w342 posters, w1280 backdrops) when the
+    // provider links a bigger one (#90): an original poster took the TV ~12 ms
+    // to decode, a w342 one ~3 ms. Other addresses stay as they are.
+    const TMDB = /^(https?:\/\/image\.tmdb\.org\/t\/p\/)(original|w(\d+)[a-z0-9_]*)(\/[^/]+)$/i;
+    const fit = (url, width) => {
+        const found = typeof url === 'string' && url.indexOf('image.tmdb.org') > 0 && TMDB.exec(url);
+        if (!found || (found[3] && Number(found[3]) <= width)) return url;
+        return found[1] + 'w' + width + found[4];
+    };
+
+    return { prepare, preload, seen: (src) => seen.has(src), remember, fit };
 })();

@@ -160,6 +160,23 @@ window.Settings = function (hooks) {
         </div>`;
     };
 
+    // A ▲▼ move only moves the focus, so a group that stays hidden keeps its
+    // rows as they are (#90): redrawing every group's rows cost the TV ~30 ms
+    // per key. Every other draw updates every group, as before.
+    let moving = false;
+    class Section extends UI.Component {
+        shouldComponentUpdate(next) {
+            return !(this.props.hidden && next.hidden && next.moving);
+        }
+
+        render({ entry, index, hidden }) {
+            return html`<section class=${classes('st-section', { hidden })}>
+                <h2 class="st-group">${entry.name}</h2>
+                <${SectionRows} entry=${entry} index=${index} />
+            </section>`;
+        }
+    }
+
     // Every group is drawn and only the chosen one shown, so a row keeps its
     // place in the page whichever group is open.
     const Screen = ({ list }) => html`<div class="st-groups">
@@ -170,10 +187,7 @@ window.Settings = function (hooks) {
             </div>`)}
         </div>
         <div class="st-panes">
-            ${list.map((entry, index) => html`<section class=${classes('st-section', { hidden: index !== group })}>
-                <h2 class="st-group">${entry.name}</h2>
-                <${SectionRows} entry=${entry} index=${index} />
-            </section>`)}
+            ${list.map((entry, index) => html`<${Section} entry=${entry} index=${index} hidden=${index !== group} moving=${moving} />`)}
         </div>`;
 
     function render() {
@@ -185,6 +199,12 @@ window.Settings = function (hooks) {
         UI.render(html`<${Screen} list=${list} />`, root);
         const selected = root.querySelector('.st-row.focused, .st-group-item.focused');
         if (selected) selected.scrollIntoView({ block: 'nearest' });
+    }
+
+    // A draw for a ▲▼ move: the groups that stay hidden are left as they are.
+    function move() {
+        moving = true;
+        try { render(); } finally { moving = false; }
     }
 
     function current() {
@@ -242,7 +262,7 @@ window.Settings = function (hooks) {
             focus = 0;
             action = 0;
             root.querySelector('.st-panes').scrollTop = 0;
-            render();
+            move();
         } else if (code === KEY.RIGHT || code === KEY.ENTER) {
             focus = 0;
             setZone('rows');
@@ -290,7 +310,7 @@ window.Settings = function (hooks) {
             if (code === KEY.UP || code === KEY.DOWN) {
                 action = 0;
                 focus = Math.max(0, Math.min(groups()[group].rows.length - 1, focus + (code === KEY.UP ? -1 : 1)));
-                render();
+                move();
             }
         },
     };

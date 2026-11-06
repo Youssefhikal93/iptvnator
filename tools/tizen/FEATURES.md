@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Faster lists: Movies, Series and Live TV keep the pictures and channel plates already on screen while you scroll, Live TV opens faster, film and show posters from TMDB load at tile size and backdrops at 1280 wide, the TV guide redraws only the rows a move changes, the channel list over the video moves faster, and Settings redraws only the open group (#90).
 - Settings → Playback → Open quality: Best quality (as before) or The one I picked, which opens exactly the channel or title you chose; the player's Quality menu still lists the other copies (#94).
 - Per-profile switches for optional online features ask before turning Off and keep saved answers for when you turn them back On (#98).
 

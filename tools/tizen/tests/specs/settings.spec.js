@@ -128,3 +128,23 @@ test('OK on a Settings row lists its choices; ◀ goes back to the groups', asyn
     await expect(page.locator('#settings .st-group-item.focused')).toContainText('Playback');
     await expect(page.locator('#settings .st-row.focused')).toHaveCount(0);
 });
+
+test('#90 moving in a Settings group redraws that group, not every hidden one; a group shows its current values when opened', async ({ page }) => {
+    await boot(page);
+    await setting(page, 'Autoplay next episode');
+    // Rows drawn per press, counted by the labels they ask for.
+    await page.evaluate(() => {
+        const t = I18n.t;
+        window.__labels = 0;
+        I18n.t = function () { window.__labels++; return t.apply(this, arguments); };
+    });
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#settings .st-row.focused .st-label')).toHaveText('Reminders');
+    // Drawing every group took ~380 lookups a press; the open group alone ~175.
+    expect(await page.evaluate(() => window.__labels / 2)).toBeLessThan(250);
+    // A value changed while its group was hidden shows once the group opens.
+    await page.evaluate(() => Prefs.set('homeLayout', 'backdrop'));
+    await setting(page, 'Home layout');
+    await expect(page.locator('#settings .st-row.focused .st-value')).toHaveText('Backdrop');
+});

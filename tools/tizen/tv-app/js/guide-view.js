@@ -99,13 +99,29 @@ window.GuideView = function (el) {
         return tile;
     }
 
+    // A channel's logo plate, kept from the row it had before when its name
+    // and logo are the same (#90): building plates was much of a guide move.
+    var spare = {};
+
+    function plate(channel, old) {
+        var logo = channel.stream_icon || channel.logo || '';
+        var key = channel.name + '\n' + logo;
+        var kept = old && old.querySelector('.gd-plate');
+        if (!(kept && kept.__plate === key)) kept = spare[key] && spare[key].pop();
+        if (kept) return kept;
+        var made = Kit.plateNode({ cls: 'gd-plate', name: channel.name, logo: logo });
+        made.__plate = key;
+        return made;
+    }
+
     function row(frame) {
         var strip = node('div', 'gd-row' + (frame.selected ? ' selected' : ''));
         strip.setAttribute('data-index', frame.index);
         strip.setAttribute('data-channel', frame.channel.stream_id === undefined ? frame.channel.url : frame.channel.stream_id);
         // Logo plate (#44), then number and name.
+        var old = rows.querySelector('[data-index="' + frame.index + '"]');
         var channel = node('div', 'gd-channel');
-        channel.appendChild(Kit.plateNode({ cls: 'gd-plate', name: frame.channel.name, logo: frame.channel.stream_icon || frame.channel.logo || '' }));
+        channel.appendChild(plate(frame.channel, old));
         channel.appendChild(node('span', 'gd-name', I18n.isolate((frame.channel.num || frame.index + 1) + '. ' + frame.channel.name)));
         strip.appendChild(channel);
         var track = node('div', 'gd-track');
@@ -118,7 +134,6 @@ window.GuideView = function (el) {
             });
             if (!track.childNodes.length) track.appendChild(node('div', 'gd-empty', I18n.t('guide.noInfo')));
         }
-        var old = rows.querySelector('[data-index="' + frame.index + '"]');
         if (old) rows.replaceChild(strip, old);
         else rows.appendChild(strip);
     }
@@ -147,7 +162,13 @@ window.GuideView = function (el) {
         },
         times: times,
         row: row,
-        clearRows: function () { rows.innerHTML = ''; },
+        clearRows: function () {
+            spare = {};
+            Array.prototype.forEach.call(rows.querySelectorAll('.gd-plate'), function (kept) {
+                if (kept.__plate) (spare[kept.__plate] = spare[kept.__plate] || []).push(kept);
+            });
+            rows.innerHTML = '';
+        },
         empty: function () { rows.appendChild(node('p', 'gd-empty', I18n.t('guide.noChannels'))); },
         details: details,
         closeDetails: function () { popup.classList.add('hidden'); },

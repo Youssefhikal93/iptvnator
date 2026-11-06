@@ -6,7 +6,8 @@ const zlib = require('zlib');
 
 const root = process.argv[2] || path.resolve(__dirname, '../../tv-app');
 const port = Number(process.argv[3] || process.env.PORT || 8767);
-const origin = 'http://localhost:' + port;
+// FAKE_HOST=<pc address> lets a TV on the network reach the images and streams.
+const origin = 'http://' + (process.env.FAKE_HOST || 'localhost') + ':' + port;
 const json = (res, body) => {
     if (Array.isArray(body)) body.forEach(channel => {
         if (channel.stream_id >= 1001 && channel.stream_id <= 1500 && /[15]$/.test(String(channel.stream_id))) {
@@ -24,6 +25,8 @@ const range = (n, f) => Array.from({ length: n }, (_, i) => f(i + 1));
 const many = Number(process.env.FAKE_CATALOGUE) || 0;
 const sized = (small, share) => (many ? Math.round(many * share) : small);
 const spread = (i, small) => String(1 + (i % (many ? 30 : small)));
+// A sized catalogue gives each title its own image address, as a provider does.
+const pic = (file, id) => origin + '/img/' + file + (many ? '?v=' + id : '');
 // A day of programmes (6 h back, 18 h ahead) on whole hours, 30/60/90 min long; times in s.
 const schedule = (seed, name) => {
     const list = [];
@@ -60,13 +63,13 @@ http.createServer((req, res) => {
         const cat = url.searchParams.get('category_id');
         if (!action) return json(res, { server_info: { timezone: 'UTC' }, user_info: { auth: 1, status: 'Active', exp_date: String(Math.floor(Date.now() / 1000) + 365 * 86400), active_cons: '0', max_connections: '1' } });
         if (action.endsWith('_categories')) return json(res, range(30, (i) => ({ category_id: String(i), category_name: action + ' cat ' + i })));
-        if (action === 'get_live_streams') return json(res, range(cat ? 40 : sized(500, 0.25), (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, epg_channel_id: 'ch' + (1000 + i) + '.se', category_id: cat || String(1 + (i % 30)) })));
-        if (action === 'get_vod_streams') return json(res, range(sized(25, 1), (i) => ({ name: 'Movie ' + i, stream_id: 2000 + i, category_id: cat || spread(i, 3), container_extension: 'mkv', stream_icon: i % 3 ? origin + '/img/poster.jpg' : '', added: i === 5 ? '' : String(1700000000 + i * 3600), rating_5based: String(((i * 7) % 10) / 2) })));
-        if (action === 'get_series') return json(res, range(sized(15, 0.25), (i) => ({ name: 'Show ' + i, series_id: 3000 + i, genre: ['Drama', 'دراما, Crime', 'Comedy'][i % 3], category_id: cat || spread(i, 3), cover: origin + '/img/poster.jpg', last_modified: String(1700000000 + (i % 5) * 7200) })));
+        if (action === 'get_live_streams') return json(res, range(cat ? 40 : sized(500, 0.25), (i) => ({ num: i, name: 'Channel ' + i + ' (cat ' + (cat || 'all') + ')', stream_id: 1000 + i, epg_channel_id: 'ch' + (1000 + i) + '.se', stream_icon: many ? pic('poster.jpg', 'l' + i) : undefined, category_id: cat || String(1 + (i % 30)) })));
+        if (action === 'get_vod_streams') return json(res, range(sized(25, 1), (i) => ({ name: 'Movie ' + i, stream_id: 2000 + i, category_id: cat || spread(i, 3), container_extension: 'mkv', stream_icon: i % 3 ? pic('poster.jpg', 'm' + i) : '', added: i === 5 ? '' : String(1700000000 + i * 3600), rating_5based: String(((i * 7) % 10) / 2) })));
+        if (action === 'get_series') return json(res, range(sized(15, 0.25), (i) => ({ name: 'Show ' + i, series_id: 3000 + i, genre: ['Drama', 'دراما, Crime', 'Comedy'][i % 3], category_id: cat || spread(i, 3), cover: pic('poster.jpg', 's' + i), last_modified: String(1700000000 + (i % 5) * 7200) })));
         if (action === 'get_series_info') {
-            const ep = (id, i, title) => ({ id, episode_num: i, title, container_extension: 'mp4', info: { movie_image: i % 2 ? origin + '/img/backdrop.jpg' : '', plot: 'The team follows a new lead. '.repeat(i), duration_secs: 2580 + i * 60 } });
+            const ep = (id, i, title) => ({ id, episode_num: i, title, container_extension: 'mp4', info: { movie_image: i % 2 ? pic('backdrop.jpg', 'e' + id) : '', plot: 'The team follows a new lead. '.repeat(i), duration_secs: 2580 + i * 60 } });
             return json(res, {
-                info: { name: 'Show ' + (url.searchParams.get('series_id') - 3000), cover: origin + '/img/poster.jpg', backdrop_path: [origin + '/img/backdrop.jpg'], plot: 'A small town hides a big secret.', cast: 'Mia Holm, Jonas Wik', genre: 'Mystery', rating: '8.1', releaseDate: '2019-09-01' },
+                info: { name: 'Show ' + (url.searchParams.get('series_id') - 3000), cover: pic('poster.jpg', 's' + (url.searchParams.get('series_id') - 3000)), backdrop_path: [pic('backdrop.jpg', 'sb' + url.searchParams.get('series_id'))], plot: 'A small town hides a big secret.', cast: 'Mia Holm, Jonas Wik', genre: 'Mystery', rating: '8.1', releaseDate: '2019-09-01' },
                 episodes: { 1: range(7, (i) => ep(4000 + i, i, 'Pilot ' + i)), 2: range(2, (i) => ep(5000 + i, i, 'Return ' + i)) },
             });
         }
@@ -75,8 +78,8 @@ http.createServer((req, res) => {
             return json(res, {
                 info: {
                     name: 'Movie ' + (id - 2000) + ': The Long Title',
-                    movie_image: origin + '/img/poster.jpg',
-                    backdrop_path: [origin + '/img/backdrop.jpg'],
+                    movie_image: pic('poster.jpg', 'm' + (id - 2000)),
+                    backdrop_path: [pic('backdrop.jpg', 'mb' + id)],
                     plot: 'A retired detective returns for one last case. '.repeat(id % 2 ? 8 : 1).trim(),
                     cast: 'Ana Lindqvist, Omar Haddad, Lena Berg',
                     director: 'Karin Ek',
@@ -128,7 +131,8 @@ http.createServer((req, res) => {
     }
     if (url.pathname.startsWith('/img/')) {
         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-        return fs.createReadStream(path.join(__dirname, '..', 'media', path.basename(url.pathname))).on('error', () => res.end()).pipe(res);
+        // FAKE_IMG_DIR serves provider-sized pictures for speed checks.
+        return fs.createReadStream(path.join(process.env.FAKE_IMG_DIR || path.join(__dirname, '..', 'media'), path.basename(url.pathname))).on('error', () => res.end()).pipe(res);
     }
     if (url.pathname.startsWith('/live/') && url.pathname.endsWith('.ts')) {
         res.writeHead(200, { 'Content-Type': 'video/mp2t', 'Access-Control-Allow-Origin': '*' });

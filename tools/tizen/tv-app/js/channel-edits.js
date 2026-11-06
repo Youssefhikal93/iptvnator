@@ -63,8 +63,21 @@ window.ChannelEdits = (function () {
         Stored.save(ProfileStore.key('channel-edits:' + sourceId), clean(edits));
     }
 
+    // A channel's view reads its edit live, so one view per channel serves
+    // every later list (#90): Live TV made all of them again on each open.
+    var views = Object.create(null);
+
     function view(sourceId, channel) {
         if (channel.__providerChannel) return channel;
+        var made = views[sourceId] || (views[sourceId] = new WeakMap());
+        var known = made.get(channel);
+        if (known) return known;
+        known = fresh(sourceId, channel);
+        made.set(channel, known);
+        return known;
+    }
+
+    function fresh(sourceId, channel) {
         var provider = channel;
         var shown = Object.assign({}, provider);
         var key = keyOf(provider);

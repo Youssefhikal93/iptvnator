@@ -335,16 +335,36 @@ window.Player = (function () {
         return false;
     }
 
+    // How long a jump takes (#90), one line per jump: "SEEK timing avplay
+    // settle=300 total=1400" (the TV took the jump, then played on). Only the
+    // engine and numbers are logged.
+    var seekClock = null;
+
+    function seekTimed() {
+        var clock = seekClock;
+        seekClock = null;
+        if (!clock || Date.now() - clock.at > 30000) return;
+        Log.info('SEEK timing ' + clock.engine + (clock.settle === undefined ? '' : ' settle=' + clock.settle) + ' total=' + (Date.now() - clock.at));
+    }
+
     function engineSeekTo(ms) {
         var serial = ++avSeekSerial;
+        var clock = seekClock = { at: Date.now(), engine: engineKind() };
         function settled() {
+            if (clock.settle === undefined && usingAv) clock.settle = Date.now() - clock.at;
             if (serial === avSeekSerial) avSeekPending = false;
         }
         try {
             if (usingAv) {
                 avSeekPending = true;
                 avplay().seekTo(Math.floor(ms), settled, settled);
-            } else video.currentTime = ms / 1000;
+            } else {
+                video.addEventListener('seeked', function done() {
+                    video.removeEventListener('seeked', done);
+                    if (seekClock === clock) seekTimed();
+                });
+                video.currentTime = ms / 1000;
+            }
         } catch (e) {
             settled(); // The confirmation loop retries when the engine is seekable.
         }
@@ -1181,6 +1201,7 @@ window.Player = (function () {
             },
             onbufferingcomplete: function () {
                 avBuffer = 100;
+                if (seekClock) seekTimed();
                 hideStatus();
             },
             onerror: function (type) {

@@ -59,6 +59,10 @@ window.XtreamSource = function (source, options) {
         }
     }
 
+    function fit(url, width) {
+        return window.Art && Art.fit ? Art.fit(url, width) : url;
+    }
+
     function first(value) {
         return Array.isArray(value) ? value[0] || '' : value || '';
     }
@@ -102,7 +106,7 @@ window.XtreamSource = function (source, options) {
             imdb_id: info.imdb_id || info.imdb || item.imdb_id || item.imdb,
             title: info.name || item.name,
             poster: info.movie_image || info.cover_big || info.cover || item.stream_icon || item.cover || '',
-            backdrop: first(info.backdrop_path),
+            backdrop: fit(first(info.backdrop_path), 1280),
             year: String(info.releasedate || info.releaseDate || info.release_date || item.year || '').slice(0, 4),
             rating: Number(info.rating) > 0 ? Number(info.rating) : 0,
             genre: info.genre || '',
@@ -170,7 +174,13 @@ window.XtreamSource = function (source, options) {
         },
         items: function (section, categoryId) {
             return call(ACTIONS.items[section], categoryId ? { category_id: categoryId } : {}).then(function (list) {
-                return Array.isArray(list) ? list : [];
+                list = Array.isArray(list) ? list : [];
+                // Tile-sized posters (#90); a channel's logo is left as sent.
+                if (section !== 'live') list.forEach(function (item) {
+                    if (item && item.stream_icon) item.stream_icon = fit(item.stream_icon, 342);
+                    if (item && item.cover) item.cover = fit(item.cover, 342);
+                });
+                return list;
             });
         },
         // The show's details and all its episodes, in season order.

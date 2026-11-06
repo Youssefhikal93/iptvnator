@@ -13,7 +13,7 @@ async function samsungPlayer(page) {
         window.nativePlayback = { state: 'NONE', position: 40000, seeks: [] };
         window.webapis = { avplay: {
             open: () => { nativePlayback.state = 'IDLE'; },
-            setListener: () => {},
+            setListener: (listener) => { nativePlayback.listener = listener; },
             setDisplayRect: () => {},
             prepareAsync: success => success(),
             setSilentSubtitle: () => {},
@@ -90,4 +90,21 @@ test('◀ ▶ walk the buttons and never seek; with the controls hidden the firs
     await expect(page.locator('#pl-buttons .focus')).toHaveCount(0);
     await page.clock.runFor(1000);
     expect(await seeks(page)).toEqual([]);
+});
+
+test('#90 each jump logs how long the TV took to take it and to play on, with no address or title', async ({ page }) => {
+    const lines = [];
+    page.on('console', (message) => { if (/^INFO SEEK timing /.test(message.text())) lines.push(message.text().replace(/^INFO /, '')); });
+    await samsungPlayer(page);
+    await onTimeline(page);
+    await press(page, 'ArrowRight');
+    await page.clock.runFor(400);
+    await page.clock.runFor(1500);
+    await page.evaluate(() => nativePlayback.listener.onbufferingcomplete());
+    await expect.poll(() => lines.length).toBe(1);
+    expect(lines[0]).toMatch(/^SEEK timing avplay settle=1500 total=\d+$/);
+    // A later buffering without a jump logs nothing.
+    await page.evaluate(() => nativePlayback.listener.onbufferingcomplete());
+    await page.clock.runFor(1000);
+    expect(lines.length).toBe(1);
 });

@@ -54,3 +54,16 @@ test('preload fetches each new address once and remembers it when it arrives', f
     a.images[0].onload();
     assert.equal(a.Art.seen('a.jpg'), true);
 });
+
+test('#90 a big TMDB picture is asked for at the width shown; smaller ones and other hosts stay', function () {
+    var fit = art().Art.fit;
+    var base = 'https://image.tmdb.org/t/p/';
+    assert.equal(fit(base + 'original/abc.jpg', 342), base + 'w342/abc.jpg');
+    assert.equal(fit(base + 'w600_and_h900_bestv2/abc.jpg', 342), base + 'w342/abc.jpg');
+    assert.equal(fit('http://image.tmdb.org/t/p/w1920/b.jpg', 1280), 'http://image.tmdb.org/t/p/w1280/b.jpg');
+    assert.equal(fit(base + 'w185/abc.jpg', 342), base + 'w185/abc.jpg');
+    assert.equal(fit(base + 'w342/abc.jpg', 342), base + 'w342/abc.jpg');
+    assert.equal(fit('http://provider.test/images/original/abc.jpg', 342), 'http://provider.test/images/original/abc.jpg');
+    assert.equal(fit('', 342), '');
+    assert.equal(fit(undefined, 342), undefined);
+});

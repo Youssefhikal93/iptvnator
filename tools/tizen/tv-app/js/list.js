@@ -18,9 +18,28 @@ window.List = function (el, options) {
         return !!(options.plate && options.plate());
     }
 
+    // A list row's plate from the last render moves into the new rows when
+    // its channel shows the same name and logo (#90): building plates was
+    // most of a Live TV move. Grid plates carry badges, so they are made anew.
     function plate(item, cls) {
         var src = options.icon && options.icon(item);
-        return Kit.plateNode({ cls: cls, name: item.name, logo: src || '' });
+        var key = cls + '\n' + item.name + '\n' + (src || '');
+        var same = cls === 'row-plate' && spare && spare.plates[key];
+        var node = same && same.pop();
+        if (node) {
+            Array.prototype.forEach.call(node.querySelectorAll('img'), function (img) { take(spare, img); });
+            return node;
+        }
+        node = Kit.plateNode({ cls: cls, name: item.name, logo: src || '' });
+        node.__plate = key;
+        return node;
+    }
+
+    // Keeps a reused plate's picture out of the pool for other images.
+    function take(pool, img) {
+        var list = pool[img.className.split(' ')[0] + ' ' + img.getAttribute('src')];
+        var at = list ? list.indexOf(img) : -1;
+        if (at >= 0) list.splice(at, 1);
     }
 
     function visibleRows() {
@@ -38,7 +57,9 @@ window.List = function (el, options) {
     // Own function so each failing logo swaps in its own item's initials,
     // even after the list has re-rendered and detached the image.
     function logo(src, item) {
-        var img = new Image();
+        var same = spare && spare['icon ' + src];
+        var img = (same && same.pop()) || new Image();
+        if (img.complete && img.naturalWidth) return img;
         img.className = 'icon';
         img.onerror = function () {
             if (img.parentNode) img.parentNode.replaceChild(placeholder(item), img);
@@ -56,7 +77,41 @@ window.List = function (el, options) {
         node.appendChild(marks);
     }
 
+    // Each render rebuilds the rows, but an artwork already on screen moves
+    // into the new rows instead of a fresh <img> (#90): the TV decodes every
+    // new poster again, and a row scroll paid ~10 decodes per key press.
+    function loaded(root) {
+        var pool = { plates: {} };
+        Array.prototype.forEach.call(root.querySelectorAll('.row-plate'), function (node) {
+            if (node.__plate) (pool.plates[node.__plate] = pool.plates[node.__plate] || []).push(node);
+        });
+        Array.prototype.forEach.call(root.querySelectorAll('img'), function (img) {
+            if (!img.complete || !img.naturalWidth) return;
+            var key = img.className.split(' ')[0] + ' ' + img.getAttribute('src');
+            (pool[key] = pool[key] || []).push(img);
+        });
+        return pool;
+    }
+
+    function reuse(pool) {
+        Array.prototype.forEach.call(el.querySelectorAll('img'), function (img) {
+            var same = pool[img.className.split(' ')[0] + ' ' + img.getAttribute('src')];
+            var old = same && same.pop();
+            if (old && img.parentNode) img.parentNode.replaceChild(old, img);
+        });
+    }
+
+    // Loaded artwork from the last render, taken by logo() and reuse().
+    var spare = null;
+
     function render() {
+        spare = loaded(el);
+        draw();
+        reuse(spare);
+        spare = null;
+    }
+
+    function draw() {
         el.classList.toggle('channels', plates());
         // Wide picture and Info boxes (#66) are grids with their own counts in CSS.
         el.classList.toggle('boxes-wide', state.boxes === 'wide');

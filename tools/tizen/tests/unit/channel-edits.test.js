@@ -151,3 +151,14 @@ test('#96 export/Replace remaps edits for both source types; Merge keeps existin
     target.ProfileStore.setActive('default');
     assert.equal(target.ChannelEdits.view(first.id, provider).name, 'Keep mine');
 });
+
+test('#90 a channel keeps one view across lists, and an edit made later still shows in it', function () {
+    var g = app().globals;
+    var first = g.ChannelEdits.list('s1', [provider])[0];
+    assert.equal(g.ChannelEdits.list('s1', [provider])[0], first);
+    assert.notEqual(g.ChannelEdits.list('s2', [provider])[0], first);
+    g.ChannelEdits.save('s1', first, { name: 'Later name' });
+    assert.equal(g.ChannelEdits.list('s1', [provider])[0].name, 'Later name');
+    g.ChannelEdits.save('s1', first, null);
+    assert.equal(first.name, provider.name);
+});

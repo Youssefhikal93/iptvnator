@@ -346,6 +346,10 @@ Open Settings → Backup → Export, read Contains your passwords and choose Con
 
 Settings → Backup → Send everything to computer… copies every profile, PIN, setting, source and your whole library to a computer on the home network; Restore from computer… puts it all back exactly as it was, to reinstall Jotv or move to a new TV. The computer runs a small receiver that shows the address and a code to enter; steps in JOTV-BACKUP.md.
 
+### Keep each installed build (#100)
+
+Every install from the computer keeps that version of the app in Projects\jotv-releases, so a known-good build can go back on the TV; steps in JOTV-RELEASES.md.
+
 ## Phone remote (#93)
 
 Settings > General > Phone remote > Pair a phone shows a QR code and address, valid once for 10 minutes. Scan it on the home network, then bookmark the page or add it to your home screen. The saved address keeps the pairing, so an iPhone home-screen icon stays paired. An icon added before the TV forgot it keeps working once a code is typed in it. A page that is not paired takes the 6-letter code typed in. Up to five phones can stay paired and work together. Rename or forget them in the same Settings group.

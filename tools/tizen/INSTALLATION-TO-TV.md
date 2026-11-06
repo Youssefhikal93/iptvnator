@@ -194,7 +194,8 @@ git pull
 The script connects to the TV (step 6), then runs steps 8 and 9: it packages
 a copy of `tools\tizen\tv-app`, signs it with the `iptvnator-tv` profile
 (`-CertProfile` to change), installs it and starts it. The `vendor` scripts
-from step 8 must already be downloaded.
+from step 8 must already be downloaded. Each install is kept in
+`Projects\jotv-releases\` ([JOTV-RELEASES.md](JOTV-RELEASES.md)).
 
 ### Using the TV app
 

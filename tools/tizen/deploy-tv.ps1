@@ -27,7 +27,18 @@ Get-ChildItem $build -Filter *.wgt | Select-Object -First 1 | Rename-Item -NewNa
 Push-Location $build
 try {
     & $tizen install -n iptvnator.wgt -s $target -- .
+    if ($LASTEXITCODE -ne 0) { throw 'The install failed; no release copy was kept.' }
     & $tizen run -p IPTVnTVApp.IPTVnator -s $target
 } finally {
     Pop-Location
 }
+
+# Keep each installed build (#100, JOTV-RELEASES.md): the signed .wgt and the
+# vendor scripts, next to the repo in Projects\jotv-releases\<version> <date> <time>.
+$version = ([xml](Get-Content (Join-Path $src 'config.xml') -Raw)).widget.version
+$releases = Join-Path (Split-Path (Split-Path (Split-Path $PSScriptRoot))) 'jotv-releases'
+$kept = Join-Path $releases ("$version " + (Get-Date -Format 'yyyy-MM-dd HH.mm'))
+New-Item -ItemType Directory -Force (Join-Path $kept 'vendor') | Out-Null
+Copy-Item (Join-Path $build 'iptvnator.wgt') $kept
+foreach ($file in 'hls.min.js', 'mpegts.js', 'preact.umd.js', 'htm.umd.js') { Copy-Item (Join-Path $src "vendor\$file") (Join-Path $kept 'vendor') }
+Write-Host "Kept this build in $kept"

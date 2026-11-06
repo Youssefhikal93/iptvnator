@@ -196,7 +196,16 @@
     function browserScreen() {
         var content = document.getElementById('content');
         if (document.querySelector('#rail .focused')) return 'menu';
-        return content.classList.contains('home') ? 'home' : content.classList.contains('settings') ? 'settings' : 'lists';
+        if (content.classList.contains('home')) return 'home ' + homeWhere();
+        return content.classList.contains('settings') ? 'settings' : 'lists';
+    }
+
+    // Home's layout, and "hero" for a press made on the hero (#103), so a
+    // press out of the hero has its own timing.
+    function homeWhere() {
+        var home = document.getElementById('home');
+        var layout = home.classList.contains('backdrop') ? 'backdrop' : home.classList.contains('bigrow') ? 'bigrow' : 'cinema';
+        return layout + (home.querySelector('.hm-hero .dt-btn.focus') ? ' hero' : '');
     }
 
     document.addEventListener('keydown', function (event) {

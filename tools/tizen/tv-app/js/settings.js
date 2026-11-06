@@ -7,7 +7,7 @@ window.Settings = function (hooks) {
     'use strict';
 
     const { html } = UI;
-    const VERSION = '0.1.0'; // Keep in step with config.xml.
+    const VERSION = '1.0.0'; // Keep in step with config.xml.
     const KEY = Keys;
     const root = document.getElementById('settings');
     const onOff = () => [I18n.t('common.on'), I18n.t('common.off')];

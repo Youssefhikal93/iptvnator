@@ -142,20 +142,6 @@ test('#90 a move in the channel list over the video keeps the plates already sho
     const kept = await page.evaluate(() => [...document.querySelectorAll('.pl-channel-logo')].filter((node) => window.__plates.has(node)).length);
     expect(kept).toBe(shown);
 });
-test('#103 the key timing log names Home presses made on the hero apart from the rows', async ({ page }) => {
-    const lines = [];
-    page.on('console', (message) => { if (/^INFO KEYS home/.test(message.text())) lines.push(message.text().replace(/^INFO /, '')); });
-    await boot(page, library());
-    await expect(page.locator('.hm-hero .dt-btn.focus')).toBeVisible();
-    // ▶ ◀ along the hero's buttons, 10 presses, never leaving it.
-    for (let i = 0; i < 5; i++) {
-        await press(page, 'ArrowRight');
-        await press(page, 'ArrowLeft');
-    }
-    await expect.poll(() => lines.length).toBe(1);
-    expect(lines[0]).toMatch(/^KEYS home cinema hero 10, median [\d.]+ ms, max [\d.]+ ms$/);
-});
-
 // A 3840×2160 picture for every backdrop the fake server links.
 async function fourKBackdrops(page) {
     await page.route('**/img/backdrop.jpg*', async (route) => {

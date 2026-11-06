@@ -1,11 +1,11 @@
 // How long a key press takes on the TV, from the key to the next drawn frame
-// (#53): one log line per 10 presses on a screen, for before/after numbers.
+// (#53): one log line per 20 presses on a screen, for before/after numbers.
 //
 // measure(screen, run) runs the key's handler and returns what it returns.
 window.KeyTiming = (function () {
     'use strict';
 
-    var EVERY = 10;
+    var EVERY = 20;
     var times = {};
 
     function note(screen, ms) {

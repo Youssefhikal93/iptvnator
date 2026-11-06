@@ -3,7 +3,7 @@
     function groups() {
         var list = [];
         var group = null;
-        api.entries({ head: function (label) { group = { label: label, items: [] }; list.push(group); }, item: function (label, active, run) { if (group) group.items.push({ label: label, run: run }); }, note: function () {}, info: function () {} });
+        api.entries({ head: function (label) { group = { label: label, items: [] }; list.push(group); }, item: function (label, active, run) { if (group) group.items.push({ label: label, run: run }); }, note: function () {}, info: function () {}, widget: function () {} });
         return list;
     }
     function state() {

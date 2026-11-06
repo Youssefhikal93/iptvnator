@@ -1,7 +1,7 @@
-const { test, expect, boot, openFirst, press, playing, playerMenu, playerGroup, moveTo } = require('./helpers');
+const { test, expect, boot, openFirst, press, playing, playerMenu, playerGroup, moveTo, learntIntro } = require('./helpers');
 
-// The show's learnt intro { from, to } in ms (0 when none).
-const learnt = page => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem(ProfileStore.key('intros')) || '{}'))[0] || 0);
+// Season 1's intro { from, to } in ms (0 when none).
+const learnt = page => learntIntro(page, 1);
 const at = page => page.locator('#video').evaluate(v => v.currentTime);
 
 async function startShow(page) {
@@ -51,13 +51,13 @@ test('a skip by hand teaches the intro; the next episode offers Skip intro there
     await expect.poll(() => learnt(page)).toEqual({ from: 15000, to: 45000 });
     await expect(page.locator('#pl-skip')).toBeHidden();
 
-    // The next episode at 0:12 (5 s before the intro) offers Skip intro, which jumps to 0:45.
+    // The next episode at 0:16 (in the intro) offers Skip intro, which jumps to 0:45.
     await press(page, 'ArrowDown');
     await moveTo(page, '#pl-buttons .focus', 'Next', 'ArrowRight');
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E2');
-    await page.locator('#video').evaluate(v => { v.pause(); v.currentTime = 12; });
+    await page.locator('#video').evaluate(v => { v.pause(); v.currentTime = 16; });
     await expect(page.locator('#pl-skip')).toBeVisible();
     await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
@@ -68,11 +68,14 @@ test('a skip by hand teaches the intro; the next episode offers Skip intro there
     await press(page, 'ArrowLeft');
     await expect.poll(() => learnt(page)).toEqual({ from: 15000, to: 35000 });
 
-    // ▲ ▲ menu: Intro · 0:15 to 0:35, and Forget clears it.
+    // ▲ ▲ menu: Intro · 00:15–00:35, and Reset clears it (#102).
     await playerMenu(page);
-    await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Intro' }).locator('.value')).toHaveText('0:15 to 0:35');
+    await expect(page.locator('#pl-menu .pl-menu-group', { hasText: 'Intro' }).locator('.value')).toHaveText('00:15–00:35');
     await playerGroup(page, 'Intro');
+    await press(page, 'ArrowDown');
+    await press(page, 'ArrowDown');
+    await expect(page.locator('#pl-menu .pl-menu-item.focus')).toContainText('Reset');
     await press(page, 'Enter');
-    await expect(page.locator('#toast')).toContainText('Intro forgotten');
+    await expect(page.locator('#toast')).toContainText('Reset');
     expect(await learnt(page)).toBe(0);
 });

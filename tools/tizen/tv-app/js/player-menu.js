@@ -29,6 +29,8 @@ window.PlayerMenu = (root, hooks) => {
             item: (label, active, action, note, icon) => (group ? group.items : list).push({ label, active, run: action, note, icon }),
             note: (text) => group && group.notes.push(text),
             info: (text) => group && group.infos.push(text),
+            // A row that draws and keys itself (#102): kind 'switch', 'pills' or 'action'.
+            widget: (entry) => (group ? group.items : list).push(Object.assign({ widget: true }, entry)),
         });
         // Playback choices come before reference material in every menu part.
         const helpIndex = list.findIndex((row) => !row.items && row.label === I18n.t('help.title'));
@@ -56,8 +58,22 @@ window.PlayerMenu = (root, hooks) => {
         return group.items.length ? '' : group.notes.join(' ');
     };
 
-    const Choice = ({ entry, focused }) => html`<div class=${'pl-menu-item' + (entry.active ? ' active' : '') + (entry.run ? '' : ' unavailable') + (focused ? ' focus' : '')}>
+    const Choice = ({ entry, focused }) => entry.widget ? html`<${Widget} entry=${entry} focused=${focused} />` : html`<div class=${'pl-menu-item' + (entry.active ? ' active' : '') + (entry.run ? '' : ' unavailable') + (focused ? ' focus' : '')}>
         <span class="dot">${entry.active ? '●' : ''}</span><span>${entry.label}${entry.note ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
+    </div>`;
+
+    // A switch, a row of pills (one opens as mm:ss digits) or a plain action;
+    // disabled ones are greyed and the focus passes over them.
+    const Pill = ({ pill, focused }) => html`<span class=${'pl-menu-pill' + (focused && pill.focus ? ' focus' : '') + (pill.digits ? ' editing' : '')}>
+        ${pill.label} ${pill.digits ? pill.digits.map((digit, i) => html`${i === 2 ? ':' : ''}<b class=${i === pill.at ? 'at' : ''}>${digit}</b>`) : pill.value}
+    </span>`;
+
+    const Widget = ({ entry, focused }) => html`<div class=${'pl-menu-item pl-menu-widget' + (entry.disabled ? ' disabled' : '') + (focused ? ' focus' : '')}>
+        <span class="dot"></span>
+        <span class="pl-menu-text">${entry.label}${entry.note && entry.kind !== 'pills' ? html`<span class="pl-menu-note">${entry.note}</span>` : ''}</span>
+        ${entry.kind === 'switch' ? html`<span class=${'st-switch' + (entry.on ? ' on' : '')}><i></i></span>` : ''}
+        ${entry.kind === 'pills' ? html`<span class="pl-menu-pills">${entry.pills.map((pill) => html`<${Pill} pill=${pill} focused=${focused} />`)}</span>` : ''}
+        ${entry.note && entry.kind === 'pills' ? html`<span class="pl-menu-note pl-menu-wide">${entry.note}</span>` : ''}
     </div>`;
 
     // A row of its own among the groups (Help, Back to live) lines up with
@@ -84,7 +100,7 @@ window.PlayerMenu = (root, hooks) => {
             ${group.notes.map((text) => html`<div class="pl-menu-empty">${text}</div>`)}
             ${group.infos.map((text) => html`<div class="pl-menu-info">${text}</div>`)}
         </div>
-        <div class="pl-menu-keys">${I18n.t('player.menuKeysBack')}</div>`;
+        <div class="pl-menu-keys">${(group.items[state.focus] && group.items[state.focus].keys) || I18n.t('player.menuKeysBack')}</div>`;
 
     // The label at i, else the first one like it: a row that arrives or leaves
     // while the menu is open (live Start over after the guide loads) must not
@@ -124,16 +140,26 @@ window.PlayerMenu = (root, hooks) => {
     const key = (code) => {
         const inGroup = state.group >= 0;
         const list = inGroup ? rows[state.group].items : rows;
+        const here = list[state.focus];
+        // A row with its own keys (the intro's pills) takes them first.
+        if (here && here.widget && !here.disabled && here.key && here.key(code)) return true;
         if (Keys.isBack(code) || (inGroup && code === Keys.LEFT)) {
             if (!inGroup) return 'close';
             state = { group: -1, focus: state.group };
         } else if (code === Keys.UP || code === Keys.DOWN) {
-            const moved = Focus.step(state.focus, list.length, code, 'column');
-            if (moved.index !== undefined) state.focus = moved.index;
+            // Greyed rows are passed over; with none beyond, the focus stays.
+            let at = state.focus;
+            for (let moved = Focus.step(at, list.length, code, 'column'); moved.index !== undefined && moved.index !== at; moved = Focus.step(at, list.length, code, 'column')) {
+                at = moved.index;
+                if (!(list[at] && list[at].disabled)) {
+                    state.focus = at;
+                    break;
+                }
+            }
         } else if (code === Keys.ENTER || (!inGroup && code === Keys.RIGHT)) {
             const row = list[state.focus];
             if (isGroup(row)) open(state.focus);
-            else if (row && row.run && code === Keys.ENTER) run(row.run);
+            else if (row && row.run && !row.disabled && code === Keys.ENTER) run(row.run);
         }
         return true;
     };

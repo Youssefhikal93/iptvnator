@@ -274,7 +274,7 @@ The card near the end of an episode that offers, and then plays, the next episod
 _Avoid_: Autoplay card, next-episode popup
 
 **Skip intro**:
-A jump of a fixed length near the start of an episode; providers do not mark intros.
+A jump past a season's intro; providers do not mark intros, so its start and end are learnt from the viewer's own skip or set by hand (#102).
 
 **Sleep timer**:
 A player choice that stops playback and closes the TV app after a duration or at the end of the current movie or episode.

@@ -138,9 +138,10 @@ test('episode controls skip intro, select another season and play next', async (
     await press(page, 'Enter');
     await playing(page);
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E1');
-    // Skipping 0:15 -> 0:35 by hand teaches the intro; back at 0:15 Skip intro shows.
+    // Skipping 0:15 -> 0:35 by hand teaches the intro; back in it Skip intro shows.
     await teachIntro(page, 15);
-    await page.locator('#video').evaluate(v => { v.currentTime = 15; });
+    // Just inside the intro: a playing video starts it a little after 0:15.
+    await page.locator('#video').evaluate(v => { v.currentTime = 16; });
     // Skip intro floats above the timeline, not in the row: ▲ from the timeline reaches it.
     await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');

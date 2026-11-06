@@ -251,6 +251,15 @@ async function teachIntro(page, from = 15, { clock = false } = {}) {
     else await page.waitForTimeout(700);
 }
 
+// The first show's intro for `season` as { from, to } in ms, `hand: true`
+// when set in the menu (#102); 0 when none.
+async function learntIntro(page, season = 1) {
+    return page.evaluate((season) => {
+        const show = Object.values(JSON.parse(localStorage.getItem(ProfileStore.key('intros')) || '{}'))[0];
+        return (show && show.seasons && show.seasons[season]) || 0;
+    }, String(season));
+}
+
 async function toolbar(page, name) {
     // Call from the first item (or the top category).
     await press(page, 'ArrowUp');
@@ -294,4 +303,4 @@ async function typeIn(page, selector, value) {
     await page.locator(selector).fill(value);
 }
 
-module.exports = { test, expect, typeIn, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, menuSearch, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };
+module.exports = { test, expect, typeIn, boot, movie, show, channel, press, sendKeyCode, back, holdOK, moveTo, menuSearch, section, category, enterItems, openFirst, setting, choose, pick, playerGroup, playerMenu, teachIntro, learntIntro, sources, sourceMenu, menuChoice, toolbar, chooseView, playing, savedProgress, resumeSeed };

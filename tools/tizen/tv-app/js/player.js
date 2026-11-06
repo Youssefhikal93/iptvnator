@@ -776,6 +776,7 @@ window.Player = (function () {
             item: function (label, active, action, note) { if (keep) m.item(label, active, action, note); },
             note: function (text) { if (keep) m.note(text); },
             info: function (text) { if (keep) m.info(text); },
+            widget: function (entry) { if (keep) m.widget(entry); },
         };
     }
 
@@ -824,7 +825,7 @@ window.Player = (function () {
                 });
             });
         }
-        if (!current.live) series.introEntries(m.head, m.item);
+        if (!current.live) series.introEntries(m);
         m.head(sleep.heading());
         sleep.choices(current).forEach(function (choice) { m.item(choice.label, choice.active, choice.select); });
         m.head(I18n.t('player.streamInfo'), I18n.t(streamInfo.shown() ? 'common.on' : 'common.off'));
@@ -866,6 +867,7 @@ window.Player = (function () {
 
     function closeMenu() {
         menu.open = false;
+        series.menuClosed();
         ui.menu.classList.add('hidden');
         playerEl.classList.remove('menu-on');
         scheduleHide();

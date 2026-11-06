@@ -63,7 +63,7 @@ function scene(settings, Hls) {
         'keys.js', 'settings-store.js', 'progress.js', 'log.js', 'focus.js', 'kit.js', 'menu.js', 'key-help.js', 'player-help.js',
         'subtitle-file.js', 'subtitle-rank.js', 'open-timing.js', 'movie-hash.js', 'media-sniff.js', 'subtitle-store.js', 'subtitle-sync.js', 'subtitle-download.js',
         'player-resume.js', 'player-epg.js', 'player-freeze.js', 'playback-chain.js', 'player-tracks.js', 'player-reconnect.js',
-        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-series.js', 'player-live.js', 'player-picture.js', 'quality.js', 'player-quality.js', 'player-menu.js', 'zap-banner.js', 'stream-info.js', 'audio-choice.js', 'language-choice.js', 'remote-context.js', 'player-remote.js', 'player.js',
+        'sleep-timer.js', 'player-sleep.js', 'intro-marks.js', 'player-intro.js', 'player-series.js', 'player-live.js', 'player-picture.js', 'quality.js', 'player-quality.js', 'player-menu.js', 'zap-banner.js', 'stream-info.js', 'audio-choice.js', 'language-choice.js', 'remote-context.js', 'player-remote.js', 'player.js',
     ], { 'iptvnator-tv:settings': JSON.stringify(settings || {}) }, {
         Hls: Hls,
         UI: uiSandbox.UI,

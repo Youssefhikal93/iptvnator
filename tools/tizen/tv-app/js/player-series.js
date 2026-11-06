@@ -5,11 +5,12 @@
 //
 // A request opts in with `episodes: { items, index, open(i) }` (built by the
 // browser); open(i) returns the request for episode i. Xtream has no intro
-// markers: Skip intro appears only once the viewer has skipped an intro by
-// hand. A forward jump of 20 s or more that starts in an episode's first five
-// minutes teaches the show's intro (intro-marks.js): it starts where the jump
-// began and ends where it landed. The button then shows from 5 s before that
-// start, for 7 s, and jumps to the end; a jump soon after it corrects the end.
+// markers: each season's intro (intro-marks.js) is set by hand in the ▲ menu's
+// Intro group (player-intro.js), or learnt: a forward jump of 20 s or more
+// that starts in an episode's first five minutes starts where the jump began
+// and ends where it landed, unless the season was set by hand (#102). The
+// button shows from the intro's start for 5 s, unless turned off for the show,
+// and jumps to the end; a jump soon after it corrects a learnt end.
 //
 // The focus is on play/pause when the controls appear; ◀ ▶ move along the
 // row, ▲ goes to the timeline (where ◀ ▶ seek) and from there to Skip intro.
@@ -19,10 +20,9 @@ window.PlayerSeries = function (api) {
     var LEARN_BEFORE_MS = 300000;
     var LEARN_MIN_MS = 20000;
     var CHAIN_MS = 4000;
-    var EARLY_MS = 5000;
     var UP_NEXT_BEFORE_MS = 30000;
     var LEARN_MS = 60000;
-    var SKIP_SHOWN_MS = 7000;
+    var SKIP_SHOWN_MS = 5000;
     var PANEL_ROWS = 7;
     var KEY = Keys;
 
@@ -56,8 +56,8 @@ window.PlayerSeries = function (api) {
         return req && req.episodes;
     }
 
-    // Skip intro is on screen for 7 s from when the intro starts, and again for
-    // 7 s each time the controls come up during it; focused, it stays.
+    // Skip intro is on screen for 5 s from when the intro starts, and again for
+    // 5 s each time the controls come up during it; focused, it stays.
     function skipShown() {
         if (!inIntro()) return false;
         if (!s.skipUntil) s.skipUntil = Date.now() + SKIP_SHOWN_MS;
@@ -68,6 +68,20 @@ window.PlayerSeries = function (api) {
         var eps = episodes();
         return eps ? eps.show || '' : '';
     }
+
+    // The show and season playing, for the season's intro (#102).
+    function where() {
+        var eps = episodes();
+        var episode = eps && eps.items[eps.index];
+        return eps && eps.show ? { show: eps.show, season: episode ? episode.season : undefined } : null;
+    }
+
+    function introMark() {
+        var at = where();
+        return at ? IntroMarks.get(at.show, at.season) : null;
+    }
+
+    var intro = PlayerIntro({ where: where, toast: function (text) { api.toast(text); } });
 
     function previousIndex() {
         var eps = episodes();
@@ -80,10 +94,10 @@ window.PlayerSeries = function (api) {
     }
 
     function inIntro() {
-        var mark = IntroMarks.get(showKey());
-        if (!mark || !episodes() || s.introDone || api.isEnded()) return false;
+        var mark = introMark();
+        if (!mark || !IntroMarks.shown(showKey()) || s.introDone || api.isEnded()) return false;
         var pos = api.position();
-        return pos >= Math.max(0, mark.from - EARLY_MS) && pos < mark.to;
+        return pos >= mark.from && pos < mark.to;
     }
 
     // A live channel, or a catch-up channel played behind live (#97).
@@ -125,9 +139,9 @@ window.PlayerSeries = function (api) {
         return list;
     }
 
-    // To the end of the show's learnt intro.
+    // To the end of the season's intro.
     function skipIntro() {
-        var mark = IntroMarks.get(showKey());
+        var mark = introMark();
         if (!mark) return;
         s.introDone = true;
         s.learnUntil = Date.now() + LEARN_MS;
@@ -136,16 +150,17 @@ window.PlayerSeries = function (api) {
     }
 
     // Every committed jump (from where it started to where it landed). Soon
-    // after Skip intro it corrects the end; otherwise quick forward jumps in a
-    // row count as one, and one of 20 s or more that began in the first five
-    // minutes teaches the intro. The latest such jump wins.
+    // after Skip intro it corrects a learnt end; otherwise quick forward jumps
+    // in a row count as one, and one of 20 s or more that began in the first
+    // five minutes teaches the season's intro. The latest such jump wins; a
+    // season set by hand keeps its times (IntroMarks.learn).
     function onJump(from, to) {
-        var show = showKey();
-        if (!show) return;
+        var at = where();
+        if (!at) return;
         var now = Date.now();
-        var mark = IntroMarks.get(show);
+        var mark = IntroMarks.get(at.show, at.season);
         if (s.learnUntil && now <= s.learnUntil && mark) {
-            if (to > mark.from) IntroMarks.set(show, mark.from, to);
+            if (to > mark.from) IntroMarks.learn(at.show, at.season, mark.from, to);
             s.learnUntil = now + LEARN_MS;
             return;
         }
@@ -156,19 +171,8 @@ window.PlayerSeries = function (api) {
         var chained = s.manual && now - s.manual.at <= CHAIN_MS && Math.abs(from - s.manual.to) <= 3000;
         s.manual = chained ? { from: s.manual.from, to: to, at: now } : { from: from, to: to, at: now };
         if (s.manual.to - s.manual.from >= LEARN_MIN_MS && s.manual.from <= LEARN_BEFORE_MS) {
-            IntroMarks.set(show, s.manual.from, s.manual.to);
+            IntroMarks.learn(at.show, at.season, s.manual.from, s.manual.to);
         }
-    }
-
-    // The Intro group of the ▲ menu, once the show has a learnt intro.
-    function introEntries(head, item) {
-        var mark = IntroMarks.get(showKey());
-        if (!mark) return;
-        head(I18n.t('player.intro'), I18n.t('player.introRange', { from: api.clock(mark.from), to: api.clock(mark.to) }));
-        item(I18n.t('player.introForget'), false, function () {
-            IntroMarks.clear(showKey());
-            api.toast(I18n.t('player.introForgotten'));
-        });
     }
 
     function startOver() {
@@ -410,7 +414,9 @@ window.PlayerSeries = function (api) {
         remote: function () { return { next: nextIndex() >= 0 ? playNext : null, skip: skipShown() ? skipIntro : null }; },
         reset: reset,
         onJump: onJump,
-        introEntries: introEntries,
+        // The ▲ menu's Intro group for an episode (player-intro.js).
+        introEntries: intro.entries,
+        menuClosed: intro.closed,
         // Keeps the overlay up while the user is on a button or the panel.
         busy: function () {
             return !!s.panel || (s.focus !== home() && s.focus !== 'bar');

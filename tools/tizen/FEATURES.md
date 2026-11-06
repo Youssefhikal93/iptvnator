@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Skip intro per season: set Starts and Ends by hand in the player menu → Intro, turn the button off for a show, and the button now appears at the intro's start for 5 seconds (#102).
 - Faster lists: Movies, Series and Live TV keep the pictures and channel plates already on screen while you scroll, Live TV opens faster, film and show posters from TMDB load at tile size and backdrops at 1280 wide, the TV guide redraws only the rows a move changes, the channel list over the video moves faster, and Settings redraws only the open group (#90).
 - Settings → Playback → Open quality: Best quality (as before) or The one I picked, which opens exactly the channel or title you chose; the player's Quality menu still lists the other copies (#94).
 - Per-profile switches for optional online features ask before turning Off and keep saved answers for when you turn them back On (#98).
@@ -192,9 +193,11 @@ For a film or episode, OK or Play / Pause pauses or plays; ▼ shows hidden cont
 
 While watching an episode, show the controls and use ◀/▶ and OK on Previous or Next to change episode, or on Episodes to choose with ◀/▶ for seasons and ▲/▼ for episodes. Up next appears near the end: OK plays now and Return hides or cancels it. Settings → Playback → Autoplay next episode offers Off, 5 s, 8 s or 15 s for the end-of-episode countdown; Jotv also reuses known playback choices to shorten later starts.
 
-### Learn and skip a show's intro (#31)
+### Skip a season's intro (#31, #102)
 
-On the timeline, skip forward at least 20 seconds within an episode's first five minutes to teach Jotv that show's intro. In later episodes, press ▲ from the timeline to select Skip intro when it appears, then OK to jump past it. To teach it again, open the player menu → Intro → Forget this show’s intro.
+On the timeline, skip forward at least 20 seconds within an episode's first five minutes to teach Jotv that season's intro. Skip intro then appears at the intro's start for 5 seconds (and again when you bring up the controls during it): press ▲ from the timeline to select it, then OK to jump past it.
+
+To set the times yourself, open the player menu → Intro, go to Times, pick Starts or Ends with ◀ ▶ and press OK. Change each digit with ▲ ▼ (or type 0–9), move with ◀ ▶, and press OK to save or Return to cancel. Times you set are kept when you skip; Reset: learn from my skips lets Jotv learn them again. A season without its own times uses the nearest season's. The Skip intro button switch turns the button off for the whole show; the times are kept.
 
 ### Confirmed resume position (#33)
 

@@ -495,6 +495,39 @@
     margin-top: 4px;
     font-size: 24px;
 }
+/* Rows that draw themselves (#102): a switch, or pills such as the intro's
+   Starts and Ends; an open pill shows mm:ss with the digit being changed. */
+.pl-menu-widget { flex-wrap: wrap; row-gap: 4px; }
+.pl-menu-widget .pl-menu-text { flex: 1; min-width: 0; }
+/* The pills' note runs under the whole row, lined up with the label. */
+.pl-menu-widget .pl-menu-wide { flex-basis: 100%; margin: 0 0 0 46px; }
+.pl-menu-widget .st-switch { flex: none; }
+.pl-menu-item.disabled { opacity: 0.4; }
+.pl-menu-pills { display: flex; flex: none; gap: 12px; }
+.pl-menu-pill {
+    padding: 8px 22px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 26px;
+    white-space: nowrap;
+}
+/* Light on the focused row's colour, as the focused card is elsewhere. */
+.pl-menu-pill.focus {
+    background: #fff;
+    color: #0b1020;
+    font-weight: 600;
+}
+.pl-menu-pill b {
+    display: inline-block;
+    min-width: 0.7em;
+    font-weight: inherit;
+    text-align: center;
+    border-radius: 6px;
+}
+.pl-menu-pill b.at {
+    background: #0b1020;
+    color: #fff;
+}
 .pl-menu-info {
     margin: 8px 24px;
     font-size: 27px;

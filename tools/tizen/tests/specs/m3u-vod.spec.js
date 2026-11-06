@@ -72,9 +72,10 @@ test('a show opens with seasons, plays an episode, offers the next one and saves
     await expect(page.locator('#pl-subtitle')).toContainText('S1 E1');
     await page.locator('#video').evaluate(v => { v.currentTime = 60; });
     await expect.poll(() => page.locator('#video').evaluate(v => v.currentTime)).toBeGreaterThanOrEqual(60);
-    // Skipping 0:15 -> 0:35 by hand teaches the intro; back at 0:15 ▲ reaches Skip intro, ▼ ▼ the row again.
+    // Skipping 0:15 -> 0:35 by hand teaches the intro; back in it ▲ reaches Skip intro, ▼ ▼ the row again.
     await teachIntro(page, 15);
-    await page.locator('#video').evaluate(v => { v.currentTime = 15; });
+    // Just inside the intro: a playing video starts it a little after 0:15.
+    await page.locator('#video').evaluate(v => { v.currentTime = 16; });
     await press(page, 'ArrowUp');
     await press(page, 'ArrowUp');
     await expect(page.locator('#pl-skip')).toHaveClass(/focus/);

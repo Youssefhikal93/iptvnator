@@ -182,6 +182,10 @@
    removes all of it. */
 img.art { opacity: 0; transition: opacity 0.25s ease-out; }
 img.art.art-in { opacity: 1; }
+/* A backdrop shrunk onto a canvas (#103) fades in and crops like the picture. */
+.big-art { opacity: 0; transition: opacity 0.25s ease-out; }
+.big-art.art-in { opacity: 1; }
+.big-art > canvas { display: block; width: 100%; height: 100%; object-fit: cover; object-position: inherit; }
 :is(.card, .hm-card, .tm-card) { transition: transform 0.15s ease-out; }
 .dt-rows .tm-row { animation: appear 0.3s ease-out; }
 @keyframes appear { from { opacity: 0; } }

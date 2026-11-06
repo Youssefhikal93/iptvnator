@@ -6,6 +6,7 @@ Kept up to date with every ticket; see the rule in docs/CONTEXT.md.
 
 ## What's new
 
+- Faster Backdrop mode: a provider's 4K backdrop is drawn at 1280 wide, made once in the background, and the titles either side are made ready before you move (#103).
 - Skip intro per season: set Starts and Ends by hand in the player menu → Intro, turn the button off for a show, and the button now appears at the intro's start for 5 seconds (#102).
 - Faster lists: Movies, Series and Live TV keep the pictures and channel plates already on screen while you scroll, Live TV opens faster, film and show posters from TMDB load at tile size and backdrops at 1280 wide, the TV guide redraws only the rows a move changes, the channel list over the video moves faster, and Settings redraws only the open group (#90).
 - Settings → Playback → Open quality: Best quality (as before) or The one I picked, which opens exactly the channel or title you chose; the player's Quality menu still lists the other copies (#94).

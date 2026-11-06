@@ -161,7 +161,49 @@ window.Home = (api, element) => {
         : null);
     const minutesLeft = (p) => (p && p.duration > p.position ? I18n.t('epg.minLeft', { m: Math.max(1, Math.round((p.duration - p.position) / 60)) }) : '');
 
+    // A title's backdrop at most 1280 px wide (#103): a provider's 4K picture
+    // shows once Art.big has shrunk it, fading in like any picture; a small
+    // one is a plain picture. A shrunk picture already on screen elsewhere
+    // is copied, as a canvas has one place.
+    class BigArt extends UI.Component {
+        componentDidMount() { this.place(); }
+        componentDidUpdate() { this.place(); }
+        place() {
+            const entry = Art.big(this.props.src);
+            const box = this.base;
+            if (!box || !entry || entry.state !== 'canvas' || box.firstChild === entry.canvas) return;
+            let canvas = entry.canvas;
+            if (canvas.parentNode) {
+                const copy = document.createElement('canvas');
+                copy.width = canvas.width;
+                copy.height = canvas.height;
+                copy.getContext('2d').drawImage(canvas, 0, 0);
+                canvas = copy;
+            }
+            box.textContent = '';
+            box.appendChild(canvas);
+        }
+        render({ cls, src }) {
+            const entry = Art.big(src);
+            if (!entry || entry.state === 'small') return UI.img(cls, src);
+            // Ready at once (shrunk before): shown at once, as a picture seen
+            // before; ready later: it fades in.
+            return html`<div class=${cls + ' big-art' + (entry.state === 'canvas' ? ' art-in' : '')}></div>`;
+        }
+    }
+    const bigArt = (cls, src) => html`<${BigArt} key=${src || ''} cls=${cls} src=${src} />`;
+    const backdropOf = (entry, d) => (entry.section === 'live' ? art(entry.item, entry.section) : d.backdrop || d.poster || art(entry.item, entry.section));
     const heroArt = (entry, d) => UI.img('hm-hero-art', entry.section === 'live' ? art(entry.item, entry.section) : d.backdrop || d.poster || art(entry.item, entry.section));
+
+    // A shrunk backdrop that becomes ready redraws Backdrop mode once per frame.
+    let bigFrame = 0;
+    Art.onBig(() => {
+        if (bigFrame || layout() !== 'backdrop') return;
+        bigFrame = requestAnimationFrame(() => {
+            bigFrame = 0;
+            render();
+        });
+    });
 
     const Hero = ({ hero, focused }) => {
         const at = heroIndex(hero);
@@ -350,16 +392,19 @@ window.Home = (api, element) => {
         const plot = live ? now && now.title : d.plot;
         const above = at > 0 ? list[at - 1].row : null;
         const below = list[at + 1] ? list[at + 1].row : null;
-        // The channels either side get their soft backdrop ready now.
-        if (live) {
+        // The titles either side get their backdrop (a channel its soft one) ready now.
+        if (entry) {
             const r = rowState(row);
             [row.entries[r.focus - 1], row.entries[r.focus + 1]].forEach((near) => {
-                if (near && near.section === 'live') softArt(art(near.item, near.section), near.item.name);
+                if (!near) return;
+                if (near.section === 'live') softArt(art(near.item, near.section), near.item.name);
+                // Only details already here: a move must not ask for the neighbours'.
+                else Art.big(backdropOf(near, s.details[entryKey(near)] ? heroDetails(near) : {}));
             });
         }
         return html`<div class=${'hm-stage' + (live ? ' live' : '')}>
             ${live ? html`<${SoftBack} src=${art(entry.item, entry.section)} name=${entry.item.name} />` : null}
-            ${entry ? UI.img('hm-stage-art', live ? art(entry.item, entry.section) : d.backdrop || d.poster || art(entry.item, entry.section)) : null}
+            ${entry ? (live ? UI.img('hm-stage-art', art(entry.item, entry.section)) : bigArt('hm-stage-art', backdropOf(entry, d))) : null}
             <div class="hm-stage-shade"></div>
             ${entry ? html`<div class="hm-stage-text">
                 <div class="hm-hero-title">${titleOf(entry)}</div>

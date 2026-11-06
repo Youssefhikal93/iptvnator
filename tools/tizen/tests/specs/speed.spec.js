@@ -155,3 +155,37 @@ test('#103 the key timing log names Home presses made on the hero apart from the
     await expect.poll(() => lines.length).toBe(1);
     expect(lines[0]).toMatch(/^KEYS home cinema hero 10, median [\d.]+ ms, max [\d.]+ ms$/);
 });
+
+// A 3840×2160 picture for every backdrop the fake server links.
+async function fourKBackdrops(page) {
+    await page.route('**/img/backdrop.jpg*', async (route) => {
+        const browser = route.request().frame().page();
+        const base64 = await browser.evaluate(() => {
+            const c = document.createElement('canvas');
+            c.width = 3840;
+            c.height = 2160;
+            const g = c.getContext('2d');
+            g.fillStyle = '#346';
+            g.fillRect(0, 0, 3840, 2160);
+            return c.toDataURL('image/jpeg', 0.5).split(',')[1];
+        });
+        await route.fulfill({ status: 200, contentType: 'image/jpeg', body: Buffer.from(base64, 'base64') });
+    });
+}
+
+test('#103 Backdrop mode draws a 4K backdrop 1280 wide; Cinema keeps its picture as before', async ({ page }) => {
+    await fourKBackdrops(page);
+    const seed = library();
+    seed.storage.settings = { homeLayout: 'backdrop' };
+    await boot(page, seed);
+    // The title's details bring its backdrop; it shows shrunk, faded in, across the screen.
+    const canvas = page.locator('.hm-stage-art.big-art.art-in > canvas');
+    await expect(canvas).toBeVisible();
+    expect(await canvas.evaluate((c) => [c.width, c.height])).toEqual([1280, 720]);
+    expect((await page.locator('.hm-stage-art').boundingBox()).width).toBe(1920 - (await page.locator('#rail').boundingBox()).width);
+    await expect(page.locator('.hm-card canvas')).toHaveCount(0);
+    // Cinema's hero is the plain picture, untouched.
+    await page.evaluate(() => Prefs.set('homeLayout', 'cinema'));
+    await expect(page.locator('img.hm-hero-art[src*="backdrop.jpg"]')).toBeVisible();
+    await expect(page.locator('#home canvas')).toHaveCount(0);
+});
